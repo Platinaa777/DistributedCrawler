@@ -1,0 +1,9 @@
+go.work
+go.work.sum
+
+
+/bin
+.env
+/vendor.protobuf
+/.vscode
+/.claude

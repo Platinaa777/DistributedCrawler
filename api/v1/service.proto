@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package crawler.v1;
+
+import "v1/models.proto";
+
+option go_package = "distributed-crawler/pkg/api/crawlergrpc";
+
+// CrawlerService defines the gRPC service
+service CrawlerService {
+  // Job operations
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+  rpc CreateJob(CreateJobRequest) returns (CreateJobResponse);
+  rpc GetJob(GetJobRequest) returns (GetJobResponse);
+  rpc UpdateJob(UpdateJobRequest) returns (UpdateJobResponse);
+
+  // Task operations
+  rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+  rpc ListTasksByJob(ListTasksByJobRequest) returns (ListTasksByJobResponse);
+  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
+
+  // Snapshot operations
+  rpc CreateSnapshot(CreateSnapshotRequest) returns (CreateSnapshotResponse);
+  rpc GetSnapshot(GetSnapshotRequest) returns (GetSnapshotResponse);
+  rpc ListSnapshotsByTask(ListSnapshotsByTaskRequest) returns (ListSnapshotsByTaskResponse);
+
+  // Record operations
+  rpc CreateRecord(CreateRecordRequest) returns (CreateRecordResponse);
+  rpc GetRecord(GetRecordRequest) returns (GetRecordResponse);
+  rpc ListRecordsByTask(ListRecordsByTaskRequest) returns (ListRecordsByTaskResponse);
+}

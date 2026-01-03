@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package crawler.v1;
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+option go_package = "distributed-crawler/pkg/api/crawlergrpc";
+
+// CrawlJob represents a crawling job
+message CrawlJob {
+  string id = 1;
+  string name = 2;
+  string status = 3;
+  google.protobuf.Timestamp created_at = 4 [json_name = "created_at"];
+  optional google.protobuf.Timestamp completed_at = 5;
+}
+
+// CrawlTask represents a single crawl task within a job
+message CrawlTask {
+  string id = 1;
+  string job_id = 2;
+  string url = 3;
+  string status = 4;
+  google.protobuf.Timestamp enqueued_at = 5;
+}
+
+// PageSnapshot represents a fetched page snapshot
+message PageSnapshot {
+  string id = 1;
+  string task_id = 2;
+  string url = 3;
+  int32 http_status = 4;
+  string content_type = 5;
+  string storage_key = 6;
+  google.protobuf.Timestamp fetched_at = 7;
+}
+
+// ExtractedRecord represents extracted/parsed data from a page
+message ExtractedRecord {
+  string id = 1;
+  string task_id = 2;
+  string source_url = 3;
+  map<string, string> data = 4;
+  google.protobuf.Timestamp parsed_at = 5;
+}
+
+// Request/Response messages for Jobs
+
+message ListJobsRequest {}
+
+message ListJobsResponse {
+  repeated CrawlJob jobs = 1;
+}
+
+message CreateJobRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1];
+  string status = 2 [(buf.validate.field).string.min_len = 2];
+}
+
+message CreateJobResponse {
+  string id = 1;
+}
+
+message GetJobRequest {
+  string id = 1;
+}
+
+message GetJobResponse {
+  CrawlJob job = 1;
+}
+
+message UpdateJobRequest {
+  string id = 1;
+  string status = 2;
+}
+
+message UpdateJobResponse {
+  CrawlJob job = 1;
+}
+
+// Request/Response messages for Tasks
+
+message CreateTaskRequest {
+  string job_id = 1;
+  string url = 2;
+  string status = 3;
+}
+
+message CreateTaskResponse {
+  CrawlTask task = 1;
+}
+
+message GetTaskRequest {
+  string id = 1;
+}
+
+message GetTaskResponse {
+  CrawlTask task = 1;
+}
+
+message ListTasksByJobRequest {
+  string job_id = 1;
+}
+
+message ListTasksByJobResponse {
+  repeated CrawlTask tasks = 1;
+}
+
+message UpdateTaskRequest {
+  string id = 1;
+  string status = 2;
+}
+
+message UpdateTaskResponse {
+  CrawlTask task = 1;
+}
+
+// Request/Response messages for Snapshots
+
+message CreateSnapshotRequest {
+  string task_id = 1;
+  string url = 2;
+  int32 http_status = 3;
+  string content_type = 4;
+  string storage_key = 5;
+}
+
+message CreateSnapshotResponse {
+  PageSnapshot snapshot = 1;
+}
+
+message GetSnapshotRequest {
+  string id = 1;
+}
+
+message GetSnapshotResponse {
+  PageSnapshot snapshot = 1;
+}
+
+message ListSnapshotsByTaskRequest {
+  string task_id = 1;
+}
+
+message ListSnapshotsByTaskResponse {
+  repeated PageSnapshot snapshots = 1;
+}
+
+// Request/Response messages for Records
+
+message CreateRecordRequest {
+  string task_id = 1;
+  string source_url = 2;
+  map<string, string> data = 3;
+}
+
+message CreateRecordResponse {
+  ExtractedRecord record = 1;
+}
+
+message GetRecordRequest {
+  string id = 1;
+}
+
+message GetRecordResponse {
+  ExtractedRecord record = 1;
+}
+
+message ListRecordsByTaskRequest {
+  string task_id = 1;
+}
+
+message ListRecordsByTaskResponse {
+  repeated ExtractedRecord records = 1;
+}
