@@ -7,6 +7,7 @@
 package crawlergrpc
 
 import (
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -25,24 +26,24 @@ var File_v1_service_proto protoreflect.FileDescriptor
 const file_v1_service_proto_rawDesc = "" +
 	"\n" +
 	"\x10v1/service.proto\x12\n" +
-	"crawler.v1\x1a\x0fv1/models.proto2\xf3\b\n" +
-	"\x0eCrawlerService\x12E\n" +
-	"\bListJobs\x12\x1b.crawler.v1.ListJobsRequest\x1a\x1c.crawler.v1.ListJobsResponse\x12H\n" +
-	"\tCreateJob\x12\x1c.crawler.v1.CreateJobRequest\x1a\x1d.crawler.v1.CreateJobResponse\x12?\n" +
-	"\x06GetJob\x12\x19.crawler.v1.GetJobRequest\x1a\x1a.crawler.v1.GetJobResponse\x12H\n" +
-	"\tUpdateJob\x12\x1c.crawler.v1.UpdateJobRequest\x1a\x1d.crawler.v1.UpdateJobResponse\x12K\n" +
+	"crawler.v1\x1a\x0fv1/models.proto\x1a\x1cgoogle/api/annotations.proto2\xa3\f\n" +
+	"\x0eCrawlerService\x12[\n" +
+	"\bListJobs\x12\x1b.crawler.v1.ListJobsRequest\x1a\x1c.crawler.v1.ListJobsResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/api/v1/jobs\x12a\n" +
+	"\tCreateJob\x12\x1c.crawler.v1.CreateJobRequest\x1a\x1d.crawler.v1.CreateJobResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/api/v1/jobs\x12Z\n" +
+	"\x06GetJob\x12\x19.crawler.v1.GetJobRequest\x1a\x1a.crawler.v1.GetJobResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/jobs/{id}\x12f\n" +
+	"\tUpdateJob\x12\x1c.crawler.v1.UpdateJobRequest\x1a\x1d.crawler.v1.UpdateJobResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*2\x11/api/v1/jobs/{id}\x12e\n" +
 	"\n" +
-	"CreateTask\x12\x1d.crawler.v1.CreateTaskRequest\x1a\x1e.crawler.v1.CreateTaskResponse\x12B\n" +
-	"\aGetTask\x12\x1a.crawler.v1.GetTaskRequest\x1a\x1b.crawler.v1.GetTaskResponse\x12W\n" +
-	"\x0eListTasksByJob\x12!.crawler.v1.ListTasksByJobRequest\x1a\".crawler.v1.ListTasksByJobResponse\x12K\n" +
+	"CreateTask\x12\x1d.crawler.v1.CreateTaskRequest\x1a\x1e.crawler.v1.CreateTaskResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/tasks\x12^\n" +
+	"\aGetTask\x12\x1a.crawler.v1.GetTaskRequest\x1a\x1b.crawler.v1.GetTaskResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/tasks/{id}\x12|\n" +
+	"\x0eListTasksByJob\x12!.crawler.v1.ListTasksByJobRequest\x1a\".crawler.v1.ListTasksByJobResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/jobs/{job_id}/tasks\x12j\n" +
 	"\n" +
-	"UpdateTask\x12\x1d.crawler.v1.UpdateTaskRequest\x1a\x1e.crawler.v1.UpdateTaskResponse\x12W\n" +
-	"\x0eCreateSnapshot\x12!.crawler.v1.CreateSnapshotRequest\x1a\".crawler.v1.CreateSnapshotResponse\x12N\n" +
-	"\vGetSnapshot\x12\x1e.crawler.v1.GetSnapshotRequest\x1a\x1f.crawler.v1.GetSnapshotResponse\x12f\n" +
-	"\x13ListSnapshotsByTask\x12&.crawler.v1.ListSnapshotsByTaskRequest\x1a'.crawler.v1.ListSnapshotsByTaskResponse\x12Q\n" +
-	"\fCreateRecord\x12\x1f.crawler.v1.CreateRecordRequest\x1a .crawler.v1.CreateRecordResponse\x12H\n" +
-	"\tGetRecord\x12\x1c.crawler.v1.GetRecordRequest\x1a\x1d.crawler.v1.GetRecordResponse\x12`\n" +
-	"\x11ListRecordsByTask\x12$.crawler.v1.ListRecordsByTaskRequest\x1a%.crawler.v1.ListRecordsByTaskResponseB\x90\x01\n" +
+	"UpdateTask\x12\x1d.crawler.v1.UpdateTaskRequest\x1a\x1e.crawler.v1.UpdateTaskResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*2\x12/api/v1/tasks/{id}\x12u\n" +
+	"\x0eCreateSnapshot\x12!.crawler.v1.CreateSnapshotRequest\x1a\".crawler.v1.CreateSnapshotResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/snapshots\x12n\n" +
+	"\vGetSnapshot\x12\x1e.crawler.v1.GetSnapshotRequest\x1a\x1f.crawler.v1.GetSnapshotResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/v1/snapshots/{id}\x12\x91\x01\n" +
+	"\x13ListSnapshotsByTask\x12&.crawler.v1.ListSnapshotsByTaskRequest\x1a'.crawler.v1.ListSnapshotsByTaskResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/tasks/{task_id}/snapshots\x12m\n" +
+	"\fCreateRecord\x12\x1f.crawler.v1.CreateRecordRequest\x1a .crawler.v1.CreateRecordResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/api/v1/records\x12f\n" +
+	"\tGetRecord\x12\x1c.crawler.v1.GetRecordRequest\x1a\x1d.crawler.v1.GetRecordResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/records/{id}\x12\x89\x01\n" +
+	"\x11ListRecordsByTask\x12$.crawler.v1.ListRecordsByTaskRequest\x1a%.crawler.v1.ListRecordsByTaskResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/tasks/{task_id}/recordsB\x90\x01\n" +
 	"\x0ecom.crawler.v1B\fServiceProtoP\x01Z'distributed-crawler/pkg/api/crawlergrpc\xa2\x02\x03CXX\xaa\x02\n" +
 	"Crawler.V1\xca\x02\n" +
 	"Crawler\\V1\xe2\x02\x16Crawler\\V1\\GPBMetadata\xea\x02\vCrawler::V1b\x06proto3"

@@ -5,7 +5,10 @@ import (
 	"flag"
 	"log"
 	"net"
+	"net/http"
+	"sync"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -23,6 +26,7 @@ func init() {
 type APIApp struct {
 	serviceProvider *serviceProvider
 	grpcServer      *grpc.Server
+	httpServer      *http.Server
 }
 
 func NewAPIApp(ctx context.Context) (*APIApp, error) {
@@ -38,12 +42,34 @@ func NewAPIApp(ctx context.Context) (*APIApp, error) {
 
 func (a *APIApp) Run() error {
 	defer func() {
-		if err := a.serviceProvider.Close(); err != nil {
-			log.Printf("failed to close resources: %v", err)
+		// closer.CloseAll()
+		// closer.Wait()
+	}()
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+
+		err := a.runGRPCServer()
+		if err != nil {
+			log.Fatalf("failed to run GRPC server: %v", err)
 		}
 	}()
 
-	return a.runGRPCServer()
+	go func() {
+		defer wg.Done()
+
+		err := a.runHTTPServer()
+		if err != nil {
+			log.Fatalf("failed to run HTTP server: %v", err)
+		}
+	}()
+
+	wg.Wait()
+
+	return nil
 }
 
 func (a *APIApp) initDeps(ctx context.Context) error {
@@ -51,6 +77,7 @@ func (a *APIApp) initDeps(ctx context.Context) error {
 		a.initConfig,
 		a.initServiceProvider,
 		a.initGRPCServer,
+		a.initHTTPServer,
 	}
 
 	for _, f := range inits {
@@ -87,6 +114,26 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	return nil
 }
 
+func (a *APIApp) initHTTPServer(ctx context.Context) error {
+	mux := runtime.NewServeMux()
+
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	err := crawlergrpc.RegisterCrawlerServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
+	}
+
+	a.httpServer = &http.Server{
+		Addr:    a.serviceProvider.HTTPConfig().Address(),
+		Handler: mux,
+	}
+
+	return nil
+}
+
 func (a *APIApp) runGRPCServer() error {
 	log.Printf("GRPC server is running on %s", a.serviceProvider.GRPCConfig().Address())
 
@@ -96,6 +143,17 @@ func (a *APIApp) runGRPCServer() error {
 	}
 
 	err = a.grpcServer.Serve(list)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *APIApp) runHTTPServer() error {
+	log.Printf("HTTP server is running on %s", a.serviceProvider.HTTPConfig().Address())
+
+	err := a.httpServer.ListenAndServe()
 	if err != nil {
 		return err
 	}

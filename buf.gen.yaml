@@ -14,5 +14,10 @@ plugins:
     opt:
       - paths=source_relative
 
+  - local: protoc-gen-grpc-gateway
+    out: pkg
+    opt:
+      - paths=source_relative
+
 inputs:
   - directory: api
