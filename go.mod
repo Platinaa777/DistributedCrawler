@@ -4,15 +4,23 @@ go 1.25.4
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20251209175733-2a1774d88802.1
+	github.com/brianvoe/gofakeit/v7 v7.14.0
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/google/uuid v1.6.0
+	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/gojuno/minimock/v3 v3.4.7 // indirect
+	github.com/kr/pretty v0.2.1 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
@@ -29,18 +37,12 @@ require (
 )
 
 require (
-	buf.build/go/protovalidate v1.1.0
-	cel.dev/expr v0.24.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
+	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/georgysavva/scany v1.2.3
-	github.com/google/cel-go v0.26.1 // indirect
 	github.com/joho/godotenv v1.5.1
-	github.com/stoewer/go-strcase v1.3.1 // indirect
-	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20251029180050-ab9386a59fda // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda // indirect
 )

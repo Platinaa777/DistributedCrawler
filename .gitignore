@@ -6,4 +6,5 @@ go.work.sum
 .env
 /vendor.protobuf
 /.vscode
-/.claude
+/.claude/
+coverage.out
