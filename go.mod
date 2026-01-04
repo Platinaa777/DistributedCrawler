@@ -3,8 +3,8 @@ module distributed-crawler
 go 1.25.4
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20251209175733-2a1774d88802.1
 	github.com/brianvoe/gofakeit/v7 v7.14.0
+	github.com/envoyproxy/protoc-gen-validate v1.3.0
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gojuno/minimock/v3 v3.4.7
 	github.com/google/uuid v1.6.0
@@ -17,10 +17,10 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/envoyproxy/protoc-gen-validate v1.3.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rakyll/statik v0.1.7 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

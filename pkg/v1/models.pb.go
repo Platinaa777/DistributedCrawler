@@ -8,6 +8,7 @@ package crawlergrpc
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -1664,7 +1665,7 @@ var File_v1_models_proto protoreflect.FileDescriptor
 const file_v1_models_proto_rawDesc = "" +
 	"\n" +
 	"\x0fv1/models.proto\x12\n" +
-	"crawler.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17validate/validate.proto\"\xd7\x01\n" +
+	"crawler.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17validate/validate.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xd7\x01\n" +
 	"\bCrawlJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
@@ -1773,7 +1774,9 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x18ListRecordsByTaskRequest\x12\x17\n" +
 	"\atask_id\x18\x01 \x01(\tR\x06taskId\"R\n" +
 	"\x19ListRecordsByTaskResponse\x125\n" +
-	"\arecords\x18\x01 \x03(\v2\x1b.crawler.v1.ExtractedRecordR\arecordsB\x8f\x01\n" +
+	"\arecords\x18\x01 \x03(\v2\x1b.crawler.v1.ExtractedRecordR\arecordsB\x84\x02\x92Ar\x128\n" +
+	"\x17Distributed Crawler API\"\x16\n" +
+	"\x14Denis Miroshnichenko2\x051.0.0\x1a\x0elocalhost:8080*\x02\x01\x022\x10application/json:\x10application/json\n" +
 	"\x0ecom.crawler.v1B\vModelsProtoP\x01Z'distributed-crawler/pkg/api/crawlergrpc\xa2\x02\x03CXX\xaa\x02\n" +
 	"Crawler.V1\xca\x02\n" +
 	"Crawler\\V1\xe2\x02\x16Crawler\\V1\\GPBMetadata\xea\x02\vCrawler::V1b\x06proto3"
