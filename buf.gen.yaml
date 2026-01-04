@@ -19,5 +19,11 @@ plugins:
     opt:
       - paths=source_relative
 
+  - local: protoc-gen-validate
+    out: pkg
+    opt:
+      - paths=source_relative
+      - lang=go
+
 inputs:
   - directory: api

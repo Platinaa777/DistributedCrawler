@@ -7,7 +7,7 @@
 package crawlergrpc
 
 import (
-	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -1664,7 +1664,7 @@ var File_v1_models_proto protoreflect.FileDescriptor
 const file_v1_models_proto_rawDesc = "" +
 	"\n" +
 	"\x0fv1/models.proto\x12\n" +
-	"crawler.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\"\xd7\x01\n" +
+	"crawler.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17validate/validate.proto\"\xd7\x01\n" +
 	"\bCrawlJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
@@ -1706,8 +1706,8 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x10ListJobsResponse\x12(\n" +
 	"\x04jobs\x18\x01 \x03(\v2\x14.crawler.v1.CrawlJobR\x04jobs\"P\n" +
 	"\x10CreateJobRequest\x12\x1b\n" +
-	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x04name\x12\x1f\n" +
-	"\x06status\x18\x02 \x01(\tB\a\xbaH\x04r\x02\x10\x02R\x06status\"#\n" +
+	"\x04name\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x04name\x12\x1f\n" +
+	"\x06status\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06status\"#\n" +
 	"\x11CreateJobResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x1f\n" +
 	"\rGetJobRequest\x12\x0e\n" +

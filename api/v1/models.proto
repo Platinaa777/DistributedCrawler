@@ -3,7 +3,7 @@ syntax = "proto3";
 package crawler.v1;
 
 import "google/protobuf/timestamp.proto";
-import "buf/validate/validate.proto";
+import "validate/validate.proto";
 
 option go_package = "distributed-crawler/pkg/api/crawlergrpc";
 
@@ -54,8 +54,8 @@ message ListJobsResponse {
 }
 
 message CreateJobRequest {
-  string name = 1 [(buf.validate.field).string.min_len = 1];
-  string status = 2 [(buf.validate.field).string.min_len = 2];
+  string name = 1 [(validate.rules).string.min_len = 1];
+  string status = 2 [(validate.rules).string.min_len = 1];
 }
 
 message CreateJobResponse {

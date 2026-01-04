@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"distributed-crawler/internal/config"
+	"distributed-crawler/internal/interceptor"
 	crawlergrpc "distributed-crawler/pkg/v1"
 )
 
@@ -105,7 +106,10 @@ func (a *APIApp) initServiceProvider(_ context.Context) error {
 }
 
 func (a *APIApp) initGRPCServer(ctx context.Context) error {
-	a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+	a.grpcServer = grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+		grpc.UnaryInterceptor(interceptor.ValidateInterceptor),
+	)
 
 	reflection.Register(a.grpcServer)
 
