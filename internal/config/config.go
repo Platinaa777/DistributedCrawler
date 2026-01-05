@@ -22,3 +22,8 @@ type PGConfig interface {
 type HTTPConfig interface {
 	Address() string
 }
+
+type LoggerConfig interface {
+	Level() string
+	Env() string
+}
