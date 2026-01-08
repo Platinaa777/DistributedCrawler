@@ -6,10 +6,9 @@ import (
 )
 
 type CrawlJob struct {
-	// some domain fields without db tags, only DDD logic
 	ID          valueobjects.CrawlJobID
 	Name        string
-	Status      string
+	Status      TaskStatus
 	CreatedAt   time.Time
 	CompletedAt *time.Time
 }

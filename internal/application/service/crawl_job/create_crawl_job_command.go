@@ -13,7 +13,7 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 	crawlJob := models.CrawlJob{
 		ID:        valueobjects.GenerateCrawlJobID(),
 		Name:      command.Name,
-		Status:    command.Status,
+		Status:    models.TaskStatus(command.Status),
 		CreatedAt: time.Now(),
 	}
 

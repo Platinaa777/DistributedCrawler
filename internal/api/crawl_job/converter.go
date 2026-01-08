@@ -16,7 +16,7 @@ func ToProtoCrawlJob(job *models.CrawlJob) *crawlergrpc.CrawlJob {
 	protoJob := &crawlergrpc.CrawlJob{
 		Id:        job.ID.String(),
 		Name:      job.Name,
-		Status:    job.Status,
+		Status:    job.Status.String(),
 		CreatedAt: timestamppb.New(job.CreatedAt),
 	}
 

@@ -11,7 +11,7 @@ func SaveCrawlJobToSnapshot(crawlJob models.CrawlJob) *snapshots.CrawlJobSnapsho
 	snapshot := &snapshots.CrawlJobSnapshot{
 		ID:        crawlJob.ID.String(),
 		Name:      crawlJob.Name,
-		Status:    crawlJob.Status,
+		Status:    crawlJob.Status.String(),
 		CreatedAt: crawlJob.CreatedAt,
 	}
 
@@ -34,7 +34,7 @@ func RestoreCrawlJobFromSnapshot(crawlJob snapshots.CrawlJobSnapshot) (*models.C
 	job := &models.CrawlJob{
 		ID:        id,
 		Name:      crawlJob.Name,
-		Status:    crawlJob.Status,
+		Status:    models.TaskStatus(crawlJob.Status),
 		CreatedAt: crawlJob.CreatedAt,
 	}
 
