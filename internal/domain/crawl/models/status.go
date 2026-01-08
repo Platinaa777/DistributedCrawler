@@ -20,3 +20,24 @@ func (s TaskStatus) IsValid() bool {
 	}
 	return false
 }
+
+func AllTaskStatuses() []TaskStatus {
+	return []TaskStatus{
+		TaskStatusPending,
+		TaskStatusRunning,
+		TaskStatusCompleted,
+		TaskStatusFailed,
+	}
+}
+
+func AllTaskStatusesString() string {
+	statuses := AllTaskStatuses()
+	result := ""
+	for i, status := range statuses {
+		if i > 0 {
+			result += ", "
+		}
+		result += status.String()
+	}
+	return result
+}

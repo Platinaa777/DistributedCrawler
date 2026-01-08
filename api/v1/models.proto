@@ -38,9 +38,10 @@ message CrawlJob {
 message CrawlTask {
   string id = 1;
   string job_id = 2;
-  string url = 3;
-  string status = 4;
-  google.protobuf.Timestamp enqueued_at = 5;
+  optional CrawlJob job = 3;
+  string url = 4;
+  string status = 5;
+  google.protobuf.Timestamp enqueued_at = 6;
 }
 
 // PageSnapshot represents a fetched page snapshot
@@ -65,7 +66,11 @@ message ExtractedRecord {
 
 // Request/Response messages for Jobs
 
-message ListJobsRequest {}
+message ListJobsRequest {
+  optional string status = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
 
 message ListJobsResponse {
   repeated CrawlJob jobs = 1;
@@ -100,9 +105,8 @@ message UpdateJobResponse {
 // Request/Response messages for Tasks
 
 message CreateTaskRequest {
-  string job_id = 1;
-  string url = 2;
-  string status = 3;
+  string job_id = 1 [(validate.rules).string.min_len = 1];
+  string url = 2 [(validate.rules).string.min_len = 1];
 }
 
 message CreateTaskResponse {

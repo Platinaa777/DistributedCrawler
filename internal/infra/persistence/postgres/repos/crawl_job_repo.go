@@ -83,3 +83,100 @@ func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID
 
 	return converters.RestoreCrawlJobFromSnapshot(crawlJob)
 }
+
+func (c *crawlJobRepository) Update(ctx context.Context, entity models.CrawlJob) error {
+	dbEntity := converters.SaveCrawlJobToSnapshot(entity)
+
+	builder := sq.Update(tableName).
+		PlaceholderFormat(sq.Dollar).
+		Set(nameColumn, dbEntity.Name).
+		Set(statusColumn, dbEntity.Status).
+		Set(completedAtColumn, dbEntity.CompletedAt).
+		Where(sq.Eq{idColumn: dbEntity.ID})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_job_repository.Update",
+		QueryRaw: query,
+	}
+
+	_, err = c.client.DB().ExecContext(ctx, q, args...)
+	return err
+}
+
+func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus, limit, offset int) ([]*models.CrawlJob, error) {
+	builder := sq.Select(idColumn, nameColumn, statusColumn, createdAtColumn, completedAtColumn).
+		PlaceholderFormat(sq.Dollar).
+		From(tableName).
+		Where(sq.Eq{statusColumn: status.String()}).
+		OrderBy(createdAtColumn + " DESC").
+		Limit(uint64(limit)).
+		Offset(uint64(offset))
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_job_repository.List",
+		QueryRaw: query,
+	}
+
+	var jobSnapshots []snapshots.CrawlJobSnapshot
+	err = c.client.DB().ScanAllContext(ctx, &jobSnapshots, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]*models.CrawlJob, 0, len(jobSnapshots))
+	for _, snapshot := range jobSnapshots {
+		job, err := converters.RestoreCrawlJobFromSnapshot(snapshot)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+
+func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]*models.CrawlJob, error) {
+	builder := sq.Select(idColumn, nameColumn, statusColumn, createdAtColumn, completedAtColumn).
+		PlaceholderFormat(sq.Dollar).
+		From(tableName).
+		OrderBy(createdAtColumn + " DESC").
+		Limit(uint64(limit)).
+		Offset(uint64(offset))
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_job_repository.ListAll",
+		QueryRaw: query,
+	}
+
+	var jobSnapshots []snapshots.CrawlJobSnapshot
+	err = c.client.DB().ScanAllContext(ctx, &jobSnapshots, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]*models.CrawlJob, 0, len(jobSnapshots))
+	for _, snapshot := range jobSnapshots {
+		job, err := converters.RestoreCrawlJobFromSnapshot(snapshot)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}

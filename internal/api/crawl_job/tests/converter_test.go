@@ -1,6 +1,7 @@
-package crawljob
+package tests
 
 import (
+	crawljob "distributed-crawler/internal/api/crawl_job"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	crawlergrpc "distributed-crawler/pkg/v1"
@@ -97,7 +98,7 @@ func TestToProtoCrawlJob(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := ToProtoCrawlJob(tt.input)
+			result := crawljob.ToProtoCrawlJob(tt.input)
 
 			if tt.input == nil {
 				require.Nil(t, result)
@@ -138,7 +139,7 @@ func TestToProtoCrawlJob_Properties(t *testing.T) {
 			CreatedAt: time.Now(),
 		}
 
-		result := ToProtoCrawlJob(job)
+		result := crawljob.ToProtoCrawlJob(job)
 
 		require.NotNil(t, result)
 		parsedUUID, err := uuid.Parse(result.Id)
@@ -158,7 +159,7 @@ func TestToProtoCrawlJob_Properties(t *testing.T) {
 			CreatedAt: preciseTime,
 		}
 
-		result := ToProtoCrawlJob(job)
+		result := crawljob.ToProtoCrawlJob(job)
 
 		require.NotNil(t, result)
 		// timestamppb preserves nanosecond precision
@@ -185,7 +186,7 @@ func TestToProtoCrawlJob_Properties(t *testing.T) {
 				CreatedAt: time.Now(),
 			}
 
-			result := ToProtoCrawlJob(job)
+			result := crawljob.ToProtoCrawlJob(job)
 
 			require.NotNil(t, result)
 			assert.Equal(t, name, result.Name)
@@ -203,7 +204,7 @@ func BenchmarkToProtoCrawlJob(b *testing.B) {
 
 	b.ResetTimer()
 	for b.Loop() {
-		_ = ToProtoCrawlJob(job)
+		_ = crawljob.ToProtoCrawlJob(job)
 	}
 }
 
@@ -219,6 +220,6 @@ func BenchmarkToProtoCrawlJob_WithCompletedAt(b *testing.B) {
 
 	b.ResetTimer()
 	for b.Loop() {
-		_ = ToProtoCrawlJob(job)
+		_ = crawljob.ToProtoCrawlJob(job)
 	}
 }

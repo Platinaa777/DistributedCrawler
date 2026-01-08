@@ -94,7 +94,8 @@ func TestCreateJob(t *testing.T) {
 			t.Parallel()
 
 			crawlJobServiceMock := tt.crawlJobServiceMock(mc)
-			api := crawljob.NewImplementation(crawlJobServiceMock)
+			crawlTaskServiceMock := serviceMocks.NewCrawlTaskServiceMock(mc)
+			api := crawljob.NewImplementation(crawlJobServiceMock, crawlTaskServiceMock)
 
 			response, err := api.CreateJob(tt.args.ctx, tt.args.req)
 			require.Equal(t, tt.err, err)

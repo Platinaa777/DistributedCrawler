@@ -7,9 +7,11 @@ import (
 	crawljob "distributed-crawler/internal/api/crawl_job"
 	"distributed-crawler/internal/application/service"
 	crawljobservice "distributed-crawler/internal/application/service/crawl_job"
+	crawltaskservice "distributed-crawler/internal/application/service/crawl_task"
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
 	crawljobrepo "distributed-crawler/internal/domain/crawl/repos/crawl_job"
+	crawltaskrepo "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	crawljobrepoimpl "distributed-crawler/internal/infra/persistence/postgres/repos"
@@ -21,11 +23,13 @@ type serviceProvider struct {
 	grpcConfig config.GRPCConfig
 	httpConfig config.HTTPConfig
 
-	dbClient       persistence.Client
-	txManager      persistence.TxManager
-	crawlJobRepo   crawljobrepo.CrawlJobRepository
+	dbClient        persistence.Client
+	txManager       persistence.TxManager
+	crawlJobRepo    crawljobrepo.CrawlJobRepository
+	crawlTaskRepo   crawltaskrepo.CrawlTaskRepository
 
-	crawlJobService service.CrawlJobService
+	crawlJobService  service.CrawlJobService
+	crawlTaskService service.CrawlTaskService
 
 	crawlerServiceImpl *crawljob.CrawlJobImplementation
 }
@@ -118,9 +122,30 @@ func (s *serviceProvider) CrawlJobService(ctx context.Context) service.CrawlJobS
 	return s.crawlJobService
 }
 
+func (s *serviceProvider) CrawlTaskRepository(ctx context.Context) crawltaskrepo.CrawlTaskRepository {
+	if s.crawlTaskRepo == nil {
+		s.crawlTaskRepo = crawljobrepoimpl.NewCrawlTaskRepository(s.DBClient(ctx))
+	}
+
+	return s.crawlTaskRepo
+}
+
+func (s *serviceProvider) CrawlTaskService(ctx context.Context) service.CrawlTaskService {
+	if s.crawlTaskService == nil {
+		s.crawlTaskService = crawltaskservice.NewCrawlTaskService(
+			s.CrawlTaskRepository(ctx),
+		)
+	}
+
+	return s.crawlTaskService
+}
+
 func (s *serviceProvider) CrawlerServiceImpl(ctx context.Context) *crawljob.CrawlJobImplementation {
 	if s.crawlerServiceImpl == nil {
-		s.crawlerServiceImpl = crawljob.NewImplementation(s.CrawlJobService(ctx))
+		s.crawlerServiceImpl = crawljob.NewImplementation(
+			s.CrawlJobService(ctx),
+			s.CrawlTaskService(ctx),
+		)
 	}
 
 	return s.crawlerServiceImpl

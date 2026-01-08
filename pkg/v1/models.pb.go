@@ -106,9 +106,10 @@ type CrawlTask struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
-	Url           string                 `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
-	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	EnqueuedAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=enqueued_at,json=enqueuedAt,proto3" json:"enqueued_at,omitempty"`
+	Job           *CrawlJob              `protobuf:"bytes,3,opt,name=job,proto3,oneof" json:"job,omitempty"`
+	Url           string                 `protobuf:"bytes,4,opt,name=url,proto3" json:"url,omitempty"`
+	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	EnqueuedAt    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=enqueued_at,json=enqueuedAt,proto3" json:"enqueued_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -155,6 +156,13 @@ func (x *CrawlTask) GetJobId() string {
 		return x.JobId
 	}
 	return ""
+}
+
+func (x *CrawlTask) GetJob() *CrawlJob {
+	if x != nil {
+		return x.Job
+	}
+	return nil
 }
 
 func (x *CrawlTask) GetUrl() string {
@@ -350,6 +358,9 @@ func (x *ExtractedRecord) GetParsedAt() *timestamppb.Timestamp {
 
 type ListJobsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        *string                `protobuf:"bytes,1,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -382,6 +393,27 @@ func (x *ListJobsRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ListJobsRequest.ProtoReflect.Descriptor instead.
 func (*ListJobsRequest) Descriptor() ([]byte, []int) {
 	return file_v1_models_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListJobsRequest) GetStatus() string {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return ""
+}
+
+func (x *ListJobsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListJobsRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
 }
 
 type ListJobsResponse struct {
@@ -712,7 +744,6 @@ type CreateTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
-	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -757,13 +788,6 @@ func (x *CreateTaskRequest) GetJobId() string {
 func (x *CreateTaskRequest) GetUrl() string {
 	if x != nil {
 		return x.Url
-	}
-	return ""
-}
-
-func (x *CreateTaskRequest) GetStatus() string {
-	if x != nil {
-		return x.Status
 	}
 	return ""
 }
@@ -1674,14 +1698,16 @@ const file_v1_models_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"created_at\x12B\n" +
 	"\fcompleted_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\vcompletedAt\x88\x01\x01B\x0f\n" +
-	"\r_completed_at\"\x99\x01\n" +
+	"\r_completed_at\"\xce\x01\n" +
 	"\tCrawlTask\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
-	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x10\n" +
-	"\x03url\x18\x03 \x01(\tR\x03url\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\x12;\n" +
-	"\venqueued_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"enqueuedAt\"\xe9\x01\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12+\n" +
+	"\x03job\x18\x03 \x01(\v2\x14.crawler.v1.CrawlJobH\x00R\x03job\x88\x01\x01\x12\x10\n" +
+	"\x03url\x18\x04 \x01(\tR\x03url\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x12;\n" +
+	"\venqueued_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"enqueuedAtB\x06\n" +
+	"\x04_job\"\xe9\x01\n" +
 	"\fPageSnapshot\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12\x10\n" +
@@ -1702,8 +1728,12 @@ const file_v1_models_proto_rawDesc = "" +
 	"\tparsed_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\bparsedAt\x1a7\n" +
 	"\tDataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x11\n" +
-	"\x0fListJobsRequest\"<\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"g\n" +
+	"\x0fListJobsRequest\x12\x1b\n" +
+	"\x06status\x18\x01 \x01(\tH\x00R\x06status\x88\x01\x01\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offsetB\t\n" +
+	"\a_status\"<\n" +
 	"\x10ListJobsResponse\x12(\n" +
 	"\x04jobs\x18\x01 \x03(\v2\x14.crawler.v1.CrawlJobR\x04jobs\"P\n" +
 	"\x10CreateJobRequest\x12\x1b\n" +
@@ -1719,11 +1749,10 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\";\n" +
 	"\x11UpdateJobResponse\x12&\n" +
-	"\x03job\x18\x01 \x01(\v2\x14.crawler.v1.CrawlJobR\x03job\"T\n" +
-	"\x11CreateTaskRequest\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x10\n" +
-	"\x03url\x18\x02 \x01(\tR\x03url\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\tR\x06status\"?\n" +
+	"\x03job\x18\x01 \x01(\v2\x14.crawler.v1.CrawlJobR\x03job\"N\n" +
+	"\x11CreateTaskRequest\x12\x1e\n" +
+	"\x06job_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x05jobId\x12\x19\n" +
+	"\x03url\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x03url\"?\n" +
 	"\x12CreateTaskResponse\x12)\n" +
 	"\x04task\x18\x01 \x01(\v2\x15.crawler.v1.CrawlTaskR\x04task\" \n" +
 	"\x0eGetTaskRequest\x12\x0e\n" +
@@ -1834,29 +1863,30 @@ var file_v1_models_proto_goTypes = []any{
 var file_v1_models_proto_depIdxs = []int32{
 	34, // 0: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
 	34, // 1: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
-	34, // 2: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
-	34, // 3: crawler.v1.PageSnapshot.fetched_at:type_name -> google.protobuf.Timestamp
-	32, // 4: crawler.v1.ExtractedRecord.data:type_name -> crawler.v1.ExtractedRecord.DataEntry
-	34, // 5: crawler.v1.ExtractedRecord.parsed_at:type_name -> google.protobuf.Timestamp
-	0,  // 6: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
-	0,  // 7: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
-	0,  // 8: crawler.v1.UpdateJobResponse.job:type_name -> crawler.v1.CrawlJob
-	1,  // 9: crawler.v1.CreateTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	1,  // 10: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	1,  // 11: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
-	1,  // 12: crawler.v1.UpdateTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	2,  // 13: crawler.v1.CreateSnapshotResponse.snapshot:type_name -> crawler.v1.PageSnapshot
-	2,  // 14: crawler.v1.GetSnapshotResponse.snapshot:type_name -> crawler.v1.PageSnapshot
-	2,  // 15: crawler.v1.ListSnapshotsByTaskResponse.snapshots:type_name -> crawler.v1.PageSnapshot
-	33, // 16: crawler.v1.CreateRecordRequest.data:type_name -> crawler.v1.CreateRecordRequest.DataEntry
-	3,  // 17: crawler.v1.CreateRecordResponse.record:type_name -> crawler.v1.ExtractedRecord
-	3,  // 18: crawler.v1.GetRecordResponse.record:type_name -> crawler.v1.ExtractedRecord
-	3,  // 19: crawler.v1.ListRecordsByTaskResponse.records:type_name -> crawler.v1.ExtractedRecord
-	20, // [20:20] is the sub-list for method output_type
-	20, // [20:20] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	0,  // 2: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
+	34, // 3: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
+	34, // 4: crawler.v1.PageSnapshot.fetched_at:type_name -> google.protobuf.Timestamp
+	32, // 5: crawler.v1.ExtractedRecord.data:type_name -> crawler.v1.ExtractedRecord.DataEntry
+	34, // 6: crawler.v1.ExtractedRecord.parsed_at:type_name -> google.protobuf.Timestamp
+	0,  // 7: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
+	0,  // 8: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
+	0,  // 9: crawler.v1.UpdateJobResponse.job:type_name -> crawler.v1.CrawlJob
+	1,  // 10: crawler.v1.CreateTaskResponse.task:type_name -> crawler.v1.CrawlTask
+	1,  // 11: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
+	1,  // 12: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
+	1,  // 13: crawler.v1.UpdateTaskResponse.task:type_name -> crawler.v1.CrawlTask
+	2,  // 14: crawler.v1.CreateSnapshotResponse.snapshot:type_name -> crawler.v1.PageSnapshot
+	2,  // 15: crawler.v1.GetSnapshotResponse.snapshot:type_name -> crawler.v1.PageSnapshot
+	2,  // 16: crawler.v1.ListSnapshotsByTaskResponse.snapshots:type_name -> crawler.v1.PageSnapshot
+	33, // 17: crawler.v1.CreateRecordRequest.data:type_name -> crawler.v1.CreateRecordRequest.DataEntry
+	3,  // 18: crawler.v1.CreateRecordResponse.record:type_name -> crawler.v1.ExtractedRecord
+	3,  // 19: crawler.v1.GetRecordResponse.record:type_name -> crawler.v1.ExtractedRecord
+	3,  // 20: crawler.v1.ListRecordsByTaskResponse.records:type_name -> crawler.v1.ExtractedRecord
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_v1_models_proto_init() }
@@ -1865,6 +1895,8 @@ func file_v1_models_proto_init() {
 		return
 	}
 	file_v1_models_proto_msgTypes[0].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[1].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

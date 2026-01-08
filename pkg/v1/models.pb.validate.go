@@ -261,6 +261,39 @@ func (m *CrawlTask) validate(all bool) error {
 		}
 	}
 
+	if m.Job != nil {
+
+		if all {
+			switch v := interface{}(m.GetJob()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CrawlTaskValidationError{
+						field:  "Job",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CrawlTaskValidationError{
+						field:  "Job",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetJob()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CrawlTaskValidationError{
+					field:  "Job",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return CrawlTaskMultiError(errors)
 	}
@@ -636,6 +669,14 @@ func (m *ListJobsRequest) validate(all bool) error {
 	}
 
 	var errors []error
+
+	// no validation rules for Limit
+
+	// no validation rules for Offset
+
+	if m.Status != nil {
+		// no validation rules for Status
+	}
 
 	if len(errors) > 0 {
 		return ListJobsRequestMultiError(errors)
@@ -1563,11 +1604,27 @@ func (m *CreateTaskRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for JobId
+	if utf8.RuneCountInString(m.GetJobId()) < 1 {
+		err := CreateTaskRequestValidationError{
+			field:  "JobId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Url
-
-	// no validation rules for Status
+	if utf8.RuneCountInString(m.GetUrl()) < 1 {
+		err := CreateTaskRequestValidationError{
+			field:  "Url",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return CreateTaskRequestMultiError(errors)

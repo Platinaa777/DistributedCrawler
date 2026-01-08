@@ -7,11 +7,13 @@ import (
 
 type CrawlJobImplementation struct {
 	crawlergrpc.UnimplementedCrawlerServiceServer
-	crawlJobService service.CrawlJobService
+	crawlJobService  service.CrawlJobService
+	crawlTaskService service.CrawlTaskService
 }
 
-func NewImplementation(crawlJobService service.CrawlJobService) *CrawlJobImplementation {
+func NewImplementation(crawlJobService service.CrawlJobService, crawlTaskService service.CrawlTaskService) *CrawlJobImplementation {
 	return &CrawlJobImplementation{
-		crawlJobService: crawlJobService,
+		crawlJobService:  crawlJobService,
+		crawlTaskService: crawlTaskService,
 	}
 }

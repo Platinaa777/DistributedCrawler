@@ -21,6 +21,13 @@ type CrawlJobServiceMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
+	funcCompleteJob          func(ctx context.Context, cmd mm_service.CompleteCrawlJobCommand) (err error)
+	funcCompleteJobOrigin    string
+	inspectFuncCompleteJob   func(ctx context.Context, cmd mm_service.CompleteCrawlJobCommand)
+	afterCompleteJobCounter  uint64
+	beforeCompleteJobCounter uint64
+	CompleteJobMock          mCrawlJobServiceMockCompleteJob
+
 	funcCreateCrawlJob          func(ctx context.Context, cmd mm_service.CreateCrawlJobCommand) (c2 valueobjects.CrawlJobID, err error)
 	funcCreateCrawlJobOrigin    string
 	inspectFuncCreateCrawlJob   func(ctx context.Context, cmd mm_service.CreateCrawlJobCommand)
@@ -34,6 +41,20 @@ type CrawlJobServiceMock struct {
 	afterGetCrawlJobCounter  uint64
 	beforeGetCrawlJobCounter uint64
 	GetCrawlJobMock          mCrawlJobServiceMockGetCrawlJob
+
+	funcListCrawlJobs          func(ctx context.Context, query mm_service.ListCrawlJobsQuery) (cpa1 []*models.CrawlJob, err error)
+	funcListCrawlJobsOrigin    string
+	inspectFuncListCrawlJobs   func(ctx context.Context, query mm_service.ListCrawlJobsQuery)
+	afterListCrawlJobsCounter  uint64
+	beforeListCrawlJobsCounter uint64
+	ListCrawlJobsMock          mCrawlJobServiceMockListCrawlJobs
+
+	funcUpdateJobStatus          func(ctx context.Context, cmd mm_service.UpdateCrawlJobStatusCommand) (err error)
+	funcUpdateJobStatusOrigin    string
+	inspectFuncUpdateJobStatus   func(ctx context.Context, cmd mm_service.UpdateCrawlJobStatusCommand)
+	afterUpdateJobStatusCounter  uint64
+	beforeUpdateJobStatusCounter uint64
+	UpdateJobStatusMock          mCrawlJobServiceMockUpdateJobStatus
 }
 
 // NewCrawlJobServiceMock returns a mock for mm_service.CrawlJobService
@@ -44,15 +65,366 @@ func NewCrawlJobServiceMock(t minimock.Tester) *CrawlJobServiceMock {
 		controller.RegisterMocker(m)
 	}
 
+	m.CompleteJobMock = mCrawlJobServiceMockCompleteJob{mock: m}
+	m.CompleteJobMock.callArgs = []*CrawlJobServiceMockCompleteJobParams{}
+
 	m.CreateCrawlJobMock = mCrawlJobServiceMockCreateCrawlJob{mock: m}
 	m.CreateCrawlJobMock.callArgs = []*CrawlJobServiceMockCreateCrawlJobParams{}
 
 	m.GetCrawlJobMock = mCrawlJobServiceMockGetCrawlJob{mock: m}
 	m.GetCrawlJobMock.callArgs = []*CrawlJobServiceMockGetCrawlJobParams{}
 
+	m.ListCrawlJobsMock = mCrawlJobServiceMockListCrawlJobs{mock: m}
+	m.ListCrawlJobsMock.callArgs = []*CrawlJobServiceMockListCrawlJobsParams{}
+
+	m.UpdateJobStatusMock = mCrawlJobServiceMockUpdateJobStatus{mock: m}
+	m.UpdateJobStatusMock.callArgs = []*CrawlJobServiceMockUpdateJobStatusParams{}
+
 	t.Cleanup(m.MinimockFinish)
 
 	return m
+}
+
+type mCrawlJobServiceMockCompleteJob struct {
+	optional           bool
+	mock               *CrawlJobServiceMock
+	defaultExpectation *CrawlJobServiceMockCompleteJobExpectation
+	expectations       []*CrawlJobServiceMockCompleteJobExpectation
+
+	callArgs []*CrawlJobServiceMockCompleteJobParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// CrawlJobServiceMockCompleteJobExpectation specifies expectation struct of the CrawlJobService.CompleteJob
+type CrawlJobServiceMockCompleteJobExpectation struct {
+	mock               *CrawlJobServiceMock
+	params             *CrawlJobServiceMockCompleteJobParams
+	paramPtrs          *CrawlJobServiceMockCompleteJobParamPtrs
+	expectationOrigins CrawlJobServiceMockCompleteJobExpectationOrigins
+	results            *CrawlJobServiceMockCompleteJobResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// CrawlJobServiceMockCompleteJobParams contains parameters of the CrawlJobService.CompleteJob
+type CrawlJobServiceMockCompleteJobParams struct {
+	ctx context.Context
+	cmd mm_service.CompleteCrawlJobCommand
+}
+
+// CrawlJobServiceMockCompleteJobParamPtrs contains pointers to parameters of the CrawlJobService.CompleteJob
+type CrawlJobServiceMockCompleteJobParamPtrs struct {
+	ctx *context.Context
+	cmd *mm_service.CompleteCrawlJobCommand
+}
+
+// CrawlJobServiceMockCompleteJobResults contains results of the CrawlJobService.CompleteJob
+type CrawlJobServiceMockCompleteJobResults struct {
+	err error
+}
+
+// CrawlJobServiceMockCompleteJobOrigins contains origins of expectations of the CrawlJobService.CompleteJob
+type CrawlJobServiceMockCompleteJobExpectationOrigins struct {
+	origin    string
+	originCtx string
+	originCmd string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) Optional() *mCrawlJobServiceMockCompleteJob {
+	mmCompleteJob.optional = true
+	return mmCompleteJob
+}
+
+// Expect sets up expected params for CrawlJobService.CompleteJob
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) Expect(ctx context.Context, cmd mm_service.CompleteCrawlJobCommand) *mCrawlJobServiceMockCompleteJob {
+	if mmCompleteJob.mock.funcCompleteJob != nil {
+		mmCompleteJob.mock.t.Fatalf("CrawlJobServiceMock.CompleteJob mock is already set by Set")
+	}
+
+	if mmCompleteJob.defaultExpectation == nil {
+		mmCompleteJob.defaultExpectation = &CrawlJobServiceMockCompleteJobExpectation{}
+	}
+
+	if mmCompleteJob.defaultExpectation.paramPtrs != nil {
+		mmCompleteJob.mock.t.Fatalf("CrawlJobServiceMock.CompleteJob mock is already set by ExpectParams functions")
+	}
+
+	mmCompleteJob.defaultExpectation.params = &CrawlJobServiceMockCompleteJobParams{ctx, cmd}
+	mmCompleteJob.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmCompleteJob.expectations {
+		if minimock.Equal(e.params, mmCompleteJob.defaultExpectation.params) {
+			mmCompleteJob.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmCompleteJob.defaultExpectation.params)
+		}
+	}
+
+	return mmCompleteJob
+}
+
+// ExpectCtxParam1 sets up expected param ctx for CrawlJobService.CompleteJob
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) ExpectCtxParam1(ctx context.Context) *mCrawlJobServiceMockCompleteJob {
+	if mmCompleteJob.mock.funcCompleteJob != nil {
+		mmCompleteJob.mock.t.Fatalf("CrawlJobServiceMock.CompleteJob mock is already set by Set")
+	}
+
+	if mmCompleteJob.defaultExpectation == nil {
+		mmCompleteJob.defaultExpectation = &CrawlJobServiceMockCompleteJobExpectation{}
+	}
+
+	if mmCompleteJob.defaultExpectation.params != nil {
+		mmCompleteJob.mock.t.Fatalf("CrawlJobServiceMock.CompleteJob mock is already set by Expect")
+	}
+
+	if mmCompleteJob.defaultExpectation.paramPtrs == nil {
+		mmCompleteJob.defaultExpectation.paramPtrs = &CrawlJobServiceMockCompleteJobParamPtrs{}
+	}
+	mmCompleteJob.defaultExpectation.paramPtrs.ctx = &ctx
+	mmCompleteJob.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmCompleteJob
+}
+
+// ExpectCmdParam2 sets up expected param cmd for CrawlJobService.CompleteJob
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) ExpectCmdParam2(cmd mm_service.CompleteCrawlJobCommand) *mCrawlJobServiceMockCompleteJob {
+	if mmCompleteJob.mock.funcCompleteJob != nil {
+		mmCompleteJob.mock.t.Fatalf("CrawlJobServiceMock.CompleteJob mock is already set by Set")
+	}
+
+	if mmCompleteJob.defaultExpectation == nil {
+		mmCompleteJob.defaultExpectation = &CrawlJobServiceMockCompleteJobExpectation{}
+	}
+
+	if mmCompleteJob.defaultExpectation.params != nil {
+		mmCompleteJob.mock.t.Fatalf("CrawlJobServiceMock.CompleteJob mock is already set by Expect")
+	}
+
+	if mmCompleteJob.defaultExpectation.paramPtrs == nil {
+		mmCompleteJob.defaultExpectation.paramPtrs = &CrawlJobServiceMockCompleteJobParamPtrs{}
+	}
+	mmCompleteJob.defaultExpectation.paramPtrs.cmd = &cmd
+	mmCompleteJob.defaultExpectation.expectationOrigins.originCmd = minimock.CallerInfo(1)
+
+	return mmCompleteJob
+}
+
+// Inspect accepts an inspector function that has same arguments as the CrawlJobService.CompleteJob
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) Inspect(f func(ctx context.Context, cmd mm_service.CompleteCrawlJobCommand)) *mCrawlJobServiceMockCompleteJob {
+	if mmCompleteJob.mock.inspectFuncCompleteJob != nil {
+		mmCompleteJob.mock.t.Fatalf("Inspect function is already set for CrawlJobServiceMock.CompleteJob")
+	}
+
+	mmCompleteJob.mock.inspectFuncCompleteJob = f
+
+	return mmCompleteJob
+}
+
+// Return sets up results that will be returned by CrawlJobService.CompleteJob
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) Return(err error) *CrawlJobServiceMock {
+	if mmCompleteJob.mock.funcCompleteJob != nil {
+		mmCompleteJob.mock.t.Fatalf("CrawlJobServiceMock.CompleteJob mock is already set by Set")
+	}
+
+	if mmCompleteJob.defaultExpectation == nil {
+		mmCompleteJob.defaultExpectation = &CrawlJobServiceMockCompleteJobExpectation{mock: mmCompleteJob.mock}
+	}
+	mmCompleteJob.defaultExpectation.results = &CrawlJobServiceMockCompleteJobResults{err}
+	mmCompleteJob.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmCompleteJob.mock
+}
+
+// Set uses given function f to mock the CrawlJobService.CompleteJob method
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) Set(f func(ctx context.Context, cmd mm_service.CompleteCrawlJobCommand) (err error)) *CrawlJobServiceMock {
+	if mmCompleteJob.defaultExpectation != nil {
+		mmCompleteJob.mock.t.Fatalf("Default expectation is already set for the CrawlJobService.CompleteJob method")
+	}
+
+	if len(mmCompleteJob.expectations) > 0 {
+		mmCompleteJob.mock.t.Fatalf("Some expectations are already set for the CrawlJobService.CompleteJob method")
+	}
+
+	mmCompleteJob.mock.funcCompleteJob = f
+	mmCompleteJob.mock.funcCompleteJobOrigin = minimock.CallerInfo(1)
+	return mmCompleteJob.mock
+}
+
+// When sets expectation for the CrawlJobService.CompleteJob which will trigger the result defined by the following
+// Then helper
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) When(ctx context.Context, cmd mm_service.CompleteCrawlJobCommand) *CrawlJobServiceMockCompleteJobExpectation {
+	if mmCompleteJob.mock.funcCompleteJob != nil {
+		mmCompleteJob.mock.t.Fatalf("CrawlJobServiceMock.CompleteJob mock is already set by Set")
+	}
+
+	expectation := &CrawlJobServiceMockCompleteJobExpectation{
+		mock:               mmCompleteJob.mock,
+		params:             &CrawlJobServiceMockCompleteJobParams{ctx, cmd},
+		expectationOrigins: CrawlJobServiceMockCompleteJobExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmCompleteJob.expectations = append(mmCompleteJob.expectations, expectation)
+	return expectation
+}
+
+// Then sets up CrawlJobService.CompleteJob return parameters for the expectation previously defined by the When method
+func (e *CrawlJobServiceMockCompleteJobExpectation) Then(err error) *CrawlJobServiceMock {
+	e.results = &CrawlJobServiceMockCompleteJobResults{err}
+	return e.mock
+}
+
+// Times sets number of times CrawlJobService.CompleteJob should be invoked
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) Times(n uint64) *mCrawlJobServiceMockCompleteJob {
+	if n == 0 {
+		mmCompleteJob.mock.t.Fatalf("Times of CrawlJobServiceMock.CompleteJob mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmCompleteJob.expectedInvocations, n)
+	mmCompleteJob.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmCompleteJob
+}
+
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) invocationsDone() bool {
+	if len(mmCompleteJob.expectations) == 0 && mmCompleteJob.defaultExpectation == nil && mmCompleteJob.mock.funcCompleteJob == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmCompleteJob.mock.afterCompleteJobCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmCompleteJob.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// CompleteJob implements mm_service.CrawlJobService
+func (mmCompleteJob *CrawlJobServiceMock) CompleteJob(ctx context.Context, cmd mm_service.CompleteCrawlJobCommand) (err error) {
+	mm_atomic.AddUint64(&mmCompleteJob.beforeCompleteJobCounter, 1)
+	defer mm_atomic.AddUint64(&mmCompleteJob.afterCompleteJobCounter, 1)
+
+	mmCompleteJob.t.Helper()
+
+	if mmCompleteJob.inspectFuncCompleteJob != nil {
+		mmCompleteJob.inspectFuncCompleteJob(ctx, cmd)
+	}
+
+	mm_params := CrawlJobServiceMockCompleteJobParams{ctx, cmd}
+
+	// Record call args
+	mmCompleteJob.CompleteJobMock.mutex.Lock()
+	mmCompleteJob.CompleteJobMock.callArgs = append(mmCompleteJob.CompleteJobMock.callArgs, &mm_params)
+	mmCompleteJob.CompleteJobMock.mutex.Unlock()
+
+	for _, e := range mmCompleteJob.CompleteJobMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmCompleteJob.CompleteJobMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmCompleteJob.CompleteJobMock.defaultExpectation.Counter, 1)
+		mm_want := mmCompleteJob.CompleteJobMock.defaultExpectation.params
+		mm_want_ptrs := mmCompleteJob.CompleteJobMock.defaultExpectation.paramPtrs
+
+		mm_got := CrawlJobServiceMockCompleteJobParams{ctx, cmd}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmCompleteJob.t.Errorf("CrawlJobServiceMock.CompleteJob got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmCompleteJob.CompleteJobMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.cmd != nil && !minimock.Equal(*mm_want_ptrs.cmd, mm_got.cmd) {
+				mmCompleteJob.t.Errorf("CrawlJobServiceMock.CompleteJob got unexpected parameter cmd, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmCompleteJob.CompleteJobMock.defaultExpectation.expectationOrigins.originCmd, *mm_want_ptrs.cmd, mm_got.cmd, minimock.Diff(*mm_want_ptrs.cmd, mm_got.cmd))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmCompleteJob.t.Errorf("CrawlJobServiceMock.CompleteJob got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmCompleteJob.CompleteJobMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmCompleteJob.CompleteJobMock.defaultExpectation.results
+		if mm_results == nil {
+			mmCompleteJob.t.Fatal("No results are set for the CrawlJobServiceMock.CompleteJob")
+		}
+		return (*mm_results).err
+	}
+	if mmCompleteJob.funcCompleteJob != nil {
+		return mmCompleteJob.funcCompleteJob(ctx, cmd)
+	}
+	mmCompleteJob.t.Fatalf("Unexpected call to CrawlJobServiceMock.CompleteJob. %v %v", ctx, cmd)
+	return
+}
+
+// CompleteJobAfterCounter returns a count of finished CrawlJobServiceMock.CompleteJob invocations
+func (mmCompleteJob *CrawlJobServiceMock) CompleteJobAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmCompleteJob.afterCompleteJobCounter)
+}
+
+// CompleteJobBeforeCounter returns a count of CrawlJobServiceMock.CompleteJob invocations
+func (mmCompleteJob *CrawlJobServiceMock) CompleteJobBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmCompleteJob.beforeCompleteJobCounter)
+}
+
+// Calls returns a list of arguments used in each call to CrawlJobServiceMock.CompleteJob.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmCompleteJob *mCrawlJobServiceMockCompleteJob) Calls() []*CrawlJobServiceMockCompleteJobParams {
+	mmCompleteJob.mutex.RLock()
+
+	argCopy := make([]*CrawlJobServiceMockCompleteJobParams, len(mmCompleteJob.callArgs))
+	copy(argCopy, mmCompleteJob.callArgs)
+
+	mmCompleteJob.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockCompleteJobDone returns true if the count of the CompleteJob invocations corresponds
+// the number of defined expectations
+func (m *CrawlJobServiceMock) MinimockCompleteJobDone() bool {
+	if m.CompleteJobMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.CompleteJobMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.CompleteJobMock.invocationsDone()
+}
+
+// MinimockCompleteJobInspect logs each unmet expectation
+func (m *CrawlJobServiceMock) MinimockCompleteJobInspect() {
+	for _, e := range m.CompleteJobMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.CompleteJob at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterCompleteJobCounter := mm_atomic.LoadUint64(&m.afterCompleteJobCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.CompleteJobMock.defaultExpectation != nil && afterCompleteJobCounter < 1 {
+		if m.CompleteJobMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.CompleteJob at\n%s", m.CompleteJobMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.CompleteJob at\n%s with params: %#v", m.CompleteJobMock.defaultExpectation.expectationOrigins.origin, *m.CompleteJobMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcCompleteJob != nil && afterCompleteJobCounter < 1 {
+		m.t.Errorf("Expected call to CrawlJobServiceMock.CompleteJob at\n%s", m.funcCompleteJobOrigin)
+	}
+
+	if !m.CompleteJobMock.invocationsDone() && afterCompleteJobCounter > 0 {
+		m.t.Errorf("Expected %d calls to CrawlJobServiceMock.CompleteJob at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.CompleteJobMock.expectedInvocations), m.CompleteJobMock.expectedInvocationsOrigin, afterCompleteJobCounter)
+	}
 }
 
 type mCrawlJobServiceMockCreateCrawlJob struct {
@@ -741,13 +1113,704 @@ func (m *CrawlJobServiceMock) MinimockGetCrawlJobInspect() {
 	}
 }
 
+type mCrawlJobServiceMockListCrawlJobs struct {
+	optional           bool
+	mock               *CrawlJobServiceMock
+	defaultExpectation *CrawlJobServiceMockListCrawlJobsExpectation
+	expectations       []*CrawlJobServiceMockListCrawlJobsExpectation
+
+	callArgs []*CrawlJobServiceMockListCrawlJobsParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// CrawlJobServiceMockListCrawlJobsExpectation specifies expectation struct of the CrawlJobService.ListCrawlJobs
+type CrawlJobServiceMockListCrawlJobsExpectation struct {
+	mock               *CrawlJobServiceMock
+	params             *CrawlJobServiceMockListCrawlJobsParams
+	paramPtrs          *CrawlJobServiceMockListCrawlJobsParamPtrs
+	expectationOrigins CrawlJobServiceMockListCrawlJobsExpectationOrigins
+	results            *CrawlJobServiceMockListCrawlJobsResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// CrawlJobServiceMockListCrawlJobsParams contains parameters of the CrawlJobService.ListCrawlJobs
+type CrawlJobServiceMockListCrawlJobsParams struct {
+	ctx   context.Context
+	query mm_service.ListCrawlJobsQuery
+}
+
+// CrawlJobServiceMockListCrawlJobsParamPtrs contains pointers to parameters of the CrawlJobService.ListCrawlJobs
+type CrawlJobServiceMockListCrawlJobsParamPtrs struct {
+	ctx   *context.Context
+	query *mm_service.ListCrawlJobsQuery
+}
+
+// CrawlJobServiceMockListCrawlJobsResults contains results of the CrawlJobService.ListCrawlJobs
+type CrawlJobServiceMockListCrawlJobsResults struct {
+	cpa1 []*models.CrawlJob
+	err  error
+}
+
+// CrawlJobServiceMockListCrawlJobsOrigins contains origins of expectations of the CrawlJobService.ListCrawlJobs
+type CrawlJobServiceMockListCrawlJobsExpectationOrigins struct {
+	origin      string
+	originCtx   string
+	originQuery string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) Optional() *mCrawlJobServiceMockListCrawlJobs {
+	mmListCrawlJobs.optional = true
+	return mmListCrawlJobs
+}
+
+// Expect sets up expected params for CrawlJobService.ListCrawlJobs
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) Expect(ctx context.Context, query mm_service.ListCrawlJobsQuery) *mCrawlJobServiceMockListCrawlJobs {
+	if mmListCrawlJobs.mock.funcListCrawlJobs != nil {
+		mmListCrawlJobs.mock.t.Fatalf("CrawlJobServiceMock.ListCrawlJobs mock is already set by Set")
+	}
+
+	if mmListCrawlJobs.defaultExpectation == nil {
+		mmListCrawlJobs.defaultExpectation = &CrawlJobServiceMockListCrawlJobsExpectation{}
+	}
+
+	if mmListCrawlJobs.defaultExpectation.paramPtrs != nil {
+		mmListCrawlJobs.mock.t.Fatalf("CrawlJobServiceMock.ListCrawlJobs mock is already set by ExpectParams functions")
+	}
+
+	mmListCrawlJobs.defaultExpectation.params = &CrawlJobServiceMockListCrawlJobsParams{ctx, query}
+	mmListCrawlJobs.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmListCrawlJobs.expectations {
+		if minimock.Equal(e.params, mmListCrawlJobs.defaultExpectation.params) {
+			mmListCrawlJobs.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmListCrawlJobs.defaultExpectation.params)
+		}
+	}
+
+	return mmListCrawlJobs
+}
+
+// ExpectCtxParam1 sets up expected param ctx for CrawlJobService.ListCrawlJobs
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) ExpectCtxParam1(ctx context.Context) *mCrawlJobServiceMockListCrawlJobs {
+	if mmListCrawlJobs.mock.funcListCrawlJobs != nil {
+		mmListCrawlJobs.mock.t.Fatalf("CrawlJobServiceMock.ListCrawlJobs mock is already set by Set")
+	}
+
+	if mmListCrawlJobs.defaultExpectation == nil {
+		mmListCrawlJobs.defaultExpectation = &CrawlJobServiceMockListCrawlJobsExpectation{}
+	}
+
+	if mmListCrawlJobs.defaultExpectation.params != nil {
+		mmListCrawlJobs.mock.t.Fatalf("CrawlJobServiceMock.ListCrawlJobs mock is already set by Expect")
+	}
+
+	if mmListCrawlJobs.defaultExpectation.paramPtrs == nil {
+		mmListCrawlJobs.defaultExpectation.paramPtrs = &CrawlJobServiceMockListCrawlJobsParamPtrs{}
+	}
+	mmListCrawlJobs.defaultExpectation.paramPtrs.ctx = &ctx
+	mmListCrawlJobs.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmListCrawlJobs
+}
+
+// ExpectQueryParam2 sets up expected param query for CrawlJobService.ListCrawlJobs
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) ExpectQueryParam2(query mm_service.ListCrawlJobsQuery) *mCrawlJobServiceMockListCrawlJobs {
+	if mmListCrawlJobs.mock.funcListCrawlJobs != nil {
+		mmListCrawlJobs.mock.t.Fatalf("CrawlJobServiceMock.ListCrawlJobs mock is already set by Set")
+	}
+
+	if mmListCrawlJobs.defaultExpectation == nil {
+		mmListCrawlJobs.defaultExpectation = &CrawlJobServiceMockListCrawlJobsExpectation{}
+	}
+
+	if mmListCrawlJobs.defaultExpectation.params != nil {
+		mmListCrawlJobs.mock.t.Fatalf("CrawlJobServiceMock.ListCrawlJobs mock is already set by Expect")
+	}
+
+	if mmListCrawlJobs.defaultExpectation.paramPtrs == nil {
+		mmListCrawlJobs.defaultExpectation.paramPtrs = &CrawlJobServiceMockListCrawlJobsParamPtrs{}
+	}
+	mmListCrawlJobs.defaultExpectation.paramPtrs.query = &query
+	mmListCrawlJobs.defaultExpectation.expectationOrigins.originQuery = minimock.CallerInfo(1)
+
+	return mmListCrawlJobs
+}
+
+// Inspect accepts an inspector function that has same arguments as the CrawlJobService.ListCrawlJobs
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) Inspect(f func(ctx context.Context, query mm_service.ListCrawlJobsQuery)) *mCrawlJobServiceMockListCrawlJobs {
+	if mmListCrawlJobs.mock.inspectFuncListCrawlJobs != nil {
+		mmListCrawlJobs.mock.t.Fatalf("Inspect function is already set for CrawlJobServiceMock.ListCrawlJobs")
+	}
+
+	mmListCrawlJobs.mock.inspectFuncListCrawlJobs = f
+
+	return mmListCrawlJobs
+}
+
+// Return sets up results that will be returned by CrawlJobService.ListCrawlJobs
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) Return(cpa1 []*models.CrawlJob, err error) *CrawlJobServiceMock {
+	if mmListCrawlJobs.mock.funcListCrawlJobs != nil {
+		mmListCrawlJobs.mock.t.Fatalf("CrawlJobServiceMock.ListCrawlJobs mock is already set by Set")
+	}
+
+	if mmListCrawlJobs.defaultExpectation == nil {
+		mmListCrawlJobs.defaultExpectation = &CrawlJobServiceMockListCrawlJobsExpectation{mock: mmListCrawlJobs.mock}
+	}
+	mmListCrawlJobs.defaultExpectation.results = &CrawlJobServiceMockListCrawlJobsResults{cpa1, err}
+	mmListCrawlJobs.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmListCrawlJobs.mock
+}
+
+// Set uses given function f to mock the CrawlJobService.ListCrawlJobs method
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) Set(f func(ctx context.Context, query mm_service.ListCrawlJobsQuery) (cpa1 []*models.CrawlJob, err error)) *CrawlJobServiceMock {
+	if mmListCrawlJobs.defaultExpectation != nil {
+		mmListCrawlJobs.mock.t.Fatalf("Default expectation is already set for the CrawlJobService.ListCrawlJobs method")
+	}
+
+	if len(mmListCrawlJobs.expectations) > 0 {
+		mmListCrawlJobs.mock.t.Fatalf("Some expectations are already set for the CrawlJobService.ListCrawlJobs method")
+	}
+
+	mmListCrawlJobs.mock.funcListCrawlJobs = f
+	mmListCrawlJobs.mock.funcListCrawlJobsOrigin = minimock.CallerInfo(1)
+	return mmListCrawlJobs.mock
+}
+
+// When sets expectation for the CrawlJobService.ListCrawlJobs which will trigger the result defined by the following
+// Then helper
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) When(ctx context.Context, query mm_service.ListCrawlJobsQuery) *CrawlJobServiceMockListCrawlJobsExpectation {
+	if mmListCrawlJobs.mock.funcListCrawlJobs != nil {
+		mmListCrawlJobs.mock.t.Fatalf("CrawlJobServiceMock.ListCrawlJobs mock is already set by Set")
+	}
+
+	expectation := &CrawlJobServiceMockListCrawlJobsExpectation{
+		mock:               mmListCrawlJobs.mock,
+		params:             &CrawlJobServiceMockListCrawlJobsParams{ctx, query},
+		expectationOrigins: CrawlJobServiceMockListCrawlJobsExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmListCrawlJobs.expectations = append(mmListCrawlJobs.expectations, expectation)
+	return expectation
+}
+
+// Then sets up CrawlJobService.ListCrawlJobs return parameters for the expectation previously defined by the When method
+func (e *CrawlJobServiceMockListCrawlJobsExpectation) Then(cpa1 []*models.CrawlJob, err error) *CrawlJobServiceMock {
+	e.results = &CrawlJobServiceMockListCrawlJobsResults{cpa1, err}
+	return e.mock
+}
+
+// Times sets number of times CrawlJobService.ListCrawlJobs should be invoked
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) Times(n uint64) *mCrawlJobServiceMockListCrawlJobs {
+	if n == 0 {
+		mmListCrawlJobs.mock.t.Fatalf("Times of CrawlJobServiceMock.ListCrawlJobs mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmListCrawlJobs.expectedInvocations, n)
+	mmListCrawlJobs.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmListCrawlJobs
+}
+
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) invocationsDone() bool {
+	if len(mmListCrawlJobs.expectations) == 0 && mmListCrawlJobs.defaultExpectation == nil && mmListCrawlJobs.mock.funcListCrawlJobs == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmListCrawlJobs.mock.afterListCrawlJobsCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmListCrawlJobs.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// ListCrawlJobs implements mm_service.CrawlJobService
+func (mmListCrawlJobs *CrawlJobServiceMock) ListCrawlJobs(ctx context.Context, query mm_service.ListCrawlJobsQuery) (cpa1 []*models.CrawlJob, err error) {
+	mm_atomic.AddUint64(&mmListCrawlJobs.beforeListCrawlJobsCounter, 1)
+	defer mm_atomic.AddUint64(&mmListCrawlJobs.afterListCrawlJobsCounter, 1)
+
+	mmListCrawlJobs.t.Helper()
+
+	if mmListCrawlJobs.inspectFuncListCrawlJobs != nil {
+		mmListCrawlJobs.inspectFuncListCrawlJobs(ctx, query)
+	}
+
+	mm_params := CrawlJobServiceMockListCrawlJobsParams{ctx, query}
+
+	// Record call args
+	mmListCrawlJobs.ListCrawlJobsMock.mutex.Lock()
+	mmListCrawlJobs.ListCrawlJobsMock.callArgs = append(mmListCrawlJobs.ListCrawlJobsMock.callArgs, &mm_params)
+	mmListCrawlJobs.ListCrawlJobsMock.mutex.Unlock()
+
+	for _, e := range mmListCrawlJobs.ListCrawlJobsMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.cpa1, e.results.err
+		}
+	}
+
+	if mmListCrawlJobs.ListCrawlJobsMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmListCrawlJobs.ListCrawlJobsMock.defaultExpectation.Counter, 1)
+		mm_want := mmListCrawlJobs.ListCrawlJobsMock.defaultExpectation.params
+		mm_want_ptrs := mmListCrawlJobs.ListCrawlJobsMock.defaultExpectation.paramPtrs
+
+		mm_got := CrawlJobServiceMockListCrawlJobsParams{ctx, query}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmListCrawlJobs.t.Errorf("CrawlJobServiceMock.ListCrawlJobs got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmListCrawlJobs.ListCrawlJobsMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.query != nil && !minimock.Equal(*mm_want_ptrs.query, mm_got.query) {
+				mmListCrawlJobs.t.Errorf("CrawlJobServiceMock.ListCrawlJobs got unexpected parameter query, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmListCrawlJobs.ListCrawlJobsMock.defaultExpectation.expectationOrigins.originQuery, *mm_want_ptrs.query, mm_got.query, minimock.Diff(*mm_want_ptrs.query, mm_got.query))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmListCrawlJobs.t.Errorf("CrawlJobServiceMock.ListCrawlJobs got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmListCrawlJobs.ListCrawlJobsMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmListCrawlJobs.ListCrawlJobsMock.defaultExpectation.results
+		if mm_results == nil {
+			mmListCrawlJobs.t.Fatal("No results are set for the CrawlJobServiceMock.ListCrawlJobs")
+		}
+		return (*mm_results).cpa1, (*mm_results).err
+	}
+	if mmListCrawlJobs.funcListCrawlJobs != nil {
+		return mmListCrawlJobs.funcListCrawlJobs(ctx, query)
+	}
+	mmListCrawlJobs.t.Fatalf("Unexpected call to CrawlJobServiceMock.ListCrawlJobs. %v %v", ctx, query)
+	return
+}
+
+// ListCrawlJobsAfterCounter returns a count of finished CrawlJobServiceMock.ListCrawlJobs invocations
+func (mmListCrawlJobs *CrawlJobServiceMock) ListCrawlJobsAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmListCrawlJobs.afterListCrawlJobsCounter)
+}
+
+// ListCrawlJobsBeforeCounter returns a count of CrawlJobServiceMock.ListCrawlJobs invocations
+func (mmListCrawlJobs *CrawlJobServiceMock) ListCrawlJobsBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmListCrawlJobs.beforeListCrawlJobsCounter)
+}
+
+// Calls returns a list of arguments used in each call to CrawlJobServiceMock.ListCrawlJobs.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmListCrawlJobs *mCrawlJobServiceMockListCrawlJobs) Calls() []*CrawlJobServiceMockListCrawlJobsParams {
+	mmListCrawlJobs.mutex.RLock()
+
+	argCopy := make([]*CrawlJobServiceMockListCrawlJobsParams, len(mmListCrawlJobs.callArgs))
+	copy(argCopy, mmListCrawlJobs.callArgs)
+
+	mmListCrawlJobs.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockListCrawlJobsDone returns true if the count of the ListCrawlJobs invocations corresponds
+// the number of defined expectations
+func (m *CrawlJobServiceMock) MinimockListCrawlJobsDone() bool {
+	if m.ListCrawlJobsMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.ListCrawlJobsMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.ListCrawlJobsMock.invocationsDone()
+}
+
+// MinimockListCrawlJobsInspect logs each unmet expectation
+func (m *CrawlJobServiceMock) MinimockListCrawlJobsInspect() {
+	for _, e := range m.ListCrawlJobsMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.ListCrawlJobs at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterListCrawlJobsCounter := mm_atomic.LoadUint64(&m.afterListCrawlJobsCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.ListCrawlJobsMock.defaultExpectation != nil && afterListCrawlJobsCounter < 1 {
+		if m.ListCrawlJobsMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.ListCrawlJobs at\n%s", m.ListCrawlJobsMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.ListCrawlJobs at\n%s with params: %#v", m.ListCrawlJobsMock.defaultExpectation.expectationOrigins.origin, *m.ListCrawlJobsMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcListCrawlJobs != nil && afterListCrawlJobsCounter < 1 {
+		m.t.Errorf("Expected call to CrawlJobServiceMock.ListCrawlJobs at\n%s", m.funcListCrawlJobsOrigin)
+	}
+
+	if !m.ListCrawlJobsMock.invocationsDone() && afterListCrawlJobsCounter > 0 {
+		m.t.Errorf("Expected %d calls to CrawlJobServiceMock.ListCrawlJobs at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.ListCrawlJobsMock.expectedInvocations), m.ListCrawlJobsMock.expectedInvocationsOrigin, afterListCrawlJobsCounter)
+	}
+}
+
+type mCrawlJobServiceMockUpdateJobStatus struct {
+	optional           bool
+	mock               *CrawlJobServiceMock
+	defaultExpectation *CrawlJobServiceMockUpdateJobStatusExpectation
+	expectations       []*CrawlJobServiceMockUpdateJobStatusExpectation
+
+	callArgs []*CrawlJobServiceMockUpdateJobStatusParams
+	mutex    sync.RWMutex
+
+	expectedInvocations       uint64
+	expectedInvocationsOrigin string
+}
+
+// CrawlJobServiceMockUpdateJobStatusExpectation specifies expectation struct of the CrawlJobService.UpdateJobStatus
+type CrawlJobServiceMockUpdateJobStatusExpectation struct {
+	mock               *CrawlJobServiceMock
+	params             *CrawlJobServiceMockUpdateJobStatusParams
+	paramPtrs          *CrawlJobServiceMockUpdateJobStatusParamPtrs
+	expectationOrigins CrawlJobServiceMockUpdateJobStatusExpectationOrigins
+	results            *CrawlJobServiceMockUpdateJobStatusResults
+	returnOrigin       string
+	Counter            uint64
+}
+
+// CrawlJobServiceMockUpdateJobStatusParams contains parameters of the CrawlJobService.UpdateJobStatus
+type CrawlJobServiceMockUpdateJobStatusParams struct {
+	ctx context.Context
+	cmd mm_service.UpdateCrawlJobStatusCommand
+}
+
+// CrawlJobServiceMockUpdateJobStatusParamPtrs contains pointers to parameters of the CrawlJobService.UpdateJobStatus
+type CrawlJobServiceMockUpdateJobStatusParamPtrs struct {
+	ctx *context.Context
+	cmd *mm_service.UpdateCrawlJobStatusCommand
+}
+
+// CrawlJobServiceMockUpdateJobStatusResults contains results of the CrawlJobService.UpdateJobStatus
+type CrawlJobServiceMockUpdateJobStatusResults struct {
+	err error
+}
+
+// CrawlJobServiceMockUpdateJobStatusOrigins contains origins of expectations of the CrawlJobService.UpdateJobStatus
+type CrawlJobServiceMockUpdateJobStatusExpectationOrigins struct {
+	origin    string
+	originCtx string
+	originCmd string
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option unless you really need it, as default behaviour helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) Optional() *mCrawlJobServiceMockUpdateJobStatus {
+	mmUpdateJobStatus.optional = true
+	return mmUpdateJobStatus
+}
+
+// Expect sets up expected params for CrawlJobService.UpdateJobStatus
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) Expect(ctx context.Context, cmd mm_service.UpdateCrawlJobStatusCommand) *mCrawlJobServiceMockUpdateJobStatus {
+	if mmUpdateJobStatus.mock.funcUpdateJobStatus != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("CrawlJobServiceMock.UpdateJobStatus mock is already set by Set")
+	}
+
+	if mmUpdateJobStatus.defaultExpectation == nil {
+		mmUpdateJobStatus.defaultExpectation = &CrawlJobServiceMockUpdateJobStatusExpectation{}
+	}
+
+	if mmUpdateJobStatus.defaultExpectation.paramPtrs != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("CrawlJobServiceMock.UpdateJobStatus mock is already set by ExpectParams functions")
+	}
+
+	mmUpdateJobStatus.defaultExpectation.params = &CrawlJobServiceMockUpdateJobStatusParams{ctx, cmd}
+	mmUpdateJobStatus.defaultExpectation.expectationOrigins.origin = minimock.CallerInfo(1)
+	for _, e := range mmUpdateJobStatus.expectations {
+		if minimock.Equal(e.params, mmUpdateJobStatus.defaultExpectation.params) {
+			mmUpdateJobStatus.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmUpdateJobStatus.defaultExpectation.params)
+		}
+	}
+
+	return mmUpdateJobStatus
+}
+
+// ExpectCtxParam1 sets up expected param ctx for CrawlJobService.UpdateJobStatus
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) ExpectCtxParam1(ctx context.Context) *mCrawlJobServiceMockUpdateJobStatus {
+	if mmUpdateJobStatus.mock.funcUpdateJobStatus != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("CrawlJobServiceMock.UpdateJobStatus mock is already set by Set")
+	}
+
+	if mmUpdateJobStatus.defaultExpectation == nil {
+		mmUpdateJobStatus.defaultExpectation = &CrawlJobServiceMockUpdateJobStatusExpectation{}
+	}
+
+	if mmUpdateJobStatus.defaultExpectation.params != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("CrawlJobServiceMock.UpdateJobStatus mock is already set by Expect")
+	}
+
+	if mmUpdateJobStatus.defaultExpectation.paramPtrs == nil {
+		mmUpdateJobStatus.defaultExpectation.paramPtrs = &CrawlJobServiceMockUpdateJobStatusParamPtrs{}
+	}
+	mmUpdateJobStatus.defaultExpectation.paramPtrs.ctx = &ctx
+	mmUpdateJobStatus.defaultExpectation.expectationOrigins.originCtx = minimock.CallerInfo(1)
+
+	return mmUpdateJobStatus
+}
+
+// ExpectCmdParam2 sets up expected param cmd for CrawlJobService.UpdateJobStatus
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) ExpectCmdParam2(cmd mm_service.UpdateCrawlJobStatusCommand) *mCrawlJobServiceMockUpdateJobStatus {
+	if mmUpdateJobStatus.mock.funcUpdateJobStatus != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("CrawlJobServiceMock.UpdateJobStatus mock is already set by Set")
+	}
+
+	if mmUpdateJobStatus.defaultExpectation == nil {
+		mmUpdateJobStatus.defaultExpectation = &CrawlJobServiceMockUpdateJobStatusExpectation{}
+	}
+
+	if mmUpdateJobStatus.defaultExpectation.params != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("CrawlJobServiceMock.UpdateJobStatus mock is already set by Expect")
+	}
+
+	if mmUpdateJobStatus.defaultExpectation.paramPtrs == nil {
+		mmUpdateJobStatus.defaultExpectation.paramPtrs = &CrawlJobServiceMockUpdateJobStatusParamPtrs{}
+	}
+	mmUpdateJobStatus.defaultExpectation.paramPtrs.cmd = &cmd
+	mmUpdateJobStatus.defaultExpectation.expectationOrigins.originCmd = minimock.CallerInfo(1)
+
+	return mmUpdateJobStatus
+}
+
+// Inspect accepts an inspector function that has same arguments as the CrawlJobService.UpdateJobStatus
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) Inspect(f func(ctx context.Context, cmd mm_service.UpdateCrawlJobStatusCommand)) *mCrawlJobServiceMockUpdateJobStatus {
+	if mmUpdateJobStatus.mock.inspectFuncUpdateJobStatus != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("Inspect function is already set for CrawlJobServiceMock.UpdateJobStatus")
+	}
+
+	mmUpdateJobStatus.mock.inspectFuncUpdateJobStatus = f
+
+	return mmUpdateJobStatus
+}
+
+// Return sets up results that will be returned by CrawlJobService.UpdateJobStatus
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) Return(err error) *CrawlJobServiceMock {
+	if mmUpdateJobStatus.mock.funcUpdateJobStatus != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("CrawlJobServiceMock.UpdateJobStatus mock is already set by Set")
+	}
+
+	if mmUpdateJobStatus.defaultExpectation == nil {
+		mmUpdateJobStatus.defaultExpectation = &CrawlJobServiceMockUpdateJobStatusExpectation{mock: mmUpdateJobStatus.mock}
+	}
+	mmUpdateJobStatus.defaultExpectation.results = &CrawlJobServiceMockUpdateJobStatusResults{err}
+	mmUpdateJobStatus.defaultExpectation.returnOrigin = minimock.CallerInfo(1)
+	return mmUpdateJobStatus.mock
+}
+
+// Set uses given function f to mock the CrawlJobService.UpdateJobStatus method
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) Set(f func(ctx context.Context, cmd mm_service.UpdateCrawlJobStatusCommand) (err error)) *CrawlJobServiceMock {
+	if mmUpdateJobStatus.defaultExpectation != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("Default expectation is already set for the CrawlJobService.UpdateJobStatus method")
+	}
+
+	if len(mmUpdateJobStatus.expectations) > 0 {
+		mmUpdateJobStatus.mock.t.Fatalf("Some expectations are already set for the CrawlJobService.UpdateJobStatus method")
+	}
+
+	mmUpdateJobStatus.mock.funcUpdateJobStatus = f
+	mmUpdateJobStatus.mock.funcUpdateJobStatusOrigin = minimock.CallerInfo(1)
+	return mmUpdateJobStatus.mock
+}
+
+// When sets expectation for the CrawlJobService.UpdateJobStatus which will trigger the result defined by the following
+// Then helper
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) When(ctx context.Context, cmd mm_service.UpdateCrawlJobStatusCommand) *CrawlJobServiceMockUpdateJobStatusExpectation {
+	if mmUpdateJobStatus.mock.funcUpdateJobStatus != nil {
+		mmUpdateJobStatus.mock.t.Fatalf("CrawlJobServiceMock.UpdateJobStatus mock is already set by Set")
+	}
+
+	expectation := &CrawlJobServiceMockUpdateJobStatusExpectation{
+		mock:               mmUpdateJobStatus.mock,
+		params:             &CrawlJobServiceMockUpdateJobStatusParams{ctx, cmd},
+		expectationOrigins: CrawlJobServiceMockUpdateJobStatusExpectationOrigins{origin: minimock.CallerInfo(1)},
+	}
+	mmUpdateJobStatus.expectations = append(mmUpdateJobStatus.expectations, expectation)
+	return expectation
+}
+
+// Then sets up CrawlJobService.UpdateJobStatus return parameters for the expectation previously defined by the When method
+func (e *CrawlJobServiceMockUpdateJobStatusExpectation) Then(err error) *CrawlJobServiceMock {
+	e.results = &CrawlJobServiceMockUpdateJobStatusResults{err}
+	return e.mock
+}
+
+// Times sets number of times CrawlJobService.UpdateJobStatus should be invoked
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) Times(n uint64) *mCrawlJobServiceMockUpdateJobStatus {
+	if n == 0 {
+		mmUpdateJobStatus.mock.t.Fatalf("Times of CrawlJobServiceMock.UpdateJobStatus mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmUpdateJobStatus.expectedInvocations, n)
+	mmUpdateJobStatus.expectedInvocationsOrigin = minimock.CallerInfo(1)
+	return mmUpdateJobStatus
+}
+
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) invocationsDone() bool {
+	if len(mmUpdateJobStatus.expectations) == 0 && mmUpdateJobStatus.defaultExpectation == nil && mmUpdateJobStatus.mock.funcUpdateJobStatus == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmUpdateJobStatus.mock.afterUpdateJobStatusCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmUpdateJobStatus.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// UpdateJobStatus implements mm_service.CrawlJobService
+func (mmUpdateJobStatus *CrawlJobServiceMock) UpdateJobStatus(ctx context.Context, cmd mm_service.UpdateCrawlJobStatusCommand) (err error) {
+	mm_atomic.AddUint64(&mmUpdateJobStatus.beforeUpdateJobStatusCounter, 1)
+	defer mm_atomic.AddUint64(&mmUpdateJobStatus.afterUpdateJobStatusCounter, 1)
+
+	mmUpdateJobStatus.t.Helper()
+
+	if mmUpdateJobStatus.inspectFuncUpdateJobStatus != nil {
+		mmUpdateJobStatus.inspectFuncUpdateJobStatus(ctx, cmd)
+	}
+
+	mm_params := CrawlJobServiceMockUpdateJobStatusParams{ctx, cmd}
+
+	// Record call args
+	mmUpdateJobStatus.UpdateJobStatusMock.mutex.Lock()
+	mmUpdateJobStatus.UpdateJobStatusMock.callArgs = append(mmUpdateJobStatus.UpdateJobStatusMock.callArgs, &mm_params)
+	mmUpdateJobStatus.UpdateJobStatusMock.mutex.Unlock()
+
+	for _, e := range mmUpdateJobStatus.UpdateJobStatusMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmUpdateJobStatus.UpdateJobStatusMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmUpdateJobStatus.UpdateJobStatusMock.defaultExpectation.Counter, 1)
+		mm_want := mmUpdateJobStatus.UpdateJobStatusMock.defaultExpectation.params
+		mm_want_ptrs := mmUpdateJobStatus.UpdateJobStatusMock.defaultExpectation.paramPtrs
+
+		mm_got := CrawlJobServiceMockUpdateJobStatusParams{ctx, cmd}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmUpdateJobStatus.t.Errorf("CrawlJobServiceMock.UpdateJobStatus got unexpected parameter ctx, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUpdateJobStatus.UpdateJobStatusMock.defaultExpectation.expectationOrigins.originCtx, *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.cmd != nil && !minimock.Equal(*mm_want_ptrs.cmd, mm_got.cmd) {
+				mmUpdateJobStatus.t.Errorf("CrawlJobServiceMock.UpdateJobStatus got unexpected parameter cmd, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+					mmUpdateJobStatus.UpdateJobStatusMock.defaultExpectation.expectationOrigins.originCmd, *mm_want_ptrs.cmd, mm_got.cmd, minimock.Diff(*mm_want_ptrs.cmd, mm_got.cmd))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmUpdateJobStatus.t.Errorf("CrawlJobServiceMock.UpdateJobStatus got unexpected parameters, expected at\n%s:\nwant: %#v\n got: %#v%s\n",
+				mmUpdateJobStatus.UpdateJobStatusMock.defaultExpectation.expectationOrigins.origin, *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmUpdateJobStatus.UpdateJobStatusMock.defaultExpectation.results
+		if mm_results == nil {
+			mmUpdateJobStatus.t.Fatal("No results are set for the CrawlJobServiceMock.UpdateJobStatus")
+		}
+		return (*mm_results).err
+	}
+	if mmUpdateJobStatus.funcUpdateJobStatus != nil {
+		return mmUpdateJobStatus.funcUpdateJobStatus(ctx, cmd)
+	}
+	mmUpdateJobStatus.t.Fatalf("Unexpected call to CrawlJobServiceMock.UpdateJobStatus. %v %v", ctx, cmd)
+	return
+}
+
+// UpdateJobStatusAfterCounter returns a count of finished CrawlJobServiceMock.UpdateJobStatus invocations
+func (mmUpdateJobStatus *CrawlJobServiceMock) UpdateJobStatusAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUpdateJobStatus.afterUpdateJobStatusCounter)
+}
+
+// UpdateJobStatusBeforeCounter returns a count of CrawlJobServiceMock.UpdateJobStatus invocations
+func (mmUpdateJobStatus *CrawlJobServiceMock) UpdateJobStatusBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmUpdateJobStatus.beforeUpdateJobStatusCounter)
+}
+
+// Calls returns a list of arguments used in each call to CrawlJobServiceMock.UpdateJobStatus.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmUpdateJobStatus *mCrawlJobServiceMockUpdateJobStatus) Calls() []*CrawlJobServiceMockUpdateJobStatusParams {
+	mmUpdateJobStatus.mutex.RLock()
+
+	argCopy := make([]*CrawlJobServiceMockUpdateJobStatusParams, len(mmUpdateJobStatus.callArgs))
+	copy(argCopy, mmUpdateJobStatus.callArgs)
+
+	mmUpdateJobStatus.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockUpdateJobStatusDone returns true if the count of the UpdateJobStatus invocations corresponds
+// the number of defined expectations
+func (m *CrawlJobServiceMock) MinimockUpdateJobStatusDone() bool {
+	if m.UpdateJobStatusMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.UpdateJobStatusMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.UpdateJobStatusMock.invocationsDone()
+}
+
+// MinimockUpdateJobStatusInspect logs each unmet expectation
+func (m *CrawlJobServiceMock) MinimockUpdateJobStatusInspect() {
+	for _, e := range m.UpdateJobStatusMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.UpdateJobStatus at\n%s with params: %#v", e.expectationOrigins.origin, *e.params)
+		}
+	}
+
+	afterUpdateJobStatusCounter := mm_atomic.LoadUint64(&m.afterUpdateJobStatusCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.UpdateJobStatusMock.defaultExpectation != nil && afterUpdateJobStatusCounter < 1 {
+		if m.UpdateJobStatusMock.defaultExpectation.params == nil {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.UpdateJobStatus at\n%s", m.UpdateJobStatusMock.defaultExpectation.returnOrigin)
+		} else {
+			m.t.Errorf("Expected call to CrawlJobServiceMock.UpdateJobStatus at\n%s with params: %#v", m.UpdateJobStatusMock.defaultExpectation.expectationOrigins.origin, *m.UpdateJobStatusMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcUpdateJobStatus != nil && afterUpdateJobStatusCounter < 1 {
+		m.t.Errorf("Expected call to CrawlJobServiceMock.UpdateJobStatus at\n%s", m.funcUpdateJobStatusOrigin)
+	}
+
+	if !m.UpdateJobStatusMock.invocationsDone() && afterUpdateJobStatusCounter > 0 {
+		m.t.Errorf("Expected %d calls to CrawlJobServiceMock.UpdateJobStatus at\n%s but found %d calls",
+			mm_atomic.LoadUint64(&m.UpdateJobStatusMock.expectedInvocations), m.UpdateJobStatusMock.expectedInvocationsOrigin, afterUpdateJobStatusCounter)
+	}
+}
+
 // MinimockFinish checks that all mocked methods have been called the expected number of times
 func (m *CrawlJobServiceMock) MinimockFinish() {
 	m.finishOnce.Do(func() {
 		if !m.minimockDone() {
+			m.MinimockCompleteJobInspect()
+
 			m.MinimockCreateCrawlJobInspect()
 
 			m.MinimockGetCrawlJobInspect()
+
+			m.MinimockListCrawlJobsInspect()
+
+			m.MinimockUpdateJobStatusInspect()
 		}
 	})
 }
@@ -771,6 +1834,9 @@ func (m *CrawlJobServiceMock) MinimockWait(timeout mm_time.Duration) {
 func (m *CrawlJobServiceMock) minimockDone() bool {
 	done := true
 	return done &&
+		m.MinimockCompleteJobDone() &&
 		m.MinimockCreateCrawlJobDone() &&
-		m.MinimockGetCrawlJobDone()
+		m.MinimockGetCrawlJobDone() &&
+		m.MinimockListCrawlJobsDone() &&
+		m.MinimockUpdateJobStatusDone()
 }
