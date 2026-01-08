@@ -463,7 +463,7 @@ func (x *ListJobsResponse) GetJobs() []*CrawlJob {
 type CreateJobRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Urls          []string               `protobuf:"bytes,2,rep,name=urls,proto3" json:"urls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -505,11 +505,11 @@ func (x *CreateJobRequest) GetName() string {
 	return ""
 }
 
-func (x *CreateJobRequest) GetStatus() string {
+func (x *CreateJobRequest) GetUrls() []string {
 	if x != nil {
-		return x.Status
+		return x.Urls
 	}
-	return ""
+	return nil
 }
 
 type CreateJobResponse struct {
@@ -1735,10 +1735,10 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x06offset\x18\x03 \x01(\x05R\x06offsetB\t\n" +
 	"\a_status\"<\n" +
 	"\x10ListJobsResponse\x12(\n" +
-	"\x04jobs\x18\x01 \x03(\v2\x14.crawler.v1.CrawlJobR\x04jobs\"P\n" +
+	"\x04jobs\x18\x01 \x03(\v2\x14.crawler.v1.CrawlJobR\x04jobs\"M\n" +
 	"\x10CreateJobRequest\x12\x1b\n" +
-	"\x04name\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x04name\x12\x1f\n" +
-	"\x06status\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06status\"#\n" +
+	"\x04name\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x04name\x12\x1c\n" +
+	"\x04urls\x18\x02 \x03(\tB\b\xfaB\x05\x92\x01\x02\b\x01R\x04urls\"#\n" +
 	"\x11CreateJobResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x1f\n" +
 	"\rGetJobRequest\x12\x0e\n" +

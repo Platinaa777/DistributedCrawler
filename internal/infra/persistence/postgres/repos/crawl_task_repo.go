@@ -58,6 +58,34 @@ func (c *crawlTaskRepository) Create(ctx context.Context, entity models.CrawlTas
 	return valueobjects.NewCrawlTaskID(id)
 }
 
+func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.CrawlTask) error {
+	if len(entities) == 0 {
+		return nil
+	}
+
+	builder := sq.Insert(taskTableName).
+		PlaceholderFormat(sq.Dollar).
+		Columns(taskIDColumn, taskJobIDColumn, taskURLColumn, taskStatusColumn, taskEnqueuedAtColumn)
+
+	for _, entity := range entities {
+		dbEntity := converters.SaveCrawlTaskToSnapshot(entity)
+		builder = builder.Values(dbEntity.ID, dbEntity.JobID, dbEntity.URL, dbEntity.Status, dbEntity.EnqueuedAt)
+	}
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_task_repository.BulkCreate",
+		QueryRaw: query,
+	}
+
+	_, err = c.client.DB().ExecContext(ctx, q, args...)
+	return err
+}
+
 func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTaskID) (*models.CrawlTask, error) {
 	builder := sq.Select(
 		"t.id", "t.job_id", "t.url", "t.status", "t.enqueued_at",

@@ -8,6 +8,7 @@ import (
 
 type CrawlTaskRepository interface {
 	Create(ctx context.Context, entity models.CrawlTask) (valueobjects.CrawlTaskID, error)
+	BulkCreate(ctx context.Context, entities []models.CrawlTask) error
 	Get(ctx context.Context, id valueobjects.CrawlTaskID) (*models.CrawlTask, error)
 	Update(ctx context.Context, entity models.CrawlTask) error
 	ListByJob(ctx context.Context, jobID valueobjects.CrawlJobID) ([]*models.CrawlTask, error)

@@ -9,8 +9,8 @@ import (
 
 func (i *CrawlJobImplementation) CreateJob(ctx context.Context, req *crawlergrpc.CreateJobRequest) (*crawlergrpc.CreateJobResponse, error) {
 	command := service.CreateCrawlJobCommand{
-		Name:   req.Name,
-		Status: req.Status,
+		Name: req.Name,
+		URLs: req.Urls,
 	}
 
 	id, err := i.crawlJobService.CreateCrawlJob(ctx, command)
@@ -18,7 +18,7 @@ func (i *CrawlJobImplementation) CreateJob(ctx context.Context, req *crawlergrpc
 		return nil, err
 	}
 
-	log.Printf("inserted crawl job with id: %s", id.String())
+	log.Printf("inserted crawl job with id: %s and %d tasks", id.String(), len(req.Urls))
 
 	return &crawlergrpc.CreateJobResponse{
 		Id: id.String(),

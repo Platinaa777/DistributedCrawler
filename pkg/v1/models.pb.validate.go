@@ -923,10 +923,10 @@ func (m *CreateJobRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetStatus()) < 1 {
+	if len(m.GetUrls()) < 1 {
 		err := CreateJobRequestValidationError{
-			field:  "Status",
-			reason: "value length must be at least 1 runes",
+			field:  "Urls",
+			reason: "value must contain at least 1 item(s)",
 		}
 		if !all {
 			return err

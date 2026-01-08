@@ -9,11 +9,8 @@ import (
 // Commands for CrawlJob management
 
 type CreateCrawlJobCommand struct {
-	Name         string
-	Status       string
-	URL          string
-	MaxDepth     int
-	ExtractRules []string
+	Name string
+	URLs []string
 }
 
 type UpdateCrawlJobStatusCommand struct {

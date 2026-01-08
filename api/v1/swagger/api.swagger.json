@@ -580,8 +580,11 @@
         "name": {
           "type": "string"
         },
-        "status": {
-          "type": "string"
+        "urls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

@@ -29,20 +29,24 @@ func TestCreateJob(t *testing.T) {
 		ctx = context.Background()
 		mc  = minimock.NewController(t)
 
-		id     = valueobjects.GenerateCrawlJobID()
-		name   = gofakeit.Animal()
-		status = gofakeit.RandomString([]string{"pending", "running", "completed", "failed"})
+		id   = valueobjects.GenerateCrawlJobID()
+		name = gofakeit.Animal()
+		urls = []string{
+			gofakeit.URL(),
+			gofakeit.URL(),
+			gofakeit.URL(),
+		}
 
 		serviceErr = fmt.Errorf("service error")
 
 		req = &crawlergrpc.CreateJobRequest{
-			Name:   name,
-			Status: status,
+			Name: name,
+			Urls: urls,
 		}
 
 		command = service.CreateCrawlJobCommand{
-			Name:   name,
-			Status: status,
+			Name: name,
+			URLs: urls,
 		}
 
 		res = &crawlergrpc.CreateJobResponse{

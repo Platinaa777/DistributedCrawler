@@ -78,7 +78,7 @@ message ListJobsResponse {
 
 message CreateJobRequest {
   string name = 1 [(validate.rules).string.min_len = 1];
-  string status = 2 [(validate.rules).string.min_len = 1];
+  repeated string urls = 2 [(validate.rules).repeated = {min_items: 1}];
 }
 
 message CreateJobResponse {

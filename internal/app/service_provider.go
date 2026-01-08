@@ -115,6 +115,7 @@ func (s *serviceProvider) CrawlJobService(ctx context.Context) service.CrawlJobS
 	if s.crawlJobService == nil {
 		s.crawlJobService = crawljobservice.NewService(
 			s.CrawlJobRepository(ctx),
+			s.CrawlTaskRepository(ctx),
 			s.TxManager(ctx),
 		)
 	}

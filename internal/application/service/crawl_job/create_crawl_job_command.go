@@ -10,22 +10,52 @@ import (
 )
 
 func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.CreateCrawlJobCommand) (valueobjects.CrawlJobID, error) {
-	status := models.TaskStatus(command.Status)
-	if !status.IsValid() {
-		return valueobjects.CrawlJobID{}, fmt.Errorf("invalid status: %s, must be one of: %s", command.Status, models.AllTaskStatusesString())
+	if len(command.URLs) == 0 {
+		return valueobjects.CrawlJobID{}, fmt.Errorf("URLs list cannot be empty")
 	}
 
-	crawlJob := models.CrawlJob{
-		ID:        valueobjects.GenerateCrawlJobID(),
-		Name:      command.Name,
-		Status:    status,
-		CreatedAt: time.Now(),
-	}
+	var jobID valueobjects.CrawlJobID
 
-	id, err := s.crawlJobRepo.Create(ctx, crawlJob)
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		// Create crawl job
+		crawlJob := models.CrawlJob{
+			ID:        valueobjects.GenerateCrawlJobID(),
+			Name:      command.Name,
+			Status:    models.TaskStatusPending,
+			CreatedAt: time.Now(),
+		}
+
+		id, err := s.crawlJobRepo.Create(ctx, crawlJob)
+		if err != nil {
+			return fmt.Errorf("failed to create crawl job: %w", err)
+		}
+		jobID = id
+
+		// Create crawl tasks
+		tasks := make([]models.CrawlTask, 0, len(command.URLs))
+		now := time.Now()
+
+		for _, url := range command.URLs {
+			task := models.CrawlTask{
+				ID:         valueobjects.GenerateCrawlTaskID(),
+				JobID:      jobID,
+				URL:        url,
+				Status:     models.TaskStatusPending,
+				EnqueuedAt: now,
+			}
+			tasks = append(tasks, task)
+		}
+
+		if err := s.crawlTaskRepo.BulkCreate(ctx, tasks); err != nil {
+			return fmt.Errorf("failed to create crawl tasks: %w", err)
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		return valueobjects.CrawlJobID{}, fmt.Errorf("failed to create crawl job: %w", err)
+		return valueobjects.CrawlJobID{}, err
 	}
 
-	return id, nil
+	return jobID, nil
 }
