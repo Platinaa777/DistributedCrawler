@@ -1,7 +1,7 @@
 package env
 
 import (
-	"errors"
+	"fmt"
 	"os"
 
 	"distributed-crawler/internal/config"
@@ -34,7 +34,7 @@ func NewLoggerConfig() (config.LoggerConfig, error) {
 	}
 
 	if env != EnvProduction && env != EnvDevelopment {
-		return nil, errors.New("log env must be 'production' or 'development'")
+		return nil, fmt.Errorf("%s must be '%s' or '%s'", logEnvEnvName, EnvProduction, EnvDevelopment)
 	}
 
 	return &loggerConfig{

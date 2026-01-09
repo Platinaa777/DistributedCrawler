@@ -4,7 +4,10 @@ go.work.sum
 
 /bin
 .env
+.worker.env
 /vendor.protobuf
 /.vscode
 /.claude/
 coverage.out
+
+*.exe

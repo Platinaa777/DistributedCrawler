@@ -2,6 +2,12 @@ package config
 
 import "github.com/joho/godotenv"
 
+const (
+	// Queue name keys
+	CrawlQueueKey   = "crawl_queue"
+	ParsingQueueKey = "parsing_queue"
+)
+
 func Load(path string) error {
 	err := godotenv.Load(path)
 	if err != nil {
@@ -30,5 +36,13 @@ type LoggerConfig interface {
 
 type RabbitMQConfig interface {
 	URL() string
-	QueueName() string
+	GetQueueName(key string) string
+}
+
+type MinIOConfig interface {
+	Endpoint() string
+	AccessKeyID() string
+	SecretAccessKey() string
+	UseSSL() bool
+	BucketName() string
 }

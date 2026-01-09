@@ -215,7 +215,7 @@ func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPub
 			s.OutboxRepository(ctx),
 			s.TxManager(ctx),
 			s.RabbitMQClient(),
-			s.RabbitMQConfig().QueueName(),
+			s.RabbitMQConfig().GetQueueName(config.CrawlQueueKey),
 			s.Logger(),
 		)
 	}

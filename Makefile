@@ -46,9 +46,9 @@ build:
 	go build -o $(LOCAL_BIN)/$(APP_NAME) ./cmd/grpc_server/main.go
 	@echo "Build completed! File: $(LOCAL_BIN)/$(APP_NAME)"
 
-run:
-	@echo "Run app..."
-	go run ./cmd/http_server/main.go
+run-grpc-server:
+	@echo "Run grpc app..."
+	go run ./cmd/grpc_server/main.go --config-path=.env
 
 test:
 	go clean -testcache
