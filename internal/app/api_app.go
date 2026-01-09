@@ -31,6 +31,8 @@ type APIApp struct {
 	serviceProvider *serviceProvider
 	grpcServer      *grpc.Server
 	httpServer      *http.Server
+	workerCtx       context.Context
+	workerCancel    context.CancelFunc
 }
 
 func NewAPIApp(ctx context.Context) (*APIApp, error) {
@@ -46,13 +48,12 @@ func NewAPIApp(ctx context.Context) (*APIApp, error) {
 
 func (a *APIApp) Run() error {
 	defer func() {
+		a.serviceProvider.Close()
 		logger.Sync()
-		// closer.CloseAll()
-		// closer.Wait()
 	}()
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 
 	go func() {
 		defer wg.Done()
@@ -72,6 +73,11 @@ func (a *APIApp) Run() error {
 		}
 	}()
 
+	go func() {
+		defer wg.Done()
+		a.runWorker()
+	}()
+
 	wg.Wait()
 
 	return nil
@@ -84,6 +90,7 @@ func (a *APIApp) initDeps(ctx context.Context) error {
 		a.initServiceProvider,
 		a.initGRPCServer,
 		a.initHTTPServer,
+		a.initWorker,
 	}
 
 	for _, f := range inits {
@@ -162,6 +169,11 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 	return nil
 }
 
+func (a *APIApp) initWorker(ctx context.Context) error {
+	a.workerCtx, a.workerCancel = context.WithCancel(ctx)
+	return nil
+}
+
 func (a *APIApp) runGRPCServer() error {
 	log.Printf("GRPC server is running on %s", a.serviceProvider.GRPCConfig().Address())
 
@@ -187,4 +199,17 @@ func (a *APIApp) runHTTPServer() error {
 	}
 
 	return nil
+}
+
+func (a *APIApp) runWorker() {
+	log.Printf("Outbox publisher worker is starting...")
+
+	// Get worker from service provider with background context
+	worker := a.serviceProvider.OutboxPublisher(context.Background())
+	_ = worker
+	
+	// Start worker with worker context (can be cancelled)
+	worker.Start(a.workerCtx)
+
+	log.Printf("Outbox publisher worker stopped")
 }

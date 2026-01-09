@@ -1,1 +1,23 @@
 package events
+
+import "time"
+
+// TaskEnqueuedEvent is emitted when a crawl task is created and needs to be processed
+type TaskEnqueuedEvent struct {
+	BaseEvent
+	TaskID     string    `json:"task_id"`
+	JobID      string    `json:"job_id"`
+	URL        string    `json:"url"`
+	EnqueuedAt time.Time `json:"enqueued_at"`
+}
+
+// NewTaskEnqueuedEvent creates a new TaskEnqueuedEvent
+func NewTaskEnqueuedEvent(taskID, jobID, url string, enqueuedAt time.Time) TaskEnqueuedEvent {
+	return TaskEnqueuedEvent{
+		BaseEvent:  NewBaseEvent(EventTypeTaskEnqueued),
+		TaskID:     taskID,
+		JobID:      jobID,
+		URL:        url,
+		EnqueuedAt: enqueuedAt,
+	}
+}

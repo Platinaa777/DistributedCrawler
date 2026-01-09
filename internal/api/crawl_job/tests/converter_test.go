@@ -81,7 +81,7 @@ func TestToProtoCrawlJob(t *testing.T) {
 			input: &models.CrawlJob{
 				ID:          valueobjects.GenerateCrawlJobID(),
 				Name:        "",
-				Status:      models.TaskStatusPending,
+				Status:      models.TaskStatusInProgress,
 				CreatedAt:   now,
 				CompletedAt: nil,
 			},
@@ -135,7 +135,7 @@ func TestToProtoCrawlJob_Properties(t *testing.T) {
 		job := &models.CrawlJob{
 			ID:        jobID,
 			Name:      gofakeit.BuzzWord(),
-			Status:    models.TaskStatusRunning,
+			Status:    models.TaskStatusInProgress,
 			CreatedAt: time.Now(),
 		}
 
@@ -182,7 +182,7 @@ func TestToProtoCrawlJob_Properties(t *testing.T) {
 			job := &models.CrawlJob{
 				ID:        valueobjects.GenerateCrawlJobID(),
 				Name:      name,
-				Status:    models.TaskStatusPending,
+				Status:    models.TaskStatusInProgress,
 				CreatedAt: time.Now(),
 			}
 
@@ -198,7 +198,7 @@ func BenchmarkToProtoCrawlJob(b *testing.B) {
 	job := &models.CrawlJob{
 		ID:        valueobjects.GenerateCrawlJobID(),
 		Name:      gofakeit.AppName(),
-		Status:    models.TaskStatusRunning,
+		Status:    models.TaskStatusInProgress,
 		CreatedAt: time.Now(),
 	}
 

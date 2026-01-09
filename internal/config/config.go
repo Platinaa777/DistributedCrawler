@@ -27,3 +27,8 @@ type LoggerConfig interface {
 	Level() string
 	Env() string
 }
+
+type RabbitMQConfig interface {
+	URL() string
+	QueueName() string
+}

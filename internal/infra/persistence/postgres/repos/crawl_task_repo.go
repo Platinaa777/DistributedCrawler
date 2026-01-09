@@ -227,3 +227,4 @@ func (c *crawlTaskRepository) ListByStatus(ctx context.Context, status models.Ta
 
 	return tasks, nil
 }
+

@@ -12,26 +12,37 @@ import (
 	"distributed-crawler/internal/config/env"
 	crawljobrepo "distributed-crawler/internal/domain/crawl/repos/crawl_job"
 	crawltaskrepo "distributed-crawler/internal/domain/crawl/repos/crawl_task"
+	"distributed-crawler/internal/domain/crawl/repos/outbox"
+	"distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	crawljobrepoimpl "distributed-crawler/internal/infra/persistence/postgres/repos"
 	"distributed-crawler/internal/infra/persistence/postgres/transaction"
+	"distributed-crawler/internal/worker"
+
+	"go.uber.org/zap"
 )
 
 type serviceProvider struct {
-	pgConfig   config.PGConfig
-	grpcConfig config.GRPCConfig
-	httpConfig config.HTTPConfig
+	pgConfig        config.PGConfig
+	grpcConfig      config.GRPCConfig
+	httpConfig      config.HTTPConfig
+	rabbitmqConfig  config.RabbitMQConfig
 
 	dbClient        persistence.Client
 	txManager       persistence.TxManager
 	crawlJobRepo    crawljobrepo.CrawlJobRepository
 	crawlTaskRepo   crawltaskrepo.CrawlTaskRepository
+	outboxRepo      outbox.OutboxRepository
+	rmqClient       rabbitmq.Client
 
 	crawlJobService  service.CrawlJobService
 	crawlTaskService service.CrawlTaskService
 
 	crawlerServiceImpl *crawljob.CrawlJobImplementation
+	outboxPublisher    *worker.OutboxPublisher
+
+	logger *zap.Logger
 }
 
 func newServiceProvider() *serviceProvider {
@@ -77,6 +88,31 @@ func (s *serviceProvider) HTTPConfig() config.HTTPConfig {
 	return s.httpConfig
 }
 
+func (s *serviceProvider) RabbitMQConfig() config.RabbitMQConfig {
+	if s.rabbitmqConfig == nil {
+		cfg, err := env.NewRabbitMQConfig()
+		if err != nil {
+			log.Fatalf("failed to get rabbitmq config: %s", err.Error())
+		}
+
+		s.rabbitmqConfig = cfg
+	}
+
+	return s.rabbitmqConfig
+}
+
+func (s *serviceProvider) Logger() *zap.Logger {
+	if s.logger == nil {
+		logger, err := zap.NewProduction()
+		if err != nil {
+			log.Fatalf("failed to create logger: %s", err.Error())
+		}
+		s.logger = logger
+	}
+
+	return s.logger
+}
+
 func (s *serviceProvider) DBClient(ctx context.Context) persistence.Client {
 	if s.dbClient == nil {
 		cl, err := pg.New(ctx, s.PGConfig().DSN())
@@ -116,6 +152,7 @@ func (s *serviceProvider) CrawlJobService(ctx context.Context) service.CrawlJobS
 		s.crawlJobService = crawljobservice.NewService(
 			s.CrawlJobRepository(ctx),
 			s.CrawlTaskRepository(ctx),
+			s.OutboxRepository(ctx),
 			s.TxManager(ctx),
 		)
 	}
@@ -129,6 +166,14 @@ func (s *serviceProvider) CrawlTaskRepository(ctx context.Context) crawltaskrepo
 	}
 
 	return s.crawlTaskRepo
+}
+
+func (s *serviceProvider) OutboxRepository(ctx context.Context) outbox.OutboxRepository {
+	if s.outboxRepo == nil {
+		s.outboxRepo = crawljobrepoimpl.NewOutboxRepository(s.DBClient(ctx))
+	}
+
+	return s.outboxRepo
 }
 
 func (s *serviceProvider) CrawlTaskService(ctx context.Context) service.CrawlTaskService {
@@ -152,9 +197,43 @@ func (s *serviceProvider) CrawlerServiceImpl(ctx context.Context) *crawljob.Craw
 	return s.crawlerServiceImpl
 }
 
+func (s *serviceProvider) RabbitMQClient() rabbitmq.Client {
+	if s.rmqClient == nil {
+		client, err := rabbitmq.NewClient(s.RabbitMQConfig().URL())
+		if err != nil {
+			log.Fatalf("failed to create rabbitmq client: %v", err)
+		}
+		s.rmqClient = client
+	}
+
+	return s.rmqClient
+}
+
+func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPublisher {
+	if s.outboxPublisher == nil {
+		s.outboxPublisher = worker.NewOutboxPublisher(
+			s.OutboxRepository(ctx),
+			s.TxManager(ctx),
+			s.RabbitMQClient(),
+			s.RabbitMQConfig().QueueName(),
+			s.Logger(),
+		)
+	}
+
+	return s.outboxPublisher
+}
+
 func (s *serviceProvider) Close() error {
+	if s.rmqClient != nil {
+		if err := s.rmqClient.Close(); err != nil {
+			log.Printf("failed to close rabbitmq client: %v", err)
+		}
+	}
 	if s.dbClient != nil {
 		return s.dbClient.Close()
+	}
+	if s.logger != nil {
+		s.logger.Sync()
 	}
 	return nil
 }

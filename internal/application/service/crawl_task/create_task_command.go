@@ -19,7 +19,7 @@ func (s *crawlTaskServ) CreateTask(ctx context.Context, command service.CreateCr
 		ID:         valueobjects.GenerateCrawlTaskID(),
 		JobID:      jobID,
 		URL:        command.URL,
-		Status:     models.TaskStatusPending,
+		Status:     models.TaskStatusInProgress,
 		EnqueuedAt: time.Now(),
 	}
 

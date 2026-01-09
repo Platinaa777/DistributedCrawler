@@ -3,10 +3,9 @@ package models
 type TaskStatus string
 
 const (
-	TaskStatusPending   TaskStatus = "Pending"
-	TaskStatusRunning   TaskStatus = "Running"
-	TaskStatusCompleted TaskStatus = "Completed"
-	TaskStatusFailed    TaskStatus = "Failed"
+	TaskStatusInProgress TaskStatus = "InProgress"
+	TaskStatusCompleted  TaskStatus = "Completed"
+	TaskStatusFailed     TaskStatus = "Failed"
 )
 
 func (s TaskStatus) String() string {
@@ -15,7 +14,7 @@ func (s TaskStatus) String() string {
 
 func (s TaskStatus) IsValid() bool {
 	switch s {
-	case TaskStatusPending, TaskStatusRunning, TaskStatusCompleted, TaskStatusFailed:
+	case TaskStatusInProgress, TaskStatusCompleted, TaskStatusFailed:
 		return true
 	}
 	return false
@@ -23,8 +22,7 @@ func (s TaskStatus) IsValid() bool {
 
 func AllTaskStatuses() []TaskStatus {
 	return []TaskStatus{
-		TaskStatusPending,
-		TaskStatusRunning,
+		TaskStatusInProgress,
 		TaskStatusCompleted,
 		TaskStatusFailed,
 	}
