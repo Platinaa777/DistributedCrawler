@@ -205,7 +205,7 @@ func (a *WorkerApp) initFetchWorker() error {
 	}
 
 	// Initialize repositories
-	fetchRepo := repos.NewPageFetchRepository(a.pgClient)
+	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
 
 	// Get queue names from configuration
 	crawlQueue := a.rmqConfig.GetQueueName(config.CrawlQueueKey)
@@ -217,7 +217,7 @@ func (a *WorkerApp) initFetchWorker() error {
 		crawlQueue,   // Consume from crawl_queue
 		parsingQueue, // Publish to parsing_queue
 		contentStore,
-		fetchRepo,
+		taskRepo,
 		a.zapLogger,
 	)
 
@@ -244,8 +244,9 @@ func (a *WorkerApp) initParserWorker() error {
 	}
 
 	// Initialize repositories
-	fetchRepo := repos.NewPageFetchRepository(a.pgClient)
-	extractRepo := repos.NewPageExtractRepository(a.pgClient)
+	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
+	jobRepo := repos.NewCrawlRepository(a.pgClient)
+	jobConfigRepo := repos.NewCrawlJobConfigRepository(a.pgClient)
 
 	// Get queue name from configuration
 	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
@@ -255,8 +256,9 @@ func (a *WorkerApp) initParserWorker() error {
 		a.rmqClient,
 		parsingQueue, // Consume from parsing_queue
 		contentStore,
-		fetchRepo,
-		extractRepo,
+		taskRepo,
+		jobRepo,
+		jobConfigRepo,
 		a.zapLogger,
 	)
 

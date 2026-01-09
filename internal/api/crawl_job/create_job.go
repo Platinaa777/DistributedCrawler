@@ -8,9 +8,11 @@ import (
 )
 
 func (i *CrawlJobImplementation) CreateJob(ctx context.Context, req *crawlergrpc.CreateJobRequest) (*crawlergrpc.CreateJobResponse, error) {
+	// Convert proto config to domain config
+	config := FromProtoCrawlJobConfig(req.Config)
+
 	command := service.CreateCrawlJobCommand{
-		Name: req.Name,
-		URLs: req.Urls,
+		Config: config,
 	}
 
 	id, err := i.crawlJobService.CreateCrawlJob(ctx, command)
@@ -18,7 +20,7 @@ func (i *CrawlJobImplementation) CreateJob(ctx context.Context, req *crawlergrpc
 		return nil, err
 	}
 
-	log.Printf("inserted crawl job with id: %s and %d tasks", id.String(), len(req.Urls))
+	log.Printf("inserted crawl job with id: %s and %d tasks", id.String(), len(config.Seeds))
 
 	return &crawlergrpc.CreateJobResponse{
 		Id: id.String(),

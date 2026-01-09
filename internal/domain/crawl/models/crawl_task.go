@@ -6,10 +6,17 @@ import (
 )
 
 type CrawlTask struct {
-	ID         valueobjects.CrawlTaskID
-	JobID      valueobjects.CrawlJobID
-	Job        *CrawlJob // populated when JOIN is performed
+	ID valueobjects.CrawlTaskID
+
+	JobID valueobjects.CrawlJobID
+	Job   *CrawlJob
+
 	URL        string
+	FinalURL   *string // After redirects
 	Status     TaskStatus
 	EnqueuedAt time.Time
+
+	Depth          uint64
+	BodyHash       string // SHA-256
+	MinioObjectKey string
 }

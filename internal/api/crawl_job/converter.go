@@ -3,9 +3,176 @@ package crawljob
 import (
 	"distributed-crawler/internal/domain/crawl/models"
 	crawlergrpc "distributed-crawler/pkg/v1"
+	"encoding/json"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+// ToProtoAuthOptions converts domain AuthOptions to protobuf
+func ToProtoAuthOptions(auth models.AuthOptions) *crawlergrpc.AuthOptions {
+	return &crawlergrpc.AuthOptions{
+		Cookie:        auth.Cookie,
+		BasicUser:     auth.BasicUser,
+		BasicPassword: auth.BasicPassword,
+		BearerToken:   auth.BearerToken,
+	}
+}
+
+// ToProtoRateLimitPolicy converts domain RateLimitPolicy to protobuf
+func ToProtoRateLimitPolicy(rateLimit models.RateLimitPolicy) *crawlergrpc.RateLimitPolicy {
+	return &crawlergrpc.RateLimitPolicy{
+		MaxConcurrency: rateLimit.MaxConcurrency,
+		JitterMs:       rateLimit.JitterMs,
+		Rps:            rateLimit.Rps,
+	}
+}
+
+// ToProtoRetryPolicy converts domain RetryPolicy to protobuf
+func ToProtoRetryPolicy(retry models.RetryPolicy) *crawlergrpc.RetryPolicy {
+	return &crawlergrpc.RetryPolicy{
+		MaxAttempts:       retry.MaxAttempts,
+		BackoffInitialMs:  retry.BackoffInitialMs,
+		BackoffMultiplier: retry.BackoffMultiplier,
+	}
+}
+
+// ToProtoScheduleOptions converts domain ScheduleOptions to protobuf
+func ToProtoScheduleOptions(schedule models.ScheduleOptions) *crawlergrpc.ScheduleOptions {
+	return &crawlergrpc.ScheduleOptions{
+		Cron: schedule.Cron,
+	}
+}
+
+// ToProtoScopeRules converts domain ScopeRules to protobuf
+func ToProtoScopeRules(scope models.ScopeRules) *crawlergrpc.ScopeRules {
+	return &crawlergrpc.ScopeRules{
+		MaxDepth:        scope.MaxDepth,
+		AllowedDomains:  scope.AllowedDomains,
+		DenyUrlPatterns: scope.DenyUrlPatterns,
+	}
+}
+
+// ToProtoSeed converts domain Seed to protobuf
+func ToProtoSeed(seed models.Seed) *crawlergrpc.Seed {
+	return &crawlergrpc.Seed{
+		Url: seed.Url,
+	}
+}
+
+// ToProtoExtractorSpec converts domain ExtractorSpec to protobuf
+func ToProtoExtractorSpec(spec models.ExtractorSpec) *crawlergrpc.ExtractorSpec {
+	protoSpec := &crawlergrpc.ExtractorSpec{
+		Source:       string(spec.Source),
+		SelectorType: string(spec.SelectorType),
+		Selector:     spec.Selector,
+		Attribute:    spec.Attribute,
+		Multiple:     spec.Multiple,
+	}
+
+	if spec.Index != nil {
+		idx := int32(*spec.Index)
+		protoSpec.Index = &idx
+	}
+
+	if spec.Default != nil {
+		// Marshal default value to JSON string
+		defaultJSON, _ := json.Marshal(spec.Default)
+		protoSpec.DefaultValue = string(defaultJSON)
+	}
+
+	return protoSpec
+}
+
+// ToProtoTransformSpec converts domain TransformSpec to protobuf
+func ToProtoTransformSpec(spec models.TransformSpec) *crawlergrpc.TransformSpec {
+	protoSpec := &crawlergrpc.TransformSpec{
+		Op: string(spec.Op),
+	}
+
+	if spec.Arg != nil {
+		// Marshal arg to JSON string
+		argJSON, _ := json.Marshal(spec.Arg)
+		protoSpec.Arg = string(argJSON)
+	}
+
+	return protoSpec
+}
+
+// ToProtoFieldSpec converts domain FieldSpec to protobuf
+func ToProtoFieldSpec(field models.FieldSpec) *crawlergrpc.FieldSpec {
+	transforms := make([]*crawlergrpc.TransformSpec, len(field.Transforms))
+	for i, t := range field.Transforms {
+		transforms[i] = ToProtoTransformSpec(t)
+	}
+
+	return &crawlergrpc.FieldSpec{
+		Name:       field.Name,
+		Type:       string(field.Type),
+		Required:   field.Required,
+		Extractor:  ToProtoExtractorSpec(field.Extractor),
+		Transforms: transforms,
+		Label:      field.Label,
+	}
+}
+
+// ToProtoMetricSpec converts domain MetricSpec to protobuf
+func ToProtoMetricSpec(metric models.MetricSpec) *crawlergrpc.MetricSpec {
+	protoMetric := &crawlergrpc.MetricSpec{
+		Name:  metric.Name,
+		Op:    string(metric.Op),
+		Input: metric.Input,
+	}
+
+	if metric.Arg != nil {
+		// Marshal arg to JSON string
+		argJSON, _ := json.Marshal(metric.Arg)
+		protoMetric.Arg = string(argJSON)
+	}
+
+	return protoMetric
+}
+
+// ToProtoExtractionSpec converts domain ExtractionSpec to protobuf
+func ToProtoExtractionSpec(spec models.ExtractionSpec) *crawlergrpc.ExtractionSpec {
+	fields := make([]*crawlergrpc.FieldSpec, len(spec.Fields))
+	for i, f := range spec.Fields {
+		fields[i] = ToProtoFieldSpec(f)
+	}
+
+	metrics := make([]*crawlergrpc.MetricSpec, len(spec.Metrics))
+	for i, m := range spec.Metrics {
+		metrics[i] = ToProtoMetricSpec(m)
+	}
+
+	return &crawlergrpc.ExtractionSpec{
+		Fields:  fields,
+		Metrics: metrics,
+	}
+}
+
+// ToProtoCrawlJobConfig converts domain CrawlJobConfig to protobuf
+func ToProtoCrawlJobConfig(config *models.CrawlJobConfig) *crawlergrpc.CrawlJobConfig {
+	if config == nil {
+		return nil
+	}
+
+	seeds := make([]*crawlergrpc.Seed, len(config.Seeds))
+	for i, s := range config.Seeds {
+		seeds[i] = ToProtoSeed(s)
+	}
+
+	return &crawlergrpc.CrawlJobConfig{
+		Id:             config.ID.String(),
+		Name:           config.Name,
+		ExtractionSpec: ToProtoExtractionSpec(config.ExtractionSpec),
+		Scopes:         ToProtoScopeRules(config.Scopes),
+		Seeds:          seeds,
+		RateLimit:      ToProtoRateLimitPolicy(config.RateLimit),
+		Retries:        ToProtoRetryPolicy(config.Retries),
+		Auth:           ToProtoAuthOptions(config.Auth),
+		Schedule:       ToProtoScheduleOptions(config.Schedule),
+	}
+}
 
 // ToProtoCrawlJob converts domain CrawlJob to protobuf CrawlJob
 func ToProtoCrawlJob(job *models.CrawlJob) *crawlergrpc.CrawlJob {
@@ -14,15 +181,257 @@ func ToProtoCrawlJob(job *models.CrawlJob) *crawlergrpc.CrawlJob {
 	}
 
 	protoJob := &crawlergrpc.CrawlJob{
-		Id:        job.ID.String(),
-		Name:      job.Name,
-		Status:    job.Status.String(),
-		CreatedAt: timestamppb.New(job.CreatedAt),
+		Id:          job.ID.String(),
+		JobConfigId: job.JobConfigID.String(),
+		JobConfig:   ToProtoCrawlJobConfig(job.JobConfig),
+		Status:      job.Status.String(),
+		CreatedAt:   timestamppb.New(job.CreatedAt),
 	}
 
 	if job.CompletedAt != nil {
 		protoJob.CompletedAt = timestamppb.New(*job.CompletedAt)
 	}
 
+	if job.Error != nil {
+		// Marshal error map to JSON string
+		errorJSON, _ := json.Marshal(job.Error)
+		protoJob.Error = string(errorJSON)
+	}
+
 	return protoJob
+}
+
+// ToProtoCrawlTask converts domain CrawlTask to protobuf CrawlTask
+func ToProtoCrawlTask(task *models.CrawlTask) *crawlergrpc.CrawlTask {
+	if task == nil {
+		return nil
+	}
+
+	protoTask := &crawlergrpc.CrawlTask{
+		Id:             task.ID.String(),
+		JobId:          task.JobID.String(),
+		Job:            ToProtoCrawlJob(task.Job),
+		Url:            task.URL,
+		Status:         task.Status.String(),
+		EnqueuedAt:     timestamppb.New(task.EnqueuedAt),
+		Depth:          task.Depth,
+		BodyHash:       task.BodyHash,
+		MinioObjectKey: task.MinioObjectKey,
+	}
+
+	if task.FinalURL != nil {
+		protoTask.FinalUrl = task.FinalURL
+	}
+
+	return protoTask
+}
+
+// FromProtoAuthOptions converts protobuf AuthOptions to domain
+func FromProtoAuthOptions(proto *crawlergrpc.AuthOptions) models.AuthOptions {
+	if proto == nil {
+		return models.AuthOptions{}
+	}
+
+	return models.AuthOptions{
+		Cookie:        proto.Cookie,
+		BasicUser:     proto.BasicUser,
+		BasicPassword: proto.BasicPassword,
+		BearerToken:   proto.BearerToken,
+	}
+}
+
+// FromProtoRateLimitPolicy converts protobuf RateLimitPolicy to domain
+func FromProtoRateLimitPolicy(proto *crawlergrpc.RateLimitPolicy) models.RateLimitPolicy {
+	if proto == nil {
+		return models.RateLimitPolicy{}
+	}
+
+	return models.RateLimitPolicy{
+		MaxConcurrency: proto.MaxConcurrency,
+		JitterMs:       proto.JitterMs,
+		Rps:            proto.Rps,
+	}
+}
+
+// FromProtoRetryPolicy converts protobuf RetryPolicy to domain
+func FromProtoRetryPolicy(proto *crawlergrpc.RetryPolicy) models.RetryPolicy {
+	if proto == nil {
+		return models.RetryPolicy{}
+	}
+
+	return models.RetryPolicy{
+		MaxAttempts:       proto.MaxAttempts,
+		BackoffInitialMs:  proto.BackoffInitialMs,
+		BackoffMultiplier: proto.BackoffMultiplier,
+	}
+}
+
+// FromProtoScheduleOptions converts protobuf ScheduleOptions to domain
+func FromProtoScheduleOptions(proto *crawlergrpc.ScheduleOptions) models.ScheduleOptions {
+	if proto == nil {
+		return models.ScheduleOptions{}
+	}
+
+	return models.ScheduleOptions{
+		Cron: proto.Cron,
+	}
+}
+
+// FromProtoScopeRules converts protobuf ScopeRules to domain
+func FromProtoScopeRules(proto *crawlergrpc.ScopeRules) models.ScopeRules {
+	if proto == nil {
+		return models.ScopeRules{}
+	}
+
+	return models.ScopeRules{
+		MaxDepth:        proto.MaxDepth,
+		AllowedDomains:  proto.AllowedDomains,
+		DenyUrlPatterns: proto.DenyUrlPatterns,
+	}
+}
+
+// FromProtoSeed converts protobuf Seed to domain
+func FromProtoSeed(proto *crawlergrpc.Seed) models.Seed {
+	if proto == nil {
+		return models.Seed{}
+	}
+
+	return models.Seed{
+		Url: proto.Url,
+	}
+}
+
+// FromProtoExtractorSpec converts protobuf ExtractorSpec to domain
+func FromProtoExtractorSpec(proto *crawlergrpc.ExtractorSpec) models.ExtractorSpec {
+	if proto == nil {
+		return models.ExtractorSpec{}
+	}
+
+	spec := models.ExtractorSpec{
+		Source:       models.SourceType(proto.Source),
+		SelectorType: models.SelectorType(proto.SelectorType),
+		Selector:     proto.Selector,
+		Attribute:    proto.Attribute,
+		Multiple:     proto.Multiple,
+	}
+
+	if proto.Index != nil {
+		idx := int(*proto.Index)
+		spec.Index = &idx
+	}
+
+	if proto.DefaultValue != "" {
+		var defaultVal any
+		_ = json.Unmarshal([]byte(proto.DefaultValue), &defaultVal)
+		spec.Default = defaultVal
+	}
+
+	return spec
+}
+
+// FromProtoTransformSpec converts protobuf TransformSpec to domain
+func FromProtoTransformSpec(proto *crawlergrpc.TransformSpec) models.TransformSpec {
+	if proto == nil {
+		return models.TransformSpec{}
+	}
+
+	spec := models.TransformSpec{
+		Op: models.TransformOp(proto.Op),
+	}
+
+	if proto.Arg != "" {
+		var arg any
+		_ = json.Unmarshal([]byte(proto.Arg), &arg)
+		spec.Arg = arg
+	}
+
+	return spec
+}
+
+// FromProtoFieldSpec converts protobuf FieldSpec to domain
+func FromProtoFieldSpec(proto *crawlergrpc.FieldSpec) models.FieldSpec {
+	if proto == nil {
+		return models.FieldSpec{}
+	}
+
+	transforms := make([]models.TransformSpec, len(proto.Transforms))
+	for i, t := range proto.Transforms {
+		transforms[i] = FromProtoTransformSpec(t)
+	}
+
+	return models.FieldSpec{
+		Name:       proto.Name,
+		Type:       models.ValueType(proto.Type),
+		Required:   proto.Required,
+		Extractor:  FromProtoExtractorSpec(proto.Extractor),
+		Transforms: transforms,
+		Label:      proto.Label,
+	}
+}
+
+// FromProtoMetricSpec converts protobuf MetricSpec to domain
+func FromProtoMetricSpec(proto *crawlergrpc.MetricSpec) models.MetricSpec {
+	if proto == nil {
+		return models.MetricSpec{}
+	}
+
+	metric := models.MetricSpec{
+		Name:  proto.Name,
+		Op:    models.MetricOp(proto.Op),
+		Input: proto.Input,
+	}
+
+	if proto.Arg != "" {
+		var arg any
+		_ = json.Unmarshal([]byte(proto.Arg), &arg)
+		metric.Arg = arg
+	}
+
+	return metric
+}
+
+// FromProtoExtractionSpec converts protobuf ExtractionSpec to domain
+func FromProtoExtractionSpec(proto *crawlergrpc.ExtractionSpec) models.ExtractionSpec {
+	if proto == nil {
+		return models.ExtractionSpec{}
+	}
+
+	fields := make([]models.FieldSpec, len(proto.Fields))
+	for i, f := range proto.Fields {
+		fields[i] = FromProtoFieldSpec(f)
+	}
+
+	metrics := make([]models.MetricSpec, len(proto.Metrics))
+	for i, m := range proto.Metrics {
+		metrics[i] = FromProtoMetricSpec(m)
+	}
+
+	return models.ExtractionSpec{
+		Fields:  fields,
+		Metrics: metrics,
+	}
+}
+
+// FromProtoCrawlJobConfig converts protobuf CrawlJobConfig to domain
+func FromProtoCrawlJobConfig(proto *crawlergrpc.CrawlJobConfig) models.CrawlJobConfig {
+	if proto == nil {
+		return models.CrawlJobConfig{}
+	}
+
+	seeds := make([]models.Seed, len(proto.Seeds))
+	for i, s := range proto.Seeds {
+		seeds[i] = FromProtoSeed(s)
+	}
+
+	return models.CrawlJobConfig{
+		// ID will be generated in the service layer
+		Name:           proto.Name,
+		ExtractionSpec: FromProtoExtractionSpec(proto.ExtractionSpec),
+		Scopes:         FromProtoScopeRules(proto.Scopes),
+		Seeds:          seeds,
+		RateLimit:      FromProtoRateLimitPolicy(proto.RateLimit),
+		Retries:        FromProtoRetryPolicy(proto.Retries),
+		Auth:           FromProtoAuthOptions(proto.Auth),
+		Schedule:       FromProtoScheduleOptions(proto.Schedule),
+	}
 }

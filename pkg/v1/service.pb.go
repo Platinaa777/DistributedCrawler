@@ -26,92 +26,45 @@ var File_v1_service_proto protoreflect.FileDescriptor
 const file_v1_service_proto_rawDesc = "" +
 	"\n" +
 	"\x10v1/service.proto\x12\n" +
-	"crawler.v1\x1a\x0fv1/models.proto\x1a\x1cgoogle/api/annotations.proto2\xa3\f\n" +
+	"crawler.v1\x1a\x0fv1/models.proto\x1a\x1cgoogle/api/annotations.proto2\x8a\x04\n" +
 	"\x0eCrawlerService\x12[\n" +
 	"\bListJobs\x12\x1b.crawler.v1.ListJobsRequest\x1a\x1c.crawler.v1.ListJobsResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/api/v1/jobs\x12a\n" +
 	"\tCreateJob\x12\x1c.crawler.v1.CreateJobRequest\x1a\x1d.crawler.v1.CreateJobResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/api/v1/jobs\x12Z\n" +
-	"\x06GetJob\x12\x19.crawler.v1.GetJobRequest\x1a\x1a.crawler.v1.GetJobResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/jobs/{id}\x12f\n" +
-	"\tUpdateJob\x12\x1c.crawler.v1.UpdateJobRequest\x1a\x1d.crawler.v1.UpdateJobResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*2\x11/api/v1/jobs/{id}\x12e\n" +
-	"\n" +
-	"CreateTask\x12\x1d.crawler.v1.CreateTaskRequest\x1a\x1e.crawler.v1.CreateTaskResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/tasks\x12^\n" +
+	"\x06GetJob\x12\x19.crawler.v1.GetJobRequest\x1a\x1a.crawler.v1.GetJobResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/jobs/{id}\x12^\n" +
 	"\aGetTask\x12\x1a.crawler.v1.GetTaskRequest\x1a\x1b.crawler.v1.GetTaskResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/tasks/{id}\x12|\n" +
-	"\x0eListTasksByJob\x12!.crawler.v1.ListTasksByJobRequest\x1a\".crawler.v1.ListTasksByJobResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/jobs/{job_id}/tasks\x12j\n" +
-	"\n" +
-	"UpdateTask\x12\x1d.crawler.v1.UpdateTaskRequest\x1a\x1e.crawler.v1.UpdateTaskResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*2\x12/api/v1/tasks/{id}\x12u\n" +
-	"\x0eCreateSnapshot\x12!.crawler.v1.CreateSnapshotRequest\x1a\".crawler.v1.CreateSnapshotResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/snapshots\x12n\n" +
-	"\vGetSnapshot\x12\x1e.crawler.v1.GetSnapshotRequest\x1a\x1f.crawler.v1.GetSnapshotResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/v1/snapshots/{id}\x12\x91\x01\n" +
-	"\x13ListSnapshotsByTask\x12&.crawler.v1.ListSnapshotsByTaskRequest\x1a'.crawler.v1.ListSnapshotsByTaskResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/tasks/{task_id}/snapshots\x12m\n" +
-	"\fCreateRecord\x12\x1f.crawler.v1.CreateRecordRequest\x1a .crawler.v1.CreateRecordResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/api/v1/records\x12f\n" +
-	"\tGetRecord\x12\x1c.crawler.v1.GetRecordRequest\x1a\x1d.crawler.v1.GetRecordResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/records/{id}\x12\x89\x01\n" +
-	"\x11ListRecordsByTask\x12$.crawler.v1.ListRecordsByTaskRequest\x1a%.crawler.v1.ListRecordsByTaskResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/tasks/{task_id}/recordsB\x90\x01\n" +
+	"\x0eListTasksByJob\x12!.crawler.v1.ListTasksByJobRequest\x1a\".crawler.v1.ListTasksByJobResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/jobs/{job_id}/tasksB\x90\x01\n" +
 	"\x0ecom.crawler.v1B\fServiceProtoP\x01Z'distributed-crawler/pkg/api/crawlergrpc\xa2\x02\x03CXX\xaa\x02\n" +
 	"Crawler.V1\xca\x02\n" +
 	"Crawler\\V1\xe2\x02\x16Crawler\\V1\\GPBMetadata\xea\x02\vCrawler::V1b\x06proto3"
 
 var file_v1_service_proto_goTypes = []any{
-	(*ListJobsRequest)(nil),             // 0: crawler.v1.ListJobsRequest
-	(*CreateJobRequest)(nil),            // 1: crawler.v1.CreateJobRequest
-	(*GetJobRequest)(nil),               // 2: crawler.v1.GetJobRequest
-	(*UpdateJobRequest)(nil),            // 3: crawler.v1.UpdateJobRequest
-	(*CreateTaskRequest)(nil),           // 4: crawler.v1.CreateTaskRequest
-	(*GetTaskRequest)(nil),              // 5: crawler.v1.GetTaskRequest
-	(*ListTasksByJobRequest)(nil),       // 6: crawler.v1.ListTasksByJobRequest
-	(*UpdateTaskRequest)(nil),           // 7: crawler.v1.UpdateTaskRequest
-	(*CreateSnapshotRequest)(nil),       // 8: crawler.v1.CreateSnapshotRequest
-	(*GetSnapshotRequest)(nil),          // 9: crawler.v1.GetSnapshotRequest
-	(*ListSnapshotsByTaskRequest)(nil),  // 10: crawler.v1.ListSnapshotsByTaskRequest
-	(*CreateRecordRequest)(nil),         // 11: crawler.v1.CreateRecordRequest
-	(*GetRecordRequest)(nil),            // 12: crawler.v1.GetRecordRequest
-	(*ListRecordsByTaskRequest)(nil),    // 13: crawler.v1.ListRecordsByTaskRequest
-	(*ListJobsResponse)(nil),            // 14: crawler.v1.ListJobsResponse
-	(*CreateJobResponse)(nil),           // 15: crawler.v1.CreateJobResponse
-	(*GetJobResponse)(nil),              // 16: crawler.v1.GetJobResponse
-	(*UpdateJobResponse)(nil),           // 17: crawler.v1.UpdateJobResponse
-	(*CreateTaskResponse)(nil),          // 18: crawler.v1.CreateTaskResponse
-	(*GetTaskResponse)(nil),             // 19: crawler.v1.GetTaskResponse
-	(*ListTasksByJobResponse)(nil),      // 20: crawler.v1.ListTasksByJobResponse
-	(*UpdateTaskResponse)(nil),          // 21: crawler.v1.UpdateTaskResponse
-	(*CreateSnapshotResponse)(nil),      // 22: crawler.v1.CreateSnapshotResponse
-	(*GetSnapshotResponse)(nil),         // 23: crawler.v1.GetSnapshotResponse
-	(*ListSnapshotsByTaskResponse)(nil), // 24: crawler.v1.ListSnapshotsByTaskResponse
-	(*CreateRecordResponse)(nil),        // 25: crawler.v1.CreateRecordResponse
-	(*GetRecordResponse)(nil),           // 26: crawler.v1.GetRecordResponse
-	(*ListRecordsByTaskResponse)(nil),   // 27: crawler.v1.ListRecordsByTaskResponse
+	(*ListJobsRequest)(nil),        // 0: crawler.v1.ListJobsRequest
+	(*CreateJobRequest)(nil),       // 1: crawler.v1.CreateJobRequest
+	(*GetJobRequest)(nil),          // 2: crawler.v1.GetJobRequest
+	(*GetTaskRequest)(nil),         // 3: crawler.v1.GetTaskRequest
+	(*ListTasksByJobRequest)(nil),  // 4: crawler.v1.ListTasksByJobRequest
+	(*ListJobsResponse)(nil),       // 5: crawler.v1.ListJobsResponse
+	(*CreateJobResponse)(nil),      // 6: crawler.v1.CreateJobResponse
+	(*GetJobResponse)(nil),         // 7: crawler.v1.GetJobResponse
+	(*GetTaskResponse)(nil),        // 8: crawler.v1.GetTaskResponse
+	(*ListTasksByJobResponse)(nil), // 9: crawler.v1.ListTasksByJobResponse
 }
 var file_v1_service_proto_depIdxs = []int32{
-	0,  // 0: crawler.v1.CrawlerService.ListJobs:input_type -> crawler.v1.ListJobsRequest
-	1,  // 1: crawler.v1.CrawlerService.CreateJob:input_type -> crawler.v1.CreateJobRequest
-	2,  // 2: crawler.v1.CrawlerService.GetJob:input_type -> crawler.v1.GetJobRequest
-	3,  // 3: crawler.v1.CrawlerService.UpdateJob:input_type -> crawler.v1.UpdateJobRequest
-	4,  // 4: crawler.v1.CrawlerService.CreateTask:input_type -> crawler.v1.CreateTaskRequest
-	5,  // 5: crawler.v1.CrawlerService.GetTask:input_type -> crawler.v1.GetTaskRequest
-	6,  // 6: crawler.v1.CrawlerService.ListTasksByJob:input_type -> crawler.v1.ListTasksByJobRequest
-	7,  // 7: crawler.v1.CrawlerService.UpdateTask:input_type -> crawler.v1.UpdateTaskRequest
-	8,  // 8: crawler.v1.CrawlerService.CreateSnapshot:input_type -> crawler.v1.CreateSnapshotRequest
-	9,  // 9: crawler.v1.CrawlerService.GetSnapshot:input_type -> crawler.v1.GetSnapshotRequest
-	10, // 10: crawler.v1.CrawlerService.ListSnapshotsByTask:input_type -> crawler.v1.ListSnapshotsByTaskRequest
-	11, // 11: crawler.v1.CrawlerService.CreateRecord:input_type -> crawler.v1.CreateRecordRequest
-	12, // 12: crawler.v1.CrawlerService.GetRecord:input_type -> crawler.v1.GetRecordRequest
-	13, // 13: crawler.v1.CrawlerService.ListRecordsByTask:input_type -> crawler.v1.ListRecordsByTaskRequest
-	14, // 14: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
-	15, // 15: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
-	16, // 16: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
-	17, // 17: crawler.v1.CrawlerService.UpdateJob:output_type -> crawler.v1.UpdateJobResponse
-	18, // 18: crawler.v1.CrawlerService.CreateTask:output_type -> crawler.v1.CreateTaskResponse
-	19, // 19: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
-	20, // 20: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
-	21, // 21: crawler.v1.CrawlerService.UpdateTask:output_type -> crawler.v1.UpdateTaskResponse
-	22, // 22: crawler.v1.CrawlerService.CreateSnapshot:output_type -> crawler.v1.CreateSnapshotResponse
-	23, // 23: crawler.v1.CrawlerService.GetSnapshot:output_type -> crawler.v1.GetSnapshotResponse
-	24, // 24: crawler.v1.CrawlerService.ListSnapshotsByTask:output_type -> crawler.v1.ListSnapshotsByTaskResponse
-	25, // 25: crawler.v1.CrawlerService.CreateRecord:output_type -> crawler.v1.CreateRecordResponse
-	26, // 26: crawler.v1.CrawlerService.GetRecord:output_type -> crawler.v1.GetRecordResponse
-	27, // 27: crawler.v1.CrawlerService.ListRecordsByTask:output_type -> crawler.v1.ListRecordsByTaskResponse
-	14, // [14:28] is the sub-list for method output_type
-	0,  // [0:14] is the sub-list for method input_type
-	0,  // [0:0] is the sub-list for extension type_name
-	0,  // [0:0] is the sub-list for extension extendee
-	0,  // [0:0] is the sub-list for field type_name
+	0, // 0: crawler.v1.CrawlerService.ListJobs:input_type -> crawler.v1.ListJobsRequest
+	1, // 1: crawler.v1.CrawlerService.CreateJob:input_type -> crawler.v1.CreateJobRequest
+	2, // 2: crawler.v1.CrawlerService.GetJob:input_type -> crawler.v1.GetJobRequest
+	3, // 3: crawler.v1.CrawlerService.GetTask:input_type -> crawler.v1.GetTaskRequest
+	4, // 4: crawler.v1.CrawlerService.ListTasksByJob:input_type -> crawler.v1.ListTasksByJobRequest
+	5, // 5: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
+	6, // 6: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
+	7, // 7: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
+	8, // 8: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
+	9, // 9: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_v1_service_proto_init() }

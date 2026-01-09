@@ -1,0 +1,454 @@
+Extraction & Metrics DSL – Conceptual Description
+
+This system defines a declarative extraction specification used by a distributed web crawler to extract structured data and compute quality/SEO metrics from fetched web pages.
+
+The specification is static and stored in a job configuration. It describes:
+
+What data to extract
+
+Where to extract it from
+
+How to transform it
+
+What metrics to compute from extracted data or fetch results
+
+The DSL is designed to be:
+
+UI-friendly
+
+Deterministic
+
+Extensible
+
+Safe to store and version as JSON
+
+1. High-Level Structure
+
+The extraction logic is represented by an ExtractionSpec, which contains:
+
+Fields – individual data items to extract (e.g. title, price, canonical URL)
+
+Metrics – computed signals used for quality, validation, and observability
+
+Conceptually:
+
+“Extract these fields from the page, apply these transformations, then compute these metrics from the extracted data or fetch metadata.”
+
+2. Fields: What to Extract
+
+Each FieldSpec describes one output field that will appear in the final extracted result (stored as JSONB).
+
+A field defines:
+
+its name
+
+its expected data type
+
+where the value comes from
+
+how the value should be transformed
+
+whether it is required
+
+FieldSpec Responsibilities
+
+A FieldSpec answers:
+
+“What value do I want, and how do I get it?”
+
+Key properties:
+
+Name
+
+The logical name of the extracted field.
+
+Used as the JSON key in extracted output
+
+Must be unique within the template
+
+Example: "title", "price", "canonical_url"
+
+Type (ValueType)
+
+Defines the expected type of the final value after extraction and transformations.
+
+Supported types:
+
+string
+
+int
+
+float
+
+bool
+
+url
+
+json
+
+This is used for:
+
+Validation
+
+Type conversion
+
+Downstream consumers (analytics, storage, UI)
+
+Required
+
+Indicates whether the field must be present.
+
+true: missing or invalid value is considered a quality failure
+
+false: missing value is allowed
+
+This does not necessarily fail the task, but it:
+
+affects metrics
+
+can mark the page as low-quality
+
+can trigger alerts or dashboards
+
+Extractor
+
+Describes where and how the raw value is obtained.
+
+The extractor does not transform data — it only selects raw values.
+
+3. ExtractorSpec: Where Data Comes From
+
+An extractor is defined by:
+
+a source
+
+a selector type
+
+selector details
+
+It answers:
+
+“From which part of the fetch result do we read the data, and how?”
+
+Source (SourceType)
+
+Specifies the data source used for extraction.
+
+Supported sources:
+
+html
+
+Raw HTML document
+
+Used with CSS/XPath/JSON-LD selectors
+
+text
+
+Plain text version of HTML (HTML tags removed)
+
+Useful for word counts, regex matches, content analysis
+
+response_headers
+
+HTTP response headers
+
+Example use: extract content-type, cache-control
+
+fetch_meta
+
+Internal fetch metadata
+
+Examples:
+
+status code
+
+final URL
+
+fetch duration
+
+redirect count
+
+SelectorType
+
+Defines how the extractor selects data from the chosen source.
+
+Supported selector types:
+
+css
+
+CSS selector applied to HTML DOM
+
+Example: "h1", "meta[name=description]"
+
+xpath
+
+XPath selector (advanced DOM selection)
+
+regex
+
+Regular expression applied to text
+
+Often used with SourceText
+
+jsonld
+
+Extract from JSON-LD structured data blocks
+
+meta
+
+HTML meta tags (shortcut selector)
+
+header
+
+HTTP response headers
+
+url
+
+Current page URL or final redirected URL
+
+status_code
+
+HTTP status code from fetch metadata
+
+Selector
+
+The selector expression itself.
+
+Examples:
+
+CSS: "h1"
+
+Regex: "(in stock|out of stock)"
+
+Meta: "description"
+
+Optional depending on SelectorType.
+
+Attribute
+
+Specifies which attribute to extract from a matched element.
+
+Examples:
+
+"href" for links
+
+"content" for meta tags
+
+"src" for images
+
+Multiple
+
+Controls whether the extractor returns:
+
+a single value (false)
+
+a list of values (true)
+
+If true, the output is an array before transforms are applied.
+
+Index
+
+If Multiple=true, Index allows selecting a specific element from the result list.
+
+Example:
+
+Index=0 → first match
+
+Index=1 → second match
+
+Default
+
+Fallback value used when extraction produces no result.
+
+This allows:
+
+stable schemas
+
+avoiding nulls
+
+graceful degradation when sites change
+
+4. Transforms: How Data Is Normalized
+
+Transforms process the raw extracted value in sequence.
+
+They answer:
+
+“How should the raw value be cleaned, normalized, or converted?”
+
+Each transform is deterministic and side-effect free.
+
+TransformSpec
+
+A transform consists of:
+
+an operation (Op)
+
+an optional argument (Arg)
+
+Transforms are applied left to right, in order.
+
+Common Transform Operations
+
+Examples of supported operations:
+
+trim – remove leading/trailing whitespace
+
+lower / upper – change casing
+
+collapse_ws – normalize whitespace
+
+html_to_text – strip HTML tags
+
+normalize_url – canonicalize URLs
+
+unique – remove duplicates from lists
+
+limit – limit list length
+
+to_int, to_float – numeric parsing
+
+parse_price – extract numeric price from text
+
+sha256 – hash content for deduplication
+
+Transforms can:
+
+change type
+
+reduce lists to scalars
+
+normalize values for storage and comparison
+
+5. Metrics: What to Measure
+
+Metrics are computed signals, not extracted data.
+
+They are used for:
+
+quality monitoring
+
+SEO auditing
+
+anomaly detection
+
+run-level aggregation
+
+Metrics do not modify extracted data.
+
+MetricSpec Responsibilities
+
+A metric answers:
+
+“What signal should we compute from this page or fetch?”
+
+Metrics can be computed from:
+
+extracted fields
+
+page content
+
+fetch metadata
+
+MetricSpec Fields
+Name
+
+Logical name of the metric.
+
+Example:
+
+"title_len"
+
+"price_present"
+
+"external_link_count"
+
+Op (MetricOp)
+
+Defines what kind of computation is performed.
+
+Supported operations include:
+
+len – length of a value
+
+count – number of items
+
+word_count – word count in text
+
+field_present – whether a field exists
+
+status_is_error – whether HTTP status is an error
+
+count_external_links – number of outbound links
+
+Input
+
+Specifies what the metric operates on.
+
+Examples:
+
+field name: "title"
+
+special value: "body_text"
+
+fetch meta field: "status_code"
+
+Arg
+
+Optional parameters for the metric operation.
+
+Examples:
+
+thresholds
+
+regex patterns
+
+boolean flags
+
+6. Output Semantics
+Per-page output
+
+Stored in Postgres as JSONB:
+
+Extracted fields (from FieldSpec)
+
+Computed features (optional)
+
+Optional per-page metric results
+
+Per-job aggregation
+
+Metrics are aggregated across all tasks in a CrawlJob and stored as:
+
+counters
+
+ratios
+
+quality indicators
+
+Example:
+
+{
+  "price_present": { "true": 1200, "false": 300 },
+  "status_is_error": { "true": 45, "false": 1455 }
+}
+
+7. Design Philosophy
+
+This DSL is designed to:
+
+separate what to extract from how to crawl
+
+be editable via UI
+
+support versioning and write-on-copy configs
+
+allow gradual evolution without breaking stored data
+
+scale from simple scraping to SEO-quality auditing
+
+In short:
+
+Fields extract data.
+Transforms normalize it.
+Metrics evaluate it.

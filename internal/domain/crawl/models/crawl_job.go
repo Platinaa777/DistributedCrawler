@@ -6,9 +6,15 @@ import (
 )
 
 type CrawlJob struct {
-	ID          valueobjects.CrawlJobID
-	Name        string
-	Status      TaskStatus
+	ID valueobjects.CrawlJobID
+
+	JobConfigID valueobjects.ID
+	JobConfig   *CrawlJobConfig
+
+	Status TaskStatus
+
 	CreatedAt   time.Time
 	CompletedAt *time.Time
+
+	Error map[string]any
 }

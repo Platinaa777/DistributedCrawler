@@ -26,20 +26,8 @@ service CrawlerService {
       get: "/api/v1/jobs/{id}"
     };
   }
-  rpc UpdateJob(UpdateJobRequest) returns (UpdateJobResponse) {
-    option (google.api.http) = {
-      patch: "/api/v1/jobs/{id}"
-      body: "*"
-    };
-  }
 
   // Task operations
-  rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/tasks"
-      body: "*"
-    };
-  }
   rpc GetTask(GetTaskRequest) returns (GetTaskResponse) {
     option (google.api.http) = {
       get: "/api/v1/tasks/{id}"
@@ -48,48 +36,6 @@ service CrawlerService {
   rpc ListTasksByJob(ListTasksByJobRequest) returns (ListTasksByJobResponse) {
     option (google.api.http) = {
       get: "/api/v1/jobs/{job_id}/tasks"
-    };
-  }
-  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse) {
-    option (google.api.http) = {
-      patch: "/api/v1/tasks/{id}"
-      body: "*"
-    };
-  }
-
-  // Snapshot operations
-  rpc CreateSnapshot(CreateSnapshotRequest) returns (CreateSnapshotResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/snapshots"
-      body: "*"
-    };
-  }
-  rpc GetSnapshot(GetSnapshotRequest) returns (GetSnapshotResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/snapshots/{id}"
-    };
-  }
-  rpc ListSnapshotsByTask(ListSnapshotsByTaskRequest) returns (ListSnapshotsByTaskResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/tasks/{task_id}/snapshots"
-    };
-  }
-
-  // Record operations
-  rpc CreateRecord(CreateRecordRequest) returns (CreateRecordResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/records"
-      body: "*"
-    };
-  }
-  rpc GetRecord(GetRecordRequest) returns (GetRecordResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/records/{id}"
-    };
-  }
-  rpc ListRecordsByTask(ListRecordsByTaskRequest) returns (ListRecordsByTaskResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/tasks/{task_id}/records"
     };
   }
 }

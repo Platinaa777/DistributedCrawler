@@ -12,6 +12,7 @@ import (
 	crawljob "distributed-crawler/internal/api/crawl_job"
 	"distributed-crawler/internal/application/service"
 	serviceMocks "distributed-crawler/internal/application/service/mocks"
+	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	crawlergrpc "distributed-crawler/pkg/v1"
 )
@@ -31,22 +32,32 @@ func TestCreateJob(t *testing.T) {
 
 		id   = valueobjects.GenerateCrawlJobID()
 		name = gofakeit.Animal()
-		urls = []string{
-			gofakeit.URL(),
-			gofakeit.URL(),
-			gofakeit.URL(),
+		seeds = []models.Seed{
+			{Url: gofakeit.URL()},
+			{Url: gofakeit.URL()},
+			{Url: gofakeit.URL()},
+		}
+
+		config = models.CrawlJobConfig{
+			Name:  name,
+			Seeds: seeds,
 		}
 
 		serviceErr = fmt.Errorf("service error")
 
 		req = &crawlergrpc.CreateJobRequest{
-			Name: name,
-			Urls: urls,
+			Config: &crawlergrpc.CrawlJobConfig{
+				Name: name,
+				Seeds: []*crawlergrpc.Seed{
+					{Url: seeds[0].Url},
+					{Url: seeds[1].Url},
+					{Url: seeds[2].Url},
+				},
+			},
 		}
 
 		command = service.CreateCrawlJobCommand{
-			Name: name,
-			URLs: urls,
+			Config: config,
 		}
 
 		res = &crawlergrpc.CreateJobResponse{

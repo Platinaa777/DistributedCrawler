@@ -16,10 +16,11 @@ const (
 	tableName = "crawl_jobs"
 
 	idColumn          = "id"
-	nameColumn        = "name"
+	jobConfigIDColumn = "job_config_id"
 	statusColumn      = "status"
 	createdAtColumn   = "created_at"
 	completedAtColumn = "completed_at"
+	errorColumn       = "error"
 )
 
 type crawlJobRepository struct {
@@ -35,8 +36,8 @@ func (c *crawlJobRepository) Create(ctx context.Context, entity models.CrawlJob)
 
 	builder := sq.Insert(tableName).
 		PlaceholderFormat(sq.Dollar).
-		Columns(idColumn, nameColumn, statusColumn, createdAtColumn, completedAtColumn).
-		Values(dbEntity.ID, dbEntity.Name, dbEntity.Status, dbEntity.CreatedAt, dbEntity.CompletedAt).
+		Columns(idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn).
+		Values(dbEntity.ID, dbEntity.JobConfigID, dbEntity.Status, dbEntity.CreatedAt, dbEntity.CompletedAt, dbEntity.Error).
 		Suffix("RETURNING id")
 
 	query, args, err := builder.ToSql()
@@ -59,7 +60,7 @@ func (c *crawlJobRepository) Create(ctx context.Context, entity models.CrawlJob)
 }
 
 func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID) (*models.CrawlJob, error) {
-	builder := sq.Select(idColumn, nameColumn, statusColumn, createdAtColumn, completedAtColumn).
+	builder := sq.Select(idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName).
 		Where(sq.Eq{idColumn: id.String()}).
@@ -89,9 +90,10 @@ func (c *crawlJobRepository) Update(ctx context.Context, entity models.CrawlJob)
 
 	builder := sq.Update(tableName).
 		PlaceholderFormat(sq.Dollar).
-		Set(nameColumn, dbEntity.Name).
+		Set(jobConfigIDColumn, dbEntity.JobConfigID).
 		Set(statusColumn, dbEntity.Status).
 		Set(completedAtColumn, dbEntity.CompletedAt).
+		Set(errorColumn, dbEntity.Error).
 		Where(sq.Eq{idColumn: dbEntity.ID})
 
 	query, args, err := builder.ToSql()
@@ -109,7 +111,7 @@ func (c *crawlJobRepository) Update(ctx context.Context, entity models.CrawlJob)
 }
 
 func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus, limit, offset int) ([]*models.CrawlJob, error) {
-	builder := sq.Select(idColumn, nameColumn, statusColumn, createdAtColumn, completedAtColumn).
+	builder := sq.Select(idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName).
 		Where(sq.Eq{statusColumn: status.String()}).
@@ -146,7 +148,7 @@ func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus,
 }
 
 func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]*models.CrawlJob, error) {
-	builder := sq.Select(idColumn, nameColumn, statusColumn, createdAtColumn, completedAtColumn).
+	builder := sq.Select(idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName).
 		OrderBy(createdAtColumn + " DESC").

@@ -3,8 +3,7 @@ package worker
 import (
 	"context"
 	"crypto/sha256"
-	"distributed-crawler/internal/domain/crawl/models"
-	"distributed-crawler/internal/domain/crawl/repos/page_fetch"
+	"distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
@@ -24,7 +23,7 @@ type FetchWorker struct {
 	crawlQueue    string
 	parsingQueue  string
 	contentStore  services.ContentStore
-	fetchRepo     page_fetch.PageFetchRepository
+	taskRepo      crawltask.CrawlTaskRepository
 	httpClient    *http.Client
 	logger        *zap.Logger
 }
@@ -35,7 +34,7 @@ func NewFetchWorker(
 	crawlQueue string,
 	parsingQueue string,
 	contentStore services.ContentStore,
-	fetchRepo page_fetch.PageFetchRepository,
+	taskRepo crawltask.CrawlTaskRepository,
 	logger *zap.Logger,
 ) *FetchWorker {
 	return &FetchWorker{
@@ -43,7 +42,7 @@ func NewFetchWorker(
 		crawlQueue:   crawlQueue,
 		parsingQueue: parsingQueue,
 		contentStore: contentStore,
-		fetchRepo:    fetchRepo,
+		taskRepo:     taskRepo,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -67,61 +66,83 @@ func (w *FetchWorker) Start(ctx context.Context) error {
 // handleMessage processes a single crawl task message
 func (w *FetchWorker) handleMessage(body []byte) error {
 	// Parse message
-	var task rabbitmq.CrawlTaskMessage
-	if err := json.Unmarshal(body, &task); err != nil {
+	var taskMsg rabbitmq.CrawlTaskMessage
+	if err := json.Unmarshal(body, &taskMsg); err != nil {
 		w.logger.Error("Failed to unmarshal task message", zap.Error(err))
 		return fmt.Errorf("failed to unmarshal task: %w", err)
 	}
 
 	w.logger.Info("Received crawl task",
-		zap.String("task_id", task.TaskID),
-		zap.String("job_id", task.JobID),
-		zap.String("url", task.URL),
+		zap.String("task_id", taskMsg.TaskID),
+		zap.String("job_id", taskMsg.JobID),
+		zap.String("url", taskMsg.URL),
 	)
 
 	ctx := context.Background()
 
+	// Parse task ID
+	taskID, err := valueobjects.NewCrawlTaskID(taskMsg.TaskID)
+	if err != nil {
+		w.logger.Error("Invalid task ID", zap.Error(err))
+		return fmt.Errorf("invalid task ID: %w", err)
+	}
+
+	// Get existing task from database
+	task, err := w.taskRepo.Get(ctx, taskID)
+	if err != nil {
+		w.logger.Error("Failed to get task",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.Error(err),
+		)
+		return fmt.Errorf("failed to get task: %w", err)
+	}
+
 	// Fetch the page
-	fetchResult, err := w.fetchPage(ctx, task)
+	fetchResult, err := w.fetchPage(ctx, taskMsg)
 	if err != nil {
 		w.logger.Error("Failed to fetch page",
-			zap.String("task_id", task.TaskID),
-			zap.String("url", task.URL),
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", taskMsg.URL),
 			zap.Error(err),
 		)
 		return fmt.Errorf("failed to fetch page: %w", err)
 	}
 
-	// Save fetch metadata to database
-	if err := w.fetchRepo.Save(ctx, fetchResult.Metadata); err != nil {
-		w.logger.Error("Failed to save fetch metadata",
-			zap.String("task_id", task.TaskID),
+	// Update task with fetch results
+	task.BodyHash = fetchResult.BodyHash
+	task.MinioObjectKey = fetchResult.MinioKey
+	task.FinalURL = &fetchResult.FinalURL
+
+	// Save task to database
+	if err := w.taskRepo.Update(ctx, *task); err != nil {
+		w.logger.Error("Failed to update task",
+			zap.String("task_id", taskMsg.TaskID),
 			zap.Error(err),
 		)
-		return fmt.Errorf("failed to save fetch metadata: %w", err)
+		return fmt.Errorf("failed to update task: %w", err)
 	}
 
 	// Publish to parsing queue only after successful DB save
 	parsingMsg := rabbitmq.ParsingTaskMessage{
-		TaskID:     task.TaskID,
-		JobID:      task.JobID,
+		TaskID:     taskMsg.TaskID,
+		JobID:      taskMsg.JobID,
 		EnqueuedAt: time.Now(),
 	}
 
 	if err := w.rmqClient.Publish(ctx, w.parsingQueue, parsingMsg); err != nil {
 		w.logger.Error("Failed to publish to parsing queue",
-			zap.String("task_id", task.TaskID),
+			zap.String("task_id", taskMsg.TaskID),
 			zap.Error(err),
 		)
 		return fmt.Errorf("failed to publish to parsing queue: %w", err)
 	}
 
 	w.logger.Info("Successfully processed fetch task",
-		zap.String("task_id", task.TaskID),
-		zap.String("url", task.URL),
-		zap.Int("status_code", fetchResult.Metadata.StatusCode),
-		zap.Int("duration_ms", fetchResult.Metadata.DurationMs),
-		zap.String("minio_key", fetchResult.Metadata.MinioObjectKey),
+		zap.String("task_id", taskMsg.TaskID),
+		zap.String("url", taskMsg.URL),
+		zap.String("final_url", fetchResult.FinalURL),
+		zap.String("body_hash", fetchResult.BodyHash),
+		zap.String("minio_key", fetchResult.MinioKey),
 	)
 
 	return nil
@@ -129,14 +150,13 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 
 // fetchResult contains the results of a page fetch
 type fetchResult struct {
-	Metadata *models.PageFetch
-	Body     []byte
+	BodyHash  string
+	MinioKey  string
+	FinalURL  string
 }
 
-// fetchPage performs HTTP GET and collects metadata
+// fetchPage performs HTTP GET, stores to MinIO, and returns fetch metadata
 func (w *FetchWorker) fetchPage(ctx context.Context, task rabbitmq.CrawlTaskMessage) (*fetchResult, error) {
-	startTime := time.Now()
-
 	// Create HTTP request
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, task.URL, nil)
 	if err != nil {
@@ -153,8 +173,6 @@ func (w *FetchWorker) fetchPage(ctx context.Context, task rabbitmq.CrawlTaskMess
 	}
 	defer resp.Body.Close()
 
-	duration := time.Since(startTime)
-
 	// Read body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -164,14 +182,6 @@ func (w *FetchWorker) fetchPage(ctx context.Context, task rabbitmq.CrawlTaskMess
 	// Calculate SHA-256 hash
 	hash := sha256.Sum256(body)
 	bodyHash := hex.EncodeToString(hash[:])
-
-	// Collect headers (first value only for simplicity)
-	headers := make(map[string]string)
-	for key, values := range resp.Header {
-		if len(values) > 0 {
-			headers[key] = values[0]
-		}
-	}
 
 	// Generate MinIO object key
 	minioKey := fmt.Sprintf("pages/%s/%s.html", task.JobID, task.TaskID)
@@ -186,39 +196,12 @@ func (w *FetchWorker) fetchPage(ctx context.Context, task rabbitmq.CrawlTaskMess
 		return nil, fmt.Errorf("failed to store content to MinIO: %w", err)
 	}
 
-	// Parse IDs
-	taskID, err := valueobjects.NewCrawlTaskID(task.TaskID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid task ID: %w", err)
-	}
-
-	jobID, err := valueobjects.NewCrawlJobID(task.JobID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid job ID: %w", err)
-	}
-
-	// Build fetch metadata
+	// Get final URL after redirects
 	finalURL := resp.Request.URL.String()
-	contentLength := resp.ContentLength
-
-	metadata := &models.PageFetch{
-		TaskID:         taskID,
-		JobID:          jobID,
-		URL:            task.URL,
-		FinalURL:       &finalURL,
-		StatusCode:     resp.StatusCode,
-		DurationMs:     int(duration.Milliseconds()),
-		Headers:        headers,
-		ContentType:    &contentType,
-		ContentLength:  &contentLength,
-		BodyHash:       bodyHash,
-		MinioObjectKey: minioKey,
-		FetchedAt:      time.Now(),
-		CreatedAt:      time.Now(),
-	}
 
 	return &fetchResult{
-		Metadata: metadata,
-		Body:     body,
+		BodyHash: bodyHash,
+		MinioKey: minioKey,
+		FinalURL: finalURL,
 	}, nil
 }

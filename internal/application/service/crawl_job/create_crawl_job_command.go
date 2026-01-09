@@ -12,19 +12,28 @@ import (
 )
 
 func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.CreateCrawlJobCommand) (valueobjects.CrawlJobID, error) {
-	if len(command.URLs) == 0 {
-		return valueobjects.CrawlJobID{}, fmt.Errorf("URLs list cannot be empty")
+	if len(command.Config.Seeds) == 0 {
+		return valueobjects.CrawlJobID{}, fmt.Errorf("seeds list cannot be empty")
 	}
 
 	var jobID valueobjects.CrawlJobID
 
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		// Generate IDs
+		configID := valueobjects.GenerateID()
+		jobID = valueobjects.GenerateCrawlJobID()
+
+		// Set config ID
+		config := command.Config
+		config.ID = configID
+
 		// Create crawl job
 		crawlJob := models.CrawlJob{
-			ID:        valueobjects.GenerateCrawlJobID(),
-			Name:      command.Name,
-			Status:    models.TaskStatusInProgress,
-			CreatedAt: time.Now(),
+			ID:          jobID,
+			JobConfigID: configID,
+			JobConfig:   &config,
+			Status:      models.TaskStatusInProgress,
+			CreatedAt:   time.Now(),
 		}
 
 		id, err := s.crawlJobRepo.Create(ctx, crawlJob)
@@ -34,16 +43,17 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 		jobID = id
 
 		// Create crawl tasks and outbox events
-		tasks := make([]models.CrawlTask, 0, len(command.URLs))
+		tasks := make([]models.CrawlTask, 0, len(config.Seeds))
 		now := time.Now()
 
-		for _, url := range command.URLs {
+		for _, seed := range config.Seeds {
 			task := models.CrawlTask{
 				ID:         valueobjects.GenerateCrawlTaskID(),
 				JobID:      jobID,
-				URL:        url,
+				URL:        seed.Url,
 				Status:     models.TaskStatusInProgress,
 				EnqueuedAt: now,
+				Depth:      0, // Seeds start at depth 0
 			}
 			tasks = append(tasks, task)
 

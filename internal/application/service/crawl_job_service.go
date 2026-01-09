@@ -9,8 +9,7 @@ import (
 // Commands for CrawlJob management
 
 type CreateCrawlJobCommand struct {
-	Name string
-	URLs []string
+	Config models.CrawlJobConfig
 }
 
 type UpdateCrawlJobStatusCommand struct {
@@ -62,13 +61,9 @@ type CrawlJobService interface {
 	CreateCrawlJob(ctx context.Context, cmd CreateCrawlJobCommand) (valueobjects.CrawlJobID, error)
 	GetCrawlJob(ctx context.Context, query GetCrawlJobQuery) (*models.CrawlJob, error)
 	ListCrawlJobs(ctx context.Context, query ListCrawlJobsQuery) ([]*models.CrawlJob, error)
-	UpdateJobStatus(ctx context.Context, cmd UpdateCrawlJobStatusCommand) error
-	CompleteJob(ctx context.Context, cmd CompleteCrawlJobCommand) error
 }
 
 type CrawlTaskService interface {
-	CreateTask(ctx context.Context, cmd CreateCrawlTaskCommand) (valueobjects.CrawlTaskID, error)
 	GetTask(ctx context.Context, query GetCrawlTaskQuery) (*models.CrawlTask, error)
 	ListTasksByJob(ctx context.Context, query ListTasksByJobQuery) ([]*models.CrawlTask, error)
-	UpdateTaskStatus(ctx context.Context, cmd UpdateTaskStatusCommand) error
 }

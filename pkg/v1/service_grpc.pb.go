@@ -19,20 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CrawlerService_ListJobs_FullMethodName            = "/crawler.v1.CrawlerService/ListJobs"
-	CrawlerService_CreateJob_FullMethodName           = "/crawler.v1.CrawlerService/CreateJob"
-	CrawlerService_GetJob_FullMethodName              = "/crawler.v1.CrawlerService/GetJob"
-	CrawlerService_UpdateJob_FullMethodName           = "/crawler.v1.CrawlerService/UpdateJob"
-	CrawlerService_CreateTask_FullMethodName          = "/crawler.v1.CrawlerService/CreateTask"
-	CrawlerService_GetTask_FullMethodName             = "/crawler.v1.CrawlerService/GetTask"
-	CrawlerService_ListTasksByJob_FullMethodName      = "/crawler.v1.CrawlerService/ListTasksByJob"
-	CrawlerService_UpdateTask_FullMethodName          = "/crawler.v1.CrawlerService/UpdateTask"
-	CrawlerService_CreateSnapshot_FullMethodName      = "/crawler.v1.CrawlerService/CreateSnapshot"
-	CrawlerService_GetSnapshot_FullMethodName         = "/crawler.v1.CrawlerService/GetSnapshot"
-	CrawlerService_ListSnapshotsByTask_FullMethodName = "/crawler.v1.CrawlerService/ListSnapshotsByTask"
-	CrawlerService_CreateRecord_FullMethodName        = "/crawler.v1.CrawlerService/CreateRecord"
-	CrawlerService_GetRecord_FullMethodName           = "/crawler.v1.CrawlerService/GetRecord"
-	CrawlerService_ListRecordsByTask_FullMethodName   = "/crawler.v1.CrawlerService/ListRecordsByTask"
+	CrawlerService_ListJobs_FullMethodName       = "/crawler.v1.CrawlerService/ListJobs"
+	CrawlerService_CreateJob_FullMethodName      = "/crawler.v1.CrawlerService/CreateJob"
+	CrawlerService_GetJob_FullMethodName         = "/crawler.v1.CrawlerService/GetJob"
+	CrawlerService_GetTask_FullMethodName        = "/crawler.v1.CrawlerService/GetTask"
+	CrawlerService_ListTasksByJob_FullMethodName = "/crawler.v1.CrawlerService/ListTasksByJob"
 )
 
 // CrawlerServiceClient is the client API for CrawlerService service.
@@ -45,20 +36,9 @@ type CrawlerServiceClient interface {
 	ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error)
 	CreateJob(ctx context.Context, in *CreateJobRequest, opts ...grpc.CallOption) (*CreateJobResponse, error)
 	GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*GetJobResponse, error)
-	UpdateJob(ctx context.Context, in *UpdateJobRequest, opts ...grpc.CallOption) (*UpdateJobResponse, error)
 	// Task operations
-	CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*CreateTaskResponse, error)
 	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
 	ListTasksByJob(ctx context.Context, in *ListTasksByJobRequest, opts ...grpc.CallOption) (*ListTasksByJobResponse, error)
-	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*UpdateTaskResponse, error)
-	// Snapshot operations
-	CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error)
-	GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*GetSnapshotResponse, error)
-	ListSnapshotsByTask(ctx context.Context, in *ListSnapshotsByTaskRequest, opts ...grpc.CallOption) (*ListSnapshotsByTaskResponse, error)
-	// Record operations
-	CreateRecord(ctx context.Context, in *CreateRecordRequest, opts ...grpc.CallOption) (*CreateRecordResponse, error)
-	GetRecord(ctx context.Context, in *GetRecordRequest, opts ...grpc.CallOption) (*GetRecordResponse, error)
-	ListRecordsByTask(ctx context.Context, in *ListRecordsByTaskRequest, opts ...grpc.CallOption) (*ListRecordsByTaskResponse, error)
 }
 
 type crawlerServiceClient struct {
@@ -99,26 +79,6 @@ func (c *crawlerServiceClient) GetJob(ctx context.Context, in *GetJobRequest, op
 	return out, nil
 }
 
-func (c *crawlerServiceClient) UpdateJob(ctx context.Context, in *UpdateJobRequest, opts ...grpc.CallOption) (*UpdateJobResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateJobResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_UpdateJob_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*CreateTaskResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateTaskResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_CreateTask_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *crawlerServiceClient) GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetTaskResponse)
@@ -139,76 +99,6 @@ func (c *crawlerServiceClient) ListTasksByJob(ctx context.Context, in *ListTasks
 	return out, nil
 }
 
-func (c *crawlerServiceClient) UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*UpdateTaskResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateTaskResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_UpdateTask_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateSnapshotResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_CreateSnapshot_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*GetSnapshotResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetSnapshotResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_GetSnapshot_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) ListSnapshotsByTask(ctx context.Context, in *ListSnapshotsByTaskRequest, opts ...grpc.CallOption) (*ListSnapshotsByTaskResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListSnapshotsByTaskResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_ListSnapshotsByTask_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) CreateRecord(ctx context.Context, in *CreateRecordRequest, opts ...grpc.CallOption) (*CreateRecordResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateRecordResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_CreateRecord_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) GetRecord(ctx context.Context, in *GetRecordRequest, opts ...grpc.CallOption) (*GetRecordResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetRecordResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_GetRecord_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) ListRecordsByTask(ctx context.Context, in *ListRecordsByTaskRequest, opts ...grpc.CallOption) (*ListRecordsByTaskResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListRecordsByTaskResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_ListRecordsByTask_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CrawlerServiceServer is the server API for CrawlerService service.
 // All implementations must embed UnimplementedCrawlerServiceServer
 // for forward compatibility.
@@ -219,20 +109,9 @@ type CrawlerServiceServer interface {
 	ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error)
 	CreateJob(context.Context, *CreateJobRequest) (*CreateJobResponse, error)
 	GetJob(context.Context, *GetJobRequest) (*GetJobResponse, error)
-	UpdateJob(context.Context, *UpdateJobRequest) (*UpdateJobResponse, error)
 	// Task operations
-	CreateTask(context.Context, *CreateTaskRequest) (*CreateTaskResponse, error)
 	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
 	ListTasksByJob(context.Context, *ListTasksByJobRequest) (*ListTasksByJobResponse, error)
-	UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error)
-	// Snapshot operations
-	CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error)
-	GetSnapshot(context.Context, *GetSnapshotRequest) (*GetSnapshotResponse, error)
-	ListSnapshotsByTask(context.Context, *ListSnapshotsByTaskRequest) (*ListSnapshotsByTaskResponse, error)
-	// Record operations
-	CreateRecord(context.Context, *CreateRecordRequest) (*CreateRecordResponse, error)
-	GetRecord(context.Context, *GetRecordRequest) (*GetRecordResponse, error)
-	ListRecordsByTask(context.Context, *ListRecordsByTaskRequest) (*ListRecordsByTaskResponse, error)
 	mustEmbedUnimplementedCrawlerServiceServer()
 }
 
@@ -252,38 +131,11 @@ func (UnimplementedCrawlerServiceServer) CreateJob(context.Context, *CreateJobRe
 func (UnimplementedCrawlerServiceServer) GetJob(context.Context, *GetJobRequest) (*GetJobResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetJob not implemented")
 }
-func (UnimplementedCrawlerServiceServer) UpdateJob(context.Context, *UpdateJobRequest) (*UpdateJobResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateJob not implemented")
-}
-func (UnimplementedCrawlerServiceServer) CreateTask(context.Context, *CreateTaskRequest) (*CreateTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateTask not implemented")
-}
 func (UnimplementedCrawlerServiceServer) GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTask not implemented")
 }
 func (UnimplementedCrawlerServiceServer) ListTasksByJob(context.Context, *ListTasksByJobRequest) (*ListTasksByJobResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTasksByJob not implemented")
-}
-func (UnimplementedCrawlerServiceServer) UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateTask not implemented")
-}
-func (UnimplementedCrawlerServiceServer) CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateSnapshot not implemented")
-}
-func (UnimplementedCrawlerServiceServer) GetSnapshot(context.Context, *GetSnapshotRequest) (*GetSnapshotResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetSnapshot not implemented")
-}
-func (UnimplementedCrawlerServiceServer) ListSnapshotsByTask(context.Context, *ListSnapshotsByTaskRequest) (*ListSnapshotsByTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListSnapshotsByTask not implemented")
-}
-func (UnimplementedCrawlerServiceServer) CreateRecord(context.Context, *CreateRecordRequest) (*CreateRecordResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateRecord not implemented")
-}
-func (UnimplementedCrawlerServiceServer) GetRecord(context.Context, *GetRecordRequest) (*GetRecordResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetRecord not implemented")
-}
-func (UnimplementedCrawlerServiceServer) ListRecordsByTask(context.Context, *ListRecordsByTaskRequest) (*ListRecordsByTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListRecordsByTask not implemented")
 }
 func (UnimplementedCrawlerServiceServer) mustEmbedUnimplementedCrawlerServiceServer() {}
 func (UnimplementedCrawlerServiceServer) testEmbeddedByValue()                        {}
@@ -360,42 +212,6 @@ func _CrawlerService_GetJob_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CrawlerService_UpdateJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateJobRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).UpdateJob(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_UpdateJob_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).UpdateJob(ctx, req.(*UpdateJobRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_CreateTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).CreateTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_CreateTask_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).CreateTask(ctx, req.(*CreateTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _CrawlerService_GetTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetTaskRequest)
 	if err := dec(in); err != nil {
@@ -432,132 +248,6 @@ func _CrawlerService_ListTasksByJob_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CrawlerService_UpdateTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).UpdateTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_UpdateTask_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).UpdateTask(ctx, req.(*UpdateTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_CreateSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateSnapshotRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).CreateSnapshot(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_CreateSnapshot_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).CreateSnapshot(ctx, req.(*CreateSnapshotRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_GetSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSnapshotRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).GetSnapshot(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_GetSnapshot_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).GetSnapshot(ctx, req.(*GetSnapshotRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_ListSnapshotsByTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListSnapshotsByTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).ListSnapshotsByTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_ListSnapshotsByTask_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).ListSnapshotsByTask(ctx, req.(*ListSnapshotsByTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_CreateRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateRecordRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).CreateRecord(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_CreateRecord_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).CreateRecord(ctx, req.(*CreateRecordRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_GetRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRecordRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).GetRecord(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_GetRecord_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).GetRecord(ctx, req.(*GetRecordRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_ListRecordsByTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListRecordsByTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).ListRecordsByTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_ListRecordsByTask_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).ListRecordsByTask(ctx, req.(*ListRecordsByTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CrawlerService_ServiceDesc is the grpc.ServiceDesc for CrawlerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -578,48 +268,12 @@ var CrawlerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CrawlerService_GetJob_Handler,
 		},
 		{
-			MethodName: "UpdateJob",
-			Handler:    _CrawlerService_UpdateJob_Handler,
-		},
-		{
-			MethodName: "CreateTask",
-			Handler:    _CrawlerService_CreateTask_Handler,
-		},
-		{
 			MethodName: "GetTask",
 			Handler:    _CrawlerService_GetTask_Handler,
 		},
 		{
 			MethodName: "ListTasksByJob",
 			Handler:    _CrawlerService_ListTasksByJob_Handler,
-		},
-		{
-			MethodName: "UpdateTask",
-			Handler:    _CrawlerService_UpdateTask_Handler,
-		},
-		{
-			MethodName: "CreateSnapshot",
-			Handler:    _CrawlerService_CreateSnapshot_Handler,
-		},
-		{
-			MethodName: "GetSnapshot",
-			Handler:    _CrawlerService_GetSnapshot_Handler,
-		},
-		{
-			MethodName: "ListSnapshotsByTask",
-			Handler:    _CrawlerService_ListSnapshotsByTask_Handler,
-		},
-		{
-			MethodName: "CreateRecord",
-			Handler:    _CrawlerService_CreateRecord_Handler,
-		},
-		{
-			MethodName: "GetRecord",
-			Handler:    _CrawlerService_GetRecord_Handler,
-		},
-		{
-			MethodName: "ListRecordsByTask",
-			Handler:    _CrawlerService_ListRecordsByTask_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

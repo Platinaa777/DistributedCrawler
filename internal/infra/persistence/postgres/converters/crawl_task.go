@@ -1,19 +1,34 @@
 package converters
 
 import (
+	"database/sql"
+
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/persistence/postgres/snapshots"
 )
 
 func SaveCrawlTaskToSnapshot(crawlTask models.CrawlTask) *snapshots.CrawlTaskSnapshot {
-	return &snapshots.CrawlTaskSnapshot{
-		ID:         crawlTask.ID.String(),
-		JobID:      crawlTask.JobID.String(),
-		URL:        crawlTask.URL,
-		Status:     crawlTask.Status.String(),
-		EnqueuedAt: crawlTask.EnqueuedAt,
+	snapshot := &snapshots.CrawlTaskSnapshot{
+		ID:             crawlTask.ID.String(),
+		JobID:          crawlTask.JobID.String(),
+		URL:            crawlTask.URL,
+		Status:         crawlTask.Status.String(),
+		EnqueuedAt:     crawlTask.EnqueuedAt,
+		Depth:          crawlTask.Depth,
+		BodyHash:       crawlTask.BodyHash,
+		MinioObjectKey: crawlTask.MinioObjectKey,
 	}
+
+	// Handle FinalURL
+	if crawlTask.FinalURL != nil {
+		snapshot.FinalURL = sql.NullString{
+			String: *crawlTask.FinalURL,
+			Valid:  true,
+		}
+	}
+
+	return snapshot
 }
 
 func RestoreCrawlTaskFromSnapshot(snapshot snapshots.CrawlTaskSnapshot) (*models.CrawlTask, error) {
@@ -27,14 +42,24 @@ func RestoreCrawlTaskFromSnapshot(snapshot snapshots.CrawlTaskSnapshot) (*models
 		return nil, err
 	}
 
-	return &models.CrawlTask{
-		ID:         id,
-		JobID:      jobID,
-		Job:        nil, // not populated for non-joined queries
-		URL:        snapshot.URL,
-		Status:     models.TaskStatus(snapshot.Status),
-		EnqueuedAt: snapshot.EnqueuedAt,
-	}, nil
+	task := &models.CrawlTask{
+		ID:             id,
+		JobID:          jobID,
+		Job:            nil, // not populated for non-joined queries
+		URL:            snapshot.URL,
+		Status:         models.TaskStatus(snapshot.Status),
+		EnqueuedAt:     snapshot.EnqueuedAt,
+		Depth:          snapshot.Depth,
+		BodyHash:       snapshot.BodyHash,
+		MinioObjectKey: snapshot.MinioObjectKey,
+	}
+
+	// Handle FinalURL
+	if snapshot.FinalURL.Valid {
+		task.FinalURL = &snapshot.FinalURL.String
+	}
+
+	return task, nil
 }
 
 func RestoreCrawlTaskWithJobFromSnapshot(snapshot snapshots.CrawlTaskWithJobSnapshot) (*models.CrawlTask, error) {
@@ -56,12 +81,22 @@ func RestoreCrawlTaskWithJobFromSnapshot(snapshot snapshots.CrawlTaskWithJobSnap
 		}
 	}
 
-	return &models.CrawlTask{
-		ID:         id,
-		JobID:      jobID,
-		Job:        job,
-		URL:        snapshot.URL,
-		Status:     models.TaskStatus(snapshot.Status),
-		EnqueuedAt: snapshot.EnqueuedAt,
-	}, nil
+	task := &models.CrawlTask{
+		ID:             id,
+		JobID:          jobID,
+		Job:            job,
+		URL:            snapshot.URL,
+		Status:         models.TaskStatus(snapshot.Status),
+		EnqueuedAt:     snapshot.EnqueuedAt,
+		Depth:          snapshot.Depth,
+		BodyHash:       snapshot.BodyHash,
+		MinioObjectKey: snapshot.MinioObjectKey,
+	}
+
+	// Handle FinalURL
+	if snapshot.FinalURL.Valid {
+		task.FinalURL = &snapshot.FinalURL.String
+	}
+
+	return task, nil
 }

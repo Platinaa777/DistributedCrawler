@@ -25,46 +25,123 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   produces: "application/json",
 };
 
+// AuthOptions contains authentication options for crawling
+message AuthOptions {
+  string cookie = 1;
+  string basic_user = 2 [json_name = "basic_user"];
+  string basic_password = 3 [json_name = "basic_password"];
+  string bearer_token = 4 [json_name = "bearer_token"];
+}
+
+// RateLimitPolicy defines rate limiting configuration
+message RateLimitPolicy {
+  uint64 max_concurrency = 1 [json_name = "max_concurrency"];
+  uint64 jitter_ms = 2 [json_name = "jitter_ms"];
+  double rps = 3;
+}
+
+// RetryPolicy defines retry configuration
+message RetryPolicy {
+  uint64 max_attempts = 1 [json_name = "max_attempts"];
+  uint64 backoff_initial_ms = 2 [json_name = "backoff_initial_ms"];
+  double backoff_multiplier = 3 [json_name = "backoff_multiplier"];
+}
+
+// ScheduleOptions defines scheduling configuration
+message ScheduleOptions {
+  string cron = 1;
+}
+
+// ScopeRules defines crawling scope rules
+message ScopeRules {
+  uint64 max_depth = 1 [json_name = "max_depth"];
+  repeated string allowed_domains = 2 [json_name = "allowed_domains"];
+  repeated string deny_url_patterns = 3 [json_name = "deny_url_patterns"];
+}
+
+// Seed represents a starting URL
+message Seed {
+  string url = 1;
+}
+
+// ExtractorSpec defines how to extract a field
+message ExtractorSpec {
+  string source = 1; // "html" | "text" | "response_headers" | "fetch_meta"
+  string selector_type = 2 [json_name = "selector_type"]; // "css" | "xpath" | "regex" | "jsonld" | "meta" | "header" | "url" | "status_code"
+  string selector = 3;
+  string attribute = 4;
+  bool multiple = 5;
+  optional int32 index = 6;
+  string default_value = 7 [json_name = "default_value"]; // JSON-encoded default value
+}
+
+// TransformSpec defines a transformation operation
+message TransformSpec {
+  string op = 1; // "trim" | "lower" | "upper" | "normalize_url" | "unique" | "limit" | "to_int" | "to_float" | "parse_price" | "html_to_text" | "collapse_ws" | "sha256"
+  string arg = 2; // JSON-encoded argument
+}
+
+// FieldSpec defines a field to extract
+message FieldSpec {
+  string name = 1;
+  string type = 2; // "string" | "int" | "float" | "bool" | "url" | "json"
+  bool required = 3;
+  ExtractorSpec extractor = 4;
+  repeated TransformSpec transforms = 5;
+  string label = 6;
+}
+
+// MetricSpec defines a metric to compute
+message MetricSpec {
+  string name = 1;
+  string op = 2; // "len" | "count" | "word_count" | "field_present" | "status_is_error" | "count_external_links"
+  string input = 3;
+  string arg = 4; // JSON-encoded argument
+}
+
+// ExtractionSpec defines extraction configuration
+message ExtractionSpec {
+  repeated FieldSpec fields = 1;
+  repeated MetricSpec metrics = 2;
+}
+
+// CrawlJobConfig represents crawl job configuration
+message CrawlJobConfig {
+  string id = 1;
+  string name = 2;
+  ExtractionSpec extraction_spec = 3 [json_name = "extraction_spec"];
+  ScopeRules scopes = 4;
+  repeated Seed seeds = 5;
+  RateLimitPolicy rate_limit = 6 [json_name = "rate_limit"];
+  RetryPolicy retries = 7;
+  AuthOptions auth = 8;
+  ScheduleOptions schedule = 9;
+}
+
 // CrawlJob represents a crawling job
 message CrawlJob {
   string id = 1;
-  string name = 2;
-  string status = 3;
-  google.protobuf.Timestamp created_at = 4 [json_name = "created_at"];
-  optional google.protobuf.Timestamp completed_at = 5;
+  string job_config_id = 2 [json_name = "job_config_id"];
+  optional CrawlJobConfig job_config = 3 [json_name = "job_config"];
+  string status = 4;
+  google.protobuf.Timestamp created_at = 5 [json_name = "created_at"];
+  optional google.protobuf.Timestamp completed_at = 6 [json_name = "completed_at"];
+  string error = 7; // JSON-encoded error map
 }
 
 // CrawlTask represents a single crawl task within a job
 message CrawlTask {
   string id = 1;
-  string job_id = 2;
+  string job_id = 2 [json_name = "job_id"];
   optional CrawlJob job = 3;
   string url = 4;
-  string status = 5;
-  google.protobuf.Timestamp enqueued_at = 6;
+  optional string final_url = 5 [json_name = "final_url"];
+  string status = 6;
+  google.protobuf.Timestamp enqueued_at = 7 [json_name = "enqueued_at"];
+  uint64 depth = 8;
+  string body_hash = 9 [json_name = "body_hash"];
+  string minio_object_key = 10 [json_name = "minio_object_key"];
 }
-
-// PageSnapshot represents a fetched page snapshot
-message PageSnapshot {
-  string id = 1;
-  string task_id = 2;
-  string url = 3;
-  int32 http_status = 4;
-  string content_type = 5;
-  string storage_key = 6;
-  google.protobuf.Timestamp fetched_at = 7;
-}
-
-// ExtractedRecord represents extracted/parsed data from a page
-message ExtractedRecord {
-  string id = 1;
-  string task_id = 2;
-  string source_url = 3;
-  map<string, string> data = 4;
-  google.protobuf.Timestamp parsed_at = 5;
-}
-
-// Request/Response messages for Jobs
 
 message ListJobsRequest {
   optional string status = 1;
@@ -77,8 +154,7 @@ message ListJobsResponse {
 }
 
 message CreateJobRequest {
-  string name = 1 [(validate.rules).string.min_len = 1];
-  repeated string urls = 2 [(validate.rules).repeated = {min_items: 1}];
+  CrawlJobConfig config = 1 [(validate.rules).message.required = true];
 }
 
 message CreateJobResponse {
@@ -93,24 +169,11 @@ message GetJobResponse {
   CrawlJob job = 1;
 }
 
-message UpdateJobRequest {
-  string id = 1;
-  string status = 2;
-}
-
-message UpdateJobResponse {
-  CrawlJob job = 1;
-}
-
 // Request/Response messages for Tasks
 
 message CreateTaskRequest {
   string job_id = 1 [(validate.rules).string.min_len = 1];
   string url = 2 [(validate.rules).string.min_len = 1];
-}
-
-message CreateTaskResponse {
-  CrawlTask task = 1;
 }
 
 message GetTaskRequest {
@@ -127,71 +190,4 @@ message ListTasksByJobRequest {
 
 message ListTasksByJobResponse {
   repeated CrawlTask tasks = 1;
-}
-
-message UpdateTaskRequest {
-  string id = 1;
-  string status = 2;
-}
-
-message UpdateTaskResponse {
-  CrawlTask task = 1;
-}
-
-// Request/Response messages for Snapshots
-
-message CreateSnapshotRequest {
-  string task_id = 1;
-  string url = 2;
-  int32 http_status = 3;
-  string content_type = 4;
-  string storage_key = 5;
-}
-
-message CreateSnapshotResponse {
-  PageSnapshot snapshot = 1;
-}
-
-message GetSnapshotRequest {
-  string id = 1;
-}
-
-message GetSnapshotResponse {
-  PageSnapshot snapshot = 1;
-}
-
-message ListSnapshotsByTaskRequest {
-  string task_id = 1;
-}
-
-message ListSnapshotsByTaskResponse {
-  repeated PageSnapshot snapshots = 1;
-}
-
-// Request/Response messages for Records
-
-message CreateRecordRequest {
-  string task_id = 1;
-  string source_url = 2;
-  map<string, string> data = 3;
-}
-
-message CreateRecordResponse {
-  ExtractedRecord record = 1;
-}
-
-message GetRecordRequest {
-  string id = 1;
-}
-
-message GetRecordResponse {
-  ExtractedRecord record = 1;
-}
-
-message ListRecordsByTaskRequest {
-  string task_id = 1;
-}
-
-message ListRecordsByTaskResponse {
-  repeated ExtractedRecord records = 1;
 }
