@@ -32,7 +32,11 @@ const file_v1_service_proto_rawDesc = "" +
 	"\tCreateJob\x12\x1c.crawler.v1.CreateJobRequest\x1a\x1d.crawler.v1.CreateJobResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/api/v1/jobs\x12Z\n" +
 	"\x06GetJob\x12\x19.crawler.v1.GetJobRequest\x1a\x1a.crawler.v1.GetJobResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/jobs/{id}\x12^\n" +
 	"\aGetTask\x12\x1a.crawler.v1.GetTaskRequest\x1a\x1b.crawler.v1.GetTaskResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/tasks/{id}\x12|\n" +
-	"\x0eListTasksByJob\x12!.crawler.v1.ListTasksByJobRequest\x1a\".crawler.v1.ListTasksByJobResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/jobs/{job_id}/tasksB\x90\x01\n" +
+	"\x0eListTasksByJob\x12!.crawler.v1.ListTasksByJobRequest\x1a\".crawler.v1.ListTasksByJobResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/jobs/{job_id}/tasks2\xef\x01\n" +
+	"\x0ePreviewService\x12q\n" +
+	"\rCreatePreview\x12 .crawler.v1.CreatePreviewRequest\x1a!.crawler.v1.CreatePreviewResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/v1/previews\x12j\n" +
+	"\n" +
+	"GetPreview\x12\x1d.crawler.v1.GetPreviewRequest\x1a\x1e.crawler.v1.GetPreviewResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/previews/{id}B\x90\x01\n" +
 	"\x0ecom.crawler.v1B\fServiceProtoP\x01Z'distributed-crawler/pkg/api/crawlergrpc\xa2\x02\x03CXX\xaa\x02\n" +
 	"Crawler.V1\xca\x02\n" +
 	"Crawler\\V1\xe2\x02\x16Crawler\\V1\\GPBMetadata\xea\x02\vCrawler::V1b\x06proto3"
@@ -43,28 +47,36 @@ var file_v1_service_proto_goTypes = []any{
 	(*GetJobRequest)(nil),          // 2: crawler.v1.GetJobRequest
 	(*GetTaskRequest)(nil),         // 3: crawler.v1.GetTaskRequest
 	(*ListTasksByJobRequest)(nil),  // 4: crawler.v1.ListTasksByJobRequest
-	(*ListJobsResponse)(nil),       // 5: crawler.v1.ListJobsResponse
-	(*CreateJobResponse)(nil),      // 6: crawler.v1.CreateJobResponse
-	(*GetJobResponse)(nil),         // 7: crawler.v1.GetJobResponse
-	(*GetTaskResponse)(nil),        // 8: crawler.v1.GetTaskResponse
-	(*ListTasksByJobResponse)(nil), // 9: crawler.v1.ListTasksByJobResponse
+	(*CreatePreviewRequest)(nil),   // 5: crawler.v1.CreatePreviewRequest
+	(*GetPreviewRequest)(nil),      // 6: crawler.v1.GetPreviewRequest
+	(*ListJobsResponse)(nil),       // 7: crawler.v1.ListJobsResponse
+	(*CreateJobResponse)(nil),      // 8: crawler.v1.CreateJobResponse
+	(*GetJobResponse)(nil),         // 9: crawler.v1.GetJobResponse
+	(*GetTaskResponse)(nil),        // 10: crawler.v1.GetTaskResponse
+	(*ListTasksByJobResponse)(nil), // 11: crawler.v1.ListTasksByJobResponse
+	(*CreatePreviewResponse)(nil),  // 12: crawler.v1.CreatePreviewResponse
+	(*GetPreviewResponse)(nil),     // 13: crawler.v1.GetPreviewResponse
 }
 var file_v1_service_proto_depIdxs = []int32{
-	0, // 0: crawler.v1.CrawlerService.ListJobs:input_type -> crawler.v1.ListJobsRequest
-	1, // 1: crawler.v1.CrawlerService.CreateJob:input_type -> crawler.v1.CreateJobRequest
-	2, // 2: crawler.v1.CrawlerService.GetJob:input_type -> crawler.v1.GetJobRequest
-	3, // 3: crawler.v1.CrawlerService.GetTask:input_type -> crawler.v1.GetTaskRequest
-	4, // 4: crawler.v1.CrawlerService.ListTasksByJob:input_type -> crawler.v1.ListTasksByJobRequest
-	5, // 5: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
-	6, // 6: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
-	7, // 7: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
-	8, // 8: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
-	9, // 9: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
-	5, // [5:10] is the sub-list for method output_type
-	0, // [0:5] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: crawler.v1.CrawlerService.ListJobs:input_type -> crawler.v1.ListJobsRequest
+	1,  // 1: crawler.v1.CrawlerService.CreateJob:input_type -> crawler.v1.CreateJobRequest
+	2,  // 2: crawler.v1.CrawlerService.GetJob:input_type -> crawler.v1.GetJobRequest
+	3,  // 3: crawler.v1.CrawlerService.GetTask:input_type -> crawler.v1.GetTaskRequest
+	4,  // 4: crawler.v1.CrawlerService.ListTasksByJob:input_type -> crawler.v1.ListTasksByJobRequest
+	5,  // 5: crawler.v1.PreviewService.CreatePreview:input_type -> crawler.v1.CreatePreviewRequest
+	6,  // 6: crawler.v1.PreviewService.GetPreview:input_type -> crawler.v1.GetPreviewRequest
+	7,  // 7: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
+	8,  // 8: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
+	9,  // 9: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
+	10, // 10: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
+	11, // 11: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
+	12, // 12: crawler.v1.PreviewService.CreatePreview:output_type -> crawler.v1.CreatePreviewResponse
+	13, // 13: crawler.v1.PreviewService.GetPreview:output_type -> crawler.v1.GetPreviewResponse
+	7,  // [7:14] is the sub-list for method output_type
+	0,  // [0:7] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_v1_service_proto_init() }
@@ -81,7 +93,7 @@ func file_v1_service_proto_init() {
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_v1_service_proto_goTypes,
 		DependencyIndexes: file_v1_service_proto_depIdxs,

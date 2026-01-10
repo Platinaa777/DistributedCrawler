@@ -6,6 +6,7 @@ import (
 	"distributed-crawler/internal/domain/crawl/services"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -163,4 +164,26 @@ func (s *MinIOStore) Exists(ctx context.Context, key string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// PresignGetURL generates a presigned URL for downloading an object from MinIO
+func (s *MinIOStore) PresignGetURL(key string, ttlMinutes int) (string, error) {
+	// Generate presigned URL with specified TTL
+	url, err := s.client.PresignedGetObject(
+		context.Background(),
+		s.bucketName,
+		key,
+		time.Duration(ttlMinutes)*time.Minute,
+		nil,
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate presigned URL for %s: %w", key, err)
+	}
+
+	s.logger.Debug("Generated presigned URL",
+		zap.String("key", key),
+		zap.Int("ttl_minutes", ttlMinutes),
+	)
+
+	return url.String(), nil
 }

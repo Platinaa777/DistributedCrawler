@@ -39,3 +39,21 @@ service CrawlerService {
     };
   }
 }
+
+// PreviewService defines the preview service for HTML inspection
+service PreviewService {
+  // Fetch URL, sanitize HTML, store in MinIO, return preview reference
+  rpc CreatePreview(CreatePreviewRequest) returns (CreatePreviewResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/previews"
+      body: "*"
+    };
+  }
+
+  // Return preview metadata with presigned download URL
+  rpc GetPreview(GetPreviewRequest) returns (GetPreviewResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/previews/{id}"
+    };
+  }
+}

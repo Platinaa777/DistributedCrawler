@@ -10,6 +10,9 @@
   "tags": [
     {
       "name": "CrawlerService"
+    },
+    {
+      "name": "PreviewService"
     }
   ],
   "host": "localhost:8080",
@@ -156,6 +159,70 @@
         ],
         "tags": [
           "CrawlerService"
+        ]
+      }
+    },
+    "/api/v1/previews": {
+      "post": {
+        "summary": "Fetch URL, sanitize HTML, store in MinIO, return preview reference",
+        "operationId": "PreviewService_CreatePreview",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreatePreviewResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreatePreviewRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PreviewService"
+        ]
+      }
+    },
+    "/api/v1/previews/{id}": {
+      "get": {
+        "summary": "Return preview metadata with presigned download URL",
+        "operationId": "PreviewService_GetPreview",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetPreviewResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PreviewService"
         ]
       }
     },
@@ -359,6 +426,22 @@
         }
       }
     },
+    "v1CreatePreviewRequest": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CreatePreviewResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
     "v1ExtractionSpec": {
       "type": "object",
       "properties": {
@@ -447,6 +530,14 @@
         }
       }
     },
+    "v1GetPreviewResponse": {
+      "type": "object",
+      "properties": {
+        "preview": {
+          "$ref": "#/definitions/v1Preview"
+        }
+      }
+    },
     "v1GetTaskResponse": {
       "type": "object",
       "properties": {
@@ -498,6 +589,37 @@
         }
       },
       "title": "MetricSpec defines a metric to compute"
+    },
+    "v1Preview": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string"
+        },
+        "final_url": {
+          "type": "string"
+        },
+        "minio_key": {
+          "type": "string"
+        },
+        "content_type": {
+          "type": "string"
+        },
+        "download_url": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "v1RateLimitPolicy": {
       "type": "object",

@@ -145,6 +145,7 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	reflection.Register(a.grpcServer)
 
 	crawlergrpc.RegisterCrawlerServiceServer(a.grpcServer, a.serviceProvider.CrawlerServiceImpl(ctx))
+	crawlergrpc.RegisterPreviewServiceServer(a.grpcServer, a.serviceProvider.PreviewServiceImpl(ctx))
 
 	return nil
 }
@@ -157,6 +158,11 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 	}
 
 	err := crawlergrpc.RegisterCrawlerServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
+	}
+
+	err = crawlergrpc.RegisterPreviewServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
 	if err != nil {
 		return err
 	}

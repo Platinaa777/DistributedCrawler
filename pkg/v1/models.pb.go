@@ -1530,6 +1530,282 @@ func (x *ListTasksByJobResponse) GetTasks() []*CrawlTask {
 	return nil
 }
 
+type Preview struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	SourceUrl     string                 `protobuf:"bytes,2,opt,name=source_url,proto3" json:"source_url,omitempty"`
+	FinalUrl      *string                `protobuf:"bytes,3,opt,name=final_url,proto3,oneof" json:"final_url,omitempty"`
+	MinioKey      string                 `protobuf:"bytes,4,opt,name=minio_key,proto3" json:"minio_key,omitempty"`
+	ContentType   string                 `protobuf:"bytes,5,opt,name=content_type,proto3" json:"content_type,omitempty"`
+	DownloadUrl   string                 `protobuf:"bytes,6,opt,name=download_url,proto3" json:"download_url,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,proto3,oneof" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Preview) Reset() {
+	*x = Preview{}
+	mi := &file_v1_models_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Preview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Preview) ProtoMessage() {}
+
+func (x *Preview) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Preview.ProtoReflect.Descriptor instead.
+func (*Preview) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *Preview) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Preview) GetSourceUrl() string {
+	if x != nil {
+		return x.SourceUrl
+	}
+	return ""
+}
+
+func (x *Preview) GetFinalUrl() string {
+	if x != nil && x.FinalUrl != nil {
+		return *x.FinalUrl
+	}
+	return ""
+}
+
+func (x *Preview) GetMinioKey() string {
+	if x != nil {
+		return x.MinioKey
+	}
+	return ""
+}
+
+func (x *Preview) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *Preview) GetDownloadUrl() string {
+	if x != nil {
+		return x.DownloadUrl
+	}
+	return ""
+}
+
+func (x *Preview) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Preview) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+type CreatePreviewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreatePreviewRequest) Reset() {
+	*x = CreatePreviewRequest{}
+	mi := &file_v1_models_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreatePreviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreatePreviewRequest) ProtoMessage() {}
+
+func (x *CreatePreviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreatePreviewRequest.ProtoReflect.Descriptor instead.
+func (*CreatePreviewRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *CreatePreviewRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+type CreatePreviewResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreatePreviewResponse) Reset() {
+	*x = CreatePreviewResponse{}
+	mi := &file_v1_models_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreatePreviewResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreatePreviewResponse) ProtoMessage() {}
+
+func (x *CreatePreviewResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreatePreviewResponse.ProtoReflect.Descriptor instead.
+func (*CreatePreviewResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *CreatePreviewResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetPreviewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPreviewRequest) Reset() {
+	*x = GetPreviewRequest{}
+	mi := &file_v1_models_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPreviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPreviewRequest) ProtoMessage() {}
+
+func (x *GetPreviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPreviewRequest.ProtoReflect.Descriptor instead.
+func (*GetPreviewRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *GetPreviewRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetPreviewResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Preview       *Preview               `protobuf:"bytes,1,opt,name=preview,proto3" json:"preview,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPreviewResponse) Reset() {
+	*x = GetPreviewResponse{}
+	mi := &file_v1_models_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPreviewResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPreviewResponse) ProtoMessage() {}
+
+func (x *GetPreviewResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPreviewResponse.ProtoReflect.Descriptor instead.
+func (*GetPreviewResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *GetPreviewResponse) GetPreview() *Preview {
+	if x != nil {
+		return x.Preview
+	}
+	return nil
+}
+
 var File_v1_models_proto protoreflect.FileDescriptor
 
 const file_v1_models_proto_rawDesc = "" +
@@ -1654,7 +1930,33 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x15ListTasksByJobRequest\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"E\n" +
 	"\x16ListTasksByJobResponse\x12+\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x15.crawler.v1.CrawlTaskR\x05tasksB\x84\x02\x92Ar\x128\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x15.crawler.v1.CrawlTaskR\x05tasks\"\xdc\x02\n" +
+	"\aPreview\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
+	"\n" +
+	"source_url\x18\x02 \x01(\tR\n" +
+	"source_url\x12!\n" +
+	"\tfinal_url\x18\x03 \x01(\tH\x00R\tfinal_url\x88\x01\x01\x12\x1c\n" +
+	"\tminio_key\x18\x04 \x01(\tR\tminio_key\x12\"\n" +
+	"\fcontent_type\x18\x05 \x01(\tR\fcontent_type\x12\"\n" +
+	"\fdownload_url\x18\x06 \x01(\tR\fdownload_url\x12:\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12?\n" +
+	"\n" +
+	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampH\x01R\n" +
+	"expires_at\x88\x01\x01B\f\n" +
+	"\n" +
+	"_final_urlB\r\n" +
+	"\v_expires_at\"1\n" +
+	"\x14CreatePreviewRequest\x12\x19\n" +
+	"\x03url\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x03url\"'\n" +
+	"\x15CreatePreviewResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"#\n" +
+	"\x11GetPreviewRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
+	"\x12GetPreviewResponse\x12-\n" +
+	"\apreview\x18\x01 \x01(\v2\x13.crawler.v1.PreviewR\apreviewB\x84\x02\x92Ar\x128\n" +
 	"\x17Distributed Crawler API\"\x16\n" +
 	"\x14Denis Miroshnichenko2\x051.0.0\x1a\x0elocalhost:8080*\x02\x01\x022\x10application/json:\x10application/json\n" +
 	"\x0ecom.crawler.v1B\vModelsProtoP\x01Z'distributed-crawler/pkg/api/crawlergrpc\xa2\x02\x03CXX\xaa\x02\n" +
@@ -1673,7 +1975,7 @@ func file_v1_models_proto_rawDescGZIP() []byte {
 	return file_v1_models_proto_rawDescData
 }
 
-var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_v1_models_proto_goTypes = []any{
 	(*AuthOptions)(nil),            // 0: crawler.v1.AuthOptions
 	(*RateLimitPolicy)(nil),        // 1: crawler.v1.RateLimitPolicy
@@ -1700,7 +2002,12 @@ var file_v1_models_proto_goTypes = []any{
 	(*GetTaskResponse)(nil),        // 22: crawler.v1.GetTaskResponse
 	(*ListTasksByJobRequest)(nil),  // 23: crawler.v1.ListTasksByJobRequest
 	(*ListTasksByJobResponse)(nil), // 24: crawler.v1.ListTasksByJobResponse
-	(*timestamppb.Timestamp)(nil),  // 25: google.protobuf.Timestamp
+	(*Preview)(nil),                // 25: crawler.v1.Preview
+	(*CreatePreviewRequest)(nil),   // 26: crawler.v1.CreatePreviewRequest
+	(*CreatePreviewResponse)(nil),  // 27: crawler.v1.CreatePreviewResponse
+	(*GetPreviewRequest)(nil),      // 28: crawler.v1.GetPreviewRequest
+	(*GetPreviewResponse)(nil),     // 29: crawler.v1.GetPreviewResponse
+	(*timestamppb.Timestamp)(nil),  // 30: google.protobuf.Timestamp
 }
 var file_v1_models_proto_depIdxs = []int32{
 	6,  // 0: crawler.v1.FieldSpec.extractor:type_name -> crawler.v1.ExtractorSpec
@@ -1715,20 +2022,23 @@ var file_v1_models_proto_depIdxs = []int32{
 	0,  // 9: crawler.v1.CrawlJobConfig.auth:type_name -> crawler.v1.AuthOptions
 	3,  // 10: crawler.v1.CrawlJobConfig.schedule:type_name -> crawler.v1.ScheduleOptions
 	11, // 11: crawler.v1.CrawlJob.job_config:type_name -> crawler.v1.CrawlJobConfig
-	25, // 12: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
-	25, // 13: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
+	30, // 12: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
+	30, // 13: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
 	12, // 14: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
-	25, // 15: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
+	30, // 15: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
 	12, // 16: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
 	11, // 17: crawler.v1.CreateJobRequest.config:type_name -> crawler.v1.CrawlJobConfig
 	12, // 18: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
 	13, // 19: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
 	13, // 20: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	30, // 21: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
+	30, // 22: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
+	25, // 23: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_v1_models_proto_init() }
@@ -1740,13 +2050,14 @@ func file_v1_models_proto_init() {
 	file_v1_models_proto_msgTypes[12].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[13].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[14].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[25].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_models_proto_rawDesc), len(file_v1_models_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   25,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -189,3 +189,32 @@ message ListTasksByJobRequest {
 message ListTasksByJobResponse {
   repeated CrawlTask tasks = 1;
 }
+
+// Preview messages
+
+message Preview {
+  string id = 1;
+  string source_url = 2 [json_name = "source_url"];
+  optional string final_url = 3 [json_name = "final_url"];
+  string minio_key = 4 [json_name = "minio_key"];
+  string content_type = 5 [json_name = "content_type"];
+  string download_url = 6 [json_name = "download_url"];
+  google.protobuf.Timestamp created_at = 7 [json_name = "created_at"];
+  optional google.protobuf.Timestamp expires_at = 8 [json_name = "expires_at"];
+}
+
+message CreatePreviewRequest {
+  string url = 1 [(validate.rules).string.min_len = 1];
+}
+
+message CreatePreviewResponse {
+  string id = 1;
+}
+
+message GetPreviewRequest {
+  string id = 1;
+}
+
+message GetPreviewResponse {
+  Preview preview = 1;
+}

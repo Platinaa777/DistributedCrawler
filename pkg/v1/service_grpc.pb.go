@@ -279,3 +279,151 @@ var CrawlerService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "v1/service.proto",
 }
+
+const (
+	PreviewService_CreatePreview_FullMethodName = "/crawler.v1.PreviewService/CreatePreview"
+	PreviewService_GetPreview_FullMethodName    = "/crawler.v1.PreviewService/GetPreview"
+)
+
+// PreviewServiceClient is the client API for PreviewService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// PreviewService defines the preview service for HTML inspection
+type PreviewServiceClient interface {
+	// Fetch URL, sanitize HTML, store in MinIO, return preview reference
+	CreatePreview(ctx context.Context, in *CreatePreviewRequest, opts ...grpc.CallOption) (*CreatePreviewResponse, error)
+	// Return preview metadata with presigned download URL
+	GetPreview(ctx context.Context, in *GetPreviewRequest, opts ...grpc.CallOption) (*GetPreviewResponse, error)
+}
+
+type previewServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewPreviewServiceClient(cc grpc.ClientConnInterface) PreviewServiceClient {
+	return &previewServiceClient{cc}
+}
+
+func (c *previewServiceClient) CreatePreview(ctx context.Context, in *CreatePreviewRequest, opts ...grpc.CallOption) (*CreatePreviewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreatePreviewResponse)
+	err := c.cc.Invoke(ctx, PreviewService_CreatePreview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *previewServiceClient) GetPreview(ctx context.Context, in *GetPreviewRequest, opts ...grpc.CallOption) (*GetPreviewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPreviewResponse)
+	err := c.cc.Invoke(ctx, PreviewService_GetPreview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PreviewServiceServer is the server API for PreviewService service.
+// All implementations must embed UnimplementedPreviewServiceServer
+// for forward compatibility.
+//
+// PreviewService defines the preview service for HTML inspection
+type PreviewServiceServer interface {
+	// Fetch URL, sanitize HTML, store in MinIO, return preview reference
+	CreatePreview(context.Context, *CreatePreviewRequest) (*CreatePreviewResponse, error)
+	// Return preview metadata with presigned download URL
+	GetPreview(context.Context, *GetPreviewRequest) (*GetPreviewResponse, error)
+	mustEmbedUnimplementedPreviewServiceServer()
+}
+
+// UnimplementedPreviewServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedPreviewServiceServer struct{}
+
+func (UnimplementedPreviewServiceServer) CreatePreview(context.Context, *CreatePreviewRequest) (*CreatePreviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreatePreview not implemented")
+}
+func (UnimplementedPreviewServiceServer) GetPreview(context.Context, *GetPreviewRequest) (*GetPreviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPreview not implemented")
+}
+func (UnimplementedPreviewServiceServer) mustEmbedUnimplementedPreviewServiceServer() {}
+func (UnimplementedPreviewServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafePreviewServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PreviewServiceServer will
+// result in compilation errors.
+type UnsafePreviewServiceServer interface {
+	mustEmbedUnimplementedPreviewServiceServer()
+}
+
+func RegisterPreviewServiceServer(s grpc.ServiceRegistrar, srv PreviewServiceServer) {
+	// If the following call panics, it indicates UnimplementedPreviewServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&PreviewService_ServiceDesc, srv)
+}
+
+func _PreviewService_CreatePreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePreviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PreviewServiceServer).CreatePreview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PreviewService_CreatePreview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PreviewServiceServer).CreatePreview(ctx, req.(*CreatePreviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PreviewService_GetPreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPreviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PreviewServiceServer).GetPreview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PreviewService_GetPreview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PreviewServiceServer).GetPreview(ctx, req.(*GetPreviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// PreviewService_ServiceDesc is the grpc.ServiceDesc for PreviewService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var PreviewService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "crawler.v1.PreviewService",
+	HandlerType: (*PreviewServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreatePreview",
+			Handler:    _PreviewService_CreatePreview_Handler,
+		},
+		{
+			MethodName: "GetPreview",
+			Handler:    _PreviewService_GetPreview_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1/service.proto",
+}

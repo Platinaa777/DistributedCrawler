@@ -5,20 +5,28 @@ import (
 	"log"
 
 	crawljob "distributed-crawler/internal/api/crawl_job"
+	previewapi "distributed-crawler/internal/api/preview"
 	"distributed-crawler/internal/application/service"
 	crawljobservice "distributed-crawler/internal/application/service/crawl_job"
 	crawltaskservice "distributed-crawler/internal/application/service/crawl_task"
+	previewservice "distributed-crawler/internal/application/service/preview"
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
+	"distributed-crawler/internal/domain/crawl/models"
 	crawljobrepo "distributed-crawler/internal/domain/crawl/repos/crawl_job"
 	crawljobconfig "distributed-crawler/internal/domain/crawl/repos/crawl_job_config"
 	crawltaskrepo "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
+	previewrepo "distributed-crawler/internal/domain/crawl/repos/preview"
+	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	crawljobrepoimpl "distributed-crawler/internal/infra/persistence/postgres/repos"
 	"distributed-crawler/internal/infra/persistence/postgres/transaction"
+	"distributed-crawler/internal/infra/services/contentstore"
+	"distributed-crawler/internal/infra/services/fetcher"
+	"distributed-crawler/internal/infra/services/sanitizer"
 	"distributed-crawler/internal/worker"
 
 	"go.uber.org/zap"
@@ -29,6 +37,7 @@ type serviceProvider struct {
 	grpcConfig     config.GRPCConfig
 	httpConfig     config.HTTPConfig
 	rabbitmqConfig config.RabbitMQConfig
+	minioConfig    config.MinIOConfig
 
 	dbClient           persistence.Client
 	txManager          persistence.TxManager
@@ -36,12 +45,19 @@ type serviceProvider struct {
 	crawlJobConfigRepo crawljobconfig.CrawlJobConfigRepository
 	crawlTaskRepo      crawltaskrepo.CrawlTaskRepository
 	outboxRepo         outbox.OutboxRepository
+	previewRepo        previewrepo.PreviewRepository
 	rmqClient          rabbitmq.Client
+
+	fetcher      services.Fetcher
+	contentStore services.ContentStore
+	htmlSanitizer previewservice.HTMLSanitizer
 
 	crawlJobService  service.CrawlJobService
 	crawlTaskService service.CrawlTaskService
+	previewService   service.PreviewService
 
 	crawlerServiceImpl *crawljob.CrawlJobImplementation
+	previewServiceImpl *previewapi.PreviewImplementation
 	outboxPublisher    *worker.OutboxPublisher
 
 	logger *zap.Logger
@@ -232,6 +248,99 @@ func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPub
 	}
 
 	return s.outboxPublisher
+}
+
+func (s *serviceProvider) MinIOConfig() config.MinIOConfig {
+	if s.minioConfig == nil {
+		cfg, err := env.NewMinIOConfig()
+		if err != nil {
+			log.Fatalf("failed to get minio config: %s", err.Error())
+		}
+
+		s.minioConfig = cfg
+	}
+
+	return s.minioConfig
+}
+
+func (s *serviceProvider) ContentStore() services.ContentStore {
+	if s.contentStore == nil {
+		minioCfg := s.MinIOConfig()
+		store, err := contentstore.NewMinIOStore(
+			minioCfg.Endpoint(),
+			minioCfg.AccessKeyID(),
+			minioCfg.SecretAccessKey(),
+			minioCfg.UseSSL(),
+			minioCfg.BucketName(),
+			s.Logger(),
+		)
+		if err != nil {
+			log.Fatalf("failed to create minio store: %v", err)
+		}
+
+		s.contentStore = store
+	}
+
+	return s.contentStore
+}
+
+func (s *serviceProvider) Fetcher() services.Fetcher {
+	if s.fetcher == nil {
+		// Use default auth and retry options for preview fetching
+		authOptions := models.AuthOptions{}
+		retryPolicy := models.RetryPolicy{
+			MaxAttempts:        3,
+			BackoffInitialMs:   1000,
+			BackoffMultiplier:  2.0,
+		}
+		s.fetcher = fetcher.NewHTTPFetcher(authOptions, retryPolicy)
+	}
+
+	return s.fetcher
+}
+
+func (s *serviceProvider) HTMLSanitizer() previewservice.HTMLSanitizer {
+	if s.htmlSanitizer == nil {
+		s.htmlSanitizer = sanitizer.NewHTMLSanitizer()
+	}
+
+	return s.htmlSanitizer
+}
+
+func (s *serviceProvider) PreviewRepository(ctx context.Context) previewrepo.PreviewRepository {
+	if s.previewRepo == nil {
+		s.previewRepo = crawljobrepoimpl.NewPreviewRepository(s.DBClient(ctx))
+	}
+
+	return s.previewRepo
+}
+
+func (s *serviceProvider) PreviewService(ctx context.Context) service.PreviewService {
+	if s.previewService == nil {
+		// MinIOStore implements both ContentStore and PresignedURLGenerator
+		minioStore := s.ContentStore().(*contentstore.MinIOStore)
+
+		s.previewService = previewservice.NewService(
+			s.PreviewRepository(ctx),
+			s.Fetcher(),
+			s.ContentStore(),
+			s.HTMLSanitizer(),
+			minioStore, // PresignedURLGenerator
+			s.TxManager(ctx),
+		)
+	}
+
+	return s.previewService
+}
+
+func (s *serviceProvider) PreviewServiceImpl(ctx context.Context) *previewapi.PreviewImplementation {
+	if s.previewServiceImpl == nil {
+		s.previewServiceImpl = previewapi.NewImplementation(
+			s.PreviewService(ctx),
+		)
+	}
+
+	return s.previewServiceImpl
 }
 
 func (s *serviceProvider) Close() error {
