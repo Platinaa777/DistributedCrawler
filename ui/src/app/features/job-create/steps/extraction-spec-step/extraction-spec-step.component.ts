@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,7 +8,6 @@ import { FieldBuilderComponent } from '../../components/field-builder/field-buil
 import { MetricBuilderComponent } from '../../components/metric-builder/metric-builder.component';
 import { JobCreateStateService } from '../../services/job-create-state.service';
 import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.model';
-import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-extraction-spec-step',
@@ -38,36 +37,18 @@ import { Subscription } from 'rxjs';
           <div class="p-4 space-y-4">
             <div class="flex items-center justify-between mb-4">
               <p class="text-sm text-gray-600">
-                Define data fields to extract from each page
-              </p>
-              <button mat-raised-button color="primary" (click)="addField()">
-                <mat-icon>add</mat-icon>
-                Add Field
-              </button>
-            </div>
+            Define data fields to extract from each page
+          </p>
+          <button mat-raised-button color="primary" (click)="addField()">
+            <mat-icon>add</mat-icon>
+            Add Field
+          </button>
+        </div>
 
-            <div *ngIf="selectedElements.length > 0" class="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
-              <p class="text-xs font-semibold text-blue-800 mb-2">
-                <mat-icon class="text-sm align-middle">lightbulb</mat-icon>
-                Quick Add from Selected Elements
-              </p>
-              <div class="space-y-2">
-                <button
-                  *ngFor="let element of selectedElements; let i = index"
-                  mat-stroked-button
-                  (click)="addFieldFromElement(element)"
-                  class="mr-2"
-                >
-                  <mat-icon>add_circle_outline</mat-icon>
-                  {{ element.elementTag }} ({{ element.selector.substring(0, 30) }}...)
-                </button>
-              </div>
-            </div>
-
-            <div *ngIf="fields.length === 0" class="text-center py-12 bg-gray-50 rounded">
-              <mat-icon class="text-gray-400 text-5xl mb-2">data_object</mat-icon>
-              <p class="text-gray-500">No fields defined yet</p>
-              <p class="text-gray-400 text-sm mt-1">Add a field to start extracting data</p>
+        <div *ngIf="fields.length === 0" class="text-center py-12 bg-gray-50 rounded">
+          <mat-icon class="text-gray-400 text-5xl mb-2">data_object</mat-icon>
+          <p class="text-gray-500">No fields defined yet</p>
+          <p class="text-gray-400 text-sm mt-1">Add a field to start extracting data</p>
             </div>
 
             <app-field-builder
@@ -133,13 +114,10 @@ import { Subscription } from 'rxjs';
     }
   `]
 })
-export class ExtractionSpecStepComponent implements OnInit, OnDestroy {
+export class ExtractionSpecStepComponent implements OnInit {
   fields: FieldSpec[] = [];
   metrics: MetricSpec[] = [];
-  selectedElements: any[] = [];
   trialResult: string | null = null;
-
-  private stateSubscription: Subscription | null = null;
 
   constructor(private stateService: JobCreateStateService) {}
 
@@ -148,15 +126,6 @@ export class ExtractionSpecStepComponent implements OnInit, OnDestroy {
     const state = this.stateService.getCurrentState();
     this.fields = [...state.extractionSpec.fields];
     this.metrics = [...state.extractionSpec.metrics];
-    this.selectedElements = [...state.selectedElements];
-
-    this.stateSubscription = this.stateService.getState().subscribe(nextState => {
-      this.selectedElements = [...nextState.selectedElements];
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.stateSubscription?.unsubscribe();
   }
 
   addField(): void {
@@ -169,25 +138,6 @@ export class ExtractionSpecStepComponent implements OnInit, OnDestroy {
         selector_type: 'css',
         selector: '',
         attribute: 'text',
-        multiple: false
-      },
-      transforms: []
-    };
-
-    this.fields.push(newField);
-    this.stateService.addField(newField);
-  }
-
-  addFieldFromElement(element: any): void {
-    const newField: FieldSpec = {
-      name: element.elementTag,
-      type: 'string',
-      required: false,
-      extractor: {
-        source: 'html',
-        selector_type: 'css',
-        selector: element.selector,
-        attribute: element.attribute,
         multiple: false
       },
       transforms: []

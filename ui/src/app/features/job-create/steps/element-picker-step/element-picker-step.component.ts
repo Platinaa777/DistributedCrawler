@@ -9,6 +9,9 @@ import { PreviewIframeComponent } from '../../components/preview-iframe/preview-
 import { ElementInspectorComponent } from '../../components/element-inspector/element-inspector.component';
 import { JobCreateStateService, SelectedElementData } from '../../services/job-create-state.service';
 import { SelectorGeneratorService } from '../../../../core/services/selector-generator.service';
+import { FieldBuilderComponent } from '../../components/field-builder/field-builder.component';
+import { MetricBuilderComponent } from '../../components/metric-builder/metric-builder.component';
+import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.model';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -22,15 +25,17 @@ import { Subscription } from 'rxjs';
     MatIconModule,
     MatSlideToggleModule,
     PreviewIframeComponent,
-    ElementInspectorComponent
+    ElementInspectorComponent,
+    FieldBuilderComponent,
+    MetricBuilderComponent
   ],
   template: `
-    <div class="space-y-4">
+    <div class="space-y-4 h-full">
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Step 2: Pick Elements</mat-card-title>
+          <mat-card-title>Step 2: Pick Elements & Build Spec</mat-card-title>
           <mat-card-subtitle>
-            Hover and click on elements in the preview to extract data
+            Hover and click on elements in the preview to extract data and build your extraction spec
           </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="space-y-4">
@@ -45,53 +50,87 @@ import { Subscription } from 'rxjs';
 
             <div class="text-sm text-gray-600">
               <mat-icon class="text-sm align-middle">info</mat-icon>
-              {{ pickerEnabled ? 'Hover over elements and click to select' : 'Enable picker to select elements' }}
+              {{
+                pickerEnabled
+                  ? 'Hover over elements and click to select'
+                  : 'Enable picker to select elements'
+              }}
             </div>
           </div>
         </mat-card-content>
       </mat-card>
 
-      <div class="grid grid-cols-3 gap-4">
-        <div class="col-span-2">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title class="text-base">Page Preview</mat-card-title>
-            </mat-card-header>
-            <mat-card-content class="relative">
-              <div #previewContainer class="relative h-[600px]">
-                <app-preview-iframe
-                  [html]="previewHtml"
-                  (frameReady)="onFrameReady($event)"
-                ></app-preview-iframe>
+      <div class="layout-grid">
+        <mat-card class="fill-card">
+          <mat-card-header>
+            <mat-card-title class="text-base">Page Preview</mat-card-title>
+          </mat-card-header>
+          <mat-card-content class="relative flex-1 min-h-0">
+            <div #previewContainer class="relative h-full min-h-[360px]">
+              <app-preview-iframe
+                [html]="previewHtml"
+                (frameReady)="onFrameReady($event)"
+              ></app-preview-iframe>
 
-                <div
-                  *ngIf="pickerEnabled"
-                  class="absolute inset-0 z-10 cursor-crosshair"
-                  (mousemove)="onOverlayMouseMove($event)"
-                  (click)="onOverlayClick($event)"
-                  (wheel)="onOverlayWheel($event)"
-                ></div>
+              <div
+                *ngIf="pickerEnabled"
+                class="absolute inset-0 z-10 cursor-crosshair"
+                (mousemove)="onOverlayMouseMove($event)"
+                (click)="onOverlayClick($event)"
+                (wheel)="onOverlayWheel($event)"
+              ></div>
 
-                <!-- Highlight overlay -->
-                <div
-                  *ngIf="pickerEnabled && highlightBox"
-                  class="absolute z-20 pointer-events-none border-2 border-blue-500 bg-blue-500 bg-opacity-10"
-                  [style.left.px]="highlightBox.left"
-                  [style.top.px]="highlightBox.top"
-                  [style.width.px]="highlightBox.width"
-                  [style.height.px]="highlightBox.height"
-                >
-                  <div class="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                    {{ hoveredElement?.elementTag }}
-                  </div>
+              <div
+                *ngIf="pickerEnabled && highlightBox"
+                class="absolute z-20 pointer-events-none border-2 border-blue-500 bg-blue-500 bg-opacity-10"
+                [style.left.px]="highlightBox.left"
+                [style.top.px]="highlightBox.top"
+                [style.width.px]="highlightBox.width"
+                [style.height.px]="highlightBox.height"
+              >
+                <div class="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                  {{ hoveredElement?.elementTag }}
                 </div>
               </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
 
-        <div class="col-span-1">
+        <mat-card class="fill-card">
+          <mat-card-header class="flex items-center justify-between gap-3">
+            <div>
+              <mat-card-title class="text-base">Fields ({{ fields.length }})</mat-card-title>
+              <mat-card-subtitle>Define data fields to extract</mat-card-subtitle>
+            </div>
+            <button mat-stroked-button color="primary" (click)="addField()">
+              <mat-icon>add</mat-icon>
+              Add Field
+            </button>
+          </mat-card-header>
+          <mat-card-content class="card-content-scroll">
+            <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div
+                *ngIf="fields.length === 0"
+                class="text-center py-10 bg-gray-50 rounded border border-dashed border-gray-200"
+              >
+                <mat-icon class="text-gray-400 text-5xl mb-2">data_object</mat-icon>
+                <p class="text-gray-500">No fields defined yet</p>
+                <p class="text-gray-400 text-sm mt-1">Add a field or quick add from selected elements</p>
+              </div>
+
+              <app-field-builder
+                *ngFor="let field of fields; let i = index"
+                [field]="field"
+                (fieldChange)="updateField(i, $event)"
+                (remove)="removeField(i)"
+              ></app-field-builder>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <div class="h-full">
           <app-element-inspector
+            class="h-full block"
             [selectedElements]="selectedElements"
             [hoveredElement]="hoveredElement"
             (elementRemoved)="removeElement($event)"
@@ -99,12 +138,80 @@ import { Subscription } from 'rxjs';
             (clearAllElements)="clearAllElements()"
           ></app-element-inspector>
         </div>
+
+        <mat-card class="fill-card">
+          <mat-card-header class="flex items-center justify-between gap-3">
+            <div>
+              <mat-card-title class="text-base">Metrics ({{ metrics.length }})</mat-card-title>
+              <mat-card-subtitle>Define metrics to calculate from extracted data</mat-card-subtitle>
+            </div>
+            <button mat-stroked-button color="primary" (click)="addMetric()">
+              <mat-icon>add</mat-icon>
+              Add Metric
+            </button>
+          </mat-card-header>
+          <mat-card-content class="card-content-scroll space-y-3">
+            <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div
+                *ngIf="metrics.length === 0"
+                class="text-center py-10 bg-gray-50 rounded border border-dashed border-gray-200"
+              >
+                <mat-icon class="text-gray-400 text-5xl mb-2">analytics</mat-icon>
+                <p class="text-gray-500">No metrics defined yet</p>
+                <p class="text-gray-400 text-sm mt-1">Add a metric to track data quality</p>
+              </div>
+
+              <app-metric-builder
+                *ngFor="let metric of metrics; let i = index"
+                [metric]="metric"
+                (metricChange)="updateMetric(i, $event)"
+                (remove)="removeMetric(i)"
+              ></app-metric-builder>
+            </div>
+
+            <div class="space-y-2">
+              <button mat-raised-button color="primary" (click)="runTrial()">
+                <mat-icon>play_arrow</mat-icon>
+                Check (mock)
+              </button>
+              <div *ngIf="trialResult" class="border rounded bg-gray-50 p-3 max-h-48 overflow-auto">
+                <p class="text-xs font-semibold text-gray-600 mb-2">Trial Result</p>
+                <pre class="text-xs text-gray-800">{{ trialResult }}</pre>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
       </div>
     </div>
   `,
   styles: [`
     :host {
       display: block;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      grid-template-rows: repeat(2, 1fr);
+      gap: 1rem;
+      min-height: 720px;
+      height: calc(100vh - 280px);
+    }
+
+    .fill-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .fill-card mat-card-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
     }
   `]
 })
@@ -116,6 +223,9 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   selectedElements: SelectedElementData[] = [];
   hoveredElement: SelectedElementData | null = null;
   highlightBox: { left: number; top: number; width: number; height: number } | null = null;
+  fields: FieldSpec[] = [];
+  metrics: MetricSpec[] = [];
+  trialResult: string | null = null;
 
   private iframeDoc: Document | null = null;
   private stateSubscription: Subscription | null = null;
@@ -133,11 +243,15 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
     this.stateSubscription = this.stateService.getState().subscribe(state => {
       this.previewHtml = state.previewHtml;
       this.selectedElements = [...state.selectedElements];
+      this.fields = [...state.extractionSpec.fields];
+      this.metrics = [...state.extractionSpec.metrics];
 
       console.log('ElementPickerStep - state updated:', {
         hasPreviewHtml: !!this.previewHtml,
         previewHtmlLength: this.previewHtml?.length || 0,
-        selectedElementsCount: this.selectedElements.length
+        selectedElementsCount: this.selectedElements.length,
+        fieldsCount: this.fields.length,
+        metricsCount: this.metrics.length
       });
     });
   }
@@ -226,6 +340,7 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
     this.zone.run(() => {
       // Add to state
       this.stateService.addSelectedElement(elementData);
+      this.addFieldFromElement(elementData);
     });
   }
 
@@ -242,7 +357,7 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   }
 
   isValid(): boolean {
-    return this.selectedElements.length > 0;
+    return this.fields.length > 0;
   }
 
   onOverlayWheel(event: WheelEvent): void {
@@ -302,6 +417,97 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
       return null;
     }
     return target;
+  }
+
+  addField(): void {
+    const newField: FieldSpec = {
+      name: `field_${this.fields.length + 1}`,
+      type: 'string',
+      required: false,
+      extractor: {
+        source: 'html',
+        selector_type: 'css',
+        selector: '',
+        attribute: 'text',
+        multiple: false
+      },
+      transforms: []
+    };
+
+    this.stateService.addField(newField);
+  }
+
+  updateField(index: number, field: FieldSpec): void {
+    this.stateService.updateField(index, field);
+  }
+
+  removeField(index: number): void {
+    this.stateService.removeField(index);
+  }
+
+  addMetric(): void {
+    const newMetric: MetricSpec = {
+      name: `metric_${this.metrics.length + 1}`,
+      op: 'count',
+      input: ''
+    };
+
+    this.stateService.addMetric(newMetric);
+  }
+
+  updateMetric(index: number, metric: MetricSpec): void {
+    // State service lacks update helper, so remove and re-add
+    this.stateService.removeMetric(index);
+    this.stateService.addMetric(metric);
+  }
+
+  removeMetric(index: number): void {
+    this.stateService.removeMetric(index);
+  }
+
+  runTrial(): void {
+    const payload = {
+      fields: this.fields,
+      metrics: this.metrics
+    };
+
+    console.log('Trial run payload:', payload);
+
+    this.trialResult = JSON.stringify({
+      status: 'ok',
+      fields_count: this.fields.length,
+      metrics_count: this.metrics.length,
+      sample: this.fields.slice(0, 2).map(field => ({
+        name: field.name,
+        selector: field.extractor.selector,
+        value: '(mocked)'
+      }))
+    }, null, 2);
+  }
+
+  private addFieldFromElement(element: SelectedElementData): void {
+    const exists = this.fields.some(
+      field =>
+        field.extractor.selector === element.selector &&
+        field.extractor.attribute === element.attribute
+    );
+    if (exists) return;
+
+    const newField: FieldSpec = {
+      name: element.elementTag,
+      type: 'string',
+      required: false,
+      extractor: {
+        source: 'html',
+        selector_type: 'css',
+        selector: element.selector,
+        attribute: element.attribute,
+        multiple: false
+      },
+      transforms: []
+    };
+
+    this.stateService.addField(newField);
   }
 }
 
