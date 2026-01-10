@@ -7,18 +7,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Distributed Crawling System** - A scalable web crawling platform built with Go that uses RabbitMQ for task distribution, PostgreSQL for data persistence, and implements clean architecture with domain-driven design principles.
 
 **Key Components:**
-- **Coordinator**: Central service that manages crawl jobs and distributes tasks
-- **Workers**: Processes that fetch pages, parse content, and store results
-- **RabbitMQ**: Message queue for task distribution and worker coordination
+- **gRPC/HTTP Server**: API endpoints for managing crawl jobs and tasks
+- **Angular Frontend (MVP)**: Web UI for job management with visual extraction builder
+- **Fetch Worker**: Consumes crawl tasks from RabbitMQ, fetches pages, stores raw content
+- **Parser Worker**: Processes fetched pages, extracts structured data
+- **RabbitMQ**: Message queue with separate queues for crawling (`crawl_queue`) and parsing (`parsing_queue`)
 - **PostgreSQL**: Persistent storage for normalized crawl data
-- **S3/MinIO**: Blob storage for raw HTML/JSON pages (optional)
+- **MinIO/S3**: Blob storage for raw HTML/JSON pages
+- **Redis**: Rate limiting and caching layer
 
 ## Development Commands
 
 ### Environment Setup
 
 ```bash
-# Start infrastructure services (PostgreSQL + RabbitMQ)
+# Start all infrastructure services (PostgreSQL, RabbitMQ, MinIO, Redis)
 docker compose up -d
 
 # Install build dependencies (protoc plugins, goose, statik)
@@ -30,6 +33,12 @@ make generate
 # Tidy dependencies
 make .tidy
 ```
+
+**Infrastructure Services:**
+- PostgreSQL: `localhost:54321` (UI: N/A)
+- RabbitMQ: `localhost:5672` (Management UI: `http://localhost:15672`)
+- MinIO: `localhost:9000` (Console UI: `http://localhost:9001`)
+- Redis: `localhost:6379` (RedisInsight UI: `http://localhost:5540`)
 
 ### Database Migrations
 
@@ -56,15 +65,32 @@ goose -dir ./internal/infra/persistence/postgres/migrations create migration_nam
 make build
 # Output: ./bin/distributed-crawler
 
-# Run the HTTP server (development)
-make run
-# Runs: go run ./cmd/http_server/main.go
+# Run the gRPC server (with config)
+make run-grpc-server
+# Runs: go run ./cmd/grpc_server/main.go --config-path=.env
+
+# Run the fetch worker (processes crawl tasks)
+make run-fetcher
+# Runs: go run ./cmd/fetch_worker/main.go --config-path=.worker.env
+
+# Run the parser worker (processes parsing tasks)
+make run-parser
+# Runs: go run ./cmd/parser_worker/main.go --config-path=.worker.env
 
 # Run specific commands directly
-go run ./cmd/coordinator
-go run ./cmd/worker
-go run ./cmd/grpc_server/main.go
+go run ./cmd/grpc_server/main.go --config-path=.env
+go run ./cmd/http_server/main.go
+go run ./cmd/fetch_worker/main.go --config-path=.worker.env
+go run ./cmd/parser_worker/main.go --config-path=.worker.env
 ```
+
+**Available Entry Points:**
+- `cmd/grpc_server/` - gRPC API server
+- `cmd/http_server/` - HTTP REST API server
+- `cmd/fetch_worker/` - Worker that fetches web pages
+- `cmd/parser_worker/` - Worker that parses fetched pages
+- `cmd/grpc_service/` - Alternative gRPC service (check purpose)
+- `cmd/http_client/` - HTTP client utility
 
 ### Testing
 
@@ -90,16 +116,55 @@ go test -run TestCreateCrawlJob ./internal/api/crawl_job/tests/
 go test -v ./...
 ```
 
+### Frontend Development
+
+The project includes an Angular-based web UI in the `ui/` directory.
+
+**Tech Stack:**
+- Angular v19
+- Tailwind CSS v4
+- PrimeNG (latest compatible)
+- Consumes REST API via grpc-gateway
+
+**Running the Frontend:**
+```bash
+cd ui
+npm install
+npm start
+# UI runs on http://localhost:4200 (default)
+```
+
+**Frontend Features (MVP):**
+- Jobs list page (`/jobs`)
+- Job details page with task inspection (`/jobs/:id`)
+- Visual job creation page (`/jobs/create`) with:
+  - HTML preview in iframe (using `/api/v1/previews`)
+  - DevTools-like element picker
+  - Visual builder for ExtractionSpec
+  - Job configuration forms (seeds, scope, rate limits)
+
+**API Endpoints Used:**
+- `GET /api/v1/jobs` - List all jobs
+- `GET /api/v1/jobs/{id}` - Get job details
+- `POST /api/v1/jobs` - Create new job
+- `GET /api/v1/jobs/{job_id}/tasks` - List job tasks
+- `POST /api/v1/previews` - Create page preview
+- `GET /api/v1/previews/{id}` - Get preview with download URL
+
+See `docs/create-frontend.txt` for complete frontend specification.
+
 ## Architecture
 
 ### Clean Architecture Layers
 
 ```
 cmd/                          # Entry points (main.go files)
-  ├── grpc_server/           # gRPC API server
+  ├── grpc_server/           # gRPC API server (main production API)
   ├── http_server/           # HTTP REST API server
-  ├── coordinator/           # Coordinator service (planned)
-  └── worker/                # Worker process (planned)
+  ├── fetch_worker/          # Worker that fetches web pages from URLs
+  ├── parser_worker/         # Worker that parses fetched pages
+  ├── grpc_service/          # Alternative gRPC service implementation
+  └── http_client/           # HTTP client utility
 
 internal/
   ├── domain/crawl/          # Domain layer (business logic)
@@ -160,6 +225,20 @@ internal/
 - Stores domain events transactionally with business data
 - Processed asynchronously by separate outbox publisher
 
+**Entity: Preview**
+- Visual representation/screenshot of crawled pages
+- Useful for debugging and monitoring crawl results
+
+**Value Objects for Configuration:**
+- `Seed` - Initial URLs to start crawling
+- `ScopeRules` - Domain/URL filtering rules for crawl scope
+- `RetryPolicy` - Configuration for retry logic on failures
+- `AuthOptions` - Authentication credentials for protected sites
+- `ScheduleOptions` - Recurring crawl schedules
+- `RateLimitPolicy` - Rate limiting configuration per domain
+- `ExtractionSpec` - Parsing rules and selectors for data extraction
+- `CrawlJobConfig` - Complete configuration for a crawl job
+
 ### Key Patterns
 
 **Repository Pattern**
@@ -196,23 +275,55 @@ internal/
 
 ### Configuration
 
-**Environment Variables** (defined in `.env`):
+**Environment Variables** (defined in `.env` and `.worker.env`):
 ```
 # PostgreSQL
+PG_DSN=postgres://denis:some-pwd-123@localhost:54321/crawler?sslmode=disable
 PG_DATABASE_NAME=crawler
 PG_USER=denis
 PG_PASSWORD=some-pwd-123
 PG_PORT=54321
 MIGRATION_DIR=./internal/infra/persistence/postgres/migrations/
 
-# RabbitMQ
+# RabbitMQ (two separate queues for crawling and parsing)
 RABBITMQ_URL=amqp://guest:guest@localhost:5672/
-RABBITMQ_QUEUE_NAME=crawl_tasks
+RABBITMQ_CRAWL_QUEUE_NAME=crawl_queue
+RABBITMQ_PARSING_QUEUE_NAME=parsing_queue
+
+# MinIO
+MINIO_ENDPOINT=localhost:9000
+MINIO_USER=minioadmin
+MINIO_PWD=minioadmin
+MINIO_USE_SSL=false
+MINIO_BUCKET_NAME=pages
+
+# Redis
+REDIS_ADDRESS=localhost:6379
+REDIS_PWD=some_redis_pwd_123
+REDIS_DB=0
+
+# HTTP Server
+HTTP_HOST=localhost
+HTTP_PORT=8084
+
+# gRPC Server
+GRPC_HOST=localhost
+GRPC_PORT=8083
+
+# Logger
+LOG_LEVEL=info
+LOG_ENV=development
 ```
+
+**Configuration Files:**
+- `.env` - Used by gRPC/HTTP servers
+- `.worker.env` - Used by fetch and parser workers (same content as `.env`)
 
 **Configuration Interfaces** (`internal/config/config.go`):
 - `PGConfig` - PostgreSQL connection settings
-- `RabbitMQConfig` - RabbitMQ connection and queue name
+- `RabbitMQConfig` - RabbitMQ connection and queue names (crawl + parsing)
+- `MinIOConfig` - MinIO/S3 connection and bucket settings
+- `RedisConfig` - Redis connection settings
 - `HTTPConfig` - HTTP server address
 - `GRPCConfig` - gRPC server address
 - `LoggerConfig` - Logging level and environment
@@ -234,9 +345,11 @@ rmqCfg, _ := env.NewRabbitMQConfig()
 
 **Key Tables:**
 - `crawl_jobs` - Job metadata (name, status, timestamps)
-- `crawl_tasks` - Individual URL tasks (job_id FK, url, status)
+- `crawl_job_configs` - Job configuration (seeds, scope rules, extraction specs)
+- `crawl_tasks` - Individual URL tasks (job_id FK, url, status, depth)
 - `page_snapshots` - Fetch metadata (task_id FK, http_status, storage_key)
 - `extracted_records` - Parsed data (task_id FK, data JSONB)
+- `previews` - Visual previews/screenshots of crawled pages
 - `outbox_events` - Domain events for reliable publishing
 
 **Important Notes:**
@@ -260,16 +373,30 @@ rmqCfg, _ := env.NewRabbitMQConfig()
 **ContentStore** (`internal/infra/services/contentstore/`)
 - S3/MinIO client for storing raw page content
 - Stores HTML/JSON blobs referenced by `storage_key`
+- Implementation: `minio_store.go`
 
-**Queue** (`internal/infra/services/queue/`)
+**Sanitizer** (`internal/infra/services/sanitizer/`)
+- HTML sanitization using bluemonday
+- Cleans user-provided HTML for safe preview rendering
+- Prevents XSS attacks in preview iframe
+
+**Queue** (`internal/infra/messaging/rabbitmq/`)
 - RabbitMQ client for task distribution
-- In-memory queue implementation for testing
+- Separate queues for crawl and parsing tasks
 - Publishes `TaskEnqueuedEvent` messages to workers
 
-**Workers** (`internal/infra/workers/`)
-- `fetch_worker.go` - Consumes tasks, fetches pages, stores snapshots
-- `parse_worker.go` - Parses fetched pages, extracts records
-- `scheduler_worker.go` - Manages scheduled/recurring crawl jobs
+**RateLimiter** (`internal/domain/crawl/services/`)
+- Redis-based rate limiting per domain
+- Prevents overwhelming target sites
+- Configurable via `RateLimitPolicy`
+
+**ScopeValidator** (`internal/domain/crawl/services/`)
+- Validates URLs against scope rules
+- Enforces domain and pattern restrictions
+
+**Workers** (separate processes in `cmd/`):
+- `fetch_worker` - Consumes from `crawl_queue`, fetches pages, stores snapshots, publishes to `parsing_queue`
+- `parser_worker` - Consumes from `parsing_queue`, parses pages, extracts records
 
 ## Code Style and Conventions
 
@@ -299,15 +426,11 @@ rmqCfg, _ := env.NewRabbitMQConfig()
 1. **Nullable Fields** - `CompletedAt` field conversion has TODO comments in converters (`internal/infra/persistence/postgres/converters/crawl_job.go:14,24`)
    - Use `sql.NullTime` for database and `*time.Time` for domain model
 
-2. **Typo in Interface** - `ReadCommited` should be `ReadCommitted` (`internal/infra/persistence/dbtransaction.go:6`)
-
-3. **Logging** - `pgdb.go` uses `log.Println` instead of structured logger
+2. **Logging** - `pgdb.go` uses `log.Println` instead of structured logger
    - Should use Zap logger (`internal/infra/logger/zap_loggger.go`)
 
-4. **Empty Implementations** - Some repository files are stubs:
-   - `page_snapshot_repo.go`
-   - `extracted_record_repo.go`
-   - Domain services in `domain_services/`
+3. **Empty Implementations** - Some repository files may be stubs:
+   - Check domain services in `domain_services/` for completeness
 
 ## Important Implementation Notes
 
@@ -336,15 +459,33 @@ goose -dir ./internal/infra/persistence/postgres/migrations create <description>
 - Use `ON DELETE CASCADE` for foreign keys when child records should be deleted
 
 ### Message Format for RabbitMQ
-Tasks are published as JSON messages to `crawl_tasks` queue:
+
+**Crawl Queue** (`crawl_queue`) - Tasks for fetching pages:
 ```json
 {
   "task_id": "uuid",
   "job_id": "uuid",
   "url": "https://example.com",
+  "depth": 0,
   "enqueued_at": "2026-01-09T00:00:00Z"
 }
 ```
+
+**Parsing Queue** (`parsing_queue`) - Tasks for parsing fetched pages:
+```json
+{
+  "task_id": "uuid",
+  "job_id": "uuid",
+  "storage_key": "s3://bucket/key",
+  "enqueued_at": "2026-01-09T00:00:00Z"
+}
+```
+
+**Queue Flow:**
+1. API creates `CrawlTask` and publishes to `crawl_queue`
+2. Fetch worker consumes from `crawl_queue`, downloads page, stores in MinIO
+3. Fetch worker creates `PageSnapshot` and publishes to `parsing_queue`
+4. Parser worker consumes from `parsing_queue`, extracts data, stores `ExtractedRecord`
 
 ## gRPC and Protobuf
 
@@ -376,3 +517,93 @@ This is a **learning/portfolio project** demonstrating:
 **Language:** Primarily Russian comments/docs, Go code follows English conventions.
 
 **Go Version:** 1.25.4 (see `go.mod`)
+
+## Running a Complete Crawl Job
+
+To test the full system end-to-end:
+
+1. **Start infrastructure**:
+   ```bash
+   docker compose up -d
+   ```
+
+2. **Run migrations**:
+   ```bash
+   make local-migration-up
+   ```
+
+3. **Start the gRPC server** (in terminal 1):
+   ```bash
+   make run-grpc-server
+   ```
+
+4. **Start the fetch worker** (in terminal 2):
+   ```bash
+   make run-fetcher
+   ```
+
+5. **Start the parser worker** (in terminal 3):
+   ```bash
+   make run-parser
+   ```
+
+6. **Create a crawl job** via gRPC/HTTP API or use `cmd/http_client` or `cmd/grpc_service`
+
+The system will:
+- Accept the job via API
+- Create tasks in the database
+- Publish tasks to `crawl_queue`
+- Fetch worker downloads pages and publishes to `parsing_queue`
+- Parser worker extracts data and stores results
+
+7. **Access the UI** (optional, in terminal 4):
+   ```bash
+   cd ui
+   npm install
+   npm start
+   # Navigate to http://localhost:4200
+   ```
+
+## Project Structure Summary
+
+```
+distributed-crawler/
+├── cmd/                    # Entry points (binaries)
+├── internal/              # Application code
+│   ├── domain/           # Domain layer (business logic)
+│   ├── application/      # Use cases (commands & queries)
+│   ├── api/              # gRPC service implementations
+│   ├── interfaces/       # HTTP handlers
+│   ├── infra/            # Infrastructure implementations
+│   └── config/           # Configuration management
+├── ui/                    # Angular frontend (MVP)
+├── docs/                  # Documentation
+├── api/                   # Protobuf definitions
+├── Makefile              # Build and task automation
+├── docker-compose.yaml   # Infrastructure services
+├── .env                  # Environment configuration
+└── .worker.env           # Worker-specific configuration
+```
+
+## Key Dependencies
+
+**Core Libraries:**
+- `github.com/jackc/pgx/v4` - PostgreSQL driver
+- `github.com/rabbitmq/amqp091-go` - RabbitMQ client
+- `github.com/minio/minio-go/v7` - MinIO/S3 client
+- `github.com/redis/go-redis/v9` - Redis client
+- `google.golang.org/grpc` - gRPC framework
+- `github.com/grpc-ecosystem/grpc-gateway/v2` - REST gateway for gRPC
+
+**Parsing & Processing:**
+- `github.com/PuerkitoBio/goquery` - HTML parsing (jQuery-like)
+- `github.com/microcosm-cc/bluemonday` - HTML sanitization
+
+**Testing:**
+- `github.com/stretchr/testify` - Assertions and test utilities
+- `github.com/gojuno/minimock/v3` - Mock generation
+
+**Utilities:**
+- `go.uber.org/zap` - Structured logging
+- `github.com/google/uuid` - UUID generation
+- `github.com/Masterminds/squirrel` - SQL query builder

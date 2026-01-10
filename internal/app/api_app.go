@@ -10,6 +10,7 @@ import (
 
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -167,9 +168,17 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:4200"}, // или []string{"*"} если без credentials
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "Accept"},
+		ExposedHeaders:   []string{"Grpc-Status", "Grpc-Message", "Grpc-Metadata-*", "Location"},
+		AllowCredentials: true,
+	})
+
 	a.httpServer = &http.Server{
 		Addr:    a.serviceProvider.HTTPConfig().Address(),
-		Handler: mux,
+		Handler: c.Handler(mux),
 	}
 
 	return nil

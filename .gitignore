@@ -6,8 +6,11 @@ go.work.sum
 .env
 .worker.env
 /vendor.protobuf
-/.vscode
+*/.vscode/
 /.claude/
 coverage.out
 
 *.exe
+
+*/.angular/
+*/node_modules/
