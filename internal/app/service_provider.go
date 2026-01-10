@@ -48,9 +48,10 @@ type serviceProvider struct {
 	previewRepo        previewrepo.PreviewRepository
 	rmqClient          rabbitmq.Client
 
-	fetcher      services.Fetcher
-	contentStore services.ContentStore
-	htmlSanitizer previewservice.HTMLSanitizer
+	fetcher               services.Fetcher
+	previewFetcherFactory services.FetcherFactory
+	contentStore          services.ContentStore
+	htmlSanitizer         previewservice.HTMLSanitizer
 
 	crawlJobService  service.CrawlJobService
 	crawlTaskService service.CrawlTaskService
@@ -289,14 +290,22 @@ func (s *serviceProvider) Fetcher() services.Fetcher {
 		// Use default auth and retry options for preview fetching
 		authOptions := models.AuthOptions{}
 		retryPolicy := models.RetryPolicy{
-			MaxAttempts:        3,
-			BackoffInitialMs:   1000,
-			BackoffMultiplier:  2.0,
+			MaxAttempts:       3,
+			BackoffInitialMs:  1000,
+			BackoffMultiplier: 2.0,
 		}
-		s.fetcher = fetcher.NewHTTPFetcher(authOptions, retryPolicy)
+		s.fetcher = fetcher.NewBrowserFetcher(authOptions, retryPolicy)
 	}
 
 	return s.fetcher
+}
+
+func (s *serviceProvider) PreviewFetcherFactory() services.FetcherFactory {
+	if s.previewFetcherFactory == nil {
+		s.previewFetcherFactory = fetcher.NewBrowserFetcherFactory()
+	}
+
+	return s.previewFetcherFactory
 }
 
 func (s *serviceProvider) HTMLSanitizer() previewservice.HTMLSanitizer {
@@ -319,14 +328,20 @@ func (s *serviceProvider) PreviewService(ctx context.Context) service.PreviewSer
 	if s.previewService == nil {
 		// MinIOStore implements both ContentStore and PresignedURLGenerator
 		minioStore := s.ContentStore().(*contentstore.MinIOStore)
+		retryPolicy := models.RetryPolicy{
+			MaxAttempts:       3,
+			BackoffInitialMs:  1000,
+			BackoffMultiplier: 2.0,
+		}
 
 		s.previewService = previewservice.NewService(
 			s.PreviewRepository(ctx),
-			s.Fetcher(),
+			s.PreviewFetcherFactory(),
 			s.ContentStore(),
 			s.HTMLSanitizer(),
 			minioStore, // PresignedURLGenerator
 			s.TxManager(ctx),
+			retryPolicy,
 		)
 	}
 

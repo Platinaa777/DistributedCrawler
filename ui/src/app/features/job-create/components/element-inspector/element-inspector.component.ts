@@ -1,9 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { SelectedElementData } from '../../services/job-create-state.service';
 
 @Component({
@@ -11,10 +14,13 @@ import { SelectedElementData } from '../../services/job-create-state.service';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatChipsModule,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule
   ],
   template: `
     <mat-card class="h-full">
@@ -57,9 +63,15 @@ import { SelectedElementData } from '../../services/job-create-state.service';
                 <mat-chip class="text-xs">{{ element.elementTag }}</mat-chip>
                 <mat-chip class="text-xs" color="primary">{{ element.attribute }}</mat-chip>
               </mat-chip-set>
-              <p class="text-xs font-mono text-gray-600 break-all mb-1">
-                {{ element.selector }}
-              </p>
+              <mat-form-field appearance="outline" class="w-full mb-2">
+                <mat-label>Selector (editable)</mat-label>
+                <input
+                  matInput
+                  [ngModel]="element.selector"
+                  (ngModelChange)="updateSelector(i, $event)"
+                  placeholder=".title"
+                />
+              </mat-form-field>
               <p class="text-xs text-gray-500 truncate">
                 <strong>Value:</strong> {{ element.value || '(empty)' }}
               </p>
@@ -106,10 +118,15 @@ export class ElementInspectorComponent {
   @Input() hoveredElement: SelectedElementData | null = null;
 
   @Output() elementRemoved = new EventEmitter<number>();
+  @Output() elementUpdated = new EventEmitter<{ index: number; selector: string }>();
   @Output() clearAllElements = new EventEmitter<void>();
 
   removeElement(index: number): void {
     this.elementRemoved.emit(index);
+  }
+
+  updateSelector(index: number, selector: string): void {
+    this.elementUpdated.emit({ index, selector });
   }
 
   clearAll(): void {

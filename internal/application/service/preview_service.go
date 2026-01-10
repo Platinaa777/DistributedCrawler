@@ -8,7 +8,8 @@ import (
 // Commands for Preview management
 
 type CreatePreviewCommand struct {
-	URL    string
+	URL  string
+	Auth models.AuthOptions
 }
 
 // Queries for Preview

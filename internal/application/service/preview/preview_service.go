@@ -2,18 +2,20 @@ package preview
 
 import (
 	"distributed-crawler/internal/application/service"
+	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/repos/preview"
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/infra/persistence"
 )
 
 type previewServ struct {
-	previewRepo  preview.PreviewRepository
-	fetcher      services.Fetcher
-	contentStore services.ContentStore
-	sanitizer    HTMLSanitizer
-	urlGenerator PresignedURLGenerator
-	txManager    persistence.TxManager
+	previewRepo    preview.PreviewRepository
+	fetcherFactory services.FetcherFactory
+	contentStore   services.ContentStore
+	sanitizer      HTMLSanitizer
+	urlGenerator   PresignedURLGenerator
+	txManager      persistence.TxManager
+	retryPolicy    models.RetryPolicy
 }
 
 // HTMLSanitizer sanitizes HTML for safe iframe rendering
@@ -28,18 +30,20 @@ type PresignedURLGenerator interface {
 
 func NewService(
 	previewRepo preview.PreviewRepository,
-	fetcher services.Fetcher,
+	fetcherFactory services.FetcherFactory,
 	contentStore services.ContentStore,
 	sanitizer HTMLSanitizer,
 	urlGenerator PresignedURLGenerator,
 	txManager persistence.TxManager,
+	retryPolicy models.RetryPolicy,
 ) service.PreviewService {
 	return &previewServ{
-		previewRepo:  previewRepo,
-		fetcher:      fetcher,
-		contentStore: contentStore,
-		sanitizer:    sanitizer,
-		urlGenerator: urlGenerator,
-		txManager:    txManager,
+		previewRepo:    previewRepo,
+		fetcherFactory: fetcherFactory,
+		contentStore:   contentStore,
+		sanitizer:      sanitizer,
+		urlGenerator:   urlGenerator,
+		txManager:      txManager,
+		retryPolicy:    retryPolicy,
 	}
 }

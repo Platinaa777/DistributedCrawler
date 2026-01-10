@@ -80,7 +80,19 @@ export class JobCreateStateService {
     const current = this.state$.value;
     this.state$.next({
       ...current,
-      selectedElements: [...current.selectedElements, element]
+      selectedElements: [element, ...current.selectedElements]
+    });
+  }
+
+  updateSelectedElement(index: number, updates: Partial<SelectedElementData>): void {
+    const current = this.state$.value;
+    const selectedElements = [...current.selectedElements];
+    const existing = selectedElements[index];
+    if (!existing) return;
+    selectedElements[index] = { ...existing, ...updates };
+    this.state$.next({
+      ...current,
+      selectedElements
     });
   }
 

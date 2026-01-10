@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Preview } from '../../models';
 import { API_CONFIG, API_ENDPOINTS } from '../../constants/api.constants';
@@ -12,8 +12,15 @@ export class PreviewApiService {
 
   constructor(private http: HttpClient) {}
 
-  createPreview(url: string): Observable<{ id: string }> {
-    return this.http.post<{ id: string }>(`${this.baseUrl}${API_ENDPOINTS.PREVIEWS}`, { url });
+  createPreview(url: string, cookie?: string): Observable<{ id: string }> {
+    const headers = cookie
+      ? new HttpHeaders({ 'X-Preview-Cookie': cookie })
+      : undefined;
+    return this.http.post<{ id: string }>(
+      `${this.baseUrl}${API_ENDPOINTS.PREVIEWS}`,
+      { url },
+      { headers }
+    );
   }
 
   getPreview(id: string): Observable<{ preview: Preview }> {

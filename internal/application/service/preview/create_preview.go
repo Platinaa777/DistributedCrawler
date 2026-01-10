@@ -14,16 +14,17 @@ const (
 )
 
 func (s *previewServ) CreatePreview(ctx context.Context, cmd service.CreatePreviewCommand) (*models.Preview, error) {
+	fetcher := s.fetcherFactory.CreateFetcher(cmd.Auth, s.retryPolicy)
+
 	// Fetch HTML from URL
-	fetchResult, err := s.fetcher.Fetch(ctx, cmd.URL)
+	fetchResult, err := fetcher.Fetch(ctx, cmd.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch URL %s: %w", cmd.URL, err)
 	}
 
 	// Sanitize HTML for safe iframe rendering
-	// sanitizedHTML := s.sanitizer.Sanitize(fetchResult.Body)
-	sanitizedHTML := fetchResult.Body
-
+	sanitizedHTML := s.sanitizer.Sanitize(fetchResult.Body)
+	
 	// Generate preview ID and MinIO key
 	previewID := valueobjects.GeneratePreviewID()
 	minioKey := fmt.Sprintf("previews/%s.html", previewID.String())

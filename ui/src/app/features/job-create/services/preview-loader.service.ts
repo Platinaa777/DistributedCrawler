@@ -22,11 +22,11 @@ export class PreviewLoaderService {
     private stateService: JobCreateStateService
   ) {}
 
-  loadPreview(url: string): Observable<PreviewResult> {
+  loadPreview(url: string, cookie?: string): Observable<PreviewResult> {
     this.loading = true;
     this.error = null;
 
-    return this.previewApi.createPreview(url).pipe(
+    return this.previewApi.createPreview(url, cookie).pipe(
       switchMap(createResponse => {
         const previewId = createResponse.id;
 

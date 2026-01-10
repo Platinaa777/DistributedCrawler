@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +8,7 @@ import { FieldBuilderComponent } from '../../components/field-builder/field-buil
 import { MetricBuilderComponent } from '../../components/metric-builder/metric-builder.component';
 import { JobCreateStateService } from '../../services/job-create-state.service';
 import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-extraction-spec-step',
@@ -105,6 +106,25 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
           </div>
         </mat-tab>
       </mat-tab-group>
+
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title class="text-base">Trial Run</mat-card-title>
+          <mat-card-subtitle>
+            Check what the backend would extract with the current spec
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="space-y-3">
+          <button mat-raised-button color="primary" (click)="runTrial()">
+            <mat-icon>play_arrow</mat-icon>
+            Check
+          </button>
+          <div *ngIf="trialResult" class="border rounded bg-gray-50 p-3">
+            <p class="text-xs font-semibold text-gray-600 mb-2">Trial Result (mock)</p>
+            <pre class="text-xs text-gray-800 overflow-auto">{{ trialResult }}</pre>
+          </div>
+        </mat-card-content>
+      </mat-card>
     </div>
   `,
   styles: [`
@@ -113,10 +133,13 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
     }
   `]
 })
-export class ExtractionSpecStepComponent implements OnInit {
+export class ExtractionSpecStepComponent implements OnInit, OnDestroy {
   fields: FieldSpec[] = [];
   metrics: MetricSpec[] = [];
   selectedElements: any[] = [];
+  trialResult: string | null = null;
+
+  private stateSubscription: Subscription | null = null;
 
   constructor(private stateService: JobCreateStateService) {}
 
@@ -126,6 +149,14 @@ export class ExtractionSpecStepComponent implements OnInit {
     this.fields = [...state.extractionSpec.fields];
     this.metrics = [...state.extractionSpec.metrics];
     this.selectedElements = [...state.selectedElements];
+
+    this.stateSubscription = this.stateService.getState().subscribe(nextState => {
+      this.selectedElements = [...nextState.selectedElements];
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.stateSubscription?.unsubscribe();
   }
 
   addField(): void {
@@ -197,6 +228,26 @@ export class ExtractionSpecStepComponent implements OnInit {
   removeMetric(index: number): void {
     this.metrics.splice(index, 1);
     this.stateService.removeMetric(index);
+  }
+
+  runTrial(): void {
+    const payload = {
+      fields: this.fields,
+      metrics: this.metrics
+    };
+
+    console.log('Trial run payload:', payload);
+
+    this.trialResult = JSON.stringify({
+      status: 'ok',
+      fields_count: this.fields.length,
+      metrics_count: this.metrics.length,
+      sample: this.fields.slice(0, 2).map(field => ({
+        name: field.name,
+        selector: field.extractor.selector,
+        value: '(mocked)'
+      }))
+    }, null, 2);
   }
 
   isValid(): boolean {

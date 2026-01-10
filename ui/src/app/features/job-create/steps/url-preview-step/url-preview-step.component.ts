@@ -37,7 +37,7 @@ import { PreviewIframeComponent } from '../../components/preview-iframe/preview-
 
         <mat-card-content>
           <form [formGroup]="urlForm" (ngSubmit)="loadPreview()" class="space-y-4">
-            <mat-form-field appearance="outline" class="w-full">
+            <mat-form-field class="w-full">
               <mat-label>Target URL</mat-label>
               <input
                 matInput
@@ -52,6 +52,16 @@ import { PreviewIframeComponent } from '../../components/preview-iframe/preview-
               <mat-error *ngIf="urlForm.get('url')?.hasError('pattern')">
                 Please enter a valid URL
               </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Cookie (optional)</mat-label>
+              <textarea
+                matInput
+                formControlName="cookie"
+                placeholder="Paste Cookie header value from your browser"
+                rows="3"
+              ></textarea>
             </mat-form-field>
 
             <div class="flex items-center gap-4">
@@ -129,7 +139,8 @@ export class UrlPreviewStepComponent implements OnInit {
       url: ['', [
         Validators.required,
         Validators.pattern(/^https?:\/\/.+/)
-      ]]
+      ]],
+      cookie: ['']
     });
   }
 
@@ -149,10 +160,11 @@ export class UrlPreviewStepComponent implements OnInit {
     }
 
     const url = this.urlForm.value.url;
+    const cookie = this.urlForm.value.cookie?.trim();
     this.loading = true;
     this.error = null;
 
-    this.previewLoader.loadPreview(url).subscribe({
+    this.previewLoader.loadPreview(url, cookie || undefined).subscribe({
       next: (result) => {
         this.loading = false;
         this.previewHtml = result.html;

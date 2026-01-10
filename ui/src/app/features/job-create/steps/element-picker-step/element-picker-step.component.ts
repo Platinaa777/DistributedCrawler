@@ -95,6 +95,7 @@ import { Subscription } from 'rxjs';
             [selectedElements]="selectedElements"
             [hoveredElement]="hoveredElement"
             (elementRemoved)="removeElement($event)"
+            (elementUpdated)="updateElementSelector($event)"
             (clearAllElements)="clearAllElements()"
           ></app-element-inspector>
         </div>
@@ -230,6 +231,10 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
 
   removeElement(index: number): void {
     this.stateService.removeSelectedElement(index);
+  }
+
+  updateElementSelector(event: { index: number; selector: string }): void {
+    this.stateService.updateSelectedElement(event.index, { selector: event.selector });
   }
 
   clearAllElements(): void {

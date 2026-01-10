@@ -80,8 +80,10 @@ func (f *HTTPFetcher) doFetch(ctx context.Context, url string) (*services.FetchR
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Set User-Agent
-	req.Header.Set("User-Agent", "DistributedCrawler/1.0")
+	// Use browser-like defaults to avoid trivial bot blocks.
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
 
 	// Apply authentication options
 	if f.authOptions.Cookie != "" {

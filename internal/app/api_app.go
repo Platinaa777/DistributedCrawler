@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -152,7 +153,14 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 }
 
 func (a *APIApp) initHTTPServer(ctx context.Context) error {
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
+			if strings.EqualFold(key, "x-preview-cookie") {
+				return "x-preview-cookie", true
+			}
+			return runtime.DefaultHeaderMatcher(key)
+		}),
+	)
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -171,7 +179,7 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:4200"}, // или []string{"*"} если без credentials
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type", "Accept"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "Accept", "X-Preview-Cookie"},
 		ExposedHeaders:   []string{"Grpc-Status", "Grpc-Message", "Grpc-Metadata-*", "Location"},
 		AllowCredentials: true,
 	})
@@ -222,7 +230,7 @@ func (a *APIApp) runWorker() {
 	// Get worker from service provider with background context
 	worker := a.serviceProvider.OutboxPublisher(context.Background())
 	_ = worker
-	
+
 	// Start worker with worker context (can be cancelled)
 	worker.Start(a.workerCtx)
 
