@@ -14,6 +14,7 @@ import (
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	"distributed-crawler/internal/infra/persistence/postgres/repos"
+	"distributed-crawler/internal/infra/persistence/postgres/transaction"
 	"distributed-crawler/internal/infra/services/contentstore"
 	"distributed-crawler/internal/infra/services/fetcher"
 	"distributed-crawler/internal/worker"
@@ -283,6 +284,13 @@ func (a *WorkerApp) initParserWorker() error {
 	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
 	jobRepo := repos.NewCrawlRepository(a.pgClient)
 	jobConfigRepo := repos.NewCrawlJobConfigRepository(a.pgClient)
+	outboxRepo := repos.NewOutboxRepository(a.pgClient)
+
+	// Initialize transaction manager
+	txManager := transaction.NewTransactorManager(a.pgClient.DB())
+
+	// Initialize scope validator
+	scopeValidator := fetcher.NewDomainScopeValidator()
 
 	// Get queue name from configuration
 	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
@@ -295,6 +303,9 @@ func (a *WorkerApp) initParserWorker() error {
 		taskRepo,
 		jobRepo,
 		jobConfigRepo,
+		outboxRepo,
+		txManager,
+		scopeValidator,
 		a.zapLogger,
 	)
 

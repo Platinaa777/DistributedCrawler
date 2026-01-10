@@ -70,6 +70,50 @@ func (r *outboxRepository) Create(ctx context.Context, event models.OutboxEvent)
 	return err
 }
 
+func (r *outboxRepository) BulkCreate(ctx context.Context, events []models.OutboxEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	builder := sq.Insert(outboxTableName).
+		PlaceholderFormat(sq.Dollar).
+		Columns(
+			outboxIDColumn,
+			outboxEventTypeColumn,
+			outboxAggregateIDColumn,
+			outboxPayloadColumn,
+			outboxOccurredAtColumn,
+			outboxProcessedAtColumn,
+			outboxCreatedAtColumn,
+		)
+
+	for _, event := range events {
+		dbEntity := converters.SaveOutboxEventToSnapshot(event)
+		builder = builder.Values(
+			dbEntity.ID,
+			dbEntity.EventType,
+			dbEntity.AggregateID,
+			dbEntity.Payload,
+			dbEntity.OccurredAt,
+			dbEntity.ProcessedAt,
+			dbEntity.CreatedAt,
+		)
+	}
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := persistence.Query{
+		Name:     "outbox_repository.BulkCreate",
+		QueryRaw: query,
+	}
+
+	_, err = r.client.DB().ExecContext(ctx, q, args...)
+	return err
+}
+
 func (r *outboxRepository) FetchUnprocessedEvents(ctx context.Context, limit int) ([]*models.OutboxEvent, error) {
 	builder := sq.Select(
 		outboxIDColumn,

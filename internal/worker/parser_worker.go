@@ -9,14 +9,18 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
+	"distributed-crawler/internal/domain/crawl/events"
 	"distributed-crawler/internal/domain/crawl/models"
 	crawljob "distributed-crawler/internal/domain/crawl/repos/crawl_job"
 	crawljobconfig "distributed-crawler/internal/domain/crawl/repos/crawl_job_config"
 	crawltask "distributed-crawler/internal/domain/crawl/repos/crawl_task"
+	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
+	"distributed-crawler/internal/infra/persistence"
 
 	"github.com/PuerkitoBio/goquery"
 	"go.uber.org/zap"
@@ -24,13 +28,16 @@ import (
 
 // ParserWorker consumes parsing tasks, loads HTML from MinIO, parses using DSL, and prints results
 type ParserWorker struct {
-	rmqClient     rabbitmq.Client
-	parsingQueue  string
-	contentStore  services.ContentStore
-	taskRepo      crawltask.CrawlTaskRepository
-	jobRepo       crawljob.CrawlJobRepository
-	jobConfigRepo crawljobconfig.CrawlJobConfigRepository
-	logger        *zap.Logger
+	rmqClient      rabbitmq.Client
+	parsingQueue   string
+	contentStore   services.ContentStore
+	taskRepo       crawltask.CrawlTaskRepository
+	jobRepo        crawljob.CrawlJobRepository
+	jobConfigRepo  crawljobconfig.CrawlJobConfigRepository
+	outboxRepo     outbox.OutboxRepository
+	txManager      persistence.TxManager
+	scopeValidator services.ScopeValidator
+	logger         *zap.Logger
 }
 
 // NewParserWorker creates a new parser worker
@@ -41,16 +48,22 @@ func NewParserWorker(
 	taskRepo crawltask.CrawlTaskRepository,
 	jobRepo crawljob.CrawlJobRepository,
 	jobConfigRepo crawljobconfig.CrawlJobConfigRepository,
+	outboxRepo outbox.OutboxRepository,
+	txManager persistence.TxManager,
+	scopeValidator services.ScopeValidator,
 	logger *zap.Logger,
 ) *ParserWorker {
 	return &ParserWorker{
-		rmqClient:     rmqClient,
-		parsingQueue:  parsingQueue,
-		contentStore:  contentStore,
-		taskRepo:      taskRepo,
-		jobRepo:       jobRepo,
-		jobConfigRepo: jobConfigRepo,
-		logger:        logger,
+		rmqClient:      rmqClient,
+		parsingQueue:   parsingQueue,
+		contentStore:   contentStore,
+		taskRepo:       taskRepo,
+		jobRepo:        jobRepo,
+		jobConfigRepo:  jobConfigRepo,
+		outboxRepo:     outboxRepo,
+		txManager:      txManager,
+		scopeValidator: scopeValidator,
+		logger:         logger,
 	}
 }
 
@@ -135,6 +148,16 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 
 	// Print results to console
 	w.printResults(task.TaskID, crawlTask.URL, result)
+
+	// Discover and enqueue new links for crawling
+	if err := w.discoverAndEnqueueLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
+		w.logger.Error("Failed to discover and enqueue links",
+			zap.String("task_id", task.TaskID),
+			zap.Error(err),
+		)
+		// Don't fail the entire task if link discovery fails
+		// Just log the error and continue
+	}
 
 	return nil
 }
@@ -669,4 +692,167 @@ func (w *ParserWorker) printResults(taskID, url string, result *extractionResult
 	}
 
 	fmt.Println("\n" + string(jsonOutput) + "\n")
+}
+
+// discoverAndEnqueueLinks extracts links from HTML, filters them, and enqueues new crawl tasks via Outbox
+func (w *ParserWorker) discoverAndEnqueueLinks(
+	ctx context.Context,
+	crawlTask *models.CrawlTask,
+	htmlContent []byte,
+	jobConfig *models.CrawlJobConfig,
+) error {
+	// Check depth limit - stop if we've reached MaxDepth
+	if crawlTask.Depth >= jobConfig.Scopes.MaxDepth {
+		w.logger.Debug("Max depth reached, skipping link discovery",
+			zap.String("task_id", crawlTask.ID.String()),
+			zap.Uint64("current_depth", crawlTask.Depth),
+			zap.Uint64("max_depth", jobConfig.Scopes.MaxDepth),
+		)
+		return nil
+	}
+
+	// Parse HTML with goquery
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlContent)))
+	if err != nil {
+		return fmt.Errorf("failed to parse HTML for link discovery: %w", err)
+	}
+
+	// Determine base URL for resolving relative links
+	var baseURL *url.URL
+	if crawlTask.FinalURL != nil && *crawlTask.FinalURL != "" {
+		baseURL, err = url.Parse(*crawlTask.FinalURL)
+	} else {
+		baseURL, err = url.Parse(crawlTask.URL)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to parse base URL: %w", err)
+	}
+
+	// Extract all links and dedupe
+	linkSet := make(map[string]bool)
+	doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if !exists || href == "" {
+			return
+		}
+
+		// Parse and resolve relative URL
+		linkURL, err := url.Parse(strings.TrimSpace(href))
+		if err != nil {
+			return
+		}
+
+		// Resolve relative URLs
+		absoluteURL := baseURL.ResolveReference(linkURL)
+
+		// Filter out unwanted schemes
+		scheme := strings.ToLower(absoluteURL.Scheme)
+		if scheme != "http" && scheme != "https" {
+			return
+		}
+
+		// Remove fragment
+		absoluteURL.Fragment = ""
+
+		normalizedURL := absoluteURL.String()
+		linkSet[normalizedURL] = true
+	})
+
+	if len(linkSet) == 0 {
+		w.logger.Debug("No valid links found on page",
+			zap.String("task_id", crawlTask.ID.String()),
+		)
+		return nil
+	}
+
+	// Filter links by scope rules and prepare tasks/events
+	nextDepth := crawlTask.Depth + 1
+	tasks := make([]models.CrawlTask, 0)
+	outboxEvents := make([]models.OutboxEvent, 0)
+	now := time.Now().UTC()
+
+	for link := range linkSet {
+		// Validate against scope rules
+		if err := w.scopeValidator.Validate(link, nextDepth, jobConfig.Scopes); err != nil {
+			w.logger.Debug("Link filtered by scope rules",
+				zap.String("url", link),
+				zap.Error(err),
+			)
+			continue
+		}
+
+		// Create new CrawlTask
+		taskID := valueobjects.GenerateCrawlTaskID()
+		task := models.CrawlTask{
+			ID:         taskID,
+			JobID:      crawlTask.JobID,
+			URL:        link,
+			Status:     models.TaskStatusInProgress,
+			EnqueuedAt: now,
+			Depth:      nextDepth,
+		}
+		tasks = append(tasks, task)
+
+		// Create TaskEnqueuedEvent
+		event := events.NewTaskEnqueuedEvent(
+			taskID.String(),
+			crawlTask.JobID.String(),
+			link,
+			now,
+		)
+
+		// Marshal event to JSON
+		payload, err := json.Marshal(event)
+		if err != nil {
+			return fmt.Errorf("failed to marshal event for task %s: %w", taskID.String(), err)
+		}
+
+		// Create OutboxEvent
+		outboxEvent := models.OutboxEvent{
+			ID:          valueobjects.GenerateOutboxEventID(),
+			EventType:   string(event.Type),
+			AggregateID: taskID.String(),
+			Payload:     payload,
+			OccurredAt:  event.OccurredAt,
+			ProcessedAt: nil,
+			CreatedAt:   now,
+		}
+		outboxEvents = append(outboxEvents, outboxEvent)
+	}
+
+	if len(tasks) == 0 {
+		w.logger.Debug("No links passed scope validation",
+			zap.String("task_id", crawlTask.ID.String()),
+			zap.Int("total_links", len(linkSet)),
+		)
+		return nil
+	}
+
+	// Persist tasks and outbox events atomically
+	err = w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		// Bulk create tasks
+		if err := w.taskRepo.BulkCreate(ctx, tasks); err != nil {
+			return fmt.Errorf("failed to bulk create tasks: %w", err)
+		}
+
+		// Bulk create outbox events
+		if err := w.outboxRepo.BulkCreate(ctx, outboxEvents); err != nil {
+			return fmt.Errorf("failed to bulk create outbox events: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to persist discovered links: %w", err)
+	}
+
+	w.logger.Info("Successfully discovered and enqueued new links",
+		zap.String("task_id", crawlTask.ID.String()),
+		zap.Int("links_discovered", len(linkSet)),
+		zap.Int("links_enqueued", len(tasks)),
+		zap.Uint64("next_depth", nextDepth),
+	)
+
+	return nil
 }
