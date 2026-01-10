@@ -25,6 +25,7 @@ type FetchWorker struct {
 	jobConfigRepo   crawljobconfig.CrawlJobConfigRepository
 	fetcherFactory  services.FetcherFactory
 	scopeValidator  services.ScopeValidator
+	rateLimiter     services.RateLimiter
 	logger          *zap.Logger
 }
 
@@ -38,6 +39,7 @@ func NewFetchWorker(
 	jobConfigRepo crawljobconfig.CrawlJobConfigRepository,
 	fetcherFactory services.FetcherFactory,
 	scopeValidator services.ScopeValidator,
+	rateLimiter services.RateLimiter,
 	logger *zap.Logger,
 ) *FetchWorker {
 	return &FetchWorker{
@@ -49,6 +51,7 @@ func NewFetchWorker(
 		jobConfigRepo:  jobConfigRepo,
 		fetcherFactory: fetcherFactory,
 		scopeValidator: scopeValidator,
+		rateLimiter:    rateLimiter,
 		logger:         logger,
 	}
 }
@@ -130,6 +133,49 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 
 		// Don't return error - task is processed (marked as failed)
 		return nil
+	}
+
+	// Apply rate limiting before fetching
+	// Use "domain" as scope and extract domain from URL as id
+	// For simplicity, we'll use the entire URL as id (in production, parse domain)
+	allowed, retryAfter, err := w.rateLimiter.Allow(ctx, *config, "url", task.URL)
+	if err != nil {
+		w.logger.Error("Failed to check rate limit",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+			zap.Error(err),
+		)
+		return fmt.Errorf("failed to check rate limit: %w", err)
+	}
+
+	if !allowed {
+		w.logger.Warn("Request rate limited, need to wait",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+			zap.Duration("retry_after", retryAfter),
+		)
+
+		// Wait for the retry period
+		time.Sleep(retryAfter)
+
+		// Retry rate limit check after waiting
+		allowed, retryAfter, err = w.rateLimiter.Allow(ctx, *config, "url", task.URL)
+		if err != nil {
+			w.logger.Error("Failed to check rate limit after retry",
+				zap.String("task_id", taskMsg.TaskID),
+				zap.Error(err),
+			)
+			return fmt.Errorf("failed to check rate limit after retry: %w", err)
+		}
+
+		if !allowed {
+			// Still rate limited - this shouldn't happen after waiting, but handle it
+			w.logger.Error("Still rate limited after waiting",
+				zap.String("task_id", taskMsg.TaskID),
+				zap.Duration("retry_after", retryAfter),
+			)
+			return fmt.Errorf("still rate limited after waiting %v", retryAfter)
+		}
 	}
 
 	// Create configured fetcher

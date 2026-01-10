@@ -46,3 +46,9 @@ type MinIOConfig interface {
 	UseSSL() bool
 	BucketName() string
 }
+
+type RedisConfig interface {
+	Address() string
+	Password() string
+	DB() int
+}

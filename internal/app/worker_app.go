@@ -5,9 +5,11 @@ import (
 	"flag"
 	"log"
 	"sync"
+	"time"
 
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
+	"distributed-crawler/internal/infra/cache"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
@@ -16,6 +18,7 @@ import (
 	"distributed-crawler/internal/infra/services/fetcher"
 	"distributed-crawler/internal/worker"
 
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -39,6 +42,7 @@ type WorkerApp struct {
 	pgClient     persistence.Client
 	rmqClient    rabbitmq.Client
 	rmqConfig    config.RabbitMQConfig
+	redisClient  *redis.Client
 
 	fetchWorker  *worker.FetchWorker
 	parserWorker *worker.ParserWorker
@@ -70,6 +74,9 @@ func (a *WorkerApp) Run() error {
 		if a.rmqClient != nil {
 			a.rmqClient.Close()
 		}
+		if a.redisClient != nil {
+			a.redisClient.Close()
+		}
 		if a.zapLogger != nil {
 			a.zapLogger.Sync()
 		}
@@ -92,6 +99,7 @@ func (a *WorkerApp) initDeps(ctx context.Context) error {
 		a.initLogger,
 		a.initPostgreSQL,
 		a.initRabbitMQ,
+		a.initRedis,
 		a.initWorker,
 	}
 
@@ -171,6 +179,21 @@ func (a *WorkerApp) initRabbitMQ(_ context.Context) error {
 	return nil
 }
 
+func (a *WorkerApp) initRedis(_ context.Context) error {
+	redisCfg, err := env.NewRedisConfig()
+	if err != nil {
+		a.zapLogger.Fatal("Failed to create Redis config", zap.Error(err))
+	}
+
+	redisClient, err := cache.NewRedisClient(redisCfg)
+	if err != nil {
+		a.zapLogger.Fatal("Failed to create Redis client", zap.Error(err))
+	}
+
+	a.redisClient = redisClient
+	return nil
+}
+
 func (a *WorkerApp) initWorker(ctx context.Context) error {
 	a.workerCtx, a.workerCancel = context.WithCancel(ctx)
 
@@ -213,6 +236,9 @@ func (a *WorkerApp) initFetchWorker() error {
 	fetcherFactory := fetcher.NewHTTPFetcherFactory()
 	scopeValidator := fetcher.NewDomainScopeValidator()
 
+	// Initialize rate limiter with 5 minute TTL
+	rateLimiter := cache.NewRedisRateLimiter(a.redisClient, 5*time.Minute)
+
 	// Get queue names from configuration
 	crawlQueue := a.rmqConfig.GetQueueName(config.CrawlQueueKey)
 	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
@@ -227,6 +253,7 @@ func (a *WorkerApp) initFetchWorker() error {
 		jobConfigRepo,
 		fetcherFactory,
 		scopeValidator,
+		rateLimiter,
 		a.zapLogger,
 	)
 

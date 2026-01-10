@@ -21,9 +21,7 @@ func ToProtoAuthOptions(auth models.AuthOptions) *crawlergrpc.AuthOptions {
 // ToProtoRateLimitPolicy converts domain RateLimitPolicy to protobuf
 func ToProtoRateLimitPolicy(rateLimit models.RateLimitPolicy) *crawlergrpc.RateLimitPolicy {
 	return &crawlergrpc.RateLimitPolicy{
-		MaxConcurrency: rateLimit.MaxConcurrency,
-		JitterMs:       rateLimit.JitterMs,
-		Rps:            rateLimit.Rps,
+		Rps: rateLimit.Rps,
 	}
 }
 
@@ -247,9 +245,7 @@ func FromProtoRateLimitPolicy(proto *crawlergrpc.RateLimitPolicy) models.RateLim
 	}
 
 	return models.RateLimitPolicy{
-		MaxConcurrency: proto.MaxConcurrency,
-		JitterMs:       proto.JitterMs,
-		Rps:            proto.Rps,
+		Rps: proto.Rps,
 	}
 }
 

@@ -164,10 +164,6 @@ func (m *RateLimitPolicy) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for MaxConcurrency
-
-	// no validation rules for JitterMs
-
 	// no validation rules for Rps
 
 	if len(errors) > 0 {

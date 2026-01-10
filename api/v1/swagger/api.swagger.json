@@ -502,14 +502,6 @@
     "v1RateLimitPolicy": {
       "type": "object",
       "properties": {
-        "max_concurrency": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "jitter_ms": {
-          "type": "string",
-          "format": "uint64"
-        },
         "rps": {
           "type": "number",
           "format": "double"

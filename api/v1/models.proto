@@ -35,8 +35,6 @@ message AuthOptions {
 
 // RateLimitPolicy defines rate limiting configuration
 message RateLimitPolicy {
-  uint64 max_concurrency = 1 [json_name = "max_concurrency"];
-  uint64 jitter_ms = 2 [json_name = "jitter_ms"];
   double rps = 3;
 }
 

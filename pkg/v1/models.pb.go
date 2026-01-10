@@ -95,12 +95,10 @@ func (x *AuthOptions) GetBearerToken() string {
 
 // RateLimitPolicy defines rate limiting configuration
 type RateLimitPolicy struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	MaxConcurrency uint64                 `protobuf:"varint,1,opt,name=max_concurrency,proto3" json:"max_concurrency,omitempty"`
-	JitterMs       uint64                 `protobuf:"varint,2,opt,name=jitter_ms,proto3" json:"jitter_ms,omitempty"`
-	Rps            float64                `protobuf:"fixed64,3,opt,name=rps,proto3" json:"rps,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rps           float64                `protobuf:"fixed64,3,opt,name=rps,proto3" json:"rps,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RateLimitPolicy) Reset() {
@@ -131,20 +129,6 @@ func (x *RateLimitPolicy) ProtoReflect() protoreflect.Message {
 // Deprecated: Use RateLimitPolicy.ProtoReflect.Descriptor instead.
 func (*RateLimitPolicy) Descriptor() ([]byte, []int) {
 	return file_v1_models_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *RateLimitPolicy) GetMaxConcurrency() uint64 {
-	if x != nil {
-		return x.MaxConcurrency
-	}
-	return 0
-}
-
-func (x *RateLimitPolicy) GetJitterMs() uint64 {
-	if x != nil {
-		return x.JitterMs
-	}
-	return 0
 }
 
 func (x *RateLimitPolicy) GetRps() float64 {
@@ -1558,10 +1542,8 @@ const file_v1_models_proto_rawDesc = "" +
 	"basic_user\x18\x02 \x01(\tR\n" +
 	"basic_user\x12&\n" +
 	"\x0ebasic_password\x18\x03 \x01(\tR\x0ebasic_password\x12\"\n" +
-	"\fbearer_token\x18\x04 \x01(\tR\fbearer_token\"k\n" +
-	"\x0fRateLimitPolicy\x12(\n" +
-	"\x0fmax_concurrency\x18\x01 \x01(\x04R\x0fmax_concurrency\x12\x1c\n" +
-	"\tjitter_ms\x18\x02 \x01(\x04R\tjitter_ms\x12\x10\n" +
+	"\fbearer_token\x18\x04 \x01(\tR\fbearer_token\"#\n" +
+	"\x0fRateLimitPolicy\x12\x10\n" +
 	"\x03rps\x18\x03 \x01(\x01R\x03rps\"\x91\x01\n" +
 	"\vRetryPolicy\x12\"\n" +
 	"\fmax_attempts\x18\x01 \x01(\x04R\fmax_attempts\x12.\n" +

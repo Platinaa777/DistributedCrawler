@@ -79,3 +79,6 @@ local-migration-up:
 
 local-migration-down:
 	$(GOOSE) -dir $(LOCAL_MIGRATION_DIR) postgres $(LOCAL_MIGRATION_DSN) down -v
+
+local-migration-create:
+	$(GOOSE) -dir $(LOCAL_MIGRATION_DIR) create $(NAME) sql
