@@ -17,4 +17,10 @@ type CrawlJob struct {
 	CompletedAt *time.Time
 
 	Error map[string]any
+
+	// Export fields (Part B - ExportWorker)
+	ExportJSONKey *string        // S3 object key for JSON export
+	ExportCSVKey  *string        // S3 object key for CSV export
+	ExportedAt    *time.Time     // When export was completed
+	ExportStatus  ExportStatus   // Export status (NOT_STARTED, IN_PROGRESS, COMPLETED, FAILED)
 }

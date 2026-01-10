@@ -146,8 +146,14 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		return fmt.Errorf("failed to extract data: %w", err)
 	}
 
-	// Print results to console
-	w.printResults(task.TaskID, crawlTask.URL, result)
+	// Persist results to S3 and DB (Part A - result persistence)
+	if err := w.persistResults(ctx, task.TaskID, crawlTask.URL, result); err != nil {
+		w.logger.Error("Failed to persist results",
+			zap.String("task_id", task.TaskID),
+			zap.Error(err),
+		)
+		return fmt.Errorf("failed to persist results: %w", err)
+	}
 
 	// Discover and enqueue new links for crawling
 	if err := w.discoverAndEnqueueLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
@@ -676,8 +682,9 @@ func (w *ParserWorker) computeMetric(
 	return nil
 }
 
-// printResults prints extraction results to console
-func (w *ParserWorker) printResults(taskID, url string, result *extractionResult) {
+// persistResults uploads extraction results to S3 and updates DB (Part A - result persistence)
+func (w *ParserWorker) persistResults(ctx context.Context, taskID, url string, result *extractionResult) error {
+	// Prepare output structure (same as before)
 	output := map[string]any{
 		"task_id": taskID,
 		"url":     url,
@@ -685,13 +692,42 @@ func (w *ParserWorker) printResults(taskID, url string, result *extractionResult
 		"metrics": result.Metrics,
 	}
 
-	jsonOutput, err := json.MarshalIndent(output, "", "  ")
+	// Marshal to JSON
+	jsonData, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
-		w.logger.Error("Failed to marshal output", zap.Error(err))
-		return
+		return fmt.Errorf("failed to marshal output: %w", err)
 	}
 
-	fmt.Println("\n" + string(jsonOutput) + "\n")
+	// Determine S3 object key: results/tasks/{task_id}.json
+	objectKey := fmt.Sprintf("results/tasks/%s.json", taskID)
+
+	// Upload to S3
+	if err := w.contentStore.Store(ctx, objectKey, jsonData, "application/json"); err != nil {
+		return fmt.Errorf("failed to upload result to S3: %w", err)
+	}
+
+	w.logger.Info("Result uploaded to S3",
+		zap.String("task_id", taskID),
+		zap.String("object_key", objectKey),
+		zap.Int("size_bytes", len(jsonData)),
+	)
+
+	// Update DB with result reference
+	parsedTaskID, err := valueobjects.NewCrawlTaskID(taskID)
+	if err != nil {
+		return fmt.Errorf("invalid task ID: %w", err)
+	}
+
+	if err := w.taskRepo.SetTaskResult(ctx, parsedTaskID, objectKey, "application/json", int64(len(jsonData))); err != nil {
+		return fmt.Errorf("failed to update task result in DB: %w", err)
+	}
+
+	w.logger.Info("Task result reference saved to DB",
+		zap.String("task_id", taskID),
+		zap.String("result_object_key", objectKey),
+	)
+
+	return nil
 }
 
 // discoverAndEnqueueLinks extracts links from HTML, filters them, and enqueues new crawl tasks via Outbox

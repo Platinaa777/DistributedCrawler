@@ -12,4 +12,10 @@ type CrawlJobSnapshot struct {
 	CreatedAt   time.Time      `db:"created_at"`
 	CompletedAt sql.NullTime   `db:"completed_at"`
 	Error       JSONB          `db:"error"`
+
+	// Export fields (Part B - ExportWorker)
+	ExportJSONKey sql.NullString `db:"export_json_key"`
+	ExportCSVKey  sql.NullString `db:"export_csv_key"`
+	ExportedAt    sql.NullTime   `db:"exported_at"`
+	ExportStatus  sql.NullString `db:"export_status"`
 }

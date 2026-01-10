@@ -35,6 +35,30 @@ func SaveCrawlJobToSnapshot(crawlJob models.CrawlJob) *snapshots.CrawlJobSnapsho
 		snapshot.Error = crawlJob.Error
 	}
 
+	// Handle export fields
+	if crawlJob.ExportJSONKey != nil {
+		snapshot.ExportJSONKey = sql.NullString{
+			String: *crawlJob.ExportJSONKey,
+			Valid:  true,
+		}
+	}
+	if crawlJob.ExportCSVKey != nil {
+		snapshot.ExportCSVKey = sql.NullString{
+			String: *crawlJob.ExportCSVKey,
+			Valid:  true,
+		}
+	}
+	if crawlJob.ExportedAt != nil {
+		snapshot.ExportedAt = sql.NullTime{
+			Time:  *crawlJob.ExportedAt,
+			Valid: true,
+		}
+	}
+	snapshot.ExportStatus = sql.NullString{
+		String: crawlJob.ExportStatus.String(),
+		Valid:  true,
+	}
+
 	return snapshot
 }
 
@@ -67,6 +91,23 @@ func RestoreCrawlJobFromSnapshot(crawlJob snapshots.CrawlJobSnapshot) (*models.C
 	// Handle Error
 	if crawlJob.Error != nil {
 		job.Error = crawlJob.Error
+	}
+
+	// Handle export fields
+	if crawlJob.ExportJSONKey.Valid {
+		job.ExportJSONKey = &crawlJob.ExportJSONKey.String
+	}
+	if crawlJob.ExportCSVKey.Valid {
+		job.ExportCSVKey = &crawlJob.ExportCSVKey.String
+	}
+	if crawlJob.ExportedAt.Valid {
+		job.ExportedAt = &crawlJob.ExportedAt.Time
+	}
+	if crawlJob.ExportStatus.Valid {
+		job.ExportStatus = models.ExportStatus(crawlJob.ExportStatus.String)
+	} else {
+		// Default to NOT_STARTED if null
+		job.ExportStatus = models.ExportStatusNotStarted
 	}
 
 	return job, nil

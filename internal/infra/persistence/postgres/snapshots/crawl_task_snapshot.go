@@ -15,6 +15,12 @@ type CrawlTaskSnapshot struct {
 	Depth          uint64         `db:"depth"`
 	BodyHash       string         `db:"body_hash"`
 	MinioObjectKey string         `db:"minio_object_key"`
+
+	// Result persistence fields
+	ResultObjectKey   sql.NullString `db:"result_object_key"`
+	ResultContentType sql.NullString `db:"result_content_type"`
+	ResultSizeBytes   sql.NullInt64  `db:"result_size_bytes"`
+	ResultCreatedAt   sql.NullTime   `db:"result_created_at"`
 }
 
 type CrawlTaskWithJobSnapshot struct {

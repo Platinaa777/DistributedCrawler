@@ -28,6 +28,32 @@ func SaveCrawlTaskToSnapshot(crawlTask models.CrawlTask) *snapshots.CrawlTaskSna
 		}
 	}
 
+	// Handle result fields
+	if crawlTask.ResultObjectKey != nil {
+		snapshot.ResultObjectKey = sql.NullString{
+			String: *crawlTask.ResultObjectKey,
+			Valid:  true,
+		}
+	}
+	if crawlTask.ResultContentType != nil {
+		snapshot.ResultContentType = sql.NullString{
+			String: *crawlTask.ResultContentType,
+			Valid:  true,
+		}
+	}
+	if crawlTask.ResultSizeBytes != nil {
+		snapshot.ResultSizeBytes = sql.NullInt64{
+			Int64: *crawlTask.ResultSizeBytes,
+			Valid: true,
+		}
+	}
+	if crawlTask.ResultCreatedAt != nil {
+		snapshot.ResultCreatedAt = sql.NullTime{
+			Time:  *crawlTask.ResultCreatedAt,
+			Valid: true,
+		}
+	}
+
 	return snapshot
 }
 
@@ -57,6 +83,20 @@ func RestoreCrawlTaskFromSnapshot(snapshot snapshots.CrawlTaskSnapshot) (*models
 	// Handle FinalURL
 	if snapshot.FinalURL.Valid {
 		task.FinalURL = &snapshot.FinalURL.String
+	}
+
+	// Handle result fields
+	if snapshot.ResultObjectKey.Valid {
+		task.ResultObjectKey = &snapshot.ResultObjectKey.String
+	}
+	if snapshot.ResultContentType.Valid {
+		task.ResultContentType = &snapshot.ResultContentType.String
+	}
+	if snapshot.ResultSizeBytes.Valid {
+		task.ResultSizeBytes = &snapshot.ResultSizeBytes.Int64
+	}
+	if snapshot.ResultCreatedAt.Valid {
+		task.ResultCreatedAt = &snapshot.ResultCreatedAt.Time
 	}
 
 	return task, nil
@@ -96,6 +136,20 @@ func RestoreCrawlTaskWithJobFromSnapshot(snapshot snapshots.CrawlTaskWithJobSnap
 	// Handle FinalURL
 	if snapshot.FinalURL.Valid {
 		task.FinalURL = &snapshot.FinalURL.String
+	}
+
+	// Handle result fields
+	if snapshot.ResultObjectKey.Valid {
+		task.ResultObjectKey = &snapshot.ResultObjectKey.String
+	}
+	if snapshot.ResultContentType.Valid {
+		task.ResultContentType = &snapshot.ResultContentType.String
+	}
+	if snapshot.ResultSizeBytes.Valid {
+		task.ResultSizeBytes = &snapshot.ResultSizeBytes.Int64
+	}
+	if snapshot.ResultCreatedAt.Valid {
+		task.ResultCreatedAt = &snapshot.ResultCreatedAt.Time
 	}
 
 	return task, nil

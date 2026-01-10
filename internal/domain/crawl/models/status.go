@@ -41,3 +41,25 @@ func AllTaskStatusesString() string {
 	}
 	return result
 }
+
+// ExportStatus represents the status of job export (Part B - ExportWorker)
+type ExportStatus string
+
+const (
+	ExportStatusNotStarted ExportStatus = "NOT_STARTED"
+	ExportStatusInProgress ExportStatus = "IN_PROGRESS"
+	ExportStatusCompleted  ExportStatus = "COMPLETED"
+	ExportStatusFailed     ExportStatus = "FAILED"
+)
+
+func (s ExportStatus) String() string {
+	return string(s)
+}
+
+func (s ExportStatus) IsValid() bool {
+	switch s {
+	case ExportStatusNotStarted, ExportStatusInProgress, ExportStatusCompleted, ExportStatusFailed:
+		return true
+	}
+	return false
+}
