@@ -58,6 +58,10 @@ run-parser:
 	@echo "Run parser..."
 	go run ./cmd/parser_worker/main.go --config-path=.worker.env
 
+run-export:
+	@echo "Run export worker..."
+	go run ./cmd/export_worker/main.go --config-path=.worker.env
+
 test:
 	go clean -testcache
 	go test ./... -covermode count -coverpkg=distributed-crawler/... -count 5

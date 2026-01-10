@@ -35,6 +35,7 @@ type WorkerType string
 const (
 	FetchWorkerType  WorkerType = "fetch"
 	ParserWorkerType WorkerType = "parser"
+	ExportWorkerType WorkerType = "export"
 )
 
 type WorkerApp struct {
@@ -47,6 +48,7 @@ type WorkerApp struct {
 
 	fetchWorker  *worker.FetchWorker
 	parserWorker *worker.ParserWorker
+	exportWorker *worker.ExportWorker
 
 	workerCtx    context.Context
 	workerCancel context.CancelFunc
@@ -203,6 +205,8 @@ func (a *WorkerApp) initWorker(ctx context.Context) error {
 		return a.initFetchWorker()
 	case ParserWorkerType:
 		return a.initParserWorker()
+	case ExportWorkerType:
+		return a.initExportWorker()
 	default:
 		log.Fatalf("unknown worker type: %s", a.workerType)
 	}
@@ -312,6 +316,45 @@ func (a *WorkerApp) initParserWorker() error {
 	return nil
 }
 
+func (a *WorkerApp) initExportWorker() error {
+	// Initialize MinIO
+	minioCfg, err := env.NewMinIOConfig()
+	if err != nil {
+		a.zapLogger.Fatal("Failed to create MinIO config", zap.Error(err))
+	}
+
+	contentStore, err := contentstore.NewMinIOStore(
+		minioCfg.Endpoint(),
+		minioCfg.AccessKeyID(),
+		minioCfg.SecretAccessKey(),
+		minioCfg.UseSSL(),
+		minioCfg.BucketName(),
+		a.zapLogger,
+	)
+	if err != nil {
+		a.zapLogger.Fatal("Failed to create MinIO store", zap.Error(err))
+	}
+
+	// Initialize repositories
+	jobRepo := repos.NewCrawlRepository(a.pgClient)
+	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
+
+	// Create export worker with poll interval and batch size
+	pollInterval := 30 * time.Second // Poll every 30 seconds
+	batchSize := 10                   // Process up to 10 jobs per batch
+
+	a.exportWorker = worker.NewExportWorker(
+		jobRepo,
+		taskRepo,
+		contentStore,
+		pollInterval,
+		batchSize,
+		a.zapLogger,
+	)
+
+	return nil
+}
+
 func (a *WorkerApp) runWorker() {
 	switch a.workerType {
 	case FetchWorkerType:
@@ -323,6 +366,11 @@ func (a *WorkerApp) runWorker() {
 		a.zapLogger.Info("Parser worker started")
 		if err := a.parserWorker.Start(a.workerCtx); err != nil {
 			a.zapLogger.Fatal("Parser worker failed", zap.Error(err))
+		}
+	case ExportWorkerType:
+		a.zapLogger.Info("Export worker started")
+		if err := a.exportWorker.Start(a.workerCtx); err != nil {
+			a.zapLogger.Fatal("Export worker failed", zap.Error(err))
 		}
 	}
 }
