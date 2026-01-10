@@ -36,7 +36,12 @@ const file_v1_service_proto_rawDesc = "" +
 	"\x0ePreviewService\x12q\n" +
 	"\rCreatePreview\x12 .crawler.v1.CreatePreviewRequest\x1a!.crawler.v1.CreatePreviewResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/v1/previews\x12j\n" +
 	"\n" +
-	"GetPreview\x12\x1d.crawler.v1.GetPreviewRequest\x1a\x1e.crawler.v1.GetPreviewResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/previews/{id}B\x90\x01\n" +
+	"GetPreview\x12\x1d.crawler.v1.GetPreviewRequest\x1a\x1e.crawler.v1.GetPreviewResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/previews/{id}2\x99\x03\n" +
+	"\vAuthService\x12g\n" +
+	"\bRegister\x12\x1b.crawler.v1.RegisterRequest\x1a\x1c.crawler.v1.RegisterResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/auth/register\x12[\n" +
+	"\x05Login\x12\x18.crawler.v1.LoginRequest\x1a\x19.crawler.v1.LoginResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/v1/auth/login\x12c\n" +
+	"\aRefresh\x12\x1a.crawler.v1.RefreshRequest\x1a\x1b.crawler.v1.RefreshResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/auth/refresh\x12_\n" +
+	"\x06Logout\x12\x19.crawler.v1.LogoutRequest\x1a\x1a.crawler.v1.LogoutResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/logoutB\x90\x01\n" +
 	"\x0ecom.crawler.v1B\fServiceProtoP\x01Z'distributed-crawler/pkg/api/crawlergrpc\xa2\x02\x03CXX\xaa\x02\n" +
 	"Crawler.V1\xca\x02\n" +
 	"Crawler\\V1\xe2\x02\x16Crawler\\V1\\GPBMetadata\xea\x02\vCrawler::V1b\x06proto3"
@@ -49,13 +54,21 @@ var file_v1_service_proto_goTypes = []any{
 	(*ListTasksByJobRequest)(nil),  // 4: crawler.v1.ListTasksByJobRequest
 	(*CreatePreviewRequest)(nil),   // 5: crawler.v1.CreatePreviewRequest
 	(*GetPreviewRequest)(nil),      // 6: crawler.v1.GetPreviewRequest
-	(*ListJobsResponse)(nil),       // 7: crawler.v1.ListJobsResponse
-	(*CreateJobResponse)(nil),      // 8: crawler.v1.CreateJobResponse
-	(*GetJobResponse)(nil),         // 9: crawler.v1.GetJobResponse
-	(*GetTaskResponse)(nil),        // 10: crawler.v1.GetTaskResponse
-	(*ListTasksByJobResponse)(nil), // 11: crawler.v1.ListTasksByJobResponse
-	(*CreatePreviewResponse)(nil),  // 12: crawler.v1.CreatePreviewResponse
-	(*GetPreviewResponse)(nil),     // 13: crawler.v1.GetPreviewResponse
+	(*RegisterRequest)(nil),        // 7: crawler.v1.RegisterRequest
+	(*LoginRequest)(nil),           // 8: crawler.v1.LoginRequest
+	(*RefreshRequest)(nil),         // 9: crawler.v1.RefreshRequest
+	(*LogoutRequest)(nil),          // 10: crawler.v1.LogoutRequest
+	(*ListJobsResponse)(nil),       // 11: crawler.v1.ListJobsResponse
+	(*CreateJobResponse)(nil),      // 12: crawler.v1.CreateJobResponse
+	(*GetJobResponse)(nil),         // 13: crawler.v1.GetJobResponse
+	(*GetTaskResponse)(nil),        // 14: crawler.v1.GetTaskResponse
+	(*ListTasksByJobResponse)(nil), // 15: crawler.v1.ListTasksByJobResponse
+	(*CreatePreviewResponse)(nil),  // 16: crawler.v1.CreatePreviewResponse
+	(*GetPreviewResponse)(nil),     // 17: crawler.v1.GetPreviewResponse
+	(*RegisterResponse)(nil),       // 18: crawler.v1.RegisterResponse
+	(*LoginResponse)(nil),          // 19: crawler.v1.LoginResponse
+	(*RefreshResponse)(nil),        // 20: crawler.v1.RefreshResponse
+	(*LogoutResponse)(nil),         // 21: crawler.v1.LogoutResponse
 }
 var file_v1_service_proto_depIdxs = []int32{
 	0,  // 0: crawler.v1.CrawlerService.ListJobs:input_type -> crawler.v1.ListJobsRequest
@@ -65,15 +78,23 @@ var file_v1_service_proto_depIdxs = []int32{
 	4,  // 4: crawler.v1.CrawlerService.ListTasksByJob:input_type -> crawler.v1.ListTasksByJobRequest
 	5,  // 5: crawler.v1.PreviewService.CreatePreview:input_type -> crawler.v1.CreatePreviewRequest
 	6,  // 6: crawler.v1.PreviewService.GetPreview:input_type -> crawler.v1.GetPreviewRequest
-	7,  // 7: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
-	8,  // 8: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
-	9,  // 9: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
-	10, // 10: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
-	11, // 11: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
-	12, // 12: crawler.v1.PreviewService.CreatePreview:output_type -> crawler.v1.CreatePreviewResponse
-	13, // 13: crawler.v1.PreviewService.GetPreview:output_type -> crawler.v1.GetPreviewResponse
-	7,  // [7:14] is the sub-list for method output_type
-	0,  // [0:7] is the sub-list for method input_type
+	7,  // 7: crawler.v1.AuthService.Register:input_type -> crawler.v1.RegisterRequest
+	8,  // 8: crawler.v1.AuthService.Login:input_type -> crawler.v1.LoginRequest
+	9,  // 9: crawler.v1.AuthService.Refresh:input_type -> crawler.v1.RefreshRequest
+	10, // 10: crawler.v1.AuthService.Logout:input_type -> crawler.v1.LogoutRequest
+	11, // 11: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
+	12, // 12: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
+	13, // 13: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
+	14, // 14: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
+	15, // 15: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
+	16, // 16: crawler.v1.PreviewService.CreatePreview:output_type -> crawler.v1.CreatePreviewResponse
+	17, // 17: crawler.v1.PreviewService.GetPreview:output_type -> crawler.v1.GetPreviewResponse
+	18, // 18: crawler.v1.AuthService.Register:output_type -> crawler.v1.RegisterResponse
+	19, // 19: crawler.v1.AuthService.Login:output_type -> crawler.v1.LoginResponse
+	20, // 20: crawler.v1.AuthService.Refresh:output_type -> crawler.v1.RefreshResponse
+	21, // 21: crawler.v1.AuthService.Logout:output_type -> crawler.v1.LogoutResponse
+	11, // [11:22] is the sub-list for method output_type
+	0,  // [0:11] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -93,7 +114,7 @@ func file_v1_service_proto_init() {
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   3,
 		},
 		GoTypes:           file_v1_service_proto_goTypes,
 		DependencyIndexes: file_v1_service_proto_depIdxs,

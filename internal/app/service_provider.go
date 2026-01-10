@@ -3,15 +3,21 @@ package app
 import (
 	"context"
 	"log"
+	"time"
 
+	authapi "distributed-crawler/internal/api/auth"
 	crawljob "distributed-crawler/internal/api/crawl_job"
 	previewapi "distributed-crawler/internal/api/preview"
 	"distributed-crawler/internal/application/service"
+	authservice "distributed-crawler/internal/application/service/auth"
 	crawljobservice "distributed-crawler/internal/application/service/crawl_job"
 	crawltaskservice "distributed-crawler/internal/application/service/crawl_task"
 	previewservice "distributed-crawler/internal/application/service/preview"
+	"distributed-crawler/internal/auth"
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
+	userrepo "distributed-crawler/internal/domain/auth/repos/user"
+	refreshtokenrepo "distributed-crawler/internal/domain/auth/repos/refresh_token"
 	"distributed-crawler/internal/domain/crawl/models"
 	crawljobrepo "distributed-crawler/internal/domain/crawl/repos/crawl_job"
 	crawljobconfig "distributed-crawler/internal/domain/crawl/repos/crawl_job_config"
@@ -38,6 +44,7 @@ type serviceProvider struct {
 	httpConfig     config.HTTPConfig
 	rabbitmqConfig config.RabbitMQConfig
 	minioConfig    config.MinIOConfig
+	authConfig     config.AuthConfig
 
 	dbClient           persistence.Client
 	txManager          persistence.TxManager
@@ -46,19 +53,24 @@ type serviceProvider struct {
 	crawlTaskRepo      crawltaskrepo.CrawlTaskRepository
 	outboxRepo         outbox.OutboxRepository
 	previewRepo        previewrepo.PreviewRepository
+	userRepo           userrepo.UserRepository
+	refreshTokenRepo   refreshtokenrepo.RefreshTokenRepository
 	rmqClient          rabbitmq.Client
 
 	fetcher               services.Fetcher
 	previewFetcherFactory services.FetcherFactory
 	contentStore          services.ContentStore
 	htmlSanitizer         previewservice.HTMLSanitizer
+	jwtService            *auth.JWTService
 
 	crawlJobService  service.CrawlJobService
 	crawlTaskService service.CrawlTaskService
 	previewService   service.PreviewService
+	authService      service.AuthService
 
 	crawlerServiceImpl *crawljob.CrawlJobImplementation
 	previewServiceImpl *previewapi.PreviewImplementation
+	authServiceImpl    *authapi.AuthImplementation
 	outboxPublisher    *worker.OutboxPublisher
 
 	logger *zap.Logger
@@ -356,6 +368,85 @@ func (s *serviceProvider) PreviewServiceImpl(ctx context.Context) *previewapi.Pr
 	}
 
 	return s.previewServiceImpl
+}
+
+func (s *serviceProvider) AuthConfig() config.AuthConfig {
+	if s.authConfig == nil {
+		cfg, err := env.NewAuthConfig()
+		if err != nil {
+			log.Fatalf("failed to get auth config: %s", err.Error())
+		}
+
+		s.authConfig = cfg
+	}
+
+	return s.authConfig
+}
+
+func (s *serviceProvider) UserRepository(ctx context.Context) userrepo.UserRepository {
+	if s.userRepo == nil {
+		s.userRepo = crawljobrepoimpl.NewUserRepository(s.DBClient(ctx))
+	}
+
+	return s.userRepo
+}
+
+func (s *serviceProvider) RefreshTokenRepository(ctx context.Context) refreshtokenrepo.RefreshTokenRepository {
+	if s.refreshTokenRepo == nil {
+		s.refreshTokenRepo = crawljobrepoimpl.NewRefreshTokenRepository(s.DBClient(ctx))
+	}
+
+	return s.refreshTokenRepo
+}
+
+func (s *serviceProvider) JWTService() *auth.JWTService {
+	if s.jwtService == nil {
+		authCfg := s.AuthConfig()
+		s.jwtService = auth.NewJWTService(
+			authCfg.JWTSecret(),
+			authCfg.Issuer(),
+			authCfg.Audience(),
+		)
+	}
+
+	return s.jwtService
+}
+
+func (s *serviceProvider) AuthService(ctx context.Context) service.AuthService {
+	if s.authService == nil {
+		authCfg := s.AuthConfig()
+
+		accessTokenTTL, err := time.ParseDuration(authCfg.AccessTokenTTL())
+		if err != nil {
+			log.Fatalf("failed to parse access token TTL: %v", err)
+		}
+
+		refreshTokenTTL, err := time.ParseDuration(authCfg.RefreshTokenTTL())
+		if err != nil {
+			log.Fatalf("failed to parse refresh token TTL: %v", err)
+		}
+
+		s.authService = authservice.NewAuthService(
+			s.UserRepository(ctx),
+			s.RefreshTokenRepository(ctx),
+			s.TxManager(ctx),
+			s.JWTService(),
+			accessTokenTTL,
+			refreshTokenTTL,
+		)
+	}
+
+	return s.authService
+}
+
+func (s *serviceProvider) AuthServiceImpl(ctx context.Context) *authapi.AuthImplementation {
+	if s.authServiceImpl == nil {
+		s.authServiceImpl = authapi.NewImplementation(
+			s.AuthService(ctx),
+		)
+	}
+
+	return s.authServiceImpl
 }
 
 func (s *serviceProvider) Close() error {

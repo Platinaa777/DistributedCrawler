@@ -52,3 +52,11 @@ type RedisConfig interface {
 	Password() string
 	DB() int
 }
+
+type AuthConfig interface {
+	JWTSecret() string
+	AccessTokenTTL() string
+	RefreshTokenTTL() string
+	Issuer() string
+	Audience() string
+}

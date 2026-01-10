@@ -1806,6 +1806,414 @@ func (x *GetPreviewResponse) GetPreview() *Preview {
 	return nil
 }
 
+type RegisterRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterRequest) Reset() {
+	*x = RegisterRequest{}
+	mi := &file_v1_models_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterRequest) ProtoMessage() {}
+
+func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *RegisterRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+type RegisterResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	ExpiresIn     int32                  `protobuf:"varint,3,opt,name=expires_in,proto3" json:"expires_in,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterResponse) Reset() {
+	*x = RegisterResponse{}
+	mi := &file_v1_models_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterResponse) ProtoMessage() {}
+
+func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
+func (*RegisterResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *RegisterResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *RegisterResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *RegisterResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+type LoginRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginRequest) Reset() {
+	*x = LoginRequest{}
+	mi := &file_v1_models_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginRequest) ProtoMessage() {}
+
+func (x *LoginRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
+func (*LoginRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *LoginRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *LoginRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+type LoginResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	ExpiresIn     int32                  `protobuf:"varint,3,opt,name=expires_in,proto3" json:"expires_in,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginResponse) Reset() {
+	*x = LoginResponse{}
+	mi := &file_v1_models_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginResponse) ProtoMessage() {}
+
+func (x *LoginResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
+func (*LoginResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *LoginResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+type RefreshRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefreshRequest) Reset() {
+	*x = RefreshRequest{}
+	mi := &file_v1_models_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefreshRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefreshRequest) ProtoMessage() {}
+
+func (x *RefreshRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefreshRequest.ProtoReflect.Descriptor instead.
+func (*RefreshRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *RefreshRequest) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+type RefreshResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	ExpiresIn     int32                  `protobuf:"varint,3,opt,name=expires_in,proto3" json:"expires_in,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefreshResponse) Reset() {
+	*x = RefreshResponse{}
+	mi := &file_v1_models_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefreshResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefreshResponse) ProtoMessage() {}
+
+func (x *RefreshResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefreshResponse.ProtoReflect.Descriptor instead.
+func (*RefreshResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *RefreshResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *RefreshResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *RefreshResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+type LogoutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_v1_models_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutRequest) ProtoMessage() {}
+
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *LogoutRequest) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+type LogoutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutResponse) Reset() {
+	*x = LogoutResponse{}
+	mi := &file_v1_models_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutResponse) ProtoMessage() {}
+
+func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
+func (*LogoutResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{37}
+}
+
 var File_v1_models_proto protoreflect.FileDescriptor
 
 const file_v1_models_proto_rawDesc = "" +
@@ -1956,7 +2364,36 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x11GetPreviewRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
 	"\x12GetPreviewResponse\x12-\n" +
-	"\apreview\x18\x01 \x01(\v2\x13.crawler.v1.PreviewR\apreviewB\x84\x02\x92Ar\x128\n" +
+	"\apreview\x18\x01 \x01(\v2\x13.crawler.v1.PreviewR\apreview\"U\n" +
+	"\x0fRegisterRequest\x12\x1d\n" +
+	"\x05email\x18\x01 \x01(\tB\a\xfaB\x04r\x02`\x01R\x05email\x12#\n" +
+	"\bpassword\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\bR\bpassword\"|\n" +
+	"\x10RegisterResponse\x12\"\n" +
+	"\faccess_token\x18\x01 \x01(\tR\faccess_token\x12$\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\rrefresh_token\x12\x1e\n" +
+	"\n" +
+	"expires_in\x18\x03 \x01(\x05R\n" +
+	"expires_in\"R\n" +
+	"\fLoginRequest\x12\x1d\n" +
+	"\x05email\x18\x01 \x01(\tB\a\xfaB\x04r\x02`\x01R\x05email\x12#\n" +
+	"\bpassword\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\bpassword\"y\n" +
+	"\rLoginResponse\x12\"\n" +
+	"\faccess_token\x18\x01 \x01(\tR\faccess_token\x12$\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\rrefresh_token\x12\x1e\n" +
+	"\n" +
+	"expires_in\x18\x03 \x01(\x05R\n" +
+	"expires_in\"?\n" +
+	"\x0eRefreshRequest\x12-\n" +
+	"\rrefresh_token\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\rrefresh_token\"{\n" +
+	"\x0fRefreshResponse\x12\"\n" +
+	"\faccess_token\x18\x01 \x01(\tR\faccess_token\x12$\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\rrefresh_token\x12\x1e\n" +
+	"\n" +
+	"expires_in\x18\x03 \x01(\x05R\n" +
+	"expires_in\">\n" +
+	"\rLogoutRequest\x12-\n" +
+	"\rrefresh_token\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\rrefresh_token\"\x10\n" +
+	"\x0eLogoutResponseB\x84\x02\x92Ar\x128\n" +
 	"\x17Distributed Crawler API\"\x16\n" +
 	"\x14Denis Miroshnichenko2\x051.0.0\x1a\x0elocalhost:8080*\x02\x01\x022\x10application/json:\x10application/json\n" +
 	"\x0ecom.crawler.v1B\vModelsProtoP\x01Z'distributed-crawler/pkg/api/crawlergrpc\xa2\x02\x03CXX\xaa\x02\n" +
@@ -1975,7 +2412,7 @@ func file_v1_models_proto_rawDescGZIP() []byte {
 	return file_v1_models_proto_rawDescData
 }
 
-var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
 var file_v1_models_proto_goTypes = []any{
 	(*AuthOptions)(nil),            // 0: crawler.v1.AuthOptions
 	(*RateLimitPolicy)(nil),        // 1: crawler.v1.RateLimitPolicy
@@ -2007,7 +2444,15 @@ var file_v1_models_proto_goTypes = []any{
 	(*CreatePreviewResponse)(nil),  // 27: crawler.v1.CreatePreviewResponse
 	(*GetPreviewRequest)(nil),      // 28: crawler.v1.GetPreviewRequest
 	(*GetPreviewResponse)(nil),     // 29: crawler.v1.GetPreviewResponse
-	(*timestamppb.Timestamp)(nil),  // 30: google.protobuf.Timestamp
+	(*RegisterRequest)(nil),        // 30: crawler.v1.RegisterRequest
+	(*RegisterResponse)(nil),       // 31: crawler.v1.RegisterResponse
+	(*LoginRequest)(nil),           // 32: crawler.v1.LoginRequest
+	(*LoginResponse)(nil),          // 33: crawler.v1.LoginResponse
+	(*RefreshRequest)(nil),         // 34: crawler.v1.RefreshRequest
+	(*RefreshResponse)(nil),        // 35: crawler.v1.RefreshResponse
+	(*LogoutRequest)(nil),          // 36: crawler.v1.LogoutRequest
+	(*LogoutResponse)(nil),         // 37: crawler.v1.LogoutResponse
+	(*timestamppb.Timestamp)(nil),  // 38: google.protobuf.Timestamp
 }
 var file_v1_models_proto_depIdxs = []int32{
 	6,  // 0: crawler.v1.FieldSpec.extractor:type_name -> crawler.v1.ExtractorSpec
@@ -2022,17 +2467,17 @@ var file_v1_models_proto_depIdxs = []int32{
 	0,  // 9: crawler.v1.CrawlJobConfig.auth:type_name -> crawler.v1.AuthOptions
 	3,  // 10: crawler.v1.CrawlJobConfig.schedule:type_name -> crawler.v1.ScheduleOptions
 	11, // 11: crawler.v1.CrawlJob.job_config:type_name -> crawler.v1.CrawlJobConfig
-	30, // 12: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
-	30, // 13: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
+	38, // 12: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
+	38, // 13: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
 	12, // 14: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
-	30, // 15: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
+	38, // 15: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
 	12, // 16: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
 	11, // 17: crawler.v1.CreateJobRequest.config:type_name -> crawler.v1.CrawlJobConfig
 	12, // 18: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
 	13, // 19: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
 	13, // 20: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
-	30, // 21: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
-	30, // 22: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
+	38, // 21: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
+	38, // 22: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
 	25, // 23: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
 	24, // [24:24] is the sub-list for method output_type
 	24, // [24:24] is the sub-list for method input_type
@@ -2057,7 +2502,7 @@ func file_v1_models_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_models_proto_rawDesc), len(file_v1_models_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   30,
+			NumMessages:   38,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -218,3 +218,45 @@ message GetPreviewRequest {
 message GetPreviewResponse {
   Preview preview = 1;
 }
+
+// Auth messages
+
+message RegisterRequest {
+  string email = 1 [(validate.rules).string.email = true];
+  string password = 2 [(validate.rules).string.min_len = 8];
+}
+
+message RegisterResponse {
+  string access_token = 1 [json_name = "access_token"];
+  string refresh_token = 2 [json_name = "refresh_token"];
+  int32 expires_in = 3 [json_name = "expires_in"];
+}
+
+message LoginRequest {
+  string email = 1 [(validate.rules).string.email = true];
+  string password = 2 [(validate.rules).string.min_len = 1];
+}
+
+message LoginResponse {
+  string access_token = 1 [json_name = "access_token"];
+  string refresh_token = 2 [json_name = "refresh_token"];
+  int32 expires_in = 3 [json_name = "expires_in"];
+}
+
+message RefreshRequest {
+  string refresh_token = 1 [(validate.rules).string.min_len = 1, json_name = "refresh_token"];
+}
+
+message RefreshResponse {
+  string access_token = 1 [json_name = "access_token"];
+  string refresh_token = 2 [json_name = "refresh_token"];
+  int32 expires_in = 3 [json_name = "expires_in"];
+}
+
+message LogoutRequest {
+  string refresh_token = 1 [(validate.rules).string.min_len = 1, json_name = "refresh_token"];
+}
+
+message LogoutResponse {
+  // Empty response
+}

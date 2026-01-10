@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
+	"distributed-crawler/internal/auth"
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
 	"distributed-crawler/internal/infra/logger"
@@ -140,6 +141,7 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 			grpcMiddleware.ChainUnaryServer(
 				interceptor.LogInterceptor,
 				interceptor.ValidateInterceptor,
+				auth.JWTAuthInterceptor(a.serviceProvider.JWTService()),
 			),
 		),
 	)
@@ -148,6 +150,7 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 
 	crawlergrpc.RegisterCrawlerServiceServer(a.grpcServer, a.serviceProvider.CrawlerServiceImpl(ctx))
 	crawlergrpc.RegisterPreviewServiceServer(a.grpcServer, a.serviceProvider.PreviewServiceImpl(ctx))
+	crawlergrpc.RegisterAuthServiceServer(a.grpcServer, a.serviceProvider.AuthServiceImpl(ctx))
 
 	return nil
 }
@@ -172,6 +175,11 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 	}
 
 	err = crawlergrpc.RegisterPreviewServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
+	}
+
+	err = crawlergrpc.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
 	if err != nil {
 		return err
 	}
