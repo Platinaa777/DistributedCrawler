@@ -4,7 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatListModule } from '@angular/material/list';
 import { SelectedElementData } from '../../services/job-create-state.service';
 
 @Component({
@@ -15,8 +14,7 @@ import { SelectedElementData } from '../../services/job-create-state.service';
     MatCardModule,
     MatChipsModule,
     MatIconModule,
-    MatButtonModule,
-    MatListModule
+    MatButtonModule
   ],
   template: `
     <mat-card class="h-full">
@@ -52,32 +50,30 @@ import { SelectedElementData } from '../../services/job-create-state.service';
           <p class="text-gray-500 text-xs mt-1">Click to select</p>
         </div>
 
-        <mat-list *ngIf="selectedElements.length > 0">
-          <mat-list-item *ngFor="let element of selectedElements; let i = index" class="border-b border-gray-200">
-            <div class="flex items-start justify-between w-full py-2">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <mat-chip class="text-xs">{{ element.elementTag }}</mat-chip>
-                  <mat-chip class="text-xs" color="primary">{{ element.attribute }}</mat-chip>
-                </div>
-                <p class="text-xs font-mono text-gray-600 break-all mb-1">
-                  {{ element.selector }}
-                </p>
-                <p class="text-xs text-gray-500 truncate">
-                  <strong>Value:</strong> {{ element.value || '(empty)' }}
-                </p>
-              </div>
-              <button
-                mat-icon-button
-                color="warn"
-                (click)="removeElement(i)"
-                class="ml-2"
-              >
-                <mat-icon>delete</mat-icon>
-              </button>
+        <div *ngIf="selectedElements.length > 0" class="divide-y divide-gray-200">
+          <div *ngFor="let element of selectedElements; let i = index" class="py-3 flex items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <mat-chip-set class="mb-2" aria-label="Element selection">
+                <mat-chip class="text-xs">{{ element.elementTag }}</mat-chip>
+                <mat-chip class="text-xs" color="primary">{{ element.attribute }}</mat-chip>
+              </mat-chip-set>
+              <p class="text-xs font-mono text-gray-600 break-all mb-1">
+                {{ element.selector }}
+              </p>
+              <p class="text-xs text-gray-500 truncate">
+                <strong>Value:</strong> {{ element.value || '(empty)' }}
+              </p>
             </div>
-          </mat-list-item>
-        </mat-list>
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="removeElement(i)"
+              class="mt-1"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
       </mat-card-content>
 
       <mat-card-actions *ngIf="selectedElements.length > 0">

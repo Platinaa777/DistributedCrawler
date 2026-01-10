@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -58,16 +58,24 @@ import { Subscription } from 'rxjs';
               <mat-card-title class="text-base">Page Preview</mat-card-title>
             </mat-card-header>
             <mat-card-content class="relative">
-              <div class="relative h-[600px]">
+              <div #previewContainer class="relative h-[600px]">
                 <app-preview-iframe
                   [html]="previewHtml"
                   (frameReady)="onFrameReady($event)"
                 ></app-preview-iframe>
 
+                <div
+                  *ngIf="pickerEnabled"
+                  class="absolute inset-0 z-10 cursor-crosshair"
+                  (mousemove)="onOverlayMouseMove($event)"
+                  (click)="onOverlayClick($event)"
+                  (wheel)="onOverlayWheel($event)"
+                ></div>
+
                 <!-- Highlight overlay -->
                 <div
                   *ngIf="pickerEnabled && highlightBox"
-                  class="absolute pointer-events-none border-2 border-blue-500 bg-blue-500 bg-opacity-10"
+                  class="absolute z-20 pointer-events-none border-2 border-blue-500 bg-blue-500 bg-opacity-10"
                   [style.left.px]="highlightBox.left"
                   [style.top.px]="highlightBox.top"
                   [style.width.px]="highlightBox.width"
@@ -109,13 +117,14 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   highlightBox: { left: number; top: number; width: number; height: number } | null = null;
 
   private iframeDoc: Document | null = null;
-  private mouseMoveListener: ((e: MouseEvent) => void) | null = null;
-  private clickListener: ((e: MouseEvent) => void) | null = null;
   private stateSubscription: Subscription | null = null;
+
+  @ViewChild('previewContainer') previewContainer!: ElementRef<HTMLDivElement>;
 
   constructor(
     private stateService: JobCreateStateService,
-    private selectorGenerator: SelectorGeneratorService
+    private selectorGenerator: SelectorGeneratorService,
+    private zone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -140,16 +149,10 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   onFrameReady(iframe: HTMLIFrameElement): void {
     this.iframe = iframe;
     this.iframeDoc = iframe.contentDocument || iframe.contentWindow?.document || null;
-
-    if (this.pickerEnabled) {
-      this.attachListeners();
-    }
   }
 
   togglePicker(): void {
-    if (this.pickerEnabled) {
-      this.attachListeners();
-    } else {
+    if (!this.pickerEnabled) {
       this.detachListeners();
       this.highlightBox = null;
       this.hoveredElement = null;
@@ -157,75 +160,51 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   }
 
   private attachListeners(): void {
-    if (!this.iframeDoc) return;
-
-    this.mouseMoveListener = this.onIframeMouseMove.bind(this);
-    this.clickListener = this.onIframeClick.bind(this);
-
-    this.iframeDoc.addEventListener('mousemove', this.mouseMoveListener);
-    this.iframeDoc.addEventListener('click', this.clickListener);
+    // no-op: handled by overlay events
   }
 
   private detachListeners(): void {
-    if (!this.iframeDoc) return;
-
-    if (this.mouseMoveListener) {
-      this.iframeDoc.removeEventListener('mousemove', this.mouseMoveListener);
-    }
-    if (this.clickListener) {
-      this.iframeDoc.removeEventListener('click', this.clickListener);
-    }
+    // no-op: handled by overlay events
   }
 
-  private onIframeMouseMove(event: MouseEvent): void {
-    if (!this.pickerEnabled || !this.iframe) return;
+  onOverlayMouseMove(event: MouseEvent): void {
+    if (!this.pickerEnabled) return;
+    const target = this.getElementFromOverlayEvent(event);
+    if (!target) {
+      this.highlightBox = null;
+      this.hoveredElement = null;
+      return;
+    }
 
-    const target = event.target as Element;
-    if (!target || target.nodeName === '#document') return;
-
-    // Generate selector
     const selector = this.selectorGenerator.generate(target);
     const value = this.selectorGenerator.extractValue(target, 'text');
 
-    // Update hovered element
     this.hoveredElement = {
       selector,
-      value: value.substring(0, 100), // Limit preview
+      value: value.substring(0, 100),
       attribute: 'text',
       elementTag: target.tagName.toLowerCase()
     };
 
-    // Calculate highlight box position relative to iframe
-    const rect = target.getBoundingClientRect();
-    const iframeRect = this.iframe.getBoundingClientRect();
-
-    this.highlightBox = {
-      left: rect.left,
-      top: rect.top,
-      width: rect.width,
-      height: rect.height
-    };
+    this.highlightBox = this.getOverlayBox(target);
   }
 
-  private onIframeClick(event: MouseEvent): void {
+  onOverlayClick(event: MouseEvent): void {
     if (!this.pickerEnabled) return;
+    if (event.button !== 0) return;
 
     event.preventDefault();
     event.stopPropagation();
+    event.stopImmediatePropagation();
 
-    const target = event.target as Element;
+    const target = this.getElementFromOverlayEvent(event);
     if (!target) return;
 
     // Generate selector
     const selector = this.selectorGenerator.generate(target);
 
     // Determine attribute based on element type
-    let attribute = 'text';
-    if (target.hasAttribute('href')) {
-      attribute = 'href';
-    } else if (target.hasAttribute('src')) {
-      attribute = 'src';
-    }
+    const attribute = this.getPreferredAttribute(target);
 
     const value = this.selectorGenerator.extractValue(target, attribute);
 
@@ -236,22 +215,87 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
       elementTag: target.tagName.toLowerCase()
     };
 
-    // Add to state
-    this.stateService.addSelectedElement(elementData);
-    this.selectedElements.push(elementData);
+    const alreadySelected = this.selectedElements.some(
+      existing => existing.selector === elementData.selector && existing.attribute === elementData.attribute
+    );
+    if (alreadySelected) {
+      return;
+    }
+
+    this.zone.run(() => {
+      // Add to state
+      this.stateService.addSelectedElement(elementData);
+    });
   }
 
   removeElement(index: number): void {
     this.stateService.removeSelectedElement(index);
-    this.selectedElements.splice(index, 1);
   }
 
   clearAllElements(): void {
     this.stateService.clearSelectedElements();
-    this.selectedElements = [];
   }
 
   isValid(): boolean {
     return this.selectedElements.length > 0;
+  }
+
+  onOverlayWheel(event: WheelEvent): void {
+    if (!this.pickerEnabled || !this.iframe?.contentWindow) return;
+    event.preventDefault();
+    this.iframe.contentWindow.scrollBy({
+      top: event.deltaY,
+      left: event.deltaX
+    });
+  }
+
+  private getOverlayBox(target: Element): { left: number; top: number; width: number; height: number } | null {
+    if (!this.iframe || !this.previewContainer) return null;
+
+    const rect = target.getBoundingClientRect();
+    const iframeRect = this.iframe.getBoundingClientRect();
+    const containerRect = this.previewContainer.nativeElement.getBoundingClientRect();
+
+    return {
+      left: iframeRect.left - containerRect.left + rect.left,
+      top: iframeRect.top - containerRect.top + rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+  }
+
+  private getPreferredAttribute(element: Element): string {
+    if (element.hasAttribute('href')) {
+      return 'href';
+    }
+    if (element.hasAttribute('src')) {
+      return 'src';
+    }
+    if (element.hasAttribute('alt')) {
+      return 'alt';
+    }
+    if (element.hasAttribute('title')) {
+      return 'title';
+    }
+    return 'text';
+  }
+
+  private getElementFromOverlayEvent(event: MouseEvent): Element | null {
+    if (!this.iframe || !this.iframeDoc) return null;
+
+    const iframeRect = this.iframe.getBoundingClientRect();
+    const x = event.clientX - iframeRect.left;
+    const y = event.clientY - iframeRect.top;
+
+    if (x < 0 || y < 0 || x > iframeRect.width || y > iframeRect.height) {
+      return null;
+    }
+
+    const target = this.iframeDoc.elementFromPoint(x, y);
+    if (!target) return null;
+    if (target === this.iframeDoc.documentElement || target === this.iframeDoc.body) {
+      return null;
+    }
+    return target;
   }
 }
