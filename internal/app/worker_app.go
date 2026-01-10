@@ -13,6 +13,7 @@ import (
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	"distributed-crawler/internal/infra/persistence/postgres/repos"
 	"distributed-crawler/internal/infra/services/contentstore"
+	"distributed-crawler/internal/infra/services/fetcher"
 	"distributed-crawler/internal/worker"
 
 	"go.uber.org/zap"
@@ -206,6 +207,11 @@ func (a *WorkerApp) initFetchWorker() error {
 
 	// Initialize repositories
 	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
+	jobConfigRepo := repos.NewCrawlJobConfigRepository(a.pgClient)
+
+	// Initialize fetcher services
+	fetcherFactory := fetcher.NewHTTPFetcherFactory()
+	scopeValidator := fetcher.NewDomainScopeValidator()
 
 	// Get queue names from configuration
 	crawlQueue := a.rmqConfig.GetQueueName(config.CrawlQueueKey)
@@ -214,10 +220,13 @@ func (a *WorkerApp) initFetchWorker() error {
 	// Create fetch worker
 	a.fetchWorker = worker.NewFetchWorker(
 		a.rmqClient,
-		crawlQueue,   // Consume from crawl_queue
-		parsingQueue, // Publish to parsing_queue
+		crawlQueue,      // Consume from crawl_queue
+		parsingQueue,    // Publish to parsing_queue
 		contentStore,
 		taskRepo,
+		jobConfigRepo,
+		fetcherFactory,
+		scopeValidator,
 		a.zapLogger,
 	)
 

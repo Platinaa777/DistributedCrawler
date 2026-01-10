@@ -4,6 +4,7 @@ type TaskStatus string
 
 const (
 	TaskStatusInProgress TaskStatus = "InProgress"
+	TaskStatusParsed     TaskStatus = "Parsed"
 	TaskStatusCompleted  TaskStatus = "Completed"
 	TaskStatusFailed     TaskStatus = "Failed"
 )
@@ -14,7 +15,7 @@ func (s TaskStatus) String() string {
 
 func (s TaskStatus) IsValid() bool {
 	switch s {
-	case TaskStatusInProgress, TaskStatusCompleted, TaskStatusFailed:
+	case TaskStatusInProgress, TaskStatusCompleted, TaskStatusFailed, TaskStatusParsed:
 		return true
 	}
 	return false
@@ -23,6 +24,7 @@ func (s TaskStatus) IsValid() bool {
 func AllTaskStatuses() []TaskStatus {
 	return []TaskStatus{
 		TaskStatusInProgress,
+		TaskStatusParsed,
 		TaskStatusCompleted,
 		TaskStatusFailed,
 	}

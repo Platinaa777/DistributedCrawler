@@ -20,3 +20,11 @@ type CrawlTask struct {
 	BodyHash       string // SHA-256
 	MinioObjectKey string
 }
+
+func (task *CrawlTask) MarkAsParsed(finalUrl string, bodyHash string, minioKey string) {
+	task.BodyHash = bodyHash
+	task.MinioObjectKey = minioKey
+	*task.FinalURL = finalUrl
+
+	task.Status = TaskStatusParsed
+}
