@@ -235,13 +235,23 @@ func (w *ParserWorker) applyExtractor(
 	bodyText string,
 	baseURL *url.URL,
 ) (any, error) {
-	switch spec.Source {
-	case models.SourceHTML:
+
+	source := strings.ToLower(strings.TrimSpace(string(spec.Source)))
+
+	switch source {
+	case string(models.SourceHTML):
 		return w.extractFromHTML(spec, doc, baseURL)
-	case models.SourceText:
+	case string(models.SourceText):
 		return w.extractFromText(spec, bodyText)
-	case models.SourceFetchMeta, models.SourceResponseHeaders:
-		// These would require fetch metadata to be passed in
+
+	// Поддержка source=url (page_url)
+	case string(models.SourceURL):
+		if baseURL != nil {
+			return baseURL.String(), nil
+		}
+		return nil, fmt.Errorf("no URL available")
+
+	case string(models.SourceFetchMeta), string(models.SourceResponseHeaders):
 		return spec.Default, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", spec.Source)
@@ -254,16 +264,21 @@ func (w *ParserWorker) extractFromHTML(
 	doc *goquery.Document,
 	baseURL *url.URL,
 ) (any, error) {
-	switch spec.SelectorType {
-	case models.SelectorCSS:
+	selType := strings.ToLower(strings.TrimSpace(string(spec.SelectorType)))
+
+	switch selType {
+	case string(models.SelectorCSS):
 		return w.extractWithCSS(spec, doc, baseURL)
-	case models.SelectorMeta:
+	case string(models.SelectorMeta):
 		return w.extractMetaTag(spec, doc)
-	case models.SelectorURL:
+
+	// Если кто-то задаст selector_type=url
+	case string(models.SelectorURL):
 		if baseURL != nil {
 			return baseURL.String(), nil
 		}
 		return nil, fmt.Errorf("no URL available")
+
 	default:
 		return nil, fmt.Errorf("unsupported selector type: %s", spec.SelectorType)
 	}
@@ -290,8 +305,14 @@ func (w *ParserWorker) extractWithCSS(
 		})
 
 		// If index specified, return that element
-		if spec.Index != nil && *spec.Index < len(results) {
-			return results[*spec.Index], nil
+		if spec.Index != nil {
+			idx := *spec.Index
+			if idx < 0 {
+				idx = len(results) + idx // -1 => last
+			}
+			if idx >= 0 && idx < len(results) {
+				return results[idx], nil
+			}
 		}
 
 		return results, nil
@@ -307,34 +328,57 @@ func (w *ParserWorker) extractElementValue(
 	attribute string,
 	baseURL *url.URL,
 ) string {
-	if attribute != "" {
-		value, exists := selection.Attr(attribute)
-		if !exists {
+	attr := strings.ToLower(strings.TrimSpace(attribute))
+
+	// ✅ Псевдо-атрибуты: "text" / "html"
+	switch attr {
+	case "", "text", "innertext":
+		return strings.TrimSpace(selection.Text())
+	case "html", "innerhtml":
+		h, err := selection.Html()
+		if err != nil {
 			return ""
 		}
-		// Resolve relative URLs for href/src attributes
-		if (attribute == "href" || attribute == "src") && baseURL != nil {
-			if resolved, err := baseURL.Parse(value); err == nil {
-				return resolved.String()
-			}
-		}
-		return value
+		return strings.TrimSpace(h)
 	}
-	return strings.TrimSpace(selection.Text())
+
+	// Обычные HTML-атрибуты
+	value, exists := selection.Attr(attribute)
+	if !exists {
+		return ""
+	}
+
+	value = strings.TrimSpace(value)
+
+	// Resolve relative URLs for href/src attributes
+	if (attr == "href" || attr == "src") && baseURL != nil {
+		if resolved, err := baseURL.Parse(value); err == nil {
+			return resolved.String()
+		}
+	}
+
+	return value
 }
 
 // extractMetaTag extracts content from meta tags
 func (w *ParserWorker) extractMetaTag(spec models.ExtractorSpec, doc *goquery.Document) (any, error) {
-	// Try name attribute
-	selector := fmt.Sprintf("meta[name=%s]", spec.Selector)
-	if content, exists := doc.Find(selector).First().Attr("content"); exists {
-		return content, nil
+	key := strings.TrimSpace(spec.Selector)
+	if key == "" {
+		return nil, fmt.Errorf("meta selector is empty")
 	}
 
-	// Try property attribute (for Open Graph tags)
-	selector = fmt.Sprintf("meta[property=%s]", spec.Selector)
+	esc := strings.ReplaceAll(key, `"`, `\"`)
+
+	// name=
+	selector := fmt.Sprintf(`meta[name="%s"]`, esc)
 	if content, exists := doc.Find(selector).First().Attr("content"); exists {
-		return content, nil
+		return strings.TrimSpace(content), nil
+	}
+
+	// property=
+	selector = fmt.Sprintf(`meta[property="%s"]`, esc)
+	if content, exists := doc.Find(selector).First().Attr("content"); exists {
+		return strings.TrimSpace(content), nil
 	}
 
 	return nil, fmt.Errorf("meta tag not found: %s", spec.Selector)
@@ -342,7 +386,8 @@ func (w *ParserWorker) extractMetaTag(spec models.ExtractorSpec, doc *goquery.Do
 
 // extractFromText extracts data from plain text using regex
 func (w *ParserWorker) extractFromText(spec models.ExtractorSpec, bodyText string) (any, error) {
-	if spec.SelectorType != models.SelectorRegex {
+	selType := strings.ToLower(strings.TrimSpace(string(spec.SelectorType)))
+	if selType != string(models.SelectorRegex) {
 		return nil, fmt.Errorf("text source requires regex selector")
 	}
 
@@ -420,7 +465,26 @@ func (w *ParserWorker) applyTransform(spec models.TransformSpec, value any) any 
 		}
 	case models.OpLimit:
 		if arr, ok := value.([]string); ok {
-			if limit, ok := spec.Arg.(int); ok && limit < len(arr) {
+			// arg может быть int / float64 / json.Number / string
+			limit := -1
+			switch v := spec.Arg.(type) {
+			case int:
+				limit = v
+			case int64:
+				limit = int(v)
+			case float64:
+				limit = int(v)
+			case json.Number:
+				if i, err := v.Int64(); err == nil {
+					limit = int(i)
+				}
+			case string:
+				if i, err := strconv.Atoi(strings.TrimSpace(v)); err == nil {
+					limit = i
+				}
+			}
+
+			if limit >= 0 && limit < len(arr) {
 				return arr[:limit]
 			}
 		}
@@ -463,21 +527,29 @@ func (w *ParserWorker) convertToType(value any, valueType models.ValueType) (any
 		return fmt.Sprintf("%v", value), nil
 	case models.ValueInt:
 		switch v := value.(type) {
-		case int, int64:
+		case int:
+			return int64(v), nil
+		case int64:
 			return v, nil
 		case float64:
 			return int64(v), nil
+		case json.Number:
+			return v.Int64()
 		case string:
-			return strconv.ParseInt(v, 10, 64)
+			return strconv.ParseInt(strings.TrimSpace(v), 10, 64)
 		}
 	case models.ValueFloat:
 		switch v := value.(type) {
 		case float64:
 			return v, nil
-		case int, int64:
-			return float64(v.(int64)), nil
+		case float32:
+			return float64(v), nil
+		case int:
+			return float64(v), nil
+		case int64:
+			return float64(v), nil
 		case string:
-			return strconv.ParseFloat(v, 64)
+			return strconv.ParseFloat(strings.TrimSpace(v), 64)
 		}
 	case models.ValueBool:
 		switch v := value.(type) {
@@ -519,12 +591,36 @@ func (w *ParserWorker) computeMetric(
 		return 0
 
 	case models.MetricCount:
-		if value, ok := fields[spec.Input]; ok {
-			if arr, ok := value.([]string); ok {
-				return len(arr)
-			}
+		value, ok := fields[spec.Input]
+		if !ok || value == nil {
+			return 0
 		}
-		return 0
+
+		countNonEmpty := func(ss []string) int {
+			n := 0
+			for _, s := range ss {
+				if strings.TrimSpace(s) != "" {
+					n++
+				}
+			}
+			return n
+		}
+
+		switch v := value.(type) {
+		case []string:
+			return countNonEmpty(v)
+		case []any:
+			tmp := make([]string, 0, len(v))
+			for _, it := range v {
+				s := strings.TrimSpace(fmt.Sprintf("%v", it))
+				if s != "" {
+					tmp = append(tmp, s)
+				}
+			}
+			return len(tmp)
+		default:
+			return 0
+		}
 
 	case models.MetricWordCount:
 		var text string

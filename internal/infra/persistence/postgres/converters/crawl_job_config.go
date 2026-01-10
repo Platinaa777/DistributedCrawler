@@ -37,16 +37,16 @@ func SaveCrawlJobConfigToSnapshot(config models.CrawlJobConfig) (*snapshots.Craw
 	}
 	snapshot.Scopes = scopesMap
 
-	// Convert Seeds to JSONB
+	// Convert Seeds to JSONBArray
 	seedsJSON, err := json.Marshal(config.Seeds)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal Seeds: %w", err)
 	}
-	var seedsMap map[string]interface{}
-	if err := json.Unmarshal(seedsJSON, &seedsMap); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal Seeds to map: %w", err)
+	var seedsArray []interface{}
+	if err := json.Unmarshal(seedsJSON, &seedsArray); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal Seeds to array: %w", err)
 	}
-	snapshot.Seeds = seedsMap
+	snapshot.Seeds = seedsArray
 
 	// Convert RateLimit to JSONB
 	rateLimitJSON, err := json.Marshal(config.RateLimit)

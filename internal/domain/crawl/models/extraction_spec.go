@@ -5,6 +5,7 @@ type SourceType string
 const (
 	SourceHTML            SourceType = "html"
 	SourceText            SourceType = "text"
+	SourceURL             SourceType = "url"
 	SourceResponseHeaders SourceType = "response_headers"
 	SourceFetchMeta       SourceType = "fetch_meta"
 )
@@ -78,7 +79,7 @@ type FieldSpec struct {
 }
 
 type ExtractorSpec struct {
-	Source       SourceType   `json:"source"`              // "html" | "text" | "response_headers" | "fetch_meta"
+	Source       SourceType   `json:"source"`              // "html" | "text" | "url" | "response_headers" | "fetch_meta"
 	SelectorType SelectorType `json:"selector_type"`       // "css" | "xpath" | "regex" | "jsonld" | "meta" | "header" | "url" | "status_code"
 	Selector     string       `json:"selector,omitempty"`  // e.g. "h1", "meta[name=description]"
 	Attribute    string       `json:"attribute,omitempty"` // e.g. "href", "content"

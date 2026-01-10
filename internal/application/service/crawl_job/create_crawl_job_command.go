@@ -27,10 +27,16 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 		config := command.Config
 		config.ID = configID
 
+		// Create job config first
+		createdConfigID, err := s.crawlJobConfigRepo.Create(ctx, config)
+		if err != nil {
+			return fmt.Errorf("failed to create job config: %w", err)
+		}
+
 		// Create crawl job
 		crawlJob := models.CrawlJob{
 			ID:          jobID,
-			JobConfigID: configID,
+			JobConfigID: createdConfigID,
 			JobConfig:   &config,
 			Status:      models.TaskStatusInProgress,
 			CreatedAt:   time.Now(),

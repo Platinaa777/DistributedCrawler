@@ -27,7 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_crawl_job_configs_name
 
 CREATE TABLE IF NOT EXISTS crawl_jobs (
     id             VARCHAR(255) PRIMARY KEY,
-    job_config_id  VARCHAR(255) NULL,
+    job_config_id  VARCHAR(255) NOT NULL,
     status         VARCHAR(50)  NOT NULL,
     created_at     TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at   TIMESTAMP   NULL,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS crawl_jobs (
     CONSTRAINT fk_crawl_jobs_job_config
         FOREIGN KEY (job_config_id)
         REFERENCES crawl_job_configs(id)
-        ON DELETE SET NULL
+        ON DELETE CASCADE
 );
 
 -- Typical filters: status + time windows, and listing by config
@@ -94,7 +94,7 @@ CREATE INDEX IF NOT EXISTS idx_crawl_tasks_final_url
     ON crawl_tasks (final_url);
 
 -- Transactional outbox
-CREATE TABLE IF NOT EXISTS outbox_events (
+CREATE TABLE IF NOT EXISTS crawl_task_outbox (
     id           VARCHAR(255) PRIMARY KEY,
     event_type   VARCHAR(255) NOT NULL,
     aggregate_id VARCHAR(255) NOT NULL,
@@ -106,22 +106,22 @@ CREATE TABLE IF NOT EXISTS outbox_events (
 
 -- Typical publisher queries:
 -- WHERE processed_at IS NULL ORDER BY occurred_at LIMIT N
-CREATE INDEX IF NOT EXISTS idx_outbox_events_unprocessed_occurred_at
-    ON outbox_events (occurred_at)
+CREATE INDEX IF NOT EXISTS idx_crawl_task_outbox_unprocessed_occurred_at
+    ON crawl_task_outbox (occurred_at)
     WHERE processed_at IS NULL;
 
-CREATE INDEX IF NOT EXISTS idx_outbox_events_event_type_processed_at
-    ON outbox_events (event_type, processed_at);
+CREATE INDEX IF NOT EXISTS idx_crawl_task_outbox_event_type_processed_at
+    ON crawl_task_outbox (event_type, processed_at);
 
-CREATE INDEX IF NOT EXISTS idx_outbox_events_aggregate_id
-    ON outbox_events (aggregate_id);
+CREATE INDEX IF NOT EXISTS idx_crawl_task_outbox_aggregate_id
+    ON crawl_task_outbox (aggregate_id);
 
 -- +goose StatementEnd
 
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS outbox_events;
+DROP TABLE IF EXISTS crawl_task_outbox;
 DROP TABLE IF EXISTS crawl_tasks;
 DROP TABLE IF EXISTS crawl_jobs;
 DROP TABLE IF EXISTS crawl_job_configs;

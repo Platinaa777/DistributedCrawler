@@ -11,6 +11,7 @@ import (
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
 	crawljobrepo "distributed-crawler/internal/domain/crawl/repos/crawl_job"
+	crawljobconfig "distributed-crawler/internal/domain/crawl/repos/crawl_job_config"
 	crawltaskrepo "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
@@ -24,17 +25,18 @@ import (
 )
 
 type serviceProvider struct {
-	pgConfig        config.PGConfig
-	grpcConfig      config.GRPCConfig
-	httpConfig      config.HTTPConfig
-	rabbitmqConfig  config.RabbitMQConfig
+	pgConfig       config.PGConfig
+	grpcConfig     config.GRPCConfig
+	httpConfig     config.HTTPConfig
+	rabbitmqConfig config.RabbitMQConfig
 
-	dbClient        persistence.Client
-	txManager       persistence.TxManager
-	crawlJobRepo    crawljobrepo.CrawlJobRepository
-	crawlTaskRepo   crawltaskrepo.CrawlTaskRepository
-	outboxRepo      outbox.OutboxRepository
-	rmqClient       rabbitmq.Client
+	dbClient           persistence.Client
+	txManager          persistence.TxManager
+	crawlJobRepo       crawljobrepo.CrawlJobRepository
+	crawlJobConfigRepo crawljobconfig.CrawlJobConfigRepository
+	crawlTaskRepo      crawltaskrepo.CrawlTaskRepository
+	outboxRepo         outbox.OutboxRepository
+	rmqClient          rabbitmq.Client
 
 	crawlJobService  service.CrawlJobService
 	crawlTaskService service.CrawlTaskService
@@ -147,10 +149,19 @@ func (s *serviceProvider) CrawlJobRepository(ctx context.Context) crawljobrepo.C
 	return s.crawlJobRepo
 }
 
+func (s *serviceProvider) CrawlJobConfigRepository(ctx context.Context) crawljobconfig.CrawlJobConfigRepository {
+	if s.crawlJobConfigRepo == nil {
+		s.crawlJobConfigRepo = crawljobrepoimpl.NewCrawlJobConfigRepository(s.DBClient(ctx))
+	}
+
+	return s.crawlJobConfigRepo
+}
+
 func (s *serviceProvider) CrawlJobService(ctx context.Context) service.CrawlJobService {
 	if s.crawlJobService == nil {
 		s.crawlJobService = crawljobservice.NewService(
 			s.CrawlJobRepository(ctx),
+			s.CrawlJobConfigRepository(ctx),
 			s.CrawlTaskRepository(ctx),
 			s.OutboxRepository(ctx),
 			s.TxManager(ctx),

@@ -50,6 +50,14 @@ run-grpc-server:
 	@echo "Run grpc app..."
 	go run ./cmd/grpc_server/main.go --config-path=.env
 
+run-fetcher:
+	@echo "Run fetcher..."
+	go run ./cmd/fetch_worker/main.go --config-path=.worker.env
+
+run-parser:
+	@echo "Run parser..."
+	go run ./cmd/parser_worker/main.go --config-path=.worker.env
+
 test:
 	go clean -testcache
 	go test ./... -covermode count -coverpkg=distributed-crawler/... -count 5
