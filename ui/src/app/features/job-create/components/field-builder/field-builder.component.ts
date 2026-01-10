@@ -40,7 +40,7 @@ import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spe
       <mat-card-content>
         <form [formGroup]="fieldForm" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="fill">
               <mat-label>Field Name</mat-label>
               <input matInput formControlName="name" placeholder="title" />
               <mat-error *ngIf="fieldForm.get('name')?.hasError('required')">
@@ -48,7 +48,7 @@ import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spe
               </mat-error>
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="fill">
               <mat-label>Type</mat-label>
               <mat-select formControlName="type">
                 <mat-option value="string">String</mat-option>
@@ -63,13 +63,15 @@ import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spe
 
           <div class="flex items-center gap-4">
             <mat-checkbox formControlName="required">Required</mat-checkbox>
-            <mat-checkbox formControlName="multiple">Multiple</mat-checkbox>
+            <div formGroupName="extractor" class="flex items-center gap-4">
+              <mat-checkbox formControlName="multiple">Multiple</mat-checkbox>
+            </div>
           </div>
 
           <div class="border-t pt-4">
             <h4 class="text-sm font-semibold mb-3">Extractor Configuration</h4>
             <div formGroupName="extractor" class="space-y-4">
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field appearance="fill" class="w-full">
                 <mat-label>CSS Selector</mat-label>
                 <input matInput formControlName="selector" placeholder=".title" />
                 <mat-error *ngIf="fieldForm.get('extractor.selector')?.hasError('required')">
@@ -78,7 +80,7 @@ import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spe
               </mat-form-field>
 
               <div class="grid grid-cols-2 gap-4">
-                <mat-form-field appearance="outline">
+                <mat-form-field appearance="fill">
                   <mat-label>Attribute</mat-label>
                   <mat-select formControlName="attribute">
                     <mat-option value="text">Text Content</mat-option>
@@ -90,7 +92,7 @@ import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spe
                   </mat-select>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline">
+                <mat-form-field appearance="fill">
                   <mat-label>Default Value (Optional)</mat-label>
                   <input matInput formControlName="default_value" />
                 </mat-form-field>
@@ -107,35 +109,44 @@ import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spe
               </button>
             </div>
 
-            <div formArrayName="transforms" class="space-y-2">
+            <div formArrayName="transforms" class="space-y-3">
               <div
                 *ngFor="let transform of transforms.controls; let i = index"
                 [formGroupName]="i"
-                class="flex items-center gap-2"
+                class="transform-row"
               >
-                <mat-form-field appearance="outline" class="flex-1">
-                  <mat-label>Operation</mat-label>
-                  <mat-select formControlName="op">
-                    <mat-option value="trim">Trim</mat-option>
-                    <mat-option value="lower">Lowercase</mat-option>
-                    <mat-option value="upper">Uppercase</mat-option>
-                    <mat-option value="normalize_url">Normalize URL</mat-option>
-                    <mat-option value="html_to_text">HTML to Text</mat-option>
-                    <mat-option value="collapse_ws">Collapse Whitespace</mat-option>
-                    <mat-option value="to_int">To Integer</mat-option>
-                    <mat-option value="to_float">To Float</mat-option>
-                    <mat-option value="parse_price">Parse Price</mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="transform-top">
+                  <mat-form-field appearance="fill" class="flex-1">
+                    <mat-label>Operation</mat-label>
+                    <mat-select formControlName="op">
+                      <mat-option value="trim">Trim</mat-option>
+                      <mat-option value="lower">Lowercase</mat-option>
+                      <mat-option value="upper">Uppercase</mat-option>
+                      <mat-option value="normalize_url">Normalize URL</mat-option>
+                      <mat-option value="html_to_text">HTML to Text</mat-option>
+                      <mat-option value="collapse_ws">Collapse Whitespace</mat-option>
+                      <mat-option value="to_int">To Integer</mat-option>
+                      <mat-option value="to_float">To Float</mat-option>
+                      <mat-option value="parse_price">Parse Price</mat-option>
+                    </mat-select>
+                  </mat-form-field>
 
-                <mat-form-field appearance="outline" class="flex-1">
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    class="transform-remove"
+                    (click)="removeTransform(i)"
+                    type="button"
+                  >
+                    <mat-icon>close</mat-icon>
+                    Remove
+                  </button>
+                </div>
+
+                <mat-form-field appearance="fill" class="w-full">
                   <mat-label>Argument (Optional)</mat-label>
                   <input matInput formControlName="arg" />
                 </mat-form-field>
-
-                <button mat-icon-button color="warn" (click)="removeTransform(i)" type="button">
-                  <mat-icon>close</mat-icon>
-                </button>
               </div>
             </div>
           </div>
@@ -146,6 +157,34 @@ import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spe
   styles: [`
     :host {
       display: block;
+    }
+
+    .transform-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      background: #f9fafb;
+    }
+
+    .transform-top {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .transform-remove {
+      white-space: nowrap;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 56px;
+      box-sizing: border-box;
+      font-size: 13px;
     }
   `]
 })

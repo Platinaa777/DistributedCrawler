@@ -29,7 +29,7 @@ import { CrawlJobConfig } from '../../../../core/models/crawl-job.model';
     <div class="space-y-4">
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Step 5: Review & Create</mat-card-title>
+          <mat-card-title>Step 4: Review & Create</mat-card-title>
           <mat-card-subtitle>
             Review your job configuration before creating
           </mat-card-subtitle>

@@ -27,7 +27,7 @@ import { Seed, ScopeRules, RateLimitPolicy } from '../../../../core/models/crawl
     <div class="space-y-4">
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Step 4: Job Settings</mat-card-title>
+          <mat-card-title>Step 3: Job Settings</mat-card-title>
           <mat-card-subtitle>
             Configure crawl scope, rate limits, and initial seeds
           </mat-card-subtitle>

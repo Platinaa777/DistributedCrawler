@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { UrlPreviewStepComponent } from './steps/url-preview-step/url-preview-step.component';
 import { ElementPickerStepComponent } from './steps/element-picker-step/element-picker-step.component';
-import { ExtractionSpecStepComponent } from './steps/extraction-spec-step/extraction-spec-step.component';
 import { JobSettingsStepComponent } from './steps/job-settings-step/job-settings-step.component';
 import { ReviewCreateStepComponent } from './steps/review-create-step/review-create-step.component';
 
@@ -22,7 +21,6 @@ import { ReviewCreateStepComponent } from './steps/review-create-step/review-cre
     MatCardModule,
     UrlPreviewStepComponent,
     ElementPickerStepComponent,
-    ExtractionSpecStepComponent,
     JobSettingsStepComponent,
     ReviewCreateStepComponent
   ],
@@ -57,7 +55,7 @@ import { ReviewCreateStepComponent } from './steps/review-create-step/review-cre
         </mat-step>
 
         <mat-step [completed]="pickerStep?.isValid()">
-          <ng-template matStepLabel>Pick Elements</ng-template>
+          <ng-template matStepLabel>Pick & Build Fields</ng-template>
           <app-element-picker-step #pickerStep></app-element-picker-step>
           <div class="flex justify-between mt-4">
             <button mat-button matStepperPrevious>
@@ -65,21 +63,6 @@ import { ReviewCreateStepComponent } from './steps/review-create-step/review-cre
               Previous
             </button>
             <button mat-raised-button matStepperNext [disabled]="!pickerStep?.isValid()">
-              Next
-              <mat-icon>navigate_next</mat-icon>
-            </button>
-          </div>
-        </mat-step>
-
-        <mat-step [completed]="extractionStep?.isValid()">
-          <ng-template matStepLabel>Extraction Spec</ng-template>
-          <app-extraction-spec-step #extractionStep></app-extraction-spec-step>
-          <div class="flex justify-between mt-4">
-            <button mat-button matStepperPrevious>
-              <mat-icon>navigate_before</mat-icon>
-              Previous
-            </button>
-            <button mat-raised-button matStepperNext [disabled]="!extractionStep?.isValid()">
               Next
               <mat-icon>navigate_next</mat-icon>
             </button>
@@ -127,7 +110,6 @@ import { ReviewCreateStepComponent } from './steps/review-create-step/review-cre
 export class JobCreateComponent {
   @ViewChild('previewStep') previewStep?: UrlPreviewStepComponent;
   @ViewChild('pickerStep') pickerStep?: ElementPickerStepComponent;
-  @ViewChild('extractionStep') extractionStep?: ExtractionSpecStepComponent;
   @ViewChild('settingsStep') settingsStep?: JobSettingsStepComponent;
 
   constructor(private router: Router) {}

@@ -304,3 +304,4 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
     return target;
   }
 }
+
