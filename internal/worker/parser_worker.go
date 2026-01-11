@@ -125,6 +125,43 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		return fmt.Errorf("failed to load job config: %w", err)
 	}
 
+	// Deduplication check: if we've already processed this content (same body_hash) for this job, skip
+	// We exclude the current task to avoid false positive (task comparing with itself)
+	if crawlTask.BodyHash != "" {
+		exists, err := w.taskRepo.ExistsByJobIDAndHashExcluding(ctx, crawlTask.JobID, crawlTask.BodyHash, crawlTask.ID)
+		if err != nil {
+			w.logger.Error("Failed to check for duplicate body_hash",
+				zap.String("task_id", task.TaskID),
+				zap.String("job_id", task.JobID),
+				zap.String("body_hash", crawlTask.BodyHash),
+				zap.Error(err),
+			)
+			return fmt.Errorf("failed to check for duplicate: %w", err)
+		}
+
+		if exists {
+			w.logger.Info("Skipping task - duplicate content already processed",
+				zap.String("task_id", task.TaskID),
+				zap.String("job_id", task.JobID),
+				zap.String("body_hash", crawlTask.BodyHash),
+				zap.String("url", crawlTask.URL),
+			)
+
+			// Update task status to Skipped
+			crawlTask.Status = models.TaskStatusSkipped
+			if err := w.taskRepo.Update(ctx, *crawlTask); err != nil {
+				w.logger.Error("Failed to update task status to Skipped",
+					zap.String("task_id", task.TaskID),
+					zap.Error(err),
+				)
+				return fmt.Errorf("failed to update task status: %w", err)
+			}
+
+			// Task already processed with same content - skip without error
+			return nil
+		}
+	}
+
 	// Load HTML from MinIO
 	htmlContent, err := w.contentStore.Get(ctx, crawlTask.MinioObjectKey)
 	if err != nil {

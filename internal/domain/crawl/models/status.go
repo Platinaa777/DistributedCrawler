@@ -7,6 +7,7 @@ const (
 	TaskStatusParsed     TaskStatus = "Parsed"
 	TaskStatusCompleted  TaskStatus = "Completed"
 	TaskStatusFailed     TaskStatus = "Failed"
+	TaskStatusSkipped    TaskStatus = "Skipped" // Skipped due to deduplication
 )
 
 func (s TaskStatus) String() string {
@@ -15,7 +16,7 @@ func (s TaskStatus) String() string {
 
 func (s TaskStatus) IsValid() bool {
 	switch s {
-	case TaskStatusInProgress, TaskStatusCompleted, TaskStatusFailed, TaskStatusParsed:
+	case TaskStatusInProgress, TaskStatusCompleted, TaskStatusFailed, TaskStatusParsed, TaskStatusSkipped:
 		return true
 	}
 	return false
@@ -27,6 +28,7 @@ func AllTaskStatuses() []TaskStatus {
 		TaskStatusParsed,
 		TaskStatusCompleted,
 		TaskStatusFailed,
+		TaskStatusSkipped,
 	}
 }
 

@@ -304,3 +304,35 @@ func (c *crawlTaskRepository) SetTaskResult(ctx context.Context, taskID valueobj
 	return err
 }
 
+// ExistsByJobIDAndHashExcluding checks if a task with the given body_hash already exists for the job,
+// excluding the specified task ID (deduplication check)
+func (c *crawlTaskRepository) ExistsByJobIDAndHashExcluding(ctx context.Context, jobID valueobjects.CrawlJobID, bodyHash string, excludeTaskID valueobjects.CrawlTaskID) (bool, error) {
+	builder := sq.Select("COUNT(*)").
+		PlaceholderFormat(sq.Dollar).
+		From(taskTableName).
+		Where(sq.And{
+			sq.Eq{taskJobIDColumn: jobID.String()},
+			sq.Eq{taskBodyHashColumn: bodyHash},
+			sq.NotEq{taskIDColumn: excludeTaskID.String()},
+		}).
+		Limit(1)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return false, err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_task_repository.ExistsByJobIDAndHashExcluding",
+		QueryRaw: query,
+	}
+
+	var count int
+	err = c.client.DB().QueryRowContext(ctx, q, args...).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+

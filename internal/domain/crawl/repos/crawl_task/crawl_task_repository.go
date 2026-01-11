@@ -16,4 +16,8 @@ type CrawlTaskRepository interface {
 
 	// SetTaskResult updates the result fields for a task (Part A - ParserWorker persistence)
 	SetTaskResult(ctx context.Context, taskID valueobjects.CrawlTaskID, objectKey string, contentType string, sizeBytes int64) error
+
+	// ExistsByJobIDAndHashExcluding checks if a task with the given body_hash already exists for the job,
+	// excluding the specified task ID (deduplication check)
+	ExistsByJobIDAndHashExcluding(ctx context.Context, jobID valueobjects.CrawlJobID, bodyHash string, excludeTaskID valueobjects.CrawlTaskID) (bool, error)
 }
