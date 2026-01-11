@@ -124,7 +124,7 @@ export class JobsListComponent implements OnInit {
   }
 
   createJob(): void {
-    this.router.navigate(['/jobs/create']);
+    this.router.navigate(['/jobs/simple-create']);
   }
 
   getStatusClass(status: string): string {
