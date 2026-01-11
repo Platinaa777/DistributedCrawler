@@ -25,7 +25,7 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 
 		// Set config ID
 		config := command.Config
-		config.ID = confitestgID
+		config.ID = configID
 
 		// Create job config first
 		createdConfigID, err := s.crawlJobConfigRepo.Create(ctx, config)

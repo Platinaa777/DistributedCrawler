@@ -488,7 +488,19 @@ func (w *ParserWorker) applyTransform(spec models.TransformSpec, value any) any 
 func (w *ParserWorker) convertToType(value any, valueType models.ValueType) (any, error) {
 	switch valueType {
 	case models.ValueString:
-		return fmt.Sprintf("%v", value), nil
+		switch v := value.(type) {
+		case []string:
+			// keep list results as-is so metrics and callers can treat as array
+			return v, nil
+		case []any:
+			out := make([]string, 0, len(v))
+			for _, it := range v {
+				out = append(out, fmt.Sprintf("%v", it))
+			}
+			return out, nil
+		default:
+			return fmt.Sprintf("%v", value), nil
+		}
 	case models.ValueInt:
 		switch v := value.(type) {
 		case int:
