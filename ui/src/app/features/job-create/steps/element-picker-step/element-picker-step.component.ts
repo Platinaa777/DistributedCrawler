@@ -62,15 +62,44 @@ interface PickerElementData {
               }}
             </div>
           </div>
-        </mat-card-content>
-      </mat-card>
+    </mat-card-content>
+  </mat-card>
 
-      <div class="layout-grid">
-        <mat-card class="fill-card preview-card">
-          <mat-card-header>
-            <mat-card-title class="text-base">Page Preview</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="relative flex-1 min-h-0">
+  <div class="layout-grid">
+    <mat-card class="full-span check-card">
+      <mat-card-header class="flex items-center justify-between gap-3">
+        <div>
+          <mat-card-title class="text-base">Check (mock)</mat-card-title>
+          <mat-card-subtitle>Generate a mock JSON preview for your current setup</mat-card-subtitle>
+        </div>
+        <div class="flex items-center gap-2">
+          <button mat-raised-button color="primary" (click)="runTrial()">
+            <mat-icon>play_arrow</mat-icon>
+            Check (mock)
+          </button>
+          <button
+            mat-icon-button
+            [disabled]="!trialResult"
+            (click)="toggleTrialVisibility()"
+            aria-label="Toggle JSON visibility"
+          >
+            <mat-icon>{{ trialExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+        </div>
+      </mat-card-header>
+      <mat-card-content *ngIf="trialResult && trialExpanded">
+        <div class="trial-result">
+          <p class="text-xs font-semibold text-gray-600 mb-2">Trial Result</p>
+          <pre class="text-xs text-gray-800">{{ trialResult }}</pre>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="fill-card preview-card">
+      <mat-card-header>
+        <mat-card-title class="text-base">Page Preview</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="relative flex-1 min-h-0">
             <div #previewContainer class="relative h-full min-h-[360px]">
               <app-preview-iframe
                 [html]="previewHtml"
@@ -175,17 +204,6 @@ interface PickerElementData {
                 (remove)="removeMetric(i)"
               ></app-metric-builder>
             </div>
-
-            <div class="space-y-2">
-              <button mat-raised-button color="primary" (click)="runTrial()">
-                <mat-icon>play_arrow</mat-icon>
-                Check (mock)
-              </button>
-              <div *ngIf="trialResult" class="border rounded bg-gray-50 p-3 max-h-48 overflow-auto">
-                <p class="text-xs font-semibold text-gray-600 mb-2">Trial Result</p>
-                <pre class="text-xs text-gray-800">{{ trialResult }}</pre>
-              </div>
-            </div>
           </mat-card-content>
         </mat-card>
       </div>
@@ -201,10 +219,36 @@ interface PickerElementData {
     .layout-grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      grid-auto-rows: minmax(0, 1fr);
+      grid-template-rows: auto 1fr 1fr;
       gap: 1rem;
       min-height: 720px;
       height: calc(100vh - 280px);
+    }
+
+    .full-span {
+      grid-column: 1 / -1;
+    }
+
+    .check-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .trial-result {
+      max-height: 240px;
+      overflow: auto;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+    }
+
+    .trial-result pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
     .preview-card {
@@ -240,6 +284,7 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   fields: FieldSpec[] = [];
   metrics: MetricSpec[] = [];
   trialResult: string | null = null;
+  trialExpanded = true;
   availableFieldNames: string[] = [];
 
   private iframeDoc: Document | null = null;
@@ -475,16 +520,29 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
 
     console.log('Trial run payload:', payload);
 
+    const sampleFields = this.fields.map(field => ({
+      name: field.name,
+      selector: field.extractor.selector,
+      attribute: field.extractor.attribute,
+      value: '(mocked)'
+    }));
+
+    const metricsPayload = this.metrics.map(metric => ({
+      name: metric.name,
+      op: metric.op,
+      input: metric.input,
+      arg: (metric as any).arg ?? ''
+    }));
+
     this.trialResult = JSON.stringify({
       status: 'ok',
       fields_count: this.fields.length,
       metrics_count: this.metrics.length,
-      sample: this.fields.slice(0, 2).map(field => ({
-        name: field.name,
-        selector: field.extractor.selector,
-        value: '(mocked)'
-      }))
+      sample: sampleFields,
+      metrics: metricsPayload
     }, null, 2);
+
+    this.trialExpanded = true;
   }
 
   private addFieldFromElement(element: PickerElementData): void {
@@ -520,6 +578,11 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   trackByMetric(index: number, metric: MetricSpec): string {
     // Use stable index to avoid input disruptions when the name changes
     return `metric-${index}`;
+  }
+
+  toggleTrialVisibility(): void {
+    if (!this.trialResult) return;
+    this.trialExpanded = !this.trialExpanded;
   }
 }
 
