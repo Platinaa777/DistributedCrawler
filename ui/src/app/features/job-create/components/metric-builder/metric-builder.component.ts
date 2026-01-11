@@ -1,10 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -19,7 +18,6 @@ import { MetricSpec } from '../../../../core/models/extraction-spec.model';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatAutocompleteModule,
     MatButtonModule,
     MatIconModule,
     MatCardModule
@@ -56,17 +54,12 @@ import { MetricSpec } from '../../../../core/models/extraction-spec.model';
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="fill">
               <mat-label>Input Field</mat-label>
-              <input
-                matInput
-                formControlName="input"
-                placeholder="field_name"
-                [matAutocomplete]="fieldAuto"
-              />
-              <mat-autocomplete #fieldAuto="matAutocomplete" autoActiveFirstOption>
-                <mat-option *ngFor="let field of availableFields" [value]="field">
+              <mat-select formControlName="input" placeholder="Select field">
+                <mat-option *ngFor="let field of fieldOptions" [value]="field">
                   {{ field }}
                 </mat-option>
-              </mat-autocomplete>
+              </mat-select>
+              <mat-hint *ngIf="!fieldOptions.length">Add a field to enable metrics</mat-hint>
               <mat-error *ngIf="metricForm.get('input')?.hasError('required')">
                 Input is required
               </mat-error>
@@ -94,15 +87,31 @@ import { MetricSpec } from '../../../../core/models/extraction-spec.model';
     }
   `]
 })
-export class MetricBuilderComponent implements OnInit {
+export class MetricBuilderComponent implements OnInit, OnChanges {
   @Input() metric?: MetricSpec;
   @Input() availableFields: string[] = [];
   @Output() metricChange = new EventEmitter<MetricSpec>();
   @Output() remove = new EventEmitter<void>();
 
   metricForm!: FormGroup;
+  fieldOptions: string[] = [];
 
   constructor(private fb: FormBuilder) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['metric'] && this.metricForm) {
+      this.metricForm.patchValue({
+        name: this.metric?.name || '',
+        op: this.metric?.op || 'count',
+        input: this.metric?.input || '',
+        arg: this.metric?.arg || ''
+      }, { emitEvent: false });
+    }
+
+    if (changes['availableFields'] && this.metricForm) {
+      this.refreshFieldOptions();
+    }
+  }
 
   ngOnInit(): void {
     this.metricForm = this.fb.group({
@@ -118,6 +127,8 @@ export class MetricBuilderComponent implements OnInit {
         this.metricChange.emit(this.buildMetricSpec());
       }
     });
+
+    this.refreshFieldOptions();
   }
 
   removeMetric(): void {
@@ -136,5 +147,21 @@ export class MetricBuilderComponent implements OnInit {
 
   isValid(): boolean {
     return this.metricForm.valid;
+  }
+
+  private refreshFieldOptions(): void {
+    this.fieldOptions = [...this.availableFields];
+
+    if (!this.metricForm) {
+      return;
+    }
+
+    const currentInput = this.metricForm.get('input')?.value;
+    const isValid = currentInput && this.fieldOptions.includes(currentInput);
+
+    if (!isValid && currentInput) {
+      this.metricForm.get('input')?.setValue('', { emitEvent: false });
+      this.metricChange.emit(this.buildMetricSpec());
+    }
   }
 }

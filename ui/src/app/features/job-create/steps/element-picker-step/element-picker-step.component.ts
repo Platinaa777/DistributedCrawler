@@ -124,7 +124,7 @@ interface PickerElementData {
               </div>
 
               <app-field-builder
-                *ngFor="let field of fields; let i = index"
+                *ngFor="let field of fields; let i = index; trackBy: trackByField"
                 [field]="field"
                 (fieldChange)="updateField(i, $event)"
                 (remove)="removeField(i)"
@@ -156,8 +156,9 @@ interface PickerElementData {
               </div>
 
               <app-metric-builder
-                *ngFor="let metric of metrics; let i = index"
+                *ngFor="let metric of metrics; let i = index; trackBy: trackByMetric"
                 [metric]="metric"
+                [availableFields]="availableFieldNames"
                 (metricChange)="updateMetric(i, $event)"
                 (remove)="removeMetric(i)"
               ></app-metric-builder>
@@ -223,6 +224,7 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   fields: FieldSpec[] = [];
   metrics: MetricSpec[] = [];
   trialResult: string | null = null;
+  availableFieldNames: string[] = [];
 
   private iframeDoc: Document | null = null;
   private stateSubscription: Subscription | null = null;
@@ -241,6 +243,9 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
       this.previewHtml = state.previewHtml;
       this.fields = [...state.extractionSpec.fields];
       this.metrics = [...state.extractionSpec.metrics];
+      this.availableFieldNames = this.fields
+        .map(field => field.name)
+        .filter((name): name is string => !!name);
 
       console.log('ElementPickerStep - state updated:', {
         hasPreviewHtml: !!this.previewHtml,
@@ -439,9 +444,7 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   }
 
   updateMetric(index: number, metric: MetricSpec): void {
-    // State service lacks update helper, so remove and re-add
-    this.stateService.removeMetric(index);
-    this.stateService.addMetric(metric);
+    this.stateService.updateMetric(index, metric);
   }
 
   removeMetric(index: number): void {
@@ -491,6 +494,16 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
     };
 
     this.stateService.addField(newField);
+  }
+
+  trackByField(index: number, field: FieldSpec): string {
+    // Use stable index so typing into the form doesn't recreate the component
+    return `field-${index}`;
+  }
+
+  trackByMetric(index: number, metric: MetricSpec): string {
+    // Use stable index to avoid input disruptions when the name changes
+    return `metric-${index}`;
   }
 }
 

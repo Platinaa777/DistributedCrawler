@@ -118,6 +118,20 @@ export class JobCreateStateService {
     });
   }
 
+  updateMetric(index: number, metric: MetricSpec): void {
+    const current = this.state$.value;
+    const metrics = [...current.extractionSpec.metrics];
+    metrics[index] = metric;
+
+    this.state$.next({
+      ...current,
+      extractionSpec: {
+        ...current.extractionSpec,
+        metrics
+      }
+    });
+  }
+
   removeMetric(index: number): void {
     const current = this.state$.value;
     this.state$.next({
