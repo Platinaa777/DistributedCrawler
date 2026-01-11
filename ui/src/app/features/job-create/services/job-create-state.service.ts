@@ -9,9 +9,6 @@ export interface JobCreateState {
   previewId: string | null;
   previewHtml: string | null;
 
-  // Step B - Selected Elements
-  selectedElements: SelectedElementData[];
-
   // Step C - ExtractionSpec
   extractionSpec: ExtractionSpec;
 
@@ -22,18 +19,10 @@ export interface JobCreateState {
   rateLimit: RateLimitPolicy;
 }
 
-export interface SelectedElementData {
-  selector: string;
-  value: string;
-  attribute: string;
-  elementTag: string;
-}
-
 const initialState: JobCreateState = {
   previewUrl: '',
   previewId: null,
   previewHtml: null,
-  selectedElements: [],
   extractionSpec: {
     fields: [],
     metrics: []
@@ -72,42 +61,6 @@ export class JobCreateStateService {
       previewUrl: url,
       previewId,
       previewHtml: html
-    });
-  }
-
-  // Step B - Selected Elements
-  addSelectedElement(element: SelectedElementData): void {
-    const current = this.state$.value;
-    this.state$.next({
-      ...current,
-      selectedElements: [element, ...current.selectedElements]
-    });
-  }
-
-  updateSelectedElement(index: number, updates: Partial<SelectedElementData>): void {
-    const current = this.state$.value;
-    const selectedElements = [...current.selectedElements];
-    const existing = selectedElements[index];
-    if (!existing) return;
-    selectedElements[index] = { ...existing, ...updates };
-    this.state$.next({
-      ...current,
-      selectedElements
-    });
-  }
-
-  removeSelectedElement(index: number): void {
-    const current = this.state$.value;
-    this.state$.next({
-      ...current,
-      selectedElements: current.selectedElements.filter((_, i) => i !== index)
-    });
-  }
-
-  clearSelectedElements(): void {
-    this.state$.next({
-      ...this.state$.value,
-      selectedElements: []
     });
   }
 

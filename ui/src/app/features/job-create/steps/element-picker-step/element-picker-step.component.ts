@@ -6,13 +6,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { PreviewIframeComponent } from '../../components/preview-iframe/preview-iframe.component';
-import { ElementInspectorComponent } from '../../components/element-inspector/element-inspector.component';
-import { JobCreateStateService, SelectedElementData } from '../../services/job-create-state.service';
+import { JobCreateStateService } from '../../services/job-create-state.service';
 import { SelectorGeneratorService } from '../../../../core/services/selector-generator.service';
 import { FieldBuilderComponent } from '../../components/field-builder/field-builder.component';
 import { MetricBuilderComponent } from '../../components/metric-builder/metric-builder.component';
 import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.model';
 import { Subscription } from 'rxjs';
+
+interface PickerElementData {
+  selector: string;
+  value: string;
+  attribute: string;
+  elementTag: string;
+}
 
 @Component({
   selector: 'app-element-picker-step',
@@ -25,7 +31,6 @@ import { Subscription } from 'rxjs';
     MatIconModule,
     MatSlideToggleModule,
     PreviewIframeComponent,
-    ElementInspectorComponent,
     FieldBuilderComponent,
     MetricBuilderComponent
   ],
@@ -61,7 +66,7 @@ import { Subscription } from 'rxjs';
       </mat-card>
 
       <div class="layout-grid">
-        <mat-card class="fill-card">
+        <mat-card class="fill-card preview-card">
           <mat-card-header>
             <mat-card-title class="text-base">Page Preview</mat-card-title>
           </mat-card-header>
@@ -115,7 +120,7 @@ import { Subscription } from 'rxjs';
               >
                 <mat-icon class="text-gray-400 text-5xl mb-2">data_object</mat-icon>
                 <p class="text-gray-500">No fields defined yet</p>
-                <p class="text-gray-400 text-sm mt-1">Add a field or quick add from selected elements</p>
+                <p class="text-gray-400 text-sm mt-1">Click elements in the preview or add one manually</p>
               </div>
 
               <app-field-builder
@@ -127,17 +132,6 @@ import { Subscription } from 'rxjs';
             </div>
           </mat-card-content>
         </mat-card>
-
-        <div class="h-full">
-          <app-element-inspector
-            class="h-full block"
-            [selectedElements]="selectedElements"
-            [hoveredElement]="hoveredElement"
-            (elementRemoved)="removeElement($event)"
-            (elementUpdated)="updateElementSelector($event)"
-            (clearAllElements)="clearAllElements()"
-          ></app-element-inspector>
-        </div>
 
         <mat-card class="fill-card">
           <mat-card-header class="flex items-center justify-between gap-3">
@@ -194,10 +188,14 @@ import { Subscription } from 'rxjs';
     .layout-grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      grid-template-rows: repeat(2, 1fr);
+      grid-auto-rows: minmax(0, 1fr);
       gap: 1rem;
       min-height: 720px;
       height: calc(100vh - 280px);
+    }
+
+    .preview-card {
+      grid-row: span 2;
     }
 
     .fill-card {
@@ -220,8 +218,7 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   iframe: HTMLIFrameElement | null = null;
   pickerEnabled = false;
 
-  selectedElements: SelectedElementData[] = [];
-  hoveredElement: SelectedElementData | null = null;
+  hoveredElement: PickerElementData | null = null;
   highlightBox: { left: number; top: number; width: number; height: number } | null = null;
   fields: FieldSpec[] = [];
   metrics: MetricSpec[] = [];
@@ -242,14 +239,12 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
     // Subscribe to state changes instead of reading once
     this.stateSubscription = this.stateService.getState().subscribe(state => {
       this.previewHtml = state.previewHtml;
-      this.selectedElements = [...state.selectedElements];
       this.fields = [...state.extractionSpec.fields];
       this.metrics = [...state.extractionSpec.metrics];
 
       console.log('ElementPickerStep - state updated:', {
         hasPreviewHtml: !!this.previewHtml,
         previewHtmlLength: this.previewHtml?.length || 0,
-        selectedElementsCount: this.selectedElements.length,
         fieldsCount: this.fields.length,
         metricsCount: this.metrics.length
       });
@@ -323,37 +318,25 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
 
     const value = this.selectorGenerator.extractValue(target, attribute);
 
-    const elementData: SelectedElementData = {
+    const elementData: PickerElementData = {
       selector,
       value: value.substring(0, 200),
       attribute,
       elementTag: target.tagName.toLowerCase()
     };
 
-    const alreadySelected = this.selectedElements.some(
-      existing => existing.selector === elementData.selector && existing.attribute === elementData.attribute
+    const alreadySelected = this.fields.some(
+      existing =>
+        existing.extractor.selector === elementData.selector &&
+        existing.extractor.attribute === elementData.attribute
     );
     if (alreadySelected) {
       return;
     }
 
     this.zone.run(() => {
-      // Add to state
-      this.stateService.addSelectedElement(elementData);
       this.addFieldFromElement(elementData);
     });
-  }
-
-  removeElement(index: number): void {
-    this.stateService.removeSelectedElement(index);
-  }
-
-  updateElementSelector(event: { index: number; selector: string }): void {
-    this.stateService.updateSelectedElement(event.index, { selector: event.selector });
-  }
-
-  clearAllElements(): void {
-    this.stateService.clearSelectedElements();
   }
 
   isValid(): boolean {
@@ -485,7 +468,7 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
     }, null, 2);
   }
 
-  private addFieldFromElement(element: SelectedElementData): void {
+  private addFieldFromElement(element: PickerElementData): void {
     const exists = this.fields.some(
       field =>
         field.extractor.selector === element.selector &&
