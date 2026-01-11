@@ -24,7 +24,7 @@ func (s *previewServ) CreatePreview(ctx context.Context, cmd service.CreatePrevi
 
 	// Sanitize HTML for safe iframe rendering
 	sanitizedHTML := s.sanitizer.Sanitize(fetchResult.Body)
-	
+
 	// Generate preview ID and MinIO key
 	previewID := valueobjects.GeneratePreviewID()
 	minioKey := fmt.Sprintf("previews/%s.html", previewID.String())

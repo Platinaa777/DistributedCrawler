@@ -271,12 +271,12 @@ func (w *ParserWorker) extractField(
 	// Extract raw value using extractor
 	rawValue, err := w.applyExtractor(spec.Extractor, doc, bodyText, baseURL)
 	if err != nil {
-		return spec.Extractor.Default, err
+		return nil, err
 	}
 
-	// If value is nil/empty, return default
+	// If value is nil/empty, return nil
 	if rawValue == nil || rawValue == "" {
-		return spec.Extractor.Default, nil
+		return nil, nil
 	}
 
 	// Apply transforms
@@ -288,66 +288,21 @@ func (w *ParserWorker) extractField(
 	// Convert to expected type
 	finalValue, err := w.convertToType(transformedValue, spec.Type)
 	if err != nil {
-		return spec.Extractor.Default, err
+		return nil, err
 	}
 
 	return finalValue, nil
 }
 
-// applyExtractor extracts raw value from HTML based on selector type
+// applyExtractor extracts raw value from HTML using CSS selectors
 func (w *ParserWorker) applyExtractor(
 	spec models.ExtractorSpec,
 	doc *goquery.Document,
 	bodyText string,
 	baseURL *url.URL,
 ) (any, error) {
-
-	source := strings.ToLower(strings.TrimSpace(string(spec.Source)))
-
-	switch source {
-	case string(models.SourceHTML):
-		return w.extractFromHTML(spec, doc, baseURL)
-	case string(models.SourceText):
-		return w.extractFromText(spec, bodyText)
-
-	// Поддержка source=url (page_url)
-	case string(models.SourceURL):
-		if baseURL != nil {
-			return baseURL.String(), nil
-		}
-		return nil, fmt.Errorf("no URL available")
-
-	case string(models.SourceFetchMeta), string(models.SourceResponseHeaders):
-		return spec.Default, nil
-	default:
-		return nil, fmt.Errorf("unsupported source type: %s", spec.Source)
-	}
-}
-
-// extractFromHTML extracts data from HTML using various selectors
-func (w *ParserWorker) extractFromHTML(
-	spec models.ExtractorSpec,
-	doc *goquery.Document,
-	baseURL *url.URL,
-) (any, error) {
-	selType := strings.ToLower(strings.TrimSpace(string(spec.SelectorType)))
-
-	switch selType {
-	case string(models.SelectorCSS):
-		return w.extractWithCSS(spec, doc, baseURL)
-	case string(models.SelectorMeta):
-		return w.extractMetaTag(spec, doc)
-
-	// Если кто-то задаст selector_type=url
-	case string(models.SelectorURL):
-		if baseURL != nil {
-			return baseURL.String(), nil
-		}
-		return nil, fmt.Errorf("no URL available")
-
-	default:
-		return nil, fmt.Errorf("unsupported selector type: %s", spec.SelectorType)
-	}
+	// Always extract from HTML using CSS selectors
+	return w.extractWithCSS(spec, doc, baseURL)
 }
 
 // extractWithCSS extracts data using CSS selectors
@@ -424,63 +379,6 @@ func (w *ParserWorker) extractElementValue(
 	}
 
 	return value
-}
-
-// extractMetaTag extracts content from meta tags
-func (w *ParserWorker) extractMetaTag(spec models.ExtractorSpec, doc *goquery.Document) (any, error) {
-	key := strings.TrimSpace(spec.Selector)
-	if key == "" {
-		return nil, fmt.Errorf("meta selector is empty")
-	}
-
-	esc := strings.ReplaceAll(key, `"`, `\"`)
-
-	// name=
-	selector := fmt.Sprintf(`meta[name="%s"]`, esc)
-	if content, exists := doc.Find(selector).First().Attr("content"); exists {
-		return strings.TrimSpace(content), nil
-	}
-
-	// property=
-	selector = fmt.Sprintf(`meta[property="%s"]`, esc)
-	if content, exists := doc.Find(selector).First().Attr("content"); exists {
-		return strings.TrimSpace(content), nil
-	}
-
-	return nil, fmt.Errorf("meta tag not found: %s", spec.Selector)
-}
-
-// extractFromText extracts data from plain text using regex
-func (w *ParserWorker) extractFromText(spec models.ExtractorSpec, bodyText string) (any, error) {
-	selType := strings.ToLower(strings.TrimSpace(string(spec.SelectorType)))
-	if selType != string(models.SelectorRegex) {
-		return nil, fmt.Errorf("text source requires regex selector")
-	}
-
-	re, err := regexp.Compile(spec.Selector)
-	if err != nil {
-		return nil, fmt.Errorf("invalid regex: %w", err)
-	}
-
-	if spec.Multiple {
-		matches := re.FindAllString(bodyText, -1)
-		if len(matches) == 0 {
-			return nil, fmt.Errorf("no matches found")
-		}
-
-		if spec.Index != nil && *spec.Index < len(matches) {
-			return matches[*spec.Index], nil
-		}
-
-		return matches, nil
-	}
-
-	match := re.FindString(bodyText)
-	if match == "" {
-		return nil, fmt.Errorf("no match found")
-	}
-
-	return match, nil
 }
 
 // applyTransform applies a single transform operation to a value

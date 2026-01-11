@@ -229,10 +229,10 @@ func (w *ExportWorker) loadTaskResults(ctx context.Context, tasks []*models.Craw
 func (w *ExportWorker) generateJSONReport(ctx context.Context, jobID valueobjects.CrawlJobID, results []TaskResult) (string, error) {
 	// Build report structure
 	report := map[string]any{
-		"job_id":       jobID.String(),
-		"exported_at":  time.Now().UTC().Format(time.RFC3339),
-		"total_tasks":  len(results),
-		"results":      results,
+		"job_id":      jobID.String(),
+		"exported_at": time.Now().UTC().Format(time.RFC3339),
+		"total_tasks": len(results),
+		"results":     results,
 	}
 
 	// Marshal to JSON

@@ -600,14 +600,6 @@
     "v1ExtractorSpec": {
       "type": "object",
       "properties": {
-        "source": {
-          "type": "string",
-          "title": "\"html\" | \"text\" | \"response_headers\" | \"fetch_meta\""
-        },
-        "selector_type": {
-          "type": "string",
-          "title": "\"css\" | \"xpath\" | \"regex\" | \"jsonld\" | \"meta\" | \"header\" | \"url\" | \"status_code\""
-        },
         "selector": {
           "type": "string"
         },
@@ -620,10 +612,6 @@
         "index": {
           "type": "integer",
           "format": "int32"
-        },
-        "default_value": {
-          "type": "string",
-          "title": "JSON-encoded default value"
         }
       },
       "title": "ExtractorSpec defines how to extract a field"
@@ -650,9 +638,6 @@
             "type": "object",
             "$ref": "#/definitions/v1TransformSpec"
           }
-        },
-        "label": {
-          "type": "string"
         }
       },
       "title": "FieldSpec defines a field to extract"
@@ -755,10 +740,6 @@
         },
         "input": {
           "type": "string"
-        },
-        "arg": {
-          "type": "string",
-          "title": "JSON-encoded argument"
         }
       },
       "title": "MetricSpec defines a metric to compute"

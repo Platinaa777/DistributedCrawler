@@ -40,4 +40,3 @@ type CrawlJobService interface {
 	GetCrawlJob(ctx context.Context, query GetCrawlJobQuery) (*models.CrawlJob, error)
 	ListCrawlJobs(ctx context.Context, query ListCrawlJobsQuery) ([]*models.CrawlJob, error)
 }
-

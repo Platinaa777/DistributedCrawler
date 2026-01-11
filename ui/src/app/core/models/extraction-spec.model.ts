@@ -13,12 +13,13 @@ export interface FieldSpec {
 }
 
 export interface ExtractorSpec {
-  source: string; // "html" | "text" | "response_headers" | "fetch_meta"
-  selector_type: string; // "css" | "xpath" | "regex" | "jsonld" | "meta" | "header" | "url" | "status_code"
   selector: string;
   attribute: string;
   multiple: boolean;
   index?: number;
+  // Legacy fields kept optional for backward compatibility with existing forms.
+  source?: string;
+  selector_type?: string;
   default_value?: string;
 }
 

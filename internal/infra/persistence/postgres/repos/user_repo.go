@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	usersTableName       = "users"
-	userIDColumn         = "id"
-	userEmailColumn      = "email"
-	userPasswordColumn   = "password_hash"
-	userCreatedAtColumn  = "created_at"
-	userUpdatedAtColumn  = "updated_at"
+	usersTableName      = "users"
+	userIDColumn        = "id"
+	userEmailColumn     = "email"
+	userPasswordColumn  = "password_hash"
+	userCreatedAtColumn = "created_at"
+	userUpdatedAtColumn = "updated_at"
 )
 
 type userRepository struct {

@@ -6,13 +6,13 @@ import (
 )
 
 type RefreshToken struct {
-	ID                 valueobjects.RefreshTokenID
-	UserID             valueobjects.UserID
-	TokenHash          string
-	ExpiresAt          time.Time
-	RevokedAt          *time.Time
-	CreatedAt          time.Time
-	ReplacedByTokenID  *valueobjects.RefreshTokenID
+	ID                valueobjects.RefreshTokenID
+	UserID            valueobjects.UserID
+	TokenHash         string
+	ExpiresAt         time.Time
+	RevokedAt         *time.Time
+	CreatedAt         time.Time
+	ReplacedByTokenID *valueobjects.RefreshTokenID
 }
 
 func NewRefreshToken(userID valueobjects.UserID, tokenHash string, expiresAt time.Time) *RefreshToken {

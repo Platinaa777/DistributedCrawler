@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	ErrInvalidToken = errors.New("invalid token")
-	ErrExpiredToken = errors.New("token expired")
+	ErrInvalidToken  = errors.New("invalid token")
+	ErrExpiredToken  = errors.New("token expired")
 	ErrMissingClaims = errors.New("missing claims")
 )
 
@@ -21,8 +21,8 @@ type Claims struct {
 
 // JWTService handles JWT operations
 type JWTService struct {
-	secret string
-	issuer string
+	secret   string
+	issuer   string
 	audience string
 }
 

@@ -17,16 +17,16 @@ import (
 
 // FetchWorker consumes crawl tasks, fetches pages, stores in MinIO, and publishes to parsing queue
 type FetchWorker struct {
-	rmqClient       rabbitmq.Client
-	crawlQueue      string
-	parsingQueue    string
-	contentStore    services.ContentStore
-	taskRepo        crawltask.CrawlTaskRepository
-	jobConfigRepo   crawljobconfig.CrawlJobConfigRepository
-	fetcherFactory  services.FetcherFactory
-	scopeValidator  services.ScopeValidator
-	rateLimiter     services.RateLimiter
-	logger          *zap.Logger
+	rmqClient      rabbitmq.Client
+	crawlQueue     string
+	parsingQueue   string
+	contentStore   services.ContentStore
+	taskRepo       crawltask.CrawlTaskRepository
+	jobConfigRepo  crawljobconfig.CrawlJobConfigRepository
+	fetcherFactory services.FetcherFactory
+	scopeValidator services.ScopeValidator
+	rateLimiter    services.RateLimiter
+	logger         *zap.Logger
 }
 
 // NewFetchWorker creates a new fetch worker
@@ -241,4 +241,3 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 
 	return nil
 }
-

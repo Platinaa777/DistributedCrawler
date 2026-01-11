@@ -16,14 +16,14 @@ import (
 )
 
 const (
-	refreshTokensTableName           = "refresh_tokens"
-	refreshTokenIDColumn             = "id"
-	refreshTokenUserIDColumn         = "user_id"
-	refreshTokenHashColumn           = "token_hash"
-	refreshTokenExpiresAtColumn      = "expires_at"
-	refreshTokenRevokedAtColumn      = "revoked_at"
-	refreshTokenCreatedAtColumn      = "created_at"
-	refreshTokenReplacedByColumn     = "replaced_by_token_id"
+	refreshTokensTableName       = "refresh_tokens"
+	refreshTokenIDColumn         = "id"
+	refreshTokenUserIDColumn     = "user_id"
+	refreshTokenHashColumn       = "token_hash"
+	refreshTokenExpiresAtColumn  = "expires_at"
+	refreshTokenRevokedAtColumn  = "revoked_at"
+	refreshTokenCreatedAtColumn  = "created_at"
+	refreshTokenReplacedByColumn = "replaced_by_token_id"
 )
 
 type refreshTokenRepository struct {

@@ -1,28 +1,5 @@
 package models
 
-type SourceType string
-
-const (
-	SourceHTML            SourceType = "html"
-	SourceText            SourceType = "text"
-	SourceURL             SourceType = "url"
-	SourceResponseHeaders SourceType = "response_headers"
-	SourceFetchMeta       SourceType = "fetch_meta"
-)
-
-type SelectorType string
-
-const (
-	SelectorCSS        SelectorType = "css"
-	SelectorXPath      SelectorType = "xpath"
-	SelectorRegex      SelectorType = "regex"
-	SelectorJSONLD     SelectorType = "jsonld"
-	SelectorMeta       SelectorType = "meta"
-	SelectorHeader     SelectorType = "header"
-	SelectorURL        SelectorType = "url"
-	SelectorStatusCode SelectorType = "status_code"
-)
-
 type ValueType string
 
 const (
@@ -73,19 +50,13 @@ type FieldSpec struct {
 	Required   bool      // fail/mark bad quality if missing
 	Extractor  ExtractorSpec
 	Transforms []TransformSpec
-
-	// Optional: helps UI show nice labels, hints, grouping, etc.
-	Label string // e.g. "Page title"
 }
 
 type ExtractorSpec struct {
-	Source       SourceType   `json:"source"`              // "html" | "text" | "url" | "response_headers" | "fetch_meta"
-	SelectorType SelectorType `json:"selector_type"`       // "css" | "xpath" | "regex" | "jsonld" | "meta" | "header" | "url" | "status_code"
-	Selector     string       `json:"selector,omitempty"`  // e.g. "h1", "meta[name=description]"
-	Attribute    string       `json:"attribute,omitempty"` // e.g. "href", "content"
-	Multiple     bool         `json:"multiple,omitempty"`  // true => list result (before transforms)
-	Index        *int         `json:"index,omitempty"`     // if Multiple=true choose one
-	Default      any          `json:"default,omitempty"`   // default value if missing (string/number/bool)
+	Selector  string `json:"selector,omitempty"`  // CSS selector, e.g. "h1", "meta[name=description]"
+	Attribute string `json:"attribute,omitempty"` // e.g. "href", "content"
+	Multiple  bool   `json:"multiple,omitempty"`  // true => list result (before transforms)
+	Index     *int   `json:"index,omitempty"`     // if Multiple=true choose one
 }
 
 type TransformSpec struct {
@@ -97,5 +68,4 @@ type MetricSpec struct {
 	Name  string   `json:"name"`            // e.g. "title_len"
 	Op    MetricOp `json:"op"`              // e.g. "len", "count", "status_is_error"
 	Input string   `json:"input,omitempty"` // field name or special value like "body_text"
-	Arg   any      `json:"arg,omitempty"`   // optional parameters
 }

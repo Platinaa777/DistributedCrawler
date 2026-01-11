@@ -30,8 +30,8 @@ func TestCreateJob(t *testing.T) {
 		ctx = context.Background()
 		mc  = minimock.NewController(t)
 
-		id   = valueobjects.GenerateCrawlJobID()
-		name = gofakeit.Animal()
+		id    = valueobjects.GenerateCrawlJobID()
+		name  = gofakeit.Animal()
 		seeds = []models.Seed{
 			{Url: gofakeit.URL()},
 			{Url: gofakeit.URL()},

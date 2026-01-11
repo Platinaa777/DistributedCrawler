@@ -64,13 +64,10 @@ message Seed {
 
 // ExtractorSpec defines how to extract a field
 message ExtractorSpec {
-  string source = 1; // "html" | "text" | "response_headers" | "fetch_meta"
-  string selector_type = 2 [json_name = "selector_type"]; // "css" | "xpath" | "regex" | "jsonld" | "meta" | "header" | "url" | "status_code"
-  string selector = 3;
-  string attribute = 4;
-  bool multiple = 5;
-  optional int32 index = 6;
-  string default_value = 7 [json_name = "default_value"]; // JSON-encoded default value
+  string selector = 1;
+  string attribute = 2;
+  bool multiple = 3;
+  optional int32 index = 4;
 }
 
 // TransformSpec defines a transformation operation
@@ -86,7 +83,6 @@ message FieldSpec {
   bool required = 3;
   ExtractorSpec extractor = 4;
   repeated TransformSpec transforms = 5;
-  string label = 6;
 }
 
 // MetricSpec defines a metric to compute
@@ -94,7 +90,6 @@ message MetricSpec {
   string name = 1;
   string op = 2; // "len" | "count" | "word_count" | "field_present" | "status_is_error" | "count_external_links"
   string input = 3;
-  string arg = 4; // JSON-encoded argument
 }
 
 // ExtractionSpec defines extraction configuration

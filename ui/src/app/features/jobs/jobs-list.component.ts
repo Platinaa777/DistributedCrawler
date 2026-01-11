@@ -1,12 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
 import { CrawlJob } from '../../core/models';
 
@@ -20,7 +21,8 @@ import { CrawlJob } from '../../core/models';
     MatProgressSpinnerModule,
     MatChipsModule,
     MatIconModule,
-    MatCardModule
+    MatCardModule,
+    MatPaginatorModule
   ],
   template: `
     <div class="container mx-auto p-6">
@@ -42,7 +44,7 @@ import { CrawlJob } from '../../core/models';
       </mat-card>
 
       <mat-card *ngIf="!loading && !error">
-        <table mat-table [dataSource]="jobs" class="w-full">
+        <table mat-table [dataSource]="dataSource" class="w-full">
           <!-- Name Column -->
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>
@@ -70,6 +72,12 @@ import { CrawlJob } from '../../core/models';
               class="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
               (click)="viewJob(row)"></tr>
         </table>
+        <mat-paginator
+          [length]="jobs.length"
+          [pageSize]="10"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          showFirstLastButtons>
+        </mat-paginator>
 
         <div *ngIf="jobs.length === 0" class="text-center p-8 text-gray-500">
           <mat-icon class="text-6xl">work_outline</mat-icon>
@@ -88,8 +96,11 @@ import { CrawlJob } from '../../core/models';
     }
   `]
 })
-export class JobsListComponent implements OnInit {
+export class JobsListComponent implements OnInit, AfterViewInit {
+  @ViewChild(MatPaginator) paginator?: MatPaginator;
+
   jobs: CrawlJob[] = [];
+  dataSource = new MatTableDataSource<CrawlJob>([]);
   displayedColumns: string[] = ['name', 'status', 'created_at'];
   loading = false;
   error: string | null = null;
@@ -103,6 +114,12 @@ export class JobsListComponent implements OnInit {
     this.loadJobs();
   }
 
+  ngAfterViewInit(): void {
+    if (this.paginator) {
+      this.dataSource.paginator = this.paginator;
+    }
+  }
+
   loadJobs(): void {
     this.loading = true;
     this.error = null;
@@ -110,6 +127,10 @@ export class JobsListComponent implements OnInit {
     this.crawlerApi.listJobs().subscribe({
       next: (response) => {
         this.jobs = response.jobs;
+        this.dataSource.data = response.jobs;
+        if (this.paginator) {
+          this.dataSource.paginator = this.paginator;
+        }
         this.loading = false;
       },
       error: (err) => {

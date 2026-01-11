@@ -60,22 +60,14 @@ func ToProtoSeed(seed models.Seed) *crawlergrpc.Seed {
 // ToProtoExtractorSpec converts domain ExtractorSpec to protobuf
 func ToProtoExtractorSpec(spec models.ExtractorSpec) *crawlergrpc.ExtractorSpec {
 	protoSpec := &crawlergrpc.ExtractorSpec{
-		Source:       string(spec.Source),
-		SelectorType: string(spec.SelectorType),
-		Selector:     spec.Selector,
-		Attribute:    spec.Attribute,
-		Multiple:     spec.Multiple,
+		Selector:  spec.Selector,
+		Attribute: spec.Attribute,
+		Multiple:  spec.Multiple,
 	}
 
 	if spec.Index != nil {
 		idx := int32(*spec.Index)
 		protoSpec.Index = &idx
-	}
-
-	if spec.Default != nil {
-		// Marshal default value to JSON string
-		defaultJSON, _ := json.Marshal(spec.Default)
-		protoSpec.DefaultValue = string(defaultJSON)
 	}
 
 	return protoSpec
@@ -109,25 +101,16 @@ func ToProtoFieldSpec(field models.FieldSpec) *crawlergrpc.FieldSpec {
 		Required:   field.Required,
 		Extractor:  ToProtoExtractorSpec(field.Extractor),
 		Transforms: transforms,
-		Label:      field.Label,
 	}
 }
 
 // ToProtoMetricSpec converts domain MetricSpec to protobuf
 func ToProtoMetricSpec(metric models.MetricSpec) *crawlergrpc.MetricSpec {
-	protoMetric := &crawlergrpc.MetricSpec{
+	return &crawlergrpc.MetricSpec{
 		Name:  metric.Name,
 		Op:    string(metric.Op),
 		Input: metric.Input,
 	}
-
-	if metric.Arg != nil {
-		// Marshal arg to JSON string
-		argJSON, _ := json.Marshal(metric.Arg)
-		protoMetric.Arg = string(argJSON)
-	}
-
-	return protoMetric
 }
 
 // ToProtoExtractionSpec converts domain ExtractionSpec to protobuf
@@ -304,22 +287,14 @@ func FromProtoExtractorSpec(proto *crawlergrpc.ExtractorSpec) models.ExtractorSp
 	}
 
 	spec := models.ExtractorSpec{
-		Source:       models.SourceType(proto.Source),
-		SelectorType: models.SelectorType(proto.SelectorType),
-		Selector:     proto.Selector,
-		Attribute:    proto.Attribute,
-		Multiple:     proto.Multiple,
+		Selector:  proto.Selector,
+		Attribute: proto.Attribute,
+		Multiple:  proto.Multiple,
 	}
 
 	if proto.Index != nil {
 		idx := int(*proto.Index)
 		spec.Index = &idx
-	}
-
-	if proto.DefaultValue != "" {
-		var defaultVal any
-		_ = json.Unmarshal([]byte(proto.DefaultValue), &defaultVal)
-		spec.Default = defaultVal
 	}
 
 	return spec
@@ -361,7 +336,6 @@ func FromProtoFieldSpec(proto *crawlergrpc.FieldSpec) models.FieldSpec {
 		Required:   proto.Required,
 		Extractor:  FromProtoExtractorSpec(proto.Extractor),
 		Transforms: transforms,
-		Label:      proto.Label,
 	}
 }
 
@@ -371,19 +345,11 @@ func FromProtoMetricSpec(proto *crawlergrpc.MetricSpec) models.MetricSpec {
 		return models.MetricSpec{}
 	}
 
-	metric := models.MetricSpec{
+	return models.MetricSpec{
 		Name:  proto.Name,
 		Op:    models.MetricOp(proto.Op),
 		Input: proto.Input,
 	}
-
-	if proto.Arg != "" {
-		var arg any
-		_ = json.Unmarshal([]byte(proto.Arg), &arg)
-		metric.Arg = arg
-	}
-
-	return metric
 }
 
 // FromProtoExtractionSpec converts protobuf ExtractionSpec to domain

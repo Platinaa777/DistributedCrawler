@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
@@ -18,6 +19,7 @@ import { CrawlJob, CrawlTask } from '../../core/models';
     CommonModule,
     MatCardModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatChipsModule,
@@ -87,11 +89,15 @@ import { CrawlJob, CrawlTask } from '../../core/models';
             <mat-card-title>Tasks ({{ tasks.length }})</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <table mat-table [dataSource]="tasks" class="w-full">
+            <table mat-table [dataSource]="dataSource" class="w-full">
               <!-- URL Column -->
               <ng-container matColumnDef="url">
                 <th mat-header-cell *matHeaderCellDef>URL</th>
-                <td mat-cell *matCellDef="let task" class="truncate max-w-md">{{ task.url }}</td>
+                <td mat-cell *matCellDef="let task" class="truncate max-w-md">
+                  <a [href]="task.url" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+                    {{ task.url }}
+                  </a>
+                </td>
               </ng-container>
 
               <!-- Status Column -->
@@ -116,9 +122,23 @@ import { CrawlJob, CrawlTask } from '../../core/models';
                 <td mat-cell *matCellDef="let task">{{ task.enqueued_at | date:'short' }}</td>
               </ng-container>
 
+              <!-- Body Hash Column -->
+              <ng-container matColumnDef="body_hash">
+                <th mat-header-cell *matHeaderCellDef>Body Hash</th>
+                <td mat-cell *matCellDef="let task" class="font-mono text-xs break-all">
+                  {{ task.body_hash ? (task.body_hash | slice:0:8) + '...' : '' }}
+                </td>
+              </ng-container>
+
               <tr mat-header-row *matHeaderRowDef="taskColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: taskColumns;"></tr>
             </table>
+
+            <mat-paginator
+              [pageSizeOptions]="[5, 10, 25]"
+              showFirstLastButtons
+              [pageSize]="10">
+            </mat-paginator>
 
             <div *ngIf="tasks.length === 0" class="text-center p-8 text-gray-500">
               <mat-icon class="text-6xl">list_alt</mat-icon>
@@ -139,18 +159,26 @@ import { CrawlJob, CrawlTask } from '../../core/models';
     }
   `]
 })
-export class JobDetailsComponent implements OnInit {
+export class JobDetailsComponent implements OnInit, AfterViewInit {
   job: CrawlJob | null = null;
   tasks: CrawlTask[] = [];
-  taskColumns: string[] = ['url', 'status', 'depth', 'enqueued_at'];
+  taskColumns: string[] = ['url', 'status', 'depth', 'enqueued_at', 'body_hash'];
+  dataSource = new MatTableDataSource<CrawlTask>([]);
   loading = false;
   error: string | null = null;
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private crawlerApi: CrawlerApiService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
+
+  ngAfterViewInit(): void {
+    if (this.paginator) {
+      this.dataSource.paginator = this.paginator;
+    }
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -170,6 +198,10 @@ export class JobDetailsComponent implements OnInit {
       next: (response) => {
         this.job = response.job.job;
         this.tasks = response.tasks.tasks;
+        this.dataSource.data = response.tasks.tasks;
+        if (this.paginator) {
+          this.dataSource.paginator = this.paginator;
+        }
         this.loading = false;
       },
       error: (err) => {

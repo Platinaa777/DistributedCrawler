@@ -335,4 +335,3 @@ func (c *crawlTaskRepository) ExistsByJobIDAndHashExcluding(ctx context.Context,
 
 	return count > 0, nil
 }
-

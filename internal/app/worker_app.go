@@ -39,12 +39,12 @@ const (
 )
 
 type WorkerApp struct {
-	workerType   WorkerType
-	zapLogger    *zap.Logger
-	pgClient     persistence.Client
-	rmqClient    rabbitmq.Client
-	rmqConfig    config.RabbitMQConfig
-	redisClient  *redis.Client
+	workerType  WorkerType
+	zapLogger   *zap.Logger
+	pgClient    persistence.Client
+	rmqClient   rabbitmq.Client
+	rmqConfig   config.RabbitMQConfig
+	redisClient *redis.Client
 
 	fetchWorker  *worker.FetchWorker
 	parserWorker *worker.ParserWorker
@@ -251,8 +251,8 @@ func (a *WorkerApp) initFetchWorker() error {
 	// Create fetch worker
 	a.fetchWorker = worker.NewFetchWorker(
 		a.rmqClient,
-		crawlQueue,      // Consume from crawl_queue
-		parsingQueue,    // Publish to parsing_queue
+		crawlQueue,   // Consume from crawl_queue
+		parsingQueue, // Publish to parsing_queue
 		contentStore,
 		taskRepo,
 		jobConfigRepo,
@@ -341,7 +341,7 @@ func (a *WorkerApp) initExportWorker() error {
 
 	// Create export worker with poll interval and batch size
 	pollInterval := 30 * time.Second // Poll every 30 seconds
-	batchSize := 10                   // Process up to 10 jobs per batch
+	batchSize := 10                  // Process up to 10 jobs per batch
 
 	a.exportWorker = worker.NewExportWorker(
 		jobRepo,

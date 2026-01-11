@@ -105,11 +105,21 @@ interface SimpleJobFormValue {
       </mat-card>
 
       <mat-card>
-        <mat-card-header>
-          <mat-card-title>Seeds & Scope</mat-card-title>
-          <mat-card-subtitle>Where to start and what to allow</mat-card-subtitle>
+        <mat-card-header class="flex items-center justify-between">
+          <div>
+            <mat-card-title>Seeds & Scope</mat-card-title>
+            <mat-card-subtitle>Where to start and what to allow</mat-card-subtitle>
+          </div>
+          <button
+            mat-icon-button
+            type="button"
+            (click)="toggleSeedsScope()"
+            [attr.aria-label]="seedsScopeExpanded ? 'Collapse Seeds & Scope' : 'Expand Seeds & Scope'"
+          >
+            <mat-icon>{{ seedsScopeExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
         </mat-card-header>
-        <mat-card-content class="space-y-4">
+        <mat-card-content class="space-y-4" *ngIf="seedsScopeExpanded">
           <div>
             <div class="flex items-center justify-between mb-2">
               <p class="text-sm font-semibold">Seed URLs</p>
@@ -209,10 +219,18 @@ interface SimpleJobFormValue {
         </mat-card-content>
       </mat-card>
       <mat-card>
-        <mat-card-header>
+        <mat-card-header class="flex items-center justify-between">
           <mat-card-title>Rate Limit, Retries & Schedule</mat-card-title>
+          <button
+            mat-icon-button
+            type="button"
+            (click)="toggleRateLimit()"
+            [attr.aria-label]="rateLimitExpanded ? 'Collapse Rate Limit, Retries & Schedule' : 'Expand Rate Limit, Retries & Schedule'"
+          >
+            <mat-icon>{{ rateLimitExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
         </mat-card-header>
-        <mat-card-content class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <mat-card-content class="grid grid-cols-1 md:grid-cols-3 gap-4" *ngIf="rateLimitExpanded">
           <div [formGroup]="retriesGroup" class="space-y-4">
             <p class="text-sm font-semibold">Retry Policy</p>
             <mat-form-field class="w-full" [matTooltip]="'Maximum retry attempts'">
@@ -267,11 +285,21 @@ interface SimpleJobFormValue {
         </mat-card-content>
       </mat-card>
       <mat-card>
-        <mat-card-header>
-          <mat-card-title>Extraction Spec</mat-card-title>
-          <mat-card-subtitle>Fields and metrics that mirror the backend payload</mat-card-subtitle>
+        <mat-card-header class="flex items-center justify-between">
+          <div>
+            <mat-card-title>Extraction Spec</mat-card-title>
+            <mat-card-subtitle>Fields and metrics that mirror the backend payload</mat-card-subtitle>
+          </div>
+          <button
+            mat-icon-button
+            type="button"
+            (click)="toggleExtraction()"
+            [attr.aria-label]="extractionExpanded ? 'Collapse Extraction Spec' : 'Expand Extraction Spec'"
+          >
+            <mat-icon>{{ extractionExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
         </mat-card-header>
-        <mat-card-content class="space-y-4">
+        <mat-card-content class="space-y-4" *ngIf="extractionExpanded">
           <div class="flex items-center justify-between">
             <p class="text-sm font-semibold">Fields</p>
             <button mat-stroked-button color="primary" type="button" (click)="addExtractionField()">
@@ -293,65 +321,67 @@ interface SimpleJobFormValue {
                 </button>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <mat-form-field class="w-full" [matTooltip]="'Field key in the result JSON'">
+              <div class="grid grid-cols-1 gap-3">
+                <mat-form-field class="w-full" [matTooltip]="'Key saved to the output JSON and referenced by metrics'">
                   <mat-label>Name</mat-label>
                   <input matInput formControlName="name" />
                   <mat-icon matSuffix>info_outline</mat-icon>
                 </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Optional label for UI clarity'">
-                  <mat-label>Label</mat-label>
-                  <input matInput formControlName="label" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <mat-form-field class="w-full" [matTooltip]="'Value type for this field'">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <mat-form-field class="w-full" [matTooltip]="'Target type enforced by the parser (string/int/float/bool/url/json)'">
                   <mat-label>Type</mat-label>
-                  <input matInput formControlName="type" placeholder="string" />
+                  <mat-select formControlName="type">
+                    <mat-option *ngFor="let option of fieldTypeOptions" [value]="option">{{ option }}</mat-option>
+                  </mat-select>
                   <mat-icon matSuffix>info_outline</mat-icon>
                 </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Extractor source: html, url, response_headers, etc.'">
-                  <mat-label>Source</mat-label>
-                  <input matInput formControlName="source" placeholder="html" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Selector type: css, xpath, regex, const, meta, header'">
-                  <mat-label>Selector Type</mat-label>
-                  <input matInput formControlName="selector_type" placeholder="css" />
+                <mat-form-field class="w-full" [matTooltip]="'Attribute to return (text/html/href/src/content). href/src are resolved against the page URL.'">
+                  <mat-label>Attribute</mat-label>
+                  <mat-select formControlName="attribute">
+                    <mat-option *ngFor="let option of attributeOptions" [value]="option">{{ option }}</mat-option>
+                  </mat-select>
                   <mat-icon matSuffix>info_outline</mat-icon>
                 </mat-form-field>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <mat-form-field class="w-full" [matTooltip]="'Selector value or pattern'">
+              <div class="grid grid-cols-1 gap-3 items-center">
+                <mat-form-field class="w-full" [matTooltip]="'Selector or pattern used for extraction (CSS rule, regex body, meta name, etc.)'">
                   <mat-label>Selector</mat-label>
                   <input matInput formControlName="selector" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Attribute to read: text, href, content, etc.'">
-                  <mat-label>Attribute</mat-label>
-                  <input matInput formControlName="attribute" placeholder="text" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Default value when nothing is found'">
-                  <mat-label>Default Value</mat-label>
-                  <input matInput formControlName="default_value" />
                   <mat-icon matSuffix>info_outline</mat-icon>
                 </mat-form-field>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                <mat-form-field class="w-full" [matTooltip]="'Index used when selector_type supports it (e.g., css nth match)'">
+                <mat-form-field
+                  class="w-full"
+                  [matTooltip]="'Index is used only when Multiple is enabled; pick a specific match (0-based, negative from the end)'"
+                >
                   <mat-label>Index</mat-label>
-                  <input matInput type="number" formControlName="index" />
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="index"
+                    [disabled]="!field.get('multiple')?.value"
+                    [readonly]="!field.get('multiple')?.value"
+                    [ngClass]="{
+                      'bg-gray-100 text-gray-500 cursor-not-allowed': !field.get('multiple')?.value
+                    }"
+                  />
                   <mat-icon matSuffix>info_outline</mat-icon>
+                  <mat-hint>Works only with Multiple: true</mat-hint>
                 </mat-form-field>
-                <mat-checkbox formControlName="multiple" [matTooltip]="'Enable when you want multiple matches'" class="mt-2">
+                <mat-checkbox
+                  formControlName="multiple"
+                  [matTooltip]="'Return all matches as an array instead of a single value'"
+                  class="mt-2"
+                  (change)="handleMultipleToggle(i)"
+                >
                   Multiple
                 </mat-checkbox>
-                <mat-checkbox formControlName="required" [matTooltip]="'Mark true if the field is mandatory'" class="mt-2">
+                <mat-checkbox formControlName="required" [matTooltip]="'If true, missing extraction is logged as a warning but does not stop the job'" class="mt-2">
                   Required
                 </mat-checkbox>
               </div>
@@ -371,7 +401,9 @@ interface SimpleJobFormValue {
                 >
                   <mat-form-field class="w-full" [matTooltip]="'Transform operation, e.g., trim, lower, limit'">
                     <mat-label>Op</mat-label>
-                    <input matInput formControlName="op" />
+                    <mat-select formControlName="op">
+                      <mat-option *ngFor="let option of transformOpOptions" [value]="option">{{ option }}</mat-option>
+                    </mat-select>
                     <mat-icon matSuffix>info_outline</mat-icon>
                   </mat-form-field>
                   <div class="flex items-center gap-2">
@@ -403,19 +435,21 @@ interface SimpleJobFormValue {
               <div
                 *ngFor="let metric of metrics.controls; let m = index"
                 [formGroupName]="m"
-                class="border rounded p-3 grid grid-cols-1 md:grid-cols-2 gap-3 items-start"
+                class="border rounded p-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-start"
               >
-                <mat-form-field class="w-full" [matTooltip]="'Metric name'">
+                <mat-form-field class="w-full" [matTooltip]="'Metric key saved to the output JSON'">
                   <mat-label>Name</mat-label>
                   <input matInput formControlName="name" />
                   <mat-icon matSuffix>info_outline</mat-icon>
                 </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Metric operation (count, len, word_count, etc.)'">
+                <mat-form-field class="w-full" [matTooltip]="'Parser operations: len (string length), count (array size), word_count (split by whitespace), field_present (bool), count_external_links'">
                   <mat-label>Op</mat-label>
-                  <input matInput formControlName="op" />
+                  <mat-select formControlName="op">
+                    <mat-option *ngFor="let option of metricOpOptions" [value]="option">{{ option }}</mat-option>
+                  </mat-select>
                   <mat-icon matSuffix>info_outline</mat-icon>
                 </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Input field name to run the metric against'">
+                <mat-form-field class="w-full" [matTooltip]="'Field name to run the metric on; for word_count you may also use body_text to count the whole page'">
                   <mat-label>Input</mat-label>
                   <mat-select formControlName="input">
                     <mat-option *ngFor="let option of fieldNameOptions" [value]="option">
@@ -424,16 +458,9 @@ interface SimpleJobFormValue {
                   </mat-select>
                   <mat-hint *ngIf="fieldNameOptions.length === 0">Add a field first</mat-hint>
                 </mat-form-field>
-                <div class="flex items-center gap-2">
-                  <mat-form-field class="flex-1" [matTooltip]="'Optional metric argument'">
-                    <mat-label>Arg</mat-label>
-                    <input matInput formControlName="arg" />
-                    <mat-icon matSuffix>info_outline</mat-icon>
-                  </mat-form-field>
-                  <button mat-icon-button color="warn" type="button" (click)="removeMetric(m)">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </div>
+                <button mat-icon-button color="warn" type="button" (click)="removeMetric(m)">
+                  <mat-icon>delete</mat-icon>
+                </button>
               </div>
             </div>
           </div>
@@ -469,6 +496,26 @@ export class SimpleJobCreateComponent implements OnInit {
   creating = false;
   error: string | null = null;
   previewJson = '';
+  seedsScopeExpanded = false;
+  rateLimitExpanded = false;
+  extractionExpanded = true;
+  readonly fieldTypeOptions: FieldSpec['type'][] = ['string', 'int', 'float', 'bool', 'url', 'json'];
+  readonly attributeOptions = ['text', 'html', 'href', 'src', 'content'];
+  readonly metricOpOptions: MetricSpec['op'][] = ['len', 'count', 'word_count', 'field_present', 'status_is_error', 'count_external_links'];
+  readonly transformOpOptions: TransformSpec['op'][] = [
+    'trim',
+    'lower',
+    'upper',
+    'normalize_url',
+    'unique',
+    'limit',
+    'to_int',
+    'to_float',
+    'parse_price',
+    'html_to_text',
+    'collapse_ws',
+    'sha256'
+  ];
 
   private readonly sampleConfig: CrawlJobConfig = {
     id: 'example-simple-crawl',
@@ -487,33 +534,23 @@ export class SimpleJobCreateComponent implements OnInit {
       fields: [
         {
           name: 'page_url',
-          label: 'Page URL',
           type: 'string',
           required: true,
           extractor: {
-            source: 'url',
-            selector_type: 'const',
             selector: '',
-            attribute: '',
-            multiple: false,
-            index: 0,
-            default_value: ''
+            attribute: 'text',
+            multiple: false
           },
           transforms: []
         },
         {
           name: 'title',
-          label: 'Title',
           type: 'string',
           required: true,
           extractor: {
-            source: 'html',
-            selector_type: 'css',
             selector: "h1[itemprop='headline']",
             attribute: 'text',
-            multiple: false,
-            index: 0,
-            default_value: ''
+            multiple: false
           },
           transforms: []
         }
@@ -522,8 +559,7 @@ export class SimpleJobCreateComponent implements OnInit {
         {
           name: 'questions_count',
           op: 'count',
-          input: 'questions_h3',
-          arg: ''
+          input: 'questions_h3'
         }
       ]
     }
@@ -563,13 +599,13 @@ export class SimpleJobCreateComponent implements OnInit {
       metrics: this.fb.array([])
     });
 
-    this.resetToSample();
-
     this.jobForm.valueChanges.subscribe(() => this.updatePreview());
 
     this.extractionFields.valueChanges.subscribe(() => {
       this.syncMetricInputs();
     });
+
+    this.updatePreview();
   }
 
   get seeds(): FormArray {
@@ -612,6 +648,18 @@ export class SimpleJobCreateComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/jobs']);
+  }
+
+  toggleSeedsScope(): void {
+    this.seedsScopeExpanded = !this.seedsScopeExpanded;
+  }
+
+  toggleRateLimit(): void {
+    this.rateLimitExpanded = !this.rateLimitExpanded;
+  }
+
+  toggleExtraction(): void {
+    this.extractionExpanded = !this.extractionExpanded;
   }
 
   addSeed(url = ''): void {
@@ -680,6 +728,16 @@ export class SimpleJobCreateComponent implements OnInit {
     return (this.extractionFields.at(fieldIndex) as FormGroup).get('transforms') as FormArray;
   }
 
+  handleMultipleToggle(fieldIndex: number): void {
+    const fieldGroup = this.extractionFields.at(fieldIndex) as FormGroup;
+    const multipleCtrl = fieldGroup.get('multiple');
+    const indexCtrl = fieldGroup.get('index');
+
+    if (!multipleCtrl?.value) {
+      indexCtrl?.setValue(null);
+    }
+  }
+
   resetToSample(): void {
     const s = this.sampleConfig;
     this.jobForm.patchValue({
@@ -745,16 +803,12 @@ export class SimpleJobCreateComponent implements OnInit {
   private createExtractionFieldGroup(field?: Partial<FieldSpec>): FormGroup {
     return this.fb.group({
       name: [field?.name || '', Validators.required],
-      label: [field?.label || ''],
       type: [((field?.type || 'string') as FieldSpec['type']), Validators.required],
       required: [field?.required ?? false],
-      source: [field?.extractor?.source || 'html'],
-      selector_type: [field?.extractor?.selector_type || 'css'],
       selector: [field?.extractor?.selector || '', Validators.required],
       attribute: [field?.extractor?.attribute || 'text'],
       multiple: [field?.extractor?.multiple ?? false],
-      index: [field?.extractor?.index ?? 0],
-      default_value: [field?.extractor?.default_value || ''],
+      index: [field?.extractor?.multiple ? field?.extractor?.index ?? null : null],
       transforms: this.fb.array(
         field?.transforms?.map(t => this.createTransformGroup(t)) || []
       )
@@ -772,8 +826,7 @@ export class SimpleJobCreateComponent implements OnInit {
     return this.fb.group({
       name: [metric?.name || '', Validators.required],
       op: [(metric?.op as MetricSpec['op']) || 'count', Validators.required],
-      input: [metric?.input || '', Validators.required],
-      arg: [metric?.arg || '']
+      input: [metric?.input || '', Validators.required]
     });
   }
 
@@ -800,25 +853,22 @@ export class SimpleJobCreateComponent implements OnInit {
 
     const extractionFields: FieldSpec[] = this.extractionFields.controls.map(ctrl => {
       const value = ctrl.value;
+      const isMultiple = !!value.multiple;
       const extractor: any = {
-        source: value.source,
-        selector_type: value.selector_type,
         selector: value.selector,
         attribute: value.attribute,
-        multiple: !!value.multiple
+        multiple: isMultiple
       };
 
-      if (value.index !== null && value.index !== undefined && value.index !== '') {
-        extractor.index = Number(value.index);
-      }
-
-      if (value.default_value !== undefined && value.default_value !== '') {
-        extractor.default_value = value.default_value;
+      if (isMultiple) {
+        extractor.index =
+          value.index === null || value.index === undefined || value.index === ''
+            ? null
+            : Number(value.index);
       }
 
       return {
         name: value.name,
-        label: value.label || undefined,
         type: value.type,
         required: !!value.required,
         extractor,
@@ -831,8 +881,7 @@ export class SimpleJobCreateComponent implements OnInit {
       return {
         name: value.name,
         op: value.op,
-        input: value.input,
-        arg: value.arg || undefined
+        input: value.input
       };
     });
 

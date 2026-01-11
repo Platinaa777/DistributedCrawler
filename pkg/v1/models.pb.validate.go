@@ -674,17 +674,11 @@ func (m *ExtractorSpec) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Source
-
-	// no validation rules for SelectorType
-
 	// no validation rules for Selector
 
 	// no validation rules for Attribute
 
 	// no validation rules for Multiple
-
-	// no validation rules for DefaultValue
 
 	if m.Index != nil {
 		// no validation rules for Index
@@ -963,8 +957,6 @@ func (m *FieldSpec) validate(all bool) error {
 
 	}
 
-	// no validation rules for Label
-
 	if len(errors) > 0 {
 		return FieldSpecMultiError(errors)
 	}
@@ -1069,8 +1061,6 @@ func (m *MetricSpec) validate(all bool) error {
 	// no validation rules for Op
 
 	// no validation rules for Input
-
-	// no validation rules for Arg
 
 	if len(errors) > 0 {
 		return MetricSpecMultiError(errors)

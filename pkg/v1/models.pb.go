@@ -353,13 +353,10 @@ func (x *Seed) GetUrl() string {
 // ExtractorSpec defines how to extract a field
 type ExtractorSpec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`               // "html" | "text" | "response_headers" | "fetch_meta"
-	SelectorType  string                 `protobuf:"bytes,2,opt,name=selector_type,proto3" json:"selector_type,omitempty"` // "css" | "xpath" | "regex" | "jsonld" | "meta" | "header" | "url" | "status_code"
-	Selector      string                 `protobuf:"bytes,3,opt,name=selector,proto3" json:"selector,omitempty"`
-	Attribute     string                 `protobuf:"bytes,4,opt,name=attribute,proto3" json:"attribute,omitempty"`
-	Multiple      bool                   `protobuf:"varint,5,opt,name=multiple,proto3" json:"multiple,omitempty"`
-	Index         *int32                 `protobuf:"varint,6,opt,name=index,proto3,oneof" json:"index,omitempty"`
-	DefaultValue  string                 `protobuf:"bytes,7,opt,name=default_value,proto3" json:"default_value,omitempty"` // JSON-encoded default value
+	Selector      string                 `protobuf:"bytes,1,opt,name=selector,proto3" json:"selector,omitempty"`
+	Attribute     string                 `protobuf:"bytes,2,opt,name=attribute,proto3" json:"attribute,omitempty"`
+	Multiple      bool                   `protobuf:"varint,3,opt,name=multiple,proto3" json:"multiple,omitempty"`
+	Index         *int32                 `protobuf:"varint,4,opt,name=index,proto3,oneof" json:"index,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -394,20 +391,6 @@ func (*ExtractorSpec) Descriptor() ([]byte, []int) {
 	return file_v1_models_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *ExtractorSpec) GetSource() string {
-	if x != nil {
-		return x.Source
-	}
-	return ""
-}
-
-func (x *ExtractorSpec) GetSelectorType() string {
-	if x != nil {
-		return x.SelectorType
-	}
-	return ""
-}
-
 func (x *ExtractorSpec) GetSelector() string {
 	if x != nil {
 		return x.Selector
@@ -434,13 +417,6 @@ func (x *ExtractorSpec) GetIndex() int32 {
 		return *x.Index
 	}
 	return 0
-}
-
-func (x *ExtractorSpec) GetDefaultValue() string {
-	if x != nil {
-		return x.DefaultValue
-	}
-	return ""
 }
 
 // TransformSpec defines a transformation operation
@@ -504,7 +480,6 @@ type FieldSpec struct {
 	Required      bool                   `protobuf:"varint,3,opt,name=required,proto3" json:"required,omitempty"`
 	Extractor     *ExtractorSpec         `protobuf:"bytes,4,opt,name=extractor,proto3" json:"extractor,omitempty"`
 	Transforms    []*TransformSpec       `protobuf:"bytes,5,rep,name=transforms,proto3" json:"transforms,omitempty"`
-	Label         string                 `protobuf:"bytes,6,opt,name=label,proto3" json:"label,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -574,20 +549,12 @@ func (x *FieldSpec) GetTransforms() []*TransformSpec {
 	return nil
 }
 
-func (x *FieldSpec) GetLabel() string {
-	if x != nil {
-		return x.Label
-	}
-	return ""
-}
-
 // MetricSpec defines a metric to compute
 type MetricSpec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Op            string                 `protobuf:"bytes,2,opt,name=op,proto3" json:"op,omitempty"` // "len" | "count" | "word_count" | "field_present" | "status_is_error" | "count_external_links"
 	Input         string                 `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
-	Arg           string                 `protobuf:"bytes,4,opt,name=arg,proto3" json:"arg,omitempty"` // JSON-encoded argument
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -639,13 +606,6 @@ func (x *MetricSpec) GetOp() string {
 func (x *MetricSpec) GetInput() string {
 	if x != nil {
 		return x.Input
-	}
-	return ""
-}
-
-func (x *MetricSpec) GetArg() string {
-	if x != nil {
-		return x.Arg
 	}
 	return ""
 }
@@ -2241,19 +2201,16 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x0fallowed_domains\x18\x02 \x03(\tR\x0fallowed_domains\x12,\n" +
 	"\x11deny_url_patterns\x18\x03 \x03(\tR\x11deny_url_patterns\"\x18\n" +
 	"\x04Seed\x12\x10\n" +
-	"\x03url\x18\x01 \x01(\tR\x03url\"\xee\x01\n" +
-	"\rExtractorSpec\x12\x16\n" +
-	"\x06source\x18\x01 \x01(\tR\x06source\x12$\n" +
-	"\rselector_type\x18\x02 \x01(\tR\rselector_type\x12\x1a\n" +
-	"\bselector\x18\x03 \x01(\tR\bselector\x12\x1c\n" +
-	"\tattribute\x18\x04 \x01(\tR\tattribute\x12\x1a\n" +
-	"\bmultiple\x18\x05 \x01(\bR\bmultiple\x12\x19\n" +
-	"\x05index\x18\x06 \x01(\x05H\x00R\x05index\x88\x01\x01\x12$\n" +
-	"\rdefault_value\x18\a \x01(\tR\rdefault_valueB\b\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\"\x8a\x01\n" +
+	"\rExtractorSpec\x12\x1a\n" +
+	"\bselector\x18\x01 \x01(\tR\bselector\x12\x1c\n" +
+	"\tattribute\x18\x02 \x01(\tR\tattribute\x12\x1a\n" +
+	"\bmultiple\x18\x03 \x01(\bR\bmultiple\x12\x19\n" +
+	"\x05index\x18\x04 \x01(\x05H\x00R\x05index\x88\x01\x01B\b\n" +
 	"\x06_index\"1\n" +
 	"\rTransformSpec\x12\x0e\n" +
 	"\x02op\x18\x01 \x01(\tR\x02op\x12\x10\n" +
-	"\x03arg\x18\x02 \x01(\tR\x03arg\"\xd9\x01\n" +
+	"\x03arg\x18\x02 \x01(\tR\x03arg\"\xc3\x01\n" +
 	"\tFieldSpec\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x1a\n" +
@@ -2261,14 +2218,12 @@ const file_v1_models_proto_rawDesc = "" +
 	"\textractor\x18\x04 \x01(\v2\x19.crawler.v1.ExtractorSpecR\textractor\x129\n" +
 	"\n" +
 	"transforms\x18\x05 \x03(\v2\x19.crawler.v1.TransformSpecR\n" +
-	"transforms\x12\x14\n" +
-	"\x05label\x18\x06 \x01(\tR\x05label\"X\n" +
+	"transforms\"F\n" +
 	"\n" +
 	"MetricSpec\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
 	"\x02op\x18\x02 \x01(\tR\x02op\x12\x14\n" +
-	"\x05input\x18\x03 \x01(\tR\x05input\x12\x10\n" +
-	"\x03arg\x18\x04 \x01(\tR\x03arg\"q\n" +
+	"\x05input\x18\x03 \x01(\tR\x05input\"q\n" +
 	"\x0eExtractionSpec\x12-\n" +
 	"\x06fields\x18\x01 \x03(\v2\x15.crawler.v1.FieldSpecR\x06fields\x120\n" +
 	"\ametrics\x18\x02 \x03(\v2\x16.crawler.v1.MetricSpecR\ametrics\"\xa8\x03\n" +

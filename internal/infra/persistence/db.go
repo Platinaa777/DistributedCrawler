@@ -42,4 +42,3 @@ type NamedExecer interface {
 type Pinger interface {
 	Ping(ctx context.Context) error
 }
-
