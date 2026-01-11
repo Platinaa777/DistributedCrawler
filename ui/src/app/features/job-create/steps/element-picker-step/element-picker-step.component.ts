@@ -107,9 +107,15 @@ interface PickerElementData {
               <mat-card-title class="text-base">Fields ({{ fields.length }})</mat-card-title>
               <mat-card-subtitle>Define data fields to extract</mat-card-subtitle>
             </div>
-            <button mat-stroked-button color="primary" (click)="addField()">
+            <button
+              mat-mini-fab
+              color="primary"
+              class="no-shadow"
+              (click)="addField()"
+              title="Add field"
+              aria-label="Add field"
+            >
               <mat-icon>add</mat-icon>
-              Add Field
             </button>
           </mat-card-header>
           <mat-card-content class="card-content-scroll">
@@ -139,9 +145,15 @@ interface PickerElementData {
               <mat-card-title class="text-base">Metrics ({{ metrics.length }})</mat-card-title>
               <mat-card-subtitle>Define metrics to calculate from extracted data</mat-card-subtitle>
             </div>
-            <button mat-stroked-button color="primary" (click)="addMetric()">
+            <button
+              mat-mini-fab
+              color="primary"
+              class="no-shadow"
+              (click)="addMetric()"
+              title="Add metric"
+              aria-label="Add metric"
+            >
               <mat-icon>add</mat-icon>
-              Add Metric
             </button>
           </mat-card-header>
           <mat-card-content class="card-content-scroll space-y-3">
@@ -211,6 +223,10 @@ interface PickerElementData {
       flex-direction: column;
       flex: 1;
       min-height: 0;
+    }
+
+    .no-shadow {
+      box-shadow: none !important;
     }
   `]
 })

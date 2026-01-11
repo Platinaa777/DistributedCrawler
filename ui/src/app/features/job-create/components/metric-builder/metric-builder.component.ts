@@ -72,9 +72,14 @@ import { MetricSpec } from '../../../../core/models/extraction-spec.model';
           </div>
 
           <div class="flex justify-end">
-            <button mat-stroked-button color="warn" (click)="removeMetric()" type="button">
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="removeMetric()"
+              type="button"
+              aria-label="Remove metric"
+            >
               <mat-icon>delete</mat-icon>
-              Remove Metric
             </button>
           </div>
         </form>
