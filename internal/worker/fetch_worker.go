@@ -216,8 +216,12 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		// These errors contain "permanent error" in the message from the fetcher
 		isPermanent := strings.Contains(err.Error(), "permanent error")
 
-		if isPermanent {
-			// Mark task as failed for permanent errors
+		// Check if fetcher exhausted all retries
+		// These errors contain "failed after X attempts" indicating retries were exhausted
+		retriesExhausted := strings.Contains(err.Error(), "failed after") && strings.Contains(err.Error(), "attempts")
+
+		// Mark task as failed for both permanent errors and exhausted retries
+		if isPermanent || retriesExhausted {
 			task.Status = models.TaskStatusFailed
 			if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
 				w.logger.Error("Failed to update task status to failed",
@@ -227,9 +231,17 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 				return fmt.Errorf("failed to update task status: %w", updateErr)
 			}
 
-			w.logger.Info("Task marked as failed due to permanent error",
+			var reason string
+			if isPermanent {
+				reason = "permanent error"
+			} else {
+				reason = "retries exhausted"
+			}
+
+			w.logger.Info("Task marked as failed",
 				zap.String("task_id", taskMsg.TaskID),
 				zap.String("url", task.URL),
+				zap.String("reason", reason),
 				zap.Error(err),
 			)
 
@@ -237,7 +249,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 			return nil
 		}
 
-		// For transient errors, return error to trigger requeue/retry
+		// For transient errors that haven't exhausted retries, return error to trigger requeue/retry
 		return fmt.Errorf("failed to fetch page: %w", err)
 	}
 

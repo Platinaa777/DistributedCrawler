@@ -32,7 +32,7 @@ func NewHTTPFetcher(auth models.AuthOptions, retry models.RetryPolicy) *HTTPFetc
 
 	return &HTTPFetcher{
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 60 * time.Second, // Increased from 30s to 60s for slow TLS handshakes
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				if len(via) >= 10 {
 					return fmt.Errorf("stopped after 10 redirects")
