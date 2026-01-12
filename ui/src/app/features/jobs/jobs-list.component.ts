@@ -44,7 +44,18 @@ import { CrawlJob } from '../../core/models';
       </mat-card>
 
       <mat-card *ngIf="!loading && !error">
-        <table mat-table [dataSource]="dataSource" class="w-full">
+        <table mat-table [dataSource]="dataSource" class="w-full" multiTemplateDataRows>
+          <!-- Expand Toggle Column -->
+          <ng-container matColumnDef="expand">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let job">
+              <button mat-icon-button aria-label="Toggle details"
+                      (click)="toggleExpand(job, $event)">
+                <mat-icon>{{ expandedJobId === job.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
           <!-- Name Column -->
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>
@@ -67,10 +78,30 @@ import { CrawlJob } from '../../core/models';
             <td mat-cell *matCellDef="let job">{{ job.created_at | date:'short' }}</td>
           </ng-container>
 
+          <!-- Detail Row -->
+          <ng-container matColumnDef="detail">
+            <td mat-cell *matCellDef="let job" [attr.colspan]="displayedColumns.length">
+              <div class="detail-wrapper" *ngIf="expandedJobId === job.id">
+                <div class="detail-header">
+                  <div class="detail-title">Job Config (auth hidden)</div>
+                  <button mat-stroked-button color="primary" (click)="viewJob(job)">
+                    <mat-icon>open_in_new</mat-icon>
+                    Open Job
+                  </button>
+                </div>
+                <pre class="json-view" *ngIf="getJobConfigWithoutAuth(job) as config">{{ config | json }}</pre>
+                <div class="text-gray-500" *ngIf="!job.job_config">No job configuration available.</div>
+              </div>
+            </td>
+          </ng-container>
+
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns;"
               class="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              (click)="viewJob(row)"></tr>
+              (click)="toggleExpand(row)"></tr>
+          <tr mat-row *matRowDef="let row; columns: detailColumns"
+              class="detail-row"
+              [class.hidden-detail]="expandedJobId !== row.id"></tr>
         </table>
         <mat-paginator
           [length]="jobs.length"
@@ -94,6 +125,45 @@ import { CrawlJob } from '../../core/models';
     table {
       width: 100%;
     }
+
+    .detail-row td {
+      padding: 0;
+      border: none;
+    }
+
+    .hidden-detail {
+      display: none;
+    }
+
+    .detail-wrapper {
+      padding: 16px 24px;
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .detail-title {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .json-view {
+      margin: 0;
+      padding: 12px;
+      background: #0b1021;
+      color: #d1e5ff;
+      border-radius: 6px;
+      overflow: auto;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+    }
   `]
 })
 export class JobsListComponent implements OnInit, AfterViewInit {
@@ -101,9 +171,11 @@ export class JobsListComponent implements OnInit, AfterViewInit {
 
   jobs: CrawlJob[] = [];
   dataSource = new MatTableDataSource<CrawlJob>([]);
-  displayedColumns: string[] = ['name', 'status', 'created_at'];
+  displayedColumns: string[] = ['expand', 'name', 'status', 'created_at'];
+  detailColumns: string[] = ['detail'];
   loading = false;
   error: string | null = null;
+  expandedJobId: string | null = null;
 
   constructor(
     private crawlerApi: CrawlerApiService,
@@ -140,8 +212,23 @@ export class JobsListComponent implements OnInit, AfterViewInit {
     });
   }
 
+  toggleExpand(job: CrawlJob, event?: Event): void {
+    event?.stopPropagation();
+    this.expandedJobId = this.expandedJobId === job.id ? null : job.id;
+  }
+
   viewJob(job: CrawlJob): void {
     this.router.navigate(['/jobs', job.id]);
+  }
+
+  getJobConfigWithoutAuth(job: CrawlJob) {
+    const config = job.job_config;
+    if (!config) {
+      return null;
+    }
+
+    const { auth, ...safeConfig } = config;
+    return safeConfig;
   }
 
   createJob(): void {
