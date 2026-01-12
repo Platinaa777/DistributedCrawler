@@ -1,4 +1,5 @@
 import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -50,6 +51,7 @@ import { CrawlJob } from '../../core/models';
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let job">
               <button mat-icon-button aria-label="Toggle details"
+                      [attr.aria-expanded]="expandedJobId === job.id"
                       (click)="toggleExpand(job, $event)">
                 <mat-icon>{{ expandedJobId === job.id ? 'expand_less' : 'expand_more' }}</mat-icon>
               </button>
@@ -81,7 +83,10 @@ import { CrawlJob } from '../../core/models';
           <!-- Detail Row -->
           <ng-container matColumnDef="detail">
             <td mat-cell *matCellDef="let job" [attr.colspan]="displayedColumns.length">
-              <div class="detail-wrapper" *ngIf="expandedJobId === job.id">
+              <div
+                class="detail-wrapper"
+                [@expandCollapse]="expandedJobId === job.id ? 'expanded' : 'collapsed'"
+                [attr.aria-hidden]="expandedJobId !== job.id">
                 <div class="detail-header">
                   <div class="detail-title">Job Config (auth hidden)</div>
                   <button mat-stroked-button color="primary" (click)="viewJob(job)">
@@ -101,7 +106,8 @@ import { CrawlJob } from '../../core/models';
               (click)="toggleExpand(row)"></tr>
           <tr mat-row *matRowDef="let row; columns: detailColumns"
               class="detail-row"
-              [class.hidden-detail]="expandedJobId !== row.id"></tr>
+              [class.detail-open]="expandedJobId === row.id">
+          </tr>
         </table>
         <mat-paginator
           [length]="jobs.length"
@@ -131,14 +137,20 @@ import { CrawlJob } from '../../core/models';
       border: none;
     }
 
-    .hidden-detail {
-      display: none;
-    }
-
     .detail-wrapper {
       padding: 16px 24px;
       background: #f8fafc;
       border-top: 1px solid #e5e7eb;
+      overflow: hidden;
+    }
+
+    .detail-row {
+      height: 0 !important;
+      min-height: 0 !important;
+    }
+
+    .detail-row.detail-open {
+      height: auto !important;
     }
 
     .detail-header {
@@ -164,7 +176,24 @@ import { CrawlJob } from '../../core/models';
       font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 13px;
     }
-  `]
+  `],
+  animations: [
+    trigger('expandCollapse', [
+      state('collapsed', style({
+        height: '0px',
+        opacity: 0,
+        padding: '0 24px',
+        borderTopColor: 'transparent'
+      })),
+      state('expanded', style({
+        height: '*',
+        opacity: 1,
+        padding: '16px 24px',
+        borderTopColor: '#e5e7eb'
+      })),
+      transition('expanded <=> collapsed', animate('200ms cubic-bezier(0.4, 0.0, 0.2, 1)'))
+    ])
+  ]
 })
 export class JobsListComponent implements OnInit, AfterViewInit {
   @ViewChild(MatPaginator) paginator?: MatPaginator;
