@@ -10,6 +10,7 @@ import (
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -137,13 +138,31 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	}
 
 	// Apply rate limiting before fetching
-	// Use "domain" as scope and extract domain from URL as id
-	// For simplicity, we'll use the entire URL as id (in production, parse domain)
-	allowed, retryAfter, err := w.rateLimiter.Allow(ctx, *config, "url", task.URL)
+	parsedURL, err := url.Parse(task.URL)
+	if err != nil || parsedURL.Host == "" {
+		invalidErr := err
+		if invalidErr == nil {
+			invalidErr = fmt.Errorf("missing host")
+		}
+		w.logger.Error("Invalid URL for rate limiting",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+			zap.Error(invalidErr),
+		)
+		return fmt.Errorf("invalid url for rate limiting: %w", invalidErr)
+	}
+
+	host := parsedURL.Hostname()
+	if host == "" {
+		host = parsedURL.Host
+	}
+
+	allowed, retryAfter, err := w.rateLimiter.Allow(ctx, *config, "domain", host)
 	if err != nil {
 		w.logger.Error("Failed to check rate limit",
 			zap.String("task_id", taskMsg.TaskID),
 			zap.String("url", task.URL),
+			zap.String("domain", host),
 			zap.Error(err),
 		)
 		return fmt.Errorf("failed to check rate limit: %w", err)
@@ -153,6 +172,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		w.logger.Warn("Request rate limited, need to wait",
 			zap.String("task_id", taskMsg.TaskID),
 			zap.String("url", task.URL),
+			zap.String("domain", host),
 			zap.Duration("retry_after", retryAfter),
 		)
 
@@ -160,10 +180,11 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		time.Sleep(retryAfter)
 
 		// Retry rate limit check after waiting
-		allowed, retryAfter, err = w.rateLimiter.Allow(ctx, *config, "url", task.URL)
+		allowed, retryAfter, err = w.rateLimiter.Allow(ctx, *config, "domain", host)
 		if err != nil {
 			w.logger.Error("Failed to check rate limit after retry",
 				zap.String("task_id", taskMsg.TaskID),
+				zap.String("domain", host),
 				zap.Error(err),
 			)
 			return fmt.Errorf("failed to check rate limit after retry: %w", err)
