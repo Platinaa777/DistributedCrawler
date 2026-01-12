@@ -119,7 +119,6 @@ message CrawlJob {
   string status = 4;
   google.protobuf.Timestamp created_at = 5 [json_name = "created_at"];
   optional google.protobuf.Timestamp completed_at = 6 [json_name = "completed_at"];
-  string error = 7; // JSON-encoded error map
 }
 
 // CrawlTask represents a single crawl task within a job

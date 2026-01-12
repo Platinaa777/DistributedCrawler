@@ -173,12 +173,6 @@ func ToProtoCrawlJob(job *models.CrawlJob) *crawlergrpc.CrawlJob {
 		protoJob.CompletedAt = timestamppb.New(*job.CompletedAt)
 	}
 
-	if job.Error != nil {
-		// Marshal error map to JSON string
-		errorJSON, _ := json.Marshal(job.Error)
-		protoJob.Error = string(errorJSON)
-	}
-
 	return protoJob
 }
 

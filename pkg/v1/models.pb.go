@@ -781,7 +781,6 @@ type CrawlJob struct {
 	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,proto3" json:"created_at,omitempty"`
 	CompletedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=completed_at,proto3,oneof" json:"completed_at,omitempty"`
-	Error         string                 `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"` // JSON-encoded error map
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -856,13 +855,6 @@ func (x *CrawlJob) GetCompletedAt() *timestamppb.Timestamp {
 		return x.CompletedAt
 	}
 	return nil
-}
-
-func (x *CrawlJob) GetError() string {
-	if x != nil {
-		return x.Error
-	}
-	return ""
 }
 
 // CrawlTask represents a single crawl task within a job
@@ -2238,7 +2230,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"rate_limit\x121\n" +
 	"\aretries\x18\a \x01(\v2\x17.crawler.v1.RetryPolicyR\aretries\x12+\n" +
 	"\x04auth\x18\b \x01(\v2\x17.crawler.v1.AuthOptionsR\x04auth\x127\n" +
-	"\bschedule\x18\t \x01(\v2\x1b.crawler.v1.ScheduleOptionsR\bschedule\"\xd0\x02\n" +
+	"\bschedule\x18\t \x01(\v2\x1b.crawler.v1.ScheduleOptionsR\bschedule\"\xba\x02\n" +
 	"\bCrawlJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
 	"\rjob_config_id\x18\x02 \x01(\tR\rjob_config_id\x12?\n" +
@@ -2249,8 +2241,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"created_at\x12C\n" +
-	"\fcompleted_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\fcompleted_at\x88\x01\x01\x12\x14\n" +
-	"\x05error\x18\a \x01(\tR\x05errorB\r\n" +
+	"\fcompleted_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\fcompleted_at\x88\x01\x01B\r\n" +
 	"\v_job_configB\x0f\n" +
 	"\r_completed_at\"\xe1\x02\n" +
 	"\tCrawlTask\x12\x0e\n" +

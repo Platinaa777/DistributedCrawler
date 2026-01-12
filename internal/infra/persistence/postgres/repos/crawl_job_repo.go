@@ -14,20 +14,30 @@ import (
 )
 
 const (
-	tableName = "crawl_jobs"
+	tableName       = "crawl_jobs"
 
 	idColumn          = "id"
 	jobConfigIDColumn = "job_config_id"
 	statusColumn      = "status"
 	createdAtColumn   = "created_at"
 	completedAtColumn = "completed_at"
-	errorColumn       = "error"
 
 	// Export columns
 	exportJSONKeyColumn = "export_json_key"
 	exportCSVKeyColumn  = "export_csv_key"
 	exportedAtColumn    = "exported_at"
 	exportStatusColumn  = "export_status"
+
+	// Config table column aliases (for joins)
+	aliasConfigID             = "config_id"
+	aliasConfigName           = "config_name"
+	aliasConfigExtractionSpec = "config_extraction_spec"
+	aliasConfigScopes         = "config_scopes"
+	aliasConfigSeeds          = "config_seeds"
+	aliasConfigRateLimit      = "config_rate_limit"
+	aliasConfigRetries        = "config_retries"
+	aliasConfigAuth           = "config_auth"
+	aliasConfigSchedule       = "config_schedule"
 )
 
 type crawlJobRepository struct {
@@ -44,11 +54,11 @@ func (c *crawlJobRepository) Create(ctx context.Context, entity models.CrawlJob)
 	builder := sq.Insert(tableName).
 		PlaceholderFormat(sq.Dollar).
 		Columns(
-			idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn,
+			idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn,
 			exportJSONKeyColumn, exportCSVKeyColumn, exportedAtColumn, exportStatusColumn,
 		).
 		Values(
-			dbEntity.ID, dbEntity.JobConfigID, dbEntity.Status, dbEntity.CreatedAt, dbEntity.CompletedAt, dbEntity.Error,
+			dbEntity.ID, dbEntity.JobConfigID, dbEntity.Status, dbEntity.CreatedAt, dbEntity.CompletedAt,
 			dbEntity.ExportJSONKey, dbEntity.ExportCSVKey, dbEntity.ExportedAt, dbEntity.ExportStatus,
 		).
 		Suffix("RETURNING id")
@@ -74,12 +84,18 @@ func (c *crawlJobRepository) Create(ctx context.Context, entity models.CrawlJob)
 
 func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID) (*models.CrawlJob, error) {
 	builder := sq.Select(
-		idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn,
-		exportJSONKeyColumn, exportCSVKeyColumn, exportedAtColumn, exportStatusColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
+		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
+		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
+		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
+		"c.schedule as "+aliasConfigSchedule,
 	).
 		PlaceholderFormat(sq.Dollar).
-		From(tableName).
-		Where(sq.Eq{idColumn: id.String()}).
+		From(tableName + " j").
+		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id").
+		Where(sq.Eq{"j." + idColumn: id.String()}).
 		Limit(1)
 
 	query, args, err := builder.ToSql()
@@ -92,13 +108,13 @@ func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID
 		QueryRaw: query,
 	}
 
-	var crawlJob snapshots.CrawlJobSnapshot
-	err = c.client.DB().ScanOneContext(ctx, &crawlJob, q, args...)
+	row := c.client.DB().QueryRowContext(ctx, q, args...)
+	crawlJob, err := scanCrawlJobWithConfig(row)
 	if err != nil {
 		return nil, err
 	}
 
-	return converters.RestoreCrawlJobFromSnapshot(crawlJob)
+	return converters.RestoreCrawlJobFromSnapshot(*crawlJob)
 }
 
 func (c *crawlJobRepository) Update(ctx context.Context, entity models.CrawlJob) error {
@@ -109,7 +125,6 @@ func (c *crawlJobRepository) Update(ctx context.Context, entity models.CrawlJob)
 		Set(jobConfigIDColumn, dbEntity.JobConfigID).
 		Set(statusColumn, dbEntity.Status).
 		Set(completedAtColumn, dbEntity.CompletedAt).
-		Set(errorColumn, dbEntity.Error).
 		Set(exportJSONKeyColumn, dbEntity.ExportJSONKey).
 		Set(exportCSVKeyColumn, dbEntity.ExportCSVKey).
 		Set(exportedAtColumn, dbEntity.ExportedAt).
@@ -132,13 +147,19 @@ func (c *crawlJobRepository) Update(ctx context.Context, entity models.CrawlJob)
 
 func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus, limit, offset int) ([]*models.CrawlJob, error) {
 	builder := sq.Select(
-		idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn,
-		exportJSONKeyColumn, exportCSVKeyColumn, exportedAtColumn, exportStatusColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
+		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
+		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
+		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
+		"c.schedule as "+aliasConfigSchedule,
 	).
 		PlaceholderFormat(sq.Dollar).
-		From(tableName).
-		Where(sq.Eq{statusColumn: status.String()}).
-		OrderBy(createdAtColumn + " DESC").
+		From(tableName + " j").
+		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id").
+		Where(sq.Eq{"j." + statusColumn: status.String()}).
+		OrderBy("j." + createdAtColumn + " DESC").
 		Limit(uint64(limit)).
 		Offset(uint64(offset))
 
@@ -152,19 +173,27 @@ func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus,
 		QueryRaw: query,
 	}
 
-	var jobSnapshots []snapshots.CrawlJobSnapshot
-	err = c.client.DB().ScanAllContext(ctx, &jobSnapshots, q, args...)
+	rows, err := c.client.DB().QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	jobs := make([]*models.CrawlJob, 0, len(jobSnapshots))
-	for _, snapshot := range jobSnapshots {
-		job, err := converters.RestoreCrawlJobFromSnapshot(snapshot)
+	jobs := make([]*models.CrawlJob, 0, limit)
+	for rows.Next() {
+		snapshot, err := scanCrawlJobWithConfig(rows)
+		if err != nil {
+			return nil, err
+		}
+		job, err := converters.RestoreCrawlJobFromSnapshot(*snapshot)
 		if err != nil {
 			return nil, err
 		}
 		jobs = append(jobs, job)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return jobs, nil
@@ -172,12 +201,18 @@ func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus,
 
 func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]*models.CrawlJob, error) {
 	builder := sq.Select(
-		idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn,
-		exportJSONKeyColumn, exportCSVKeyColumn, exportedAtColumn, exportStatusColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
+		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
+		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
+		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
+		"c.schedule as "+aliasConfigSchedule,
 	).
 		PlaceholderFormat(sq.Dollar).
-		From(tableName).
-		OrderBy(createdAtColumn + " DESC").
+		From(tableName + " j").
+		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id").
+		OrderBy("j." + createdAtColumn + " DESC").
 		Limit(uint64(limit)).
 		Offset(uint64(offset))
 
@@ -191,19 +226,27 @@ func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]
 		QueryRaw: query,
 	}
 
-	var jobSnapshots []snapshots.CrawlJobSnapshot
-	err = c.client.DB().ScanAllContext(ctx, &jobSnapshots, q, args...)
+	rows, err := c.client.DB().QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	jobs := make([]*models.CrawlJob, 0, len(jobSnapshots))
-	for _, snapshot := range jobSnapshots {
-		job, err := converters.RestoreCrawlJobFromSnapshot(snapshot)
+	jobs := make([]*models.CrawlJob, 0, limit)
+	for rows.Next() {
+		snapshot, err := scanCrawlJobWithConfig(rows)
+		if err != nil {
+			return nil, err
+		}
+		job, err := converters.RestoreCrawlJobFromSnapshot(*snapshot)
 		if err != nil {
 			return nil, err
 		}
 		jobs = append(jobs, job)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return jobs, nil
@@ -213,16 +256,22 @@ func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]
 func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit int) ([]*models.CrawlJob, error) {
 	// A job is eligible if: completed_at IS NOT NULL AND export_status = 'NOT_STARTED'
 	builder := sq.Select(
-		idColumn, jobConfigIDColumn, statusColumn, createdAtColumn, completedAtColumn, errorColumn,
-		exportJSONKeyColumn, exportCSVKeyColumn, exportedAtColumn, exportStatusColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
+		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
+		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
+		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
+		"c.schedule as "+aliasConfigSchedule,
 	).
 		PlaceholderFormat(sq.Dollar).
-		From(tableName).
+		From(tableName + " j").
+		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id").
 		Where(sq.And{
-			sq.NotEq{completedAtColumn: nil},
-			sq.Eq{exportStatusColumn: models.ExportStatusNotStarted.String()},
+			sq.NotEq{"j." + completedAtColumn: nil},
+			sq.Eq{"j." + exportStatusColumn: models.ExportStatusNotStarted.String()},
 		}).
-		OrderBy(completedAtColumn + " ASC").
+		OrderBy("j." + completedAtColumn + " ASC").
 		Limit(uint64(limit))
 
 	query, args, err := builder.ToSql()
@@ -235,19 +284,27 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 		QueryRaw: query,
 	}
 
-	var jobSnapshots []snapshots.CrawlJobSnapshot
-	err = c.client.DB().ScanAllContext(ctx, &jobSnapshots, q, args...)
+	rows, err := c.client.DB().QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	jobs := make([]*models.CrawlJob, 0, len(jobSnapshots))
-	for _, snapshot := range jobSnapshots {
-		job, err := converters.RestoreCrawlJobFromSnapshot(snapshot)
+	jobs := make([]*models.CrawlJob, 0, limit)
+	for rows.Next() {
+		snapshot, err := scanCrawlJobWithConfig(rows)
+		if err != nil {
+			return nil, err
+		}
+		job, err := converters.RestoreCrawlJobFromSnapshot(*snapshot)
 		if err != nil {
 			return nil, err
 		}
 		jobs = append(jobs, job)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return jobs, nil
@@ -314,15 +371,9 @@ func (c *crawlJobRepository) CompleteExport(ctx context.Context, jobID valueobje
 
 // FailExport marks export as FAILED
 func (c *crawlJobRepository) FailExport(ctx context.Context, jobID valueobjects.CrawlJobID, errorMsg string) error {
-	// Store error message in the existing error column
-	errorData := map[string]any{
-		"export_error": errorMsg,
-	}
-
 	builder := sq.Update(tableName).
 		PlaceholderFormat(sq.Dollar).
 		Set(exportStatusColumn, models.ExportStatusFailed.String()).
-		Set(errorColumn, errorData).
 		Where(sq.Eq{idColumn: jobID.String()})
 
 	query, args, err := builder.ToSql()
@@ -337,4 +388,47 @@ func (c *crawlJobRepository) FailExport(ctx context.Context, jobID valueobjects.
 
 	_, err = c.client.DB().ExecContext(ctx, q, args...)
 	return err
+}
+
+// scanCrawlJobWithConfig scans a row containing joined crawl_job and crawl_job_config data
+type scanner interface {
+	Scan(dest ...interface{}) error
+}
+
+func scanCrawlJobWithConfig(row scanner) (*snapshots.CrawlJobSnapshot, error) {
+	var job snapshots.CrawlJobSnapshot
+	var config snapshots.CrawlJobConfigSnapshot
+
+	err := row.Scan(
+		// Job fields
+		&job.ID,
+		&job.JobConfigID,
+		&job.Status,
+		&job.CreatedAt,
+		&job.CompletedAt,
+		&job.ExportJSONKey,
+		&job.ExportCSVKey,
+		&job.ExportedAt,
+		&job.ExportStatus,
+		// Config fields (may be NULL if LEFT JOIN returns no match)
+		&config.ID,
+		&config.Name,
+		&config.ExtractionSpec,
+		&config.Scopes,
+		&config.Seeds,
+		&config.RateLimit,
+		&config.Retries,
+		&config.Auth,
+		&config.Schedule,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only attach config if it exists (ID is not empty)
+	if config.ID != "" {
+		job.JobConfig = &config
+	}
+
+	return &job, nil
 }

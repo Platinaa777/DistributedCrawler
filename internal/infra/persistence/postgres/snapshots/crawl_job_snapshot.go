@@ -11,7 +11,9 @@ type CrawlJobSnapshot struct {
 	Status      string         `db:"status"`
 	CreatedAt   time.Time      `db:"created_at"`
 	CompletedAt sql.NullTime   `db:"completed_at"`
-	Error       JSONB          `db:"error"`
+
+	// Nested job config from join
+	JobConfig *CrawlJobConfigSnapshot
 
 	// Export fields (Part B - ExportWorker)
 	ExportJSONKey sql.NullString `db:"export_json_key"`

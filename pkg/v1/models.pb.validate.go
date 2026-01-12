@@ -1676,8 +1676,6 @@ func (m *CrawlJob) validate(all bool) error {
 		}
 	}
 
-	// no validation rules for Error
-
 	if m.JobConfig != nil {
 
 		if all {

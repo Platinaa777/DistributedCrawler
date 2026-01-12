@@ -6,5 +6,11 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   JOBS: '/jobs',
   TASKS: '/tasks',
-  PREVIEWS: '/previews'
+  PREVIEWS: '/previews',
+  AUTH: {
+    REGISTER: '/auth/register',
+    LOGIN: '/auth/login',
+    REFRESH: '/auth/refresh',
+    LOGOUT: '/auth/logout'
+  }
 };

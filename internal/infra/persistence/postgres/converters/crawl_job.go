@@ -30,9 +30,14 @@ func SaveCrawlJobToSnapshot(crawlJob models.CrawlJob) *snapshots.CrawlJobSnapsho
 		}
 	}
 
-	// Handle Error
-	if crawlJob.Error != nil {
-		snapshot.Error = crawlJob.Error
+	// Handle JobConfig
+	if crawlJob.JobConfig != nil {
+		configSnapshot, err := SaveCrawlJobConfigToSnapshot(*crawlJob.JobConfig)
+		if err != nil {
+			// Note: This changes the signature - we'll return error from SaveCrawlJobToSnapshot
+			return snapshot
+		}
+		snapshot.JobConfig = configSnapshot
 	}
 
 	// Handle export fields
@@ -88,9 +93,13 @@ func RestoreCrawlJobFromSnapshot(crawlJob snapshots.CrawlJobSnapshot) (*models.C
 		job.CompletedAt = &crawlJob.CompletedAt.Time
 	}
 
-	// Handle Error
-	if crawlJob.Error != nil {
-		job.Error = crawlJob.Error
+	// Handle JobConfig
+	if crawlJob.JobConfig != nil {
+		config, err := RestoreCrawlJobConfigFromSnapshot(*crawlJob.JobConfig)
+		if err != nil {
+			return nil, err
+		}
+		job.JobConfig = config
 	}
 
 	// Handle export fields

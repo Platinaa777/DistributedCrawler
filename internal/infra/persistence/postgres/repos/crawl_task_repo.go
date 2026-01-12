@@ -116,7 +116,7 @@ func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTask
 	builder := sq.Select(
 		"t.id", "t.job_id", "t.url", "t.final_url", "t.status", "t.enqueued_at", "t.depth", "t.body_hash", "t.minio_object_key",
 		"t.result_object_key", "t.result_content_type", "t.result_size_bytes", "t.result_created_at",
-		"j.id", "j.job_config_id", "j.status", "j.created_at", "j.completed_at", "j.error",
+		"j.id", "j.job_config_id", "j.status", "j.created_at", "j.completed_at",
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(taskTableName + " t").
@@ -156,7 +156,6 @@ func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTask
 		&jobSnapshot.Status,
 		&jobSnapshot.CreatedAt,
 		&jobSnapshot.CompletedAt,
-		&jobSnapshot.Error,
 	)
 	if err != nil {
 		return nil, err

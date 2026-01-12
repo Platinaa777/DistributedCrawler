@@ -462,10 +462,6 @@
         "completed_at": {
           "type": "string",
           "format": "date-time"
-        },
-        "error": {
-          "type": "string",
-          "title": "JSON-encoded error map"
         }
       },
       "title": "CrawlJob represents a crawling job"
