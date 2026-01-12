@@ -10,6 +10,7 @@ import (
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -189,6 +190,33 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 			zap.String("url", task.URL),
 			zap.Error(err),
 		)
+
+		// Check if this is a permanent error (non-retryable)
+		// These errors contain "permanent error" in the message from the fetcher
+		isPermanent := strings.Contains(err.Error(), "permanent error")
+
+		if isPermanent {
+			// Mark task as failed for permanent errors
+			task.Status = models.TaskStatusFailed
+			if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
+				w.logger.Error("Failed to update task status to failed",
+					zap.String("task_id", taskMsg.TaskID),
+					zap.Error(updateErr),
+				)
+				return fmt.Errorf("failed to update task status: %w", updateErr)
+			}
+
+			w.logger.Info("Task marked as failed due to permanent error",
+				zap.String("task_id", taskMsg.TaskID),
+				zap.String("url", task.URL),
+				zap.Error(err),
+			)
+
+			// Return nil to acknowledge message and prevent requeuing
+			return nil
+		}
+
+		// For transient errors, return error to trigger requeue/retry
 		return fmt.Errorf("failed to fetch page: %w", err)
 	}
 

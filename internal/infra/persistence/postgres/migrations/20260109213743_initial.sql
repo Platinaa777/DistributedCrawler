@@ -61,9 +61,9 @@ CREATE TABLE IF NOT EXISTS crawl_tasks (
     status            VARCHAR(50) NOT NULL,
     enqueued_at       TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    depth             BIGINT      NOT NULL DEFAULT 1,
-    body_hash         VARCHAR(255) NOT NULL,
-    minio_object_key  TEXT NOT NULL,
+    depth             BIGINT        NOT NULL DEFAULT 1,
+    body_hash         VARCHAR(255)  NULL,
+    minio_object_key  TEXT          NULL,
 
     CONSTRAINT fk_crawl_tasks_job
         FOREIGN KEY (job_id)

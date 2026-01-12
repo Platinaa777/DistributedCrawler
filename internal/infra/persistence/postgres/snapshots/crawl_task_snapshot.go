@@ -13,7 +13,7 @@ type CrawlTaskSnapshot struct {
 	Status         string         `db:"status"`
 	EnqueuedAt     time.Time      `db:"enqueued_at"`
 	Depth          uint64         `db:"depth"`
-	BodyHash       string         `db:"body_hash"`
+	BodyHash       sql.NullString `db:"body_hash"`
 	MinioObjectKey string         `db:"minio_object_key"`
 
 	// Result persistence fields

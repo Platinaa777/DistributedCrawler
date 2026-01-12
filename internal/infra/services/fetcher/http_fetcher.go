@@ -6,9 +6,13 @@ import (
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/services"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -41,6 +45,44 @@ func NewHTTPFetcher(auth models.AuthOptions, retry models.RetryPolicy) *HTTPFetc
 	}
 }
 
+// isRetryableError determines if an error should trigger a retry
+func isRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check for DNS lookup failures (no such host)
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return false // DNS errors are permanent
+	}
+
+	// Check for invalid URL errors
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		// Check if it's a DNS error wrapped in url.Error
+		if errors.As(urlErr.Err, &dnsErr) {
+			return false
+		}
+		// Check for "no such host" in the error message
+		if strings.Contains(urlErr.Error(), "no such host") {
+			return false
+		}
+		// Invalid URL scheme or format
+		if strings.Contains(urlErr.Error(), "unsupported protocol scheme") {
+			return false
+		}
+	}
+
+	// Check for connection refused (server not running)
+	if strings.Contains(err.Error(), "connection refused") {
+		return false
+	}
+
+	// Default: retry for network errors, timeouts, etc.
+	return true
+}
+
 // Fetch performs an HTTP GET request with retry logic and returns the result
 func (f *HTTPFetcher) Fetch(ctx context.Context, url string) (*services.FetchResult, error) {
 	var lastErr error
@@ -53,6 +95,11 @@ func (f *HTTPFetcher) Fetch(ctx context.Context, url string) (*services.FetchRes
 		}
 
 		lastErr = err
+
+		// Check if error is retryable
+		if !isRetryableError(err) {
+			return nil, fmt.Errorf("permanent error (not retryable): %w", err)
+		}
 
 		// Don't sleep after the last attempt
 		if attempt < f.retryPolicy.MaxAttempts-1 {

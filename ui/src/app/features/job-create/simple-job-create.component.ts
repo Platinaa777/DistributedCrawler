@@ -17,7 +17,6 @@ import { CrawlJobConfig, RetryPolicy, ScheduleOptions } from '../../core/models/
 import { FieldSpec, MetricSpec, TransformSpec } from '../../core/models/extraction-spec.model';
 
 interface SimpleJobFormValue {
-  id?: string;
   name: string;
   seeds: { url: string }[];
   allowed_domains: string[];
@@ -62,10 +61,6 @@ interface SimpleJobFormValue {
           <h1 class="text-2xl font-semibold">Simple Crawl Job</h1>
         </div>
         <div class="flex items-center gap-2">
-          <button mat-stroked-button color="accent" type="button" (click)="resetToSample()">
-            <mat-icon>refresh</mat-icon>
-            Load Example
-          </button>
           <button
             mat-raised-button
             color="primary"
@@ -85,22 +80,14 @@ interface SimpleJobFormValue {
           <mat-card-subtitle>Minimal settings to register a crawl job</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <mat-form-field class="w-full" [matTooltip]="'Optional stable identifier for the config'">
-              <mat-label>Config ID</mat-label>
-              <input matInput formControlName="id" placeholder="my-crawl-job" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
-
-            <mat-form-field class="w-full" [matTooltip]="'Human-friendly job name'">
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="name" placeholder="Example crawl job" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-              <mat-error *ngIf="jobForm.get('name')?.hasError('required')">
-                Name is required
-              </mat-error>
-            </mat-form-field>
-          </div>
+          <mat-form-field class="w-full" [matTooltip]="'Human-friendly job name'">
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="name" placeholder="Example crawl job" />
+            <mat-icon matSuffix>info_outline</mat-icon>
+            <mat-error *ngIf="jobForm.get('name')?.hasError('required')">
+              Name is required
+            </mat-error>
+          </mat-form-field>
         </mat-card-content>
       </mat-card>
 
@@ -518,7 +505,6 @@ export class SimpleJobCreateComponent implements OnInit {
   ];
 
   private readonly sampleConfig: CrawlJobConfig = {
-    id: 'example-simple-crawl',
     name: 'Example Crawl Job',
     seeds: [{ url: 'https://bool.dev/blog/detail/voprosy-na-sobesedovanii-dlya-senior-net-developer' }],
     scopes: {
@@ -574,7 +560,6 @@ export class SimpleJobCreateComponent implements OnInit {
 
   ngOnInit(): void {
     this.jobForm = this.fb.group({
-      id: [''],
       name: ['', Validators.required],
       seeds: this.fb.array([this.createSeedGroup()]),
       allowed_domains: this.fb.array([]),
@@ -741,7 +726,6 @@ export class SimpleJobCreateComponent implements OnInit {
   resetToSample(): void {
     const s = this.sampleConfig;
     this.jobForm.patchValue({
-      id: s.id,
       name: s.name,
       max_depth: s.scopes.max_depth,
       rps: s.rate_limit.rps,
@@ -886,7 +870,6 @@ export class SimpleJobCreateComponent implements OnInit {
     });
 
     return {
-      id: raw.id || undefined,
       name: raw.name,
       seeds: raw.seeds.map(seed => ({ url: seed.url })),
       scopes: {

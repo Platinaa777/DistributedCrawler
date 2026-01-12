@@ -17,7 +17,7 @@ type CrawlTask struct {
 	EnqueuedAt time.Time
 
 	Depth          uint64
-	BodyHash       string // SHA-256
+	BodyHash       *string // SHA-256
 	MinioObjectKey string
 
 	// Result persistence fields (Part A - ParserWorker)
@@ -28,7 +28,7 @@ type CrawlTask struct {
 }
 
 func (task *CrawlTask) MarkAsParsed(finalUrl, bodyHash, minioKey string) {
-	task.BodyHash = bodyHash
+	task.BodyHash = &bodyHash
 	task.MinioObjectKey = minioKey
 	task.FinalURL = &finalUrl
 

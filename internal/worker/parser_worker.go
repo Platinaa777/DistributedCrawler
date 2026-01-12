@@ -127,13 +127,13 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 
 	// Deduplication check: if we've already processed this content (same body_hash) for this job, skip
 	// We exclude the current task to avoid false positive (task comparing with itself)
-	if crawlTask.BodyHash != "" {
-		exists, err := w.taskRepo.ExistsByJobIDAndHashExcluding(ctx, crawlTask.JobID, crawlTask.BodyHash, crawlTask.ID)
+	if crawlTask.BodyHash != nil {
+		exists, err := w.taskRepo.ExistsByJobIDAndHashExcluding(ctx, crawlTask.JobID, *crawlTask.BodyHash, crawlTask.ID)
 		if err != nil {
 			w.logger.Error("Failed to check for duplicate body_hash",
 				zap.String("task_id", task.TaskID),
 				zap.String("job_id", task.JobID),
-				zap.String("body_hash", crawlTask.BodyHash),
+				zap.String("body_hash", *crawlTask.BodyHash),
 				zap.Error(err),
 			)
 			return fmt.Errorf("failed to check for duplicate: %w", err)
@@ -143,7 +143,7 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 			w.logger.Info("Skipping task - duplicate content already processed",
 				zap.String("task_id", task.TaskID),
 				zap.String("job_id", task.JobID),
-				zap.String("body_hash", crawlTask.BodyHash),
+				zap.String("body_hash", *crawlTask.BodyHash),
 				zap.String("url", crawlTask.URL),
 			)
 

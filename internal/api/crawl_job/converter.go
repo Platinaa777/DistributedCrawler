@@ -196,8 +196,11 @@ func ToProtoCrawlTask(task *models.CrawlTask) *crawlergrpc.CrawlTask {
 		Status:         task.Status.String(),
 		EnqueuedAt:     timestamppb.New(task.EnqueuedAt),
 		Depth:          task.Depth,
-		BodyHash:       task.BodyHash,
 		MinioObjectKey: task.MinioObjectKey,
+	}
+
+	if task.BodyHash != nil {
+		protoTask.BodyHash = *task.BodyHash
 	}
 
 	if task.FinalURL != nil {

@@ -16,8 +16,15 @@ func SaveCrawlTaskToSnapshot(crawlTask models.CrawlTask) *snapshots.CrawlTaskSna
 		Status:         crawlTask.Status.String(),
 		EnqueuedAt:     crawlTask.EnqueuedAt,
 		Depth:          crawlTask.Depth,
-		BodyHash:       crawlTask.BodyHash,
 		MinioObjectKey: crawlTask.MinioObjectKey,
+	}
+
+	// Handle BodyHash
+	if crawlTask.BodyHash != nil {
+		snapshot.BodyHash = sql.NullString{
+			String: *crawlTask.BodyHash,
+			Valid:  true,
+		}
 	}
 
 	// Handle FinalURL
@@ -76,8 +83,12 @@ func RestoreCrawlTaskFromSnapshot(snapshot snapshots.CrawlTaskSnapshot) (*models
 		Status:         models.TaskStatus(snapshot.Status),
 		EnqueuedAt:     snapshot.EnqueuedAt,
 		Depth:          snapshot.Depth,
-		BodyHash:       snapshot.BodyHash,
 		MinioObjectKey: snapshot.MinioObjectKey,
+	}
+
+	// Handle BodyHash
+	if snapshot.BodyHash.Valid {
+		task.BodyHash = &snapshot.BodyHash.String
 	}
 
 	// Handle FinalURL
@@ -129,8 +140,12 @@ func RestoreCrawlTaskWithJobFromSnapshot(snapshot snapshots.CrawlTaskWithJobSnap
 		Status:         models.TaskStatus(snapshot.Status),
 		EnqueuedAt:     snapshot.EnqueuedAt,
 		Depth:          snapshot.Depth,
-		BodyHash:       snapshot.BodyHash,
 		MinioObjectKey: snapshot.MinioObjectKey,
+	}
+
+	// Handle BodyHash
+	if snapshot.BodyHash.Valid {
+		task.BodyHash = &snapshot.BodyHash.String
 	}
 
 	// Handle FinalURL
