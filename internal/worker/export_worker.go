@@ -14,6 +14,7 @@ import (
 	crawltask "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
+	"distributed-crawler/internal/infra/persistence"
 
 	"go.uber.org/zap"
 )
@@ -23,6 +24,7 @@ type ExportWorker struct {
 	jobRepo      crawljob.CrawlJobRepository
 	taskRepo     crawltask.CrawlTaskRepository
 	contentStore services.ContentStore
+	txManager    persistence.TxManager
 	pollInterval time.Duration
 	batchSize    int
 	logger       *zap.Logger
@@ -33,6 +35,7 @@ func NewExportWorker(
 	jobRepo crawljob.CrawlJobRepository,
 	taskRepo crawltask.CrawlTaskRepository,
 	contentStore services.ContentStore,
+	txManager persistence.TxManager,
 	pollInterval time.Duration,
 	batchSize int,
 	logger *zap.Logger,
@@ -41,6 +44,7 @@ func NewExportWorker(
 		jobRepo:      jobRepo,
 		taskRepo:     taskRepo,
 		contentStore: contentStore,
+		txManager:    txManager,
 		pollInterval: pollInterval,
 		batchSize:    batchSize,
 		logger:       logger,
@@ -73,44 +77,37 @@ func (w *ExportWorker) Start(ctx context.Context) error {
 
 // processEligibleJobs finds and processes jobs that need exporting
 func (w *ExportWorker) processEligibleJobs(ctx context.Context) {
-	jobs, err := w.jobRepo.ListEligibleForExport(ctx, w.batchSize)
-	if err != nil {
-		w.logger.Error("Failed to list eligible jobs for export", zap.Error(err))
-		return
-	}
-
-	if len(jobs) == 0 {
-		w.logger.Debug("No jobs eligible for export")
-		return
-	}
-
-	w.logger.Info("Found jobs eligible for export", zap.Int("count", len(jobs)))
-
-	for _, job := range jobs {
-		if err := w.processJob(ctx, job); err != nil {
-			w.logger.Error("Failed to process job export",
-				zap.String("job_id", job.ID.String()),
-				zap.Error(err),
-			)
+	err := w.txManager.ReadCommitted(ctx, func(ctxTX context.Context) error {
+		jobs, err := w.jobRepo.ListEligibleForExport(ctxTX, w.batchSize)
+		if err != nil {
+			return fmt.Errorf("failed to list eligible jobs for export: %w", err)
 		}
+
+		if len(jobs) == 0 {
+			w.logger.Debug("No jobs eligible for export")
+			return nil
+		}
+
+		w.logger.Info("Found jobs eligible for export", zap.Int("count", len(jobs)))
+
+		for _, job := range jobs {
+			if err := w.processJob(ctxTX, job); err != nil {
+				w.logger.Error("Failed to process job export",
+					zap.String("job_id", job.ID.String()),
+					zap.Error(err),
+				)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		w.logger.Error("Failed to process export batch", zap.Error(err))
 	}
 }
 
 // processJob processes export for a single job
 func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) error {
-	// Try to start export (atomic transition)
-	started, err := w.jobRepo.TryStartExport(ctx, job.ID)
-	if err != nil {
-		return fmt.Errorf("failed to start export: %w", err)
-	}
-
-	if !started {
-		w.logger.Debug("Job export already in progress or completed",
-			zap.String("job_id", job.ID.String()),
-		)
-		return nil
-	}
-
 	w.logger.Info("Starting export for job", zap.String("job_id", job.ID.String()))
 
 	// Load all tasks for the job

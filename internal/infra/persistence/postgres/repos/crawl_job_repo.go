@@ -272,7 +272,8 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 			sq.Eq{"j." + exportStatusColumn: models.ExportStatusNotStarted.String()},
 		}).
 		OrderBy("j." + completedAtColumn + " ASC").
-		Limit(uint64(limit))
+		Limit(uint64(limit)).
+		Suffix("FOR UPDATE SKIP LOCKED")
 
 	query, args, err := builder.ToSql()
 	if err != nil {

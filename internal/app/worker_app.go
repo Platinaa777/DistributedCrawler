@@ -338,6 +338,7 @@ func (a *WorkerApp) initExportWorker() error {
 	// Initialize repositories
 	jobRepo := repos.NewCrawlRepository(a.pgClient)
 	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
+	txManager := transaction.NewTransactorManager(a.pgClient.DB())
 
 	// Create export worker with poll interval and batch size
 	pollInterval := 30 * time.Second // Poll every 30 seconds
@@ -347,6 +348,7 @@ func (a *WorkerApp) initExportWorker() error {
 		jobRepo,
 		taskRepo,
 		contentStore,
+		txManager,
 		pollInterval,
 		batchSize,
 		a.zapLogger,
