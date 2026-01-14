@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -80,6 +81,20 @@ import { CrawlJob, CrawlTask } from '../../core/models';
                 </mat-chip>
               </div>
             </div>
+
+            <div class="mt-6">
+              <button mat-stroked-button color="primary" (click)="toggleConfig()">
+                <mat-icon>{{ configExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+                Job Config (auth hidden)
+              </button>
+              <div
+                class="detail-wrapper mt-3"
+                [@expandCollapse]="configExpanded ? 'expanded' : 'collapsed'"
+                [attr.aria-hidden]="!configExpanded">
+                <pre class="json-view" *ngIf="getJobConfigWithoutAuth(job) as config">{{ config | json }}</pre>
+                <div class="text-gray-500" *ngIf="job && !job.job_config">No job configuration available.</div>
+              </div>
+            </div>
           </mat-card-content>
         </mat-card>
 
@@ -157,7 +172,42 @@ import { CrawlJob, CrawlTask } from '../../core/models';
     table {
       width: 100%;
     }
-  `]
+
+    .detail-wrapper {
+      padding: 16px 24px;
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+      overflow: hidden;
+    }
+
+    .json-view {
+      margin: 0;
+      padding: 12px;
+      background: #0b1021;
+      color: #d1e5ff;
+      border-radius: 6px;
+      overflow: auto;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+    }
+  `],
+  animations: [
+    trigger('expandCollapse', [
+      state('collapsed', style({
+        height: '0px',
+        opacity: 0,
+        padding: '0 24px',
+        borderTopColor: 'transparent'
+      })),
+      state('expanded', style({
+        height: '*',
+        opacity: 1,
+        padding: '16px 24px',
+        borderTopColor: '#e5e7eb'
+      })),
+      transition('expanded <=> collapsed', animate('200ms cubic-bezier(0.4, 0.0, 0.2, 1)'))
+    ])
+  ]
 })
 export class JobDetailsComponent implements OnInit, AfterViewInit {
   job: CrawlJob | null = null;
@@ -166,6 +216,7 @@ export class JobDetailsComponent implements OnInit, AfterViewInit {
   dataSource = new MatTableDataSource<CrawlTask>([]);
   loading = false;
   error: string | null = null;
+  configExpanded = false;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
@@ -213,6 +264,20 @@ export class JobDetailsComponent implements OnInit, AfterViewInit {
 
   goBack(): void {
     this.router.navigate(['/jobs']);
+  }
+
+  toggleConfig(): void {
+    this.configExpanded = !this.configExpanded;
+  }
+
+  getJobConfigWithoutAuth(job: CrawlJob | null) {
+    const config = job?.job_config;
+    if (!config) {
+      return null;
+    }
+
+    const { auth, ...safeConfig } = config;
+    return safeConfig;
   }
 
   getStatusClass(status: string): string {
