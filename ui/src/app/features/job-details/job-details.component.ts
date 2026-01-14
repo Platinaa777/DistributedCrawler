@@ -156,18 +156,18 @@ import { CrawlJob, CrawlTask, FileType } from '../../core/models';
                       mat-icon-button
                       color="primary"
                       [disabled]="!task.minio_object_key || loadingFile[task.id + '-pages']"
-                      [matTooltip]="task.minio_object_key ? 'View HTML page' : 'HTML not available'"
-                      (click)="openTaskFile(task, 'pages')">
-                      <mat-icon *ngIf="!loadingFile[task.id + '-pages']">description</mat-icon>
+                      [matTooltip]="task.minio_object_key ? 'Download HTML page' : 'HTML not available'"
+                      (click)="downloadTaskFile(task, 'pages')">
+                      <mat-icon *ngIf="!loadingFile[task.id + '-pages']">download</mat-icon>
                       <mat-spinner *ngIf="loadingFile[task.id + '-pages']" diameter="20"></mat-spinner>
                     </button>
                     <button
                       mat-icon-button
                       color="accent"
                       [disabled]="!task.result_object_key || loadingFile[task.id + '-result']"
-                      [matTooltip]="task.result_object_key ? 'View JSON result' : 'Result not available'"
-                      (click)="openTaskFile(task, 'result')">
-                      <mat-icon *ngIf="!loadingFile[task.id + '-result']">data_object</mat-icon>
+                      [matTooltip]="task.result_object_key ? 'Download JSON result' : 'Result not available'"
+                      (click)="downloadTaskFile(task, 'result')">
+                      <mat-icon *ngIf="!loadingFile[task.id + '-result']">download</mat-icon>
                       <mat-spinner *ngIf="loadingFile[task.id + '-result']" diameter="20"></mat-spinner>
                     </button>
                   </div>
@@ -324,20 +324,47 @@ export class JobDetailsComponent implements OnInit, AfterViewInit {
     }
   }
 
-  openTaskFile(task: CrawlTask, fileType: FileType): void {
+  downloadTaskFile(task: CrawlTask, fileType: FileType): void {
     const loadingKey = `${task.id}-${fileType}`;
     this.loadingFile[loadingKey] = true;
 
     this.crawlerApi.getTaskFileURL(task.id, fileType).subscribe({
       next: (response) => {
-        this.loadingFile[loadingKey] = false;
-        // Open presigned URL in new tab
-        window.open(response.url, '_blank');
+        // Fetch the file content from the presigned URL
+        fetch(response.url)
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.blob();
+          })
+          .then(blob => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+
+            // Set filename based on file type
+            const extension = fileType === 'pages' ? 'html' : 'json';
+            link.download = `task-${task.id}.${extension}`;
+
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            this.loadingFile[loadingKey] = false;
+          })
+          .catch(err => {
+            this.loadingFile[loadingKey] = false;
+            console.error(`Failed to download file: ${err.message}`);
+          });
       },
       error: (err) => {
         this.loadingFile[loadingKey] = false;
         console.error(`Failed to get file URL: ${err.message}`);
-        // Could add a snackbar notification here for better UX
       }
     });
   }
