@@ -19,6 +19,8 @@ export interface CrawlJobConfig {
   retries?: RetryPolicy;
   auth?: AuthOptions;
   schedule?: ScheduleOptions;
+  // If true, crawler follows robots.txt rules; if false, robots.txt is ignored
+  respect_robots_txt?: boolean;
 }
 
 export interface ScopeRules {

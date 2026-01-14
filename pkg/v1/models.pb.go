@@ -675,8 +675,10 @@ type CrawlJobConfig struct {
 	Retries        *RetryPolicy           `protobuf:"bytes,7,opt,name=retries,proto3" json:"retries,omitempty"`
 	Auth           *AuthOptions           `protobuf:"bytes,8,opt,name=auth,proto3" json:"auth,omitempty"`
 	Schedule       *ScheduleOptions       `protobuf:"bytes,9,opt,name=schedule,proto3" json:"schedule,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// If true, fetch and follow robots.txt rules; if false, ignore robots.txt
+	RespectRobotsTxt bool `protobuf:"varint,10,opt,name=respect_robots_txt,proto3" json:"respect_robots_txt,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CrawlJobConfig) Reset() {
@@ -770,6 +772,13 @@ func (x *CrawlJobConfig) GetSchedule() *ScheduleOptions {
 		return x.Schedule
 	}
 	return nil
+}
+
+func (x *CrawlJobConfig) GetRespectRobotsTxt() bool {
+	if x != nil {
+		return x.RespectRobotsTxt
+	}
+	return false
 }
 
 // CrawlJob represents a crawling job
@@ -2332,7 +2341,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x05input\x18\x03 \x01(\tR\x05input\"q\n" +
 	"\x0eExtractionSpec\x12-\n" +
 	"\x06fields\x18\x01 \x03(\v2\x15.crawler.v1.FieldSpecR\x06fields\x120\n" +
-	"\ametrics\x18\x02 \x03(\v2\x16.crawler.v1.MetricSpecR\ametrics\"\xa8\x03\n" +
+	"\ametrics\x18\x02 \x03(\v2\x16.crawler.v1.MetricSpecR\ametrics\"\xd8\x03\n" +
 	"\x0eCrawlJobConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12D\n" +
@@ -2344,7 +2353,9 @@ const file_v1_models_proto_rawDesc = "" +
 	"rate_limit\x121\n" +
 	"\aretries\x18\a \x01(\v2\x17.crawler.v1.RetryPolicyR\aretries\x12+\n" +
 	"\x04auth\x18\b \x01(\v2\x17.crawler.v1.AuthOptionsR\x04auth\x127\n" +
-	"\bschedule\x18\t \x01(\v2\x1b.crawler.v1.ScheduleOptionsR\bschedule\"\xba\x02\n" +
+	"\bschedule\x18\t \x01(\v2\x1b.crawler.v1.ScheduleOptionsR\bschedule\x12.\n" +
+	"\x12respect_robots_txt\x18\n" +
+	" \x01(\bR\x12respect_robots_txt\"\xba\x02\n" +
 	"\bCrawlJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
 	"\rjob_config_id\x18\x02 \x01(\tR\rjob_config_id\x12?\n" +

@@ -15,15 +15,16 @@ import (
 const (
 	configTableName = "crawl_job_configs"
 
-	configIDColumn             = "id"
-	configNameColumn           = "name"
-	configExtractionSpecColumn = "extraction_spec"
-	configScopesColumn         = "scopes"
-	configSeedsColumn          = "seeds"
-	configRateLimitColumn      = "rate_limit"
-	configRetriesColumn        = "retries"
-	configAuthColumn           = "auth"
-	configScheduleColumn       = "schedule"
+	configIDColumn               = "id"
+	configNameColumn             = "name"
+	configExtractionSpecColumn   = "extraction_spec"
+	configScopesColumn           = "scopes"
+	configSeedsColumn            = "seeds"
+	configRateLimitColumn        = "rate_limit"
+	configRetriesColumn          = "retries"
+	configAuthColumn             = "auth"
+	configScheduleColumn         = "schedule"
+	configRespectRobotsTxtColumn = "respect_robots_txt"
 )
 
 type crawlJobConfigRepository struct {
@@ -52,6 +53,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 			configRetriesColumn,
 			configAuthColumn,
 			configScheduleColumn,
+			configRespectRobotsTxtColumn,
 		).
 		Values(
 			dbEntity.ID,
@@ -63,6 +65,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 			dbEntity.Retries,
 			dbEntity.Auth,
 			dbEntity.Schedule,
+			dbEntity.RespectRobotsTxt,
 		).
 		Suffix("RETURNING id")
 
@@ -96,6 +99,7 @@ func (r *crawlJobConfigRepository) Get(ctx context.Context, id valueobjects.ID) 
 		configRetriesColumn,
 		configAuthColumn,
 		configScheduleColumn,
+		configRespectRobotsTxtColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(configTableName).
@@ -137,6 +141,7 @@ func (r *crawlJobConfigRepository) Update(ctx context.Context, entity models.Cra
 		Set(configRetriesColumn, dbEntity.Retries).
 		Set(configAuthColumn, dbEntity.Auth).
 		Set(configScheduleColumn, dbEntity.Schedule).
+		Set(configRespectRobotsTxtColumn, dbEntity.RespectRobotsTxt).
 		Where(sq.Eq{configIDColumn: dbEntity.ID})
 
 	query, args, err := builder.ToSql()
@@ -183,6 +188,7 @@ func (r *crawlJobConfigRepository) ListAll(ctx context.Context, limit, offset in
 		configRetriesColumn,
 		configAuthColumn,
 		configScheduleColumn,
+		configRespectRobotsTxtColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(configTableName).

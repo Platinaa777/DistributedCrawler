@@ -7,15 +7,16 @@ import (
 )
 
 type CrawlJobConfigSnapshot struct {
-	ID             string     `db:"id"`
-	Name           string     `db:"name"`
-	ExtractionSpec JSONB      `db:"extraction_spec"`
-	Scopes         JSONB      `db:"scopes"`
-	Seeds          JSONBArray `db:"seeds"`
-	RateLimit      JSONB      `db:"rate_limit"`
-	Retries        JSONB      `db:"retries"`
-	Auth           JSONB      `db:"auth"`
-	Schedule       JSONB      `db:"schedule"`
+	ID               string     `db:"id"`
+	Name             string     `db:"name"`
+	ExtractionSpec   JSONB      `db:"extraction_spec"`
+	Scopes           JSONB      `db:"scopes"`
+	Seeds            JSONBArray `db:"seeds"`
+	RateLimit        JSONB      `db:"rate_limit"`
+	Retries          JSONB      `db:"retries"`
+	Auth             JSONB      `db:"auth"`
+	Schedule         JSONB      `db:"schedule"`
+	RespectRobotsTxt bool       `db:"respect_robots_txt"`
 }
 
 // JSONB is a type for PostgreSQL JSONB columns (for JSON objects)

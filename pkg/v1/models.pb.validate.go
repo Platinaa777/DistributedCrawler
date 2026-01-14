@@ -1541,6 +1541,8 @@ func (m *CrawlJobConfig) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for RespectRobotsTxt
+
 	if len(errors) > 0 {
 		return CrawlJobConfigMultiError(errors)
 	}

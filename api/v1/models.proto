@@ -109,6 +109,8 @@ message CrawlJobConfig {
   RetryPolicy retries = 7;
   AuthOptions auth = 8;
   ScheduleOptions schedule = 9;
+  // If true, fetch and follow robots.txt rules; if false, ignore robots.txt
+  bool respect_robots_txt = 10 [json_name = "respect_robots_txt"];
 }
 
 // CrawlJob represents a crawling job

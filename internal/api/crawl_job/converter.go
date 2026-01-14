@@ -143,15 +143,16 @@ func ToProtoCrawlJobConfig(config *models.CrawlJobConfig) *crawlergrpc.CrawlJobC
 	}
 
 	return &crawlergrpc.CrawlJobConfig{
-		Id:             config.ID.String(),
-		Name:           config.Name,
-		ExtractionSpec: ToProtoExtractionSpec(config.ExtractionSpec),
-		Scopes:         ToProtoScopeRules(config.Scopes),
-		Seeds:          seeds,
-		RateLimit:      ToProtoRateLimitPolicy(config.RateLimit),
-		Retries:        ToProtoRetryPolicy(config.Retries),
-		Auth:           ToProtoAuthOptions(config.Auth),
-		Schedule:       ToProtoScheduleOptions(config.Schedule),
+		Id:               config.ID.String(),
+		Name:             config.Name,
+		ExtractionSpec:   ToProtoExtractionSpec(config.ExtractionSpec),
+		Scopes:           ToProtoScopeRules(config.Scopes),
+		Seeds:            seeds,
+		RateLimit:        ToProtoRateLimitPolicy(config.RateLimit),
+		Retries:          ToProtoRetryPolicy(config.Retries),
+		Auth:             ToProtoAuthOptions(config.Auth),
+		Schedule:         ToProtoScheduleOptions(config.Schedule),
+		RespectRobotsTxt: config.RespectRobotsTxt,
 	}
 }
 
@@ -388,13 +389,14 @@ func FromProtoCrawlJobConfig(proto *crawlergrpc.CrawlJobConfig) models.CrawlJobC
 
 	return models.CrawlJobConfig{
 		// ID will be generated in the service layer
-		Name:           proto.Name,
-		ExtractionSpec: FromProtoExtractionSpec(proto.ExtractionSpec),
-		Scopes:         FromProtoScopeRules(proto.Scopes),
-		Seeds:          seeds,
-		RateLimit:      FromProtoRateLimitPolicy(proto.RateLimit),
-		Retries:        FromProtoRetryPolicy(proto.Retries),
-		Auth:           FromProtoAuthOptions(proto.Auth),
-		Schedule:       FromProtoScheduleOptions(proto.Schedule),
+		Name:             proto.Name,
+		ExtractionSpec:   FromProtoExtractionSpec(proto.ExtractionSpec),
+		Scopes:           FromProtoScopeRules(proto.Scopes),
+		Seeds:            seeds,
+		RateLimit:        FromProtoRateLimitPolicy(proto.RateLimit),
+		Retries:          FromProtoRetryPolicy(proto.Retries),
+		Auth:             FromProtoAuthOptions(proto.Auth),
+		Schedule:         FromProtoScheduleOptions(proto.Schedule),
+		RespectRobotsTxt: proto.RespectRobotsTxt,
 	}
 }

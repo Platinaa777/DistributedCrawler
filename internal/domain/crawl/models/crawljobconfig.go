@@ -14,4 +14,9 @@ type CrawlJobConfig struct {
 	Retries        RetryPolicy
 	Auth           AuthOptions
 	Schedule       ScheduleOptions
+
+	// RespectRobotsTxt controls whether the crawler follows robots.txt rules.
+	// If true, robots.txt rules are fetched and applied to allow/deny URL patterns.
+	// If false, robots.txt is ignored and all URLs within scope are crawled.
+	RespectRobotsTxt bool
 }

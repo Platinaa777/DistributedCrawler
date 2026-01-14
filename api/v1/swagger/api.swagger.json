@@ -536,6 +536,10 @@
         },
         "schedule": {
           "$ref": "#/definitions/v1ScheduleOptions"
+        },
+        "respect_robots_txt": {
+          "type": "boolean",
+          "title": "If true, fetch and follow robots.txt rules; if false, ignore robots.txt"
         }
       },
       "title": "CrawlJobConfig represents crawl job configuration"

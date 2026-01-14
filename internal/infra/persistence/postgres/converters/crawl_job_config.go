@@ -92,6 +92,9 @@ func SaveCrawlJobConfigToSnapshot(config models.CrawlJobConfig) (*snapshots.Craw
 	}
 	snapshot.Schedule = scheduleMap
 
+	// Set RespectRobotsTxt
+	snapshot.RespectRobotsTxt = config.RespectRobotsTxt
+
 	return snapshot, nil
 }
 
@@ -168,6 +171,9 @@ func RestoreCrawlJobConfigFromSnapshot(snapshot snapshots.CrawlJobConfigSnapshot
 	if err := json.Unmarshal(scheduleJSON, &config.Schedule); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal Schedule: %w", err)
 	}
+
+	// Restore RespectRobotsTxt
+	config.RespectRobotsTxt = snapshot.RespectRobotsTxt
 
 	return config, nil
 }
