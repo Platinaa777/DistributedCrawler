@@ -38,6 +38,13 @@ service CrawlerService {
       get: "/api/v1/jobs/{job_id}/tasks"
     };
   }
+
+  // Get a presigned URL for downloading a task file (HTML page or JSON result)
+  rpc GetTaskFileURL(GetTaskFileURLRequest) returns (GetTaskFileURLResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/tasks/{task_id}/file-url"
+    };
+  }
 }
 
 // PreviewService defines the preview service for HTML inspection

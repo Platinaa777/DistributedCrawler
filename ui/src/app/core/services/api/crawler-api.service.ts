@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CrawlJob, CrawlJobConfig, CrawlTask } from '../../models';
+import { CrawlJob, CrawlJobConfig, CrawlTask, FileType, TaskFileURLResponse } from '../../models';
 import { API_CONFIG, API_ENDPOINTS } from '../../constants/api.constants';
 
 @Injectable({
@@ -43,5 +43,14 @@ export class CrawlerApiService {
 
   getTask(id: string): Observable<{ task: CrawlTask }> {
     return this.http.get<{ task: CrawlTask }>(`${this.baseUrl}${API_ENDPOINTS.TASKS}/${id}`);
+  }
+
+  // File URLs
+  getTaskFileURL(taskId: string, fileType: FileType): Observable<TaskFileURLResponse> {
+    let params = new HttpParams().set('file_type', fileType);
+    return this.http.get<TaskFileURLResponse>(
+      `${this.baseUrl}${API_ENDPOINTS.TASKS}/${taskId}/file-url`,
+      { params }
+    );
   }
 }

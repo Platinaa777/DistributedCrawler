@@ -9,9 +9,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin } from 'rxjs';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
-import { CrawlJob, CrawlTask } from '../../core/models';
+import { CrawlJob, CrawlTask, FileType } from '../../core/models';
 
 @Component({
   selector: 'app-job-details',
@@ -24,7 +25,8 @@ import { CrawlJob, CrawlTask } from '../../core/models';
     MatButtonModule,
     MatProgressSpinnerModule,
     MatChipsModule,
-    MatIconModule
+    MatIconModule,
+    MatTooltipModule
   ],
   template: `
     <div class="container mx-auto p-6">
@@ -145,6 +147,33 @@ import { CrawlJob, CrawlTask } from '../../core/models';
                 </td>
               </ng-container>
 
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Files</th>
+                <td mat-cell *matCellDef="let task">
+                  <div class="flex gap-1">
+                    <button
+                      mat-icon-button
+                      color="primary"
+                      [disabled]="!task.minio_object_key || loadingFile[task.id + '-pages']"
+                      [matTooltip]="task.minio_object_key ? 'View HTML page' : 'HTML not available'"
+                      (click)="openTaskFile(task, 'pages')">
+                      <mat-icon *ngIf="!loadingFile[task.id + '-pages']">description</mat-icon>
+                      <mat-spinner *ngIf="loadingFile[task.id + '-pages']" diameter="20"></mat-spinner>
+                    </button>
+                    <button
+                      mat-icon-button
+                      color="accent"
+                      [disabled]="!task.result_object_key || loadingFile[task.id + '-result']"
+                      [matTooltip]="task.result_object_key ? 'View JSON result' : 'Result not available'"
+                      (click)="openTaskFile(task, 'result')">
+                      <mat-icon *ngIf="!loadingFile[task.id + '-result']">data_object</mat-icon>
+                      <mat-spinner *ngIf="loadingFile[task.id + '-result']" diameter="20"></mat-spinner>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
               <tr mat-header-row *matHeaderRowDef="taskColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: taskColumns;"></tr>
             </table>
@@ -212,11 +241,12 @@ import { CrawlJob, CrawlTask } from '../../core/models';
 export class JobDetailsComponent implements OnInit, AfterViewInit {
   job: CrawlJob | null = null;
   tasks: CrawlTask[] = [];
-  taskColumns: string[] = ['url', 'status', 'depth', 'enqueued_at', 'body_hash'];
+  taskColumns: string[] = ['url', 'status', 'depth', 'enqueued_at', 'body_hash', 'actions'];
   dataSource = new MatTableDataSource<CrawlTask>([]);
   loading = false;
   error: string | null = null;
   configExpanded = false;
+  loadingFile: { [key: string]: boolean } = {};
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
@@ -292,5 +322,23 @@ export class JobDetailsComponent implements OnInit, AfterViewInit {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  }
+
+  openTaskFile(task: CrawlTask, fileType: FileType): void {
+    const loadingKey = `${task.id}-${fileType}`;
+    this.loadingFile[loadingKey] = true;
+
+    this.crawlerApi.getTaskFileURL(task.id, fileType).subscribe({
+      next: (response) => {
+        this.loadingFile[loadingKey] = false;
+        // Open presigned URL in new tab
+        window.open(response.url, '_blank');
+      },
+      error: (err) => {
+        this.loadingFile[loadingKey] = false;
+        console.error(`Failed to get file URL: ${err.message}`);
+        // Could add a snackbar notification here for better UX
+      }
+    });
   }
 }

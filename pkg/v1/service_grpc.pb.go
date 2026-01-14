@@ -24,6 +24,7 @@ const (
 	CrawlerService_GetJob_FullMethodName         = "/crawler.v1.CrawlerService/GetJob"
 	CrawlerService_GetTask_FullMethodName        = "/crawler.v1.CrawlerService/GetTask"
 	CrawlerService_ListTasksByJob_FullMethodName = "/crawler.v1.CrawlerService/ListTasksByJob"
+	CrawlerService_GetTaskFileURL_FullMethodName = "/crawler.v1.CrawlerService/GetTaskFileURL"
 )
 
 // CrawlerServiceClient is the client API for CrawlerService service.
@@ -39,6 +40,8 @@ type CrawlerServiceClient interface {
 	// Task operations
 	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
 	ListTasksByJob(ctx context.Context, in *ListTasksByJobRequest, opts ...grpc.CallOption) (*ListTasksByJobResponse, error)
+	// Get a presigned URL for downloading a task file (HTML page or JSON result)
+	GetTaskFileURL(ctx context.Context, in *GetTaskFileURLRequest, opts ...grpc.CallOption) (*GetTaskFileURLResponse, error)
 }
 
 type crawlerServiceClient struct {
@@ -99,6 +102,16 @@ func (c *crawlerServiceClient) ListTasksByJob(ctx context.Context, in *ListTasks
 	return out, nil
 }
 
+func (c *crawlerServiceClient) GetTaskFileURL(ctx context.Context, in *GetTaskFileURLRequest, opts ...grpc.CallOption) (*GetTaskFileURLResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTaskFileURLResponse)
+	err := c.cc.Invoke(ctx, CrawlerService_GetTaskFileURL_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CrawlerServiceServer is the server API for CrawlerService service.
 // All implementations must embed UnimplementedCrawlerServiceServer
 // for forward compatibility.
@@ -112,6 +125,8 @@ type CrawlerServiceServer interface {
 	// Task operations
 	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
 	ListTasksByJob(context.Context, *ListTasksByJobRequest) (*ListTasksByJobResponse, error)
+	// Get a presigned URL for downloading a task file (HTML page or JSON result)
+	GetTaskFileURL(context.Context, *GetTaskFileURLRequest) (*GetTaskFileURLResponse, error)
 	mustEmbedUnimplementedCrawlerServiceServer()
 }
 
@@ -136,6 +151,9 @@ func (UnimplementedCrawlerServiceServer) GetTask(context.Context, *GetTaskReques
 }
 func (UnimplementedCrawlerServiceServer) ListTasksByJob(context.Context, *ListTasksByJobRequest) (*ListTasksByJobResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTasksByJob not implemented")
+}
+func (UnimplementedCrawlerServiceServer) GetTaskFileURL(context.Context, *GetTaskFileURLRequest) (*GetTaskFileURLResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTaskFileURL not implemented")
 }
 func (UnimplementedCrawlerServiceServer) mustEmbedUnimplementedCrawlerServiceServer() {}
 func (UnimplementedCrawlerServiceServer) testEmbeddedByValue()                        {}
@@ -248,6 +266,24 @@ func _CrawlerService_ListTasksByJob_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CrawlerService_GetTaskFileURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTaskFileURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrawlerServiceServer).GetTaskFileURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CrawlerService_GetTaskFileURL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrawlerServiceServer).GetTaskFileURL(ctx, req.(*GetTaskFileURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CrawlerService_ServiceDesc is the grpc.ServiceDesc for CrawlerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -274,6 +310,10 @@ var CrawlerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTasksByJob",
 			Handler:    _CrawlerService_ListTasksByJob_Handler,
+		},
+		{
+			MethodName: "GetTaskFileURL",
+			Handler:    _CrawlerService_GetTaskFileURL_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

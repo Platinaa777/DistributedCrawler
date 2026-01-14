@@ -228,9 +228,12 @@ func (s *serviceProvider) CrawlTaskService(ctx context.Context) service.CrawlTas
 
 func (s *serviceProvider) CrawlerServiceImpl(ctx context.Context) *crawljob.CrawlJobImplementation {
 	if s.crawlerServiceImpl == nil {
+		// MinIOStore implements PresignedURLGenerator interface
+		minioStore := s.ContentStore().(*contentstore.MinIOStore)
 		s.crawlerServiceImpl = crawljob.NewImplementation(
 			s.CrawlJobService(ctx),
 			s.CrawlTaskService(ctx),
+			minioStore,
 		)
 	}
 

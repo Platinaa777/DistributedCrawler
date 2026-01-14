@@ -391,6 +391,43 @@
           "CrawlerService"
         ]
       }
+    },
+    "/api/v1/tasks/{task_id}/file-url": {
+      "get": {
+        "summary": "Get a presigned URL for downloading a task file (HTML page or JSON result)",
+        "operationId": "CrawlerService_GetTaskFileURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTaskFileURLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "file_type",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CrawlerService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -537,6 +574,9 @@
         },
         "minio_object_key": {
           "type": "string"
+        },
+        "result_object_key": {
+          "type": "string"
         }
       },
       "title": "CrawlTask represents a single crawl task within a job"
@@ -653,6 +693,19 @@
           "$ref": "#/definitions/v1Preview"
         }
       }
+    },
+    "v1GetTaskFileURLResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "expires_in_seconds": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "GetTaskFileURLResponse contains the presigned URL for downloading a file"
     },
     "v1GetTaskResponse": {
       "type": "object",

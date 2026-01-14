@@ -201,6 +201,10 @@ func ToProtoCrawlTask(task *models.CrawlTask) *crawlergrpc.CrawlTask {
 		protoTask.FinalUrl = task.FinalURL
 	}
 
+	if task.ResultObjectKey != nil {
+		protoTask.ResultObjectKey = task.ResultObjectKey
+	}
+
 	return protoTask
 }
 

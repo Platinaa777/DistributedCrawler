@@ -133,6 +133,7 @@ message CrawlTask {
   uint64 depth = 8;
   string body_hash = 9 [json_name = "body_hash"];
   string minio_object_key = 10 [json_name = "minio_object_key"];
+  optional string result_object_key = 11 [json_name = "result_object_key"];
 }
 
 message ListJobsRequest {
@@ -182,6 +183,18 @@ message ListTasksByJobRequest {
 
 message ListTasksByJobResponse {
   repeated CrawlTask tasks = 1;
+}
+
+// GetTaskFileURLRequest requests a presigned URL for a task file
+message GetTaskFileURLRequest {
+  string task_id = 1 [(validate.rules).string.min_len = 1, json_name = "task_id"];
+  string file_type = 2 [(validate.rules).string = {in: ["pages", "result"]}, json_name = "file_type"];
+}
+
+// GetTaskFileURLResponse contains the presigned URL for downloading a file
+message GetTaskFileURLResponse {
+  string url = 1;
+  int32 expires_in_seconds = 2 [json_name = "expires_in_seconds"];
 }
 
 // Preview messages

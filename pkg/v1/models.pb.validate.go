@@ -1921,6 +1921,10 @@ func (m *CrawlTask) validate(all bool) error {
 		// no validation rules for FinalUrl
 	}
 
+	if m.ResultObjectKey != nil {
+		// no validation rules for ResultObjectKey
+	}
+
 	if len(errors) > 0 {
 		return CrawlTaskMultiError(errors)
 	}
@@ -3309,6 +3313,241 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ListTasksByJobResponseValidationError{}
+
+// Validate checks the field values on GetTaskFileURLRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetTaskFileURLRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetTaskFileURLRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetTaskFileURLRequestMultiError, or nil if none found.
+func (m *GetTaskFileURLRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetTaskFileURLRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetTaskId()) < 1 {
+		err := GetTaskFileURLRequestValidationError{
+			field:  "TaskId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _GetTaskFileURLRequest_FileType_InLookup[m.GetFileType()]; !ok {
+		err := GetTaskFileURLRequestValidationError{
+			field:  "FileType",
+			reason: "value must be in list [pages result]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return GetTaskFileURLRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetTaskFileURLRequestMultiError is an error wrapping multiple validation
+// errors returned by GetTaskFileURLRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetTaskFileURLRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetTaskFileURLRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetTaskFileURLRequestMultiError) AllErrors() []error { return m }
+
+// GetTaskFileURLRequestValidationError is the validation error returned by
+// GetTaskFileURLRequest.Validate if the designated constraints aren't met.
+type GetTaskFileURLRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetTaskFileURLRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetTaskFileURLRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetTaskFileURLRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetTaskFileURLRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetTaskFileURLRequestValidationError) ErrorName() string {
+	return "GetTaskFileURLRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetTaskFileURLRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetTaskFileURLRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetTaskFileURLRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetTaskFileURLRequestValidationError{}
+
+var _GetTaskFileURLRequest_FileType_InLookup = map[string]struct{}{
+	"pages":  {},
+	"result": {},
+}
+
+// Validate checks the field values on GetTaskFileURLResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetTaskFileURLResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetTaskFileURLResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetTaskFileURLResponseMultiError, or nil if none found.
+func (m *GetTaskFileURLResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetTaskFileURLResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Url
+
+	// no validation rules for ExpiresInSeconds
+
+	if len(errors) > 0 {
+		return GetTaskFileURLResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetTaskFileURLResponseMultiError is an error wrapping multiple validation
+// errors returned by GetTaskFileURLResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetTaskFileURLResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetTaskFileURLResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetTaskFileURLResponseMultiError) AllErrors() []error { return m }
+
+// GetTaskFileURLResponseValidationError is the validation error returned by
+// GetTaskFileURLResponse.Validate if the designated constraints aren't met.
+type GetTaskFileURLResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetTaskFileURLResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetTaskFileURLResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetTaskFileURLResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetTaskFileURLResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetTaskFileURLResponseValidationError) ErrorName() string {
+	return "GetTaskFileURLResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetTaskFileURLResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetTaskFileURLResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetTaskFileURLResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetTaskFileURLResponseValidationError{}
 
 // Validate checks the field values on Preview with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
