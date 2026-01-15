@@ -113,6 +113,16 @@ func ToProtoMetricSpec(metric models.MetricSpec) *crawlergrpc.MetricSpec {
 	}
 }
 
+// ToProtoPaginationSpec converts domain PaginationSpec to protobuf
+func ToProtoPaginationSpec(spec models.PaginationSpec) *crawlergrpc.PaginationSpec {
+	return &crawlergrpc.PaginationSpec{
+		Name:      spec.Name,
+		Selector:  spec.Selector,
+		Attribute: spec.Attribute,
+		Multiple:  spec.Multiple,
+	}
+}
+
 // ToProtoExtractionSpec converts domain ExtractionSpec to protobuf
 func ToProtoExtractionSpec(spec models.ExtractionSpec) *crawlergrpc.ExtractionSpec {
 	fields := make([]*crawlergrpc.FieldSpec, len(spec.Fields))
@@ -125,9 +135,15 @@ func ToProtoExtractionSpec(spec models.ExtractionSpec) *crawlergrpc.ExtractionSp
 		metrics[i] = ToProtoMetricSpec(m)
 	}
 
+	pagination := make([]*crawlergrpc.PaginationSpec, len(spec.Pagination))
+	for i, p := range spec.Pagination {
+		pagination[i] = ToProtoPaginationSpec(p)
+	}
+
 	return &crawlergrpc.ExtractionSpec{
-		Fields:  fields,
-		Metrics: metrics,
+		Fields:     fields,
+		Metrics:    metrics,
+		Pagination: pagination,
 	}
 }
 
@@ -354,6 +370,20 @@ func FromProtoMetricSpec(proto *crawlergrpc.MetricSpec) models.MetricSpec {
 	}
 }
 
+// FromProtoPaginationSpec converts protobuf PaginationSpec to domain
+func FromProtoPaginationSpec(proto *crawlergrpc.PaginationSpec) models.PaginationSpec {
+	if proto == nil {
+		return models.PaginationSpec{}
+	}
+
+	return models.PaginationSpec{
+		Name:      proto.Name,
+		Selector:  proto.Selector,
+		Attribute: proto.Attribute,
+		Multiple:  proto.Multiple,
+	}
+}
+
 // FromProtoExtractionSpec converts protobuf ExtractionSpec to domain
 func FromProtoExtractionSpec(proto *crawlergrpc.ExtractionSpec) models.ExtractionSpec {
 	if proto == nil {
@@ -370,9 +400,15 @@ func FromProtoExtractionSpec(proto *crawlergrpc.ExtractionSpec) models.Extractio
 		metrics[i] = FromProtoMetricSpec(m)
 	}
 
+	pagination := make([]models.PaginationSpec, len(proto.Pagination))
+	for i, p := range proto.Pagination {
+		pagination[i] = FromProtoPaginationSpec(p)
+	}
+
 	return models.ExtractionSpec{
-		Fields:  fields,
-		Metrics: metrics,
+		Fields:     fields,
+		Metrics:    metrics,
+		Pagination: pagination,
 	}
 }
 

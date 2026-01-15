@@ -633,6 +633,13 @@
             "type": "object",
             "$ref": "#/definitions/v1MetricSpec"
           }
+        },
+        "pagination": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PaginationSpec"
+          }
         }
       },
       "title": "ExtractionSpec defines extraction configuration"
@@ -796,6 +803,28 @@
         }
       },
       "title": "MetricSpec defines a metric to compute"
+    },
+    "v1PaginationSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Optional name for the pagination source (e.g., \"next_page\", \"load_more\")"
+        },
+        "selector": {
+          "type": "string",
+          "title": "CSS selector for pagination elements (e.g., \"a.next-page\", \".pagination a\")"
+        },
+        "attribute": {
+          "type": "string",
+          "title": "Attribute to extract URL from (default: \"href\")"
+        },
+        "multiple": {
+          "type": "boolean",
+          "title": "Extract all matching elements (true) or just first (false)"
+        }
+      },
+      "title": "PaginationSpec defines a pagination selector for extracting next-page URLs"
     },
     "v1Preview": {
       "type": "object",

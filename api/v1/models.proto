@@ -92,10 +92,19 @@ message MetricSpec {
   string input = 3;
 }
 
+// PaginationSpec defines a pagination selector for extracting next-page URLs
+message PaginationSpec {
+  string name = 1;      // Optional name for the pagination source (e.g., "next_page", "load_more")
+  string selector = 2;  // CSS selector for pagination elements (e.g., "a.next-page", ".pagination a")
+  string attribute = 3; // Attribute to extract URL from (default: "href")
+  bool multiple = 4;    // Extract all matching elements (true) or just first (false)
+}
+
 // ExtractionSpec defines extraction configuration
 message ExtractionSpec {
   repeated FieldSpec fields = 1;
   repeated MetricSpec metrics = 2;
+  repeated PaginationSpec pagination = 3;
 }
 
 // CrawlJobConfig represents crawl job configuration

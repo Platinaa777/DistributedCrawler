@@ -40,8 +40,18 @@ const (
 )
 
 type ExtractionSpec struct {
-	Fields  []FieldSpec
-	Metrics []MetricSpec
+	Fields     []FieldSpec
+	Metrics    []MetricSpec
+	Pagination []PaginationSpec
+}
+
+// PaginationSpec defines a pagination selector for extracting next-page URLs.
+// It reuses the same semantics as ExtractorSpec (selector, attribute, multiple).
+type PaginationSpec struct {
+	Name      string `json:"name,omitempty"`      // Optional name for the pagination source (e.g., "next_page", "load_more")
+	Selector  string `json:"selector,omitempty"`  // CSS selector for pagination elements (e.g., "a.next-page", ".pagination a")
+	Attribute string `json:"attribute,omitempty"` // Attribute to extract URL from (default: "href")
+	Multiple  bool   `json:"multiple,omitempty"`  // Extract all matching elements (true) or just first (false)
 }
 
 type FieldSpec struct {

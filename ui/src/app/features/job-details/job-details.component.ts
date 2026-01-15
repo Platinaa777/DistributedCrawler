@@ -84,6 +84,20 @@ import { CrawlJob, CrawlTask, FileType } from '../../core/models';
               </div>
             </div>
 
+            <div class="mt-4" *ngIf="job?.job_config?.extraction_spec?.pagination?.length">
+              <p class="text-sm text-gray-600">Pagination Selectors</p>
+              <div class="mt-2 space-y-2">
+                <div *ngFor="let pag of job?.job_config?.extraction_spec?.pagination" class="bg-gray-50 rounded p-2 text-sm">
+                  <div class="flex items-center gap-4">
+                    <span *ngIf="pag.name" class="font-medium">{{ pag.name }}</span>
+                    <code class="bg-gray-200 px-2 py-1 rounded text-xs">{{ pag.selector }}</code>
+                    <span class="text-gray-500">attr: {{ pag.attribute || 'href' }}</span>
+                    <mat-chip *ngIf="pag.multiple" class="text-xs">multiple</mat-chip>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="mt-6">
               <button mat-stroked-button color="primary" (click)="toggleConfig()">
                 <mat-icon>{{ configExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>

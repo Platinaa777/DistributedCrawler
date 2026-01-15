@@ -1,6 +1,14 @@
 export interface ExtractionSpec {
   fields: FieldSpec[];
   metrics: MetricSpec[];
+  pagination?: PaginationSpec[];
+}
+
+export interface PaginationSpec {
+  name?: string;      // Optional name for the pagination source (e.g., "next_page", "load_more")
+  selector: string;   // CSS selector for pagination elements (e.g., "a.next-page", ".pagination a")
+  attribute?: string; // Attribute to extract URL from (default: "href")
+  multiple?: boolean; // Extract all matching elements (true) or just first (false)
 }
 
 export interface FieldSpec {

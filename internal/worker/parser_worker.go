@@ -195,7 +195,17 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		return fmt.Errorf("failed to persist results: %w", err)
 	}
 
-	// Discover and enqueue new links for crawling
+	// Extract and enqueue pagination links (user-defined selectors only)
+	if err := w.extractAndEnqueuePaginationLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
+		w.logger.Error("Failed to extract and enqueue pagination links",
+			zap.String("task_id", task.TaskID),
+			zap.Error(err),
+		)
+		// Don't fail the entire task if pagination extraction fails
+		// Just log the error and continue
+	}
+
+	// Discover and enqueue new links for crawling (automatic link discovery)
 	if err := w.discoverAndEnqueueLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
 		w.logger.Error("Failed to discover and enqueue links",
 			zap.String("task_id", task.TaskID),
@@ -675,6 +685,226 @@ func (w *ParserWorker) persistResults(ctx context.Context, taskID, url string, r
 	w.logger.Info("Task result reference saved to DB",
 		zap.String("task_id", taskID),
 		zap.String("result_object_key", objectKey),
+	)
+
+	return nil
+}
+
+// extractAndEnqueuePaginationLinks extracts URLs from pagination elements using user-defined CSS selectors
+// and enqueues them as new crawl tasks. This is independent from automatic link discovery.
+func (w *ParserWorker) extractAndEnqueuePaginationLinks(
+	ctx context.Context,
+	crawlTask *models.CrawlTask,
+	htmlContent []byte,
+	jobConfig *models.CrawlJobConfig,
+) error {
+	// Skip if no pagination selectors defined
+	if len(jobConfig.ExtractionSpec.Pagination) == 0 {
+		return nil
+	}
+
+	// Check depth limit - stop if we've reached MaxDepth
+	if crawlTask.Depth >= jobConfig.Scopes.MaxDepth {
+		w.logger.Debug("Max depth reached, skipping pagination extraction",
+			zap.String("task_id", crawlTask.ID.String()),
+			zap.Uint64("current_depth", crawlTask.Depth),
+			zap.Uint64("max_depth", jobConfig.Scopes.MaxDepth),
+		)
+		return nil
+	}
+
+	// Parse HTML with goquery
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlContent)))
+	if err != nil {
+		return fmt.Errorf("failed to parse HTML for pagination extraction: %w", err)
+	}
+
+	// Determine base URL for resolving relative links
+	var baseURL *url.URL
+	if crawlTask.FinalURL != nil && *crawlTask.FinalURL != "" {
+		baseURL, err = url.Parse(*crawlTask.FinalURL)
+	} else {
+		baseURL, err = url.Parse(crawlTask.URL)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to parse base URL: %w", err)
+	}
+
+	// Extract URLs from all pagination selectors and deduplicate
+	paginationURLs := make(map[string]bool)
+
+	for _, paginationSpec := range jobConfig.ExtractionSpec.Pagination {
+		if paginationSpec.Selector == "" {
+			continue
+		}
+
+		// Default attribute is "href" for pagination elements
+		attribute := paginationSpec.Attribute
+		if attribute == "" {
+			attribute = "href"
+		}
+
+		selection := doc.Find(paginationSpec.Selector)
+		if selection.Length() == 0 {
+			w.logger.Debug("No elements found for pagination selector",
+				zap.String("task_id", crawlTask.ID.String()),
+				zap.String("selector", paginationSpec.Selector),
+				zap.String("name", paginationSpec.Name),
+			)
+			continue
+		}
+
+		// Extract URLs from matching elements
+		extractURL := func(s *goquery.Selection) {
+			rawValue := w.extractElementValue(s, attribute, baseURL)
+			if rawValue == "" {
+				return
+			}
+
+			// Parse and resolve relative URL
+			linkURL, err := url.Parse(strings.TrimSpace(rawValue))
+			if err != nil {
+				return
+			}
+
+			// Resolve relative URLs
+			absoluteURL := baseURL.ResolveReference(linkURL)
+
+			// Filter out unwanted schemes
+			scheme := strings.ToLower(absoluteURL.Scheme)
+			if scheme != "http" && scheme != "https" {
+				return
+			}
+
+			// Remove fragment
+			absoluteURL.Fragment = ""
+
+			normalizedURL := absoluteURL.String()
+			paginationURLs[normalizedURL] = true
+		}
+
+		if paginationSpec.Multiple {
+			selection.Each(func(i int, s *goquery.Selection) {
+				extractURL(s)
+			})
+		} else {
+			extractURL(selection.First())
+		}
+	}
+
+	if len(paginationURLs) == 0 {
+		w.logger.Debug("No pagination URLs extracted",
+			zap.String("task_id", crawlTask.ID.String()),
+			zap.Int("pagination_selectors", len(jobConfig.ExtractionSpec.Pagination)),
+		)
+		return nil
+	}
+
+	// Filter URLs by scope rules and prepare tasks/events
+	nextDepth := crawlTask.Depth + 1
+	tasks := make([]models.CrawlTask, 0)
+	outboxEvents := make([]models.OutboxEvent, 0)
+	now := time.Now().UTC()
+
+	// User-agent for robots.txt checking (matches the fetcher's user-agent)
+	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+	for link := range paginationURLs {
+		// Validate against scope rules
+		if err := w.scopeValidator.Validate(link, nextDepth, jobConfig.Scopes); err != nil {
+			w.logger.Debug("Pagination link filtered by scope rules",
+				zap.String("url", link),
+				zap.Error(err),
+			)
+			continue
+		}
+
+		// Check robots.txt rules
+		allowed, err := w.robotsTxtService.IsAllowed(ctx, link, userAgent)
+		if err != nil {
+			w.logger.Debug("Failed to check robots.txt for pagination link, allowing",
+				zap.String("url", link),
+				zap.Error(err),
+			)
+			// On error, proceed with enqueueing (permissive default)
+		} else if !allowed {
+			w.logger.Debug("Pagination link disallowed by robots.txt",
+				zap.String("url", link),
+			)
+			continue
+		}
+
+		// Create new CrawlTask
+		taskID := valueobjects.GenerateCrawlTaskID()
+		task := models.CrawlTask{
+			ID:         taskID,
+			JobID:      crawlTask.JobID,
+			URL:        link,
+			Status:     models.TaskStatusInProgress,
+			EnqueuedAt: now,
+			Depth:      nextDepth,
+		}
+		tasks = append(tasks, task)
+
+		// Create TaskEnqueuedEvent
+		event := events.NewTaskEnqueuedEvent(
+			taskID.String(),
+			crawlTask.JobID.String(),
+			link,
+			now,
+		)
+
+		// Marshal event to JSON
+		payload, err := json.Marshal(event)
+		if err != nil {
+			return fmt.Errorf("failed to marshal event for pagination task %s: %w", taskID.String(), err)
+		}
+
+		// Create OutboxEvent
+		outboxEvent := models.OutboxEvent{
+			ID:          valueobjects.GenerateOutboxEventID(),
+			EventType:   string(event.Type),
+			AggregateID: taskID.String(),
+			Payload:     payload,
+			OccurredAt:  event.OccurredAt,
+			ProcessedAt: nil,
+			CreatedAt:   now,
+		}
+		outboxEvents = append(outboxEvents, outboxEvent)
+	}
+
+	if len(tasks) == 0 {
+		w.logger.Debug("No pagination links passed scope validation",
+			zap.String("task_id", crawlTask.ID.String()),
+			zap.Int("total_pagination_urls", len(paginationURLs)),
+		)
+		return nil
+	}
+
+	// Persist tasks and outbox events atomically
+	err = w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		// Bulk create tasks
+		if err := w.taskRepo.BulkCreate(ctx, tasks); err != nil {
+			return fmt.Errorf("failed to bulk create pagination tasks: %w", err)
+		}
+
+		// Bulk create outbox events
+		if err := w.outboxRepo.BulkCreate(ctx, outboxEvents); err != nil {
+			return fmt.Errorf("failed to bulk create pagination outbox events: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to persist pagination links: %w", err)
+	}
+
+	w.logger.Info("Successfully extracted and enqueued pagination links",
+		zap.String("task_id", crawlTask.ID.String()),
+		zap.Int("pagination_urls_found", len(paginationURLs)),
+		zap.Int("pagination_urls_enqueued", len(tasks)),
+		zap.Uint64("next_depth", nextDepth),
 	)
 
 	return nil

@@ -94,6 +94,17 @@ import { CrawlJob } from '../../core/models';
                     Open Job
                   </button>
                 </div>
+                <div class="pagination-info mb-3" *ngIf="job.job_config?.extraction_spec?.pagination?.length">
+                  <p class="text-sm font-semibold mb-2">Pagination Selectors</p>
+                  <div class="flex flex-wrap gap-2">
+                    <div *ngFor="let pag of job.job_config?.extraction_spec?.pagination" class="bg-white rounded px-3 py-1 text-sm border">
+                      <span *ngIf="pag.name" class="font-medium mr-2">{{ pag.name }}:</span>
+                      <code class="text-xs">{{ pag.selector }}</code>
+                      <span class="text-gray-500 ml-2">({{ pag.attribute || 'href' }})</span>
+                      <span *ngIf="pag.multiple" class="text-blue-600 ml-1">[multiple]</span>
+                    </div>
+                  </div>
+                </div>
                 <pre class="json-view" *ngIf="getJobConfigWithoutAuth(job) as config">{{ config | json }}</pre>
                 <div class="text-gray-500" *ngIf="!job.job_config">No job configuration available.</div>
               </div>

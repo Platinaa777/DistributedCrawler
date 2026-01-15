@@ -14,7 +14,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
 import { CrawlJobConfig, RetryPolicy, ScheduleOptions } from '../../core/models/crawl-job.model';
-import { FieldSpec, MetricSpec, TransformSpec } from '../../core/models/extraction-spec.model';
+import { FieldSpec, MetricSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
 
 interface SimpleJobFormValue {
   name: string;
@@ -451,6 +451,57 @@ interface SimpleJobFormValue {
               </div>
             </div>
           </div>
+
+          <mat-divider></mat-divider>
+
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-sm font-semibold">Pagination</p>
+              <button mat-stroked-button color="primary" type="button" (click)="addPagination()">
+                <mat-icon>add</mat-icon>
+                Add Pagination
+              </button>
+            </div>
+            <div formArrayName="pagination" class="space-y-3">
+              <div
+                *ngFor="let pag of pagination.controls; let p = index"
+                [formGroupName]="p"
+                class="border rounded p-3 grid grid-cols-1 md:grid-cols-4 gap-3 items-start"
+              >
+                <mat-form-field class="w-full" [matTooltip]="'Optional name for the pagination source (e.g., next_page, load_more)'">
+                  <mat-label>Name</mat-label>
+                  <input matInput formControlName="name" placeholder="next_page" />
+                  <mat-icon matSuffix>info_outline</mat-icon>
+                </mat-form-field>
+                <mat-form-field class="w-full" [matTooltip]="'CSS selector for pagination elements (e.g., a.next-page, .pagination a)'">
+                  <mat-label>Selector</mat-label>
+                  <input matInput formControlName="selector" placeholder="a.next-page" />
+                  <mat-icon matSuffix>info_outline</mat-icon>
+                </mat-form-field>
+                <mat-form-field class="w-full" [matTooltip]="'Attribute to extract URL from (default: href)'">
+                  <mat-label>Attribute</mat-label>
+                  <mat-select formControlName="attribute">
+                    <mat-option value="href">href</mat-option>
+                    <mat-option value="src">src</mat-option>
+                    <mat-option value="data-url">data-url</mat-option>
+                    <mat-option value="content">content</mat-option>
+                  </mat-select>
+                  <mat-icon matSuffix>info_outline</mat-icon>
+                </mat-form-field>
+                <div class="flex items-center gap-2">
+                  <mat-checkbox formControlName="multiple" [matTooltip]="'Extract all matching elements (true) or just first (false)'">
+                    Multiple
+                  </mat-checkbox>
+                  <button mat-icon-button color="warn" type="button" (click)="removePagination(p)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="pagination.length === 0" class="text-gray-500 text-sm mt-2">
+              No pagination selectors configured. Add pagination to follow next-page links.
+            </div>
+          </div>
         </mat-card-content>
       </mat-card>
       <mat-card>
@@ -581,7 +632,8 @@ export class SimpleJobCreateComponent implements OnInit {
         cron: ['']
       }),
       extraction_fields: this.fb.array([]),
-      metrics: this.fb.array([])
+      metrics: this.fb.array([]),
+      pagination: this.fb.array([])
     });
 
     this.jobForm.valueChanges.subscribe(() => this.updatePreview());
@@ -611,6 +663,10 @@ export class SimpleJobCreateComponent implements OnInit {
 
   get metrics(): FormArray {
     return this.jobForm.get('metrics') as FormArray;
+  }
+
+  get pagination(): FormArray {
+    return this.jobForm.get('pagination') as FormArray;
   }
 
   get retriesGroup(): FormGroup {
@@ -706,6 +762,16 @@ export class SimpleJobCreateComponent implements OnInit {
 
   removeMetric(index: number): void {
     this.metrics.removeAt(index);
+    this.updatePreview();
+  }
+
+  addPagination(pagination?: Partial<PaginationSpec>): void {
+    this.pagination.push(this.createPaginationGroup(pagination));
+    this.updatePreview();
+  }
+
+  removePagination(index: number): void {
+    this.pagination.removeAt(index);
     this.updatePreview();
   }
 
@@ -814,6 +880,15 @@ export class SimpleJobCreateComponent implements OnInit {
     });
   }
 
+  private createPaginationGroup(pagination?: Partial<PaginationSpec>): FormGroup {
+    return this.fb.group({
+      name: [pagination?.name || ''],
+      selector: [pagination?.selector || '', Validators.required],
+      attribute: [pagination?.attribute || 'href'],
+      multiple: [pagination?.multiple ?? false]
+    });
+  }
+
   private resetArray(target: FormArray, items: (FormGroup | any)[]): void {
     while (target.length > 0) {
       target.removeAt(0);
@@ -869,6 +944,16 @@ export class SimpleJobCreateComponent implements OnInit {
       };
     });
 
+    const paginationSpecs: PaginationSpec[] = this.pagination.controls.map(ctrl => {
+      const value = ctrl.value;
+      return {
+        name: value.name || undefined,
+        selector: value.selector,
+        attribute: value.attribute || 'href',
+        multiple: !!value.multiple
+      };
+    }).filter(p => p.selector);
+
     return {
       name: raw.name,
       seeds: raw.seeds.map(seed => ({ url: seed.url })),
@@ -885,7 +970,8 @@ export class SimpleJobCreateComponent implements OnInit {
       schedule: raw.schedule,
       extraction_spec: {
         fields: extractionFields,
-        metrics
+        metrics,
+        pagination: paginationSpecs.length > 0 ? paginationSpecs : undefined
       }
     };
   }
