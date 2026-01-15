@@ -15,7 +15,7 @@ GO_FILES := $(shell find . -name '*.go' -type f)
 # Без этого, если в директории есть файл с именем "build" или "test",
 # make подумает что цель уже выполнена и не запустит команду.
 # Это защищает от конфликтов имен и улучшает производительность.
-.PHONY: help build run test clean docker-up docker-down all info
+.PHONY: help build run test clean docker-up docker-down all info docker-build
 
 .bin-deps: export GOBIN := $(LOCAL_BIN_WIN)
 .bin-deps:
@@ -86,3 +86,8 @@ local-migration-down:
 
 local-migration-create:
 	$(GOOSE) -dir $(LOCAL_MIGRATION_DIR) create $(NAME) sql
+
+docker-build:
+	@echo "Building docker image for $(APP)..."
+	@if [ -z "$(APP)" ]; then echo "APP is required (e.g. APP=grpc_server)"; exit 1; fi
+	docker build -f docker/$(APP)/Dockerfile -t distributed-crawler-$(APP) .
