@@ -28,16 +28,17 @@ import (
 
 // ParserWorker consumes parsing tasks, loads HTML from MinIO, parses using DSL, and prints results
 type ParserWorker struct {
-	rmqClient      rabbitmq.Client
-	parsingQueue   string
-	contentStore   services.ContentStore
-	taskRepo       crawltask.CrawlTaskRepository
-	jobRepo        crawljob.CrawlJobRepository
-	jobConfigRepo  crawljobconfig.CrawlJobConfigRepository
-	outboxRepo     outbox.OutboxRepository
-	txManager      persistence.TxManager
-	scopeValidator services.ScopeValidator
-	logger         *zap.Logger
+	rmqClient        rabbitmq.Client
+	parsingQueue     string
+	contentStore     services.ContentStore
+	taskRepo         crawltask.CrawlTaskRepository
+	jobRepo          crawljob.CrawlJobRepository
+	jobConfigRepo    crawljobconfig.CrawlJobConfigRepository
+	outboxRepo       outbox.OutboxRepository
+	txManager        persistence.TxManager
+	scopeValidator   services.ScopeValidator
+	robotsTxtService services.RobotsTxtService
+	logger           *zap.Logger
 }
 
 // NewParserWorker creates a new parser worker
@@ -51,19 +52,21 @@ func NewParserWorker(
 	outboxRepo outbox.OutboxRepository,
 	txManager persistence.TxManager,
 	scopeValidator services.ScopeValidator,
+	robotsTxtService services.RobotsTxtService,
 	logger *zap.Logger,
 ) *ParserWorker {
 	return &ParserWorker{
-		rmqClient:      rmqClient,
-		parsingQueue:   parsingQueue,
-		contentStore:   contentStore,
-		taskRepo:       taskRepo,
-		jobRepo:        jobRepo,
-		jobConfigRepo:  jobConfigRepo,
-		outboxRepo:     outboxRepo,
-		txManager:      txManager,
-		scopeValidator: scopeValidator,
-		logger:         logger,
+		rmqClient:        rmqClient,
+		parsingQueue:     parsingQueue,
+		contentStore:     contentStore,
+		taskRepo:         taskRepo,
+		jobRepo:          jobRepo,
+		jobConfigRepo:    jobConfigRepo,
+		outboxRepo:       outboxRepo,
+		txManager:        txManager,
+		scopeValidator:   scopeValidator,
+		robotsTxtService: robotsTxtService,
+		logger:           logger,
 	}
 }
 
@@ -754,12 +757,30 @@ func (w *ParserWorker) discoverAndEnqueueLinks(
 	outboxEvents := make([]models.OutboxEvent, 0)
 	now := time.Now().UTC()
 
+	// User-agent for robots.txt checking (matches the fetcher's user-agent)
+	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
 	for link := range linkSet {
 		// Validate against scope rules
 		if err := w.scopeValidator.Validate(link, nextDepth, jobConfig.Scopes); err != nil {
 			w.logger.Debug("Link filtered by scope rules",
 				zap.String("url", link),
 				zap.Error(err),
+			)
+			continue
+		}
+
+		// Check robots.txt rules
+		allowed, err := w.robotsTxtService.IsAllowed(ctx, link, userAgent)
+		if err != nil {
+			w.logger.Debug("Failed to check robots.txt for link, allowing",
+				zap.String("url", link),
+				zap.Error(err),
+			)
+			// On error, proceed with enqueueing (permissive default)
+		} else if !allowed {
+			w.logger.Debug("Link disallowed by robots.txt",
+				zap.String("url", link),
 			)
 			continue
 		}

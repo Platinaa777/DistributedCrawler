@@ -248,6 +248,9 @@ func (a *WorkerApp) initFetchWorker() error {
 	// Initialize rate limiter with 5 minute TTL
 	rateLimiter := cache.NewRedisRateLimiter(a.redisClient, 5*time.Minute)
 
+	// Initialize robots.txt service with 24 hour cache TTL
+	robotsTxtService := cache.NewCachedRobotsTxtService(a.redisClient, 24*time.Hour, a.zapLogger)
+
 	// Get queue names from configuration
 	crawlQueue := a.rmqConfig.GetQueueName(config.CrawlQueueKey)
 	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
@@ -263,6 +266,7 @@ func (a *WorkerApp) initFetchWorker() error {
 		fetcherFactory,
 		scopeValidator,
 		rateLimiter,
+		robotsTxtService,
 		a.zapLogger,
 	)
 
@@ -300,6 +304,9 @@ func (a *WorkerApp) initParserWorker() error {
 	// Initialize scope validator
 	scopeValidator := fetcher.NewDomainScopeValidator()
 
+	// Initialize robots.txt service with 24 hour cache TTL
+	robotsTxtService := cache.NewCachedRobotsTxtService(a.redisClient, 24*time.Hour, a.zapLogger)
+
 	// Get queue name from configuration
 	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
 
@@ -314,6 +321,7 @@ func (a *WorkerApp) initParserWorker() error {
 		outboxRepo,
 		txManager,
 		scopeValidator,
+		robotsTxtService,
 		a.zapLogger,
 	)
 

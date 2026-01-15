@@ -19,16 +19,17 @@ import (
 
 // FetchWorker consumes crawl tasks, fetches pages, stores in MinIO, and publishes to parsing queue
 type FetchWorker struct {
-	rmqClient      rabbitmq.Client
-	crawlQueue     string
-	parsingQueue   string
-	contentStore   services.ContentStore
-	taskRepo       crawltask.CrawlTaskRepository
-	jobConfigRepo  crawljobconfig.CrawlJobConfigRepository
-	fetcherFactory services.FetcherFactory
-	scopeValidator services.ScopeValidator
-	rateLimiter    services.RateLimiter
-	logger         *zap.Logger
+	rmqClient        rabbitmq.Client
+	crawlQueue       string
+	parsingQueue     string
+	contentStore     services.ContentStore
+	taskRepo         crawltask.CrawlTaskRepository
+	jobConfigRepo    crawljobconfig.CrawlJobConfigRepository
+	fetcherFactory   services.FetcherFactory
+	scopeValidator   services.ScopeValidator
+	rateLimiter      services.RateLimiter
+	robotsTxtService services.RobotsTxtService
+	logger           *zap.Logger
 }
 
 // NewFetchWorker creates a new fetch worker
@@ -42,19 +43,21 @@ func NewFetchWorker(
 	fetcherFactory services.FetcherFactory,
 	scopeValidator services.ScopeValidator,
 	rateLimiter services.RateLimiter,
+	robotsTxtService services.RobotsTxtService,
 	logger *zap.Logger,
 ) *FetchWorker {
 	return &FetchWorker{
-		rmqClient:      rmqClient,
-		crawlQueue:     crawlQueue,
-		parsingQueue:   parsingQueue,
-		contentStore:   contentStore,
-		taskRepo:       taskRepo,
-		jobConfigRepo:  jobConfigRepo,
-		fetcherFactory: fetcherFactory,
-		scopeValidator: scopeValidator,
-		rateLimiter:    rateLimiter,
-		logger:         logger,
+		rmqClient:        rmqClient,
+		crawlQueue:       crawlQueue,
+		parsingQueue:     parsingQueue,
+		contentStore:     contentStore,
+		taskRepo:         taskRepo,
+		jobConfigRepo:    jobConfigRepo,
+		fetcherFactory:   fetcherFactory,
+		scopeValidator:   scopeValidator,
+		rateLimiter:      rateLimiter,
+		robotsTxtService: robotsTxtService,
+		logger:           logger,
 	}
 }
 
@@ -129,6 +132,41 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		}
 
 		w.logger.Info("Task marked as failed due to scope violation",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+		)
+
+		// Don't return error - task is processed (marked as failed)
+		return nil
+	}
+
+	// Check robots.txt rules
+	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	allowed, err := w.robotsTxtService.IsAllowed(ctx, task.URL, userAgent)
+	if err != nil {
+		w.logger.Warn("Failed to check robots.txt, proceeding with fetch",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+			zap.Error(err),
+		)
+		// On error, proceed with fetching (permissive default)
+	} else if !allowed {
+		w.logger.Warn("URL disallowed by robots.txt",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+		)
+
+		// Mark task as failed due to robots.txt
+		task.Status = models.TaskStatusFailed
+		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
+			w.logger.Error("Failed to update task status to failed",
+				zap.String("task_id", taskMsg.TaskID),
+				zap.Error(updateErr),
+			)
+			return fmt.Errorf("failed to update task status: %w", updateErr)
+		}
+
+		w.logger.Info("Task marked as failed due to robots.txt disallow",
 			zap.String("task_id", taskMsg.TaskID),
 			zap.String("url", task.URL),
 		)
