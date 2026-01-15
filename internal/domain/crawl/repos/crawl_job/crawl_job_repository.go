@@ -12,6 +12,7 @@ type CrawlJobRepository interface {
 	Update(ctx context.Context, entity models.CrawlJob) error
 	List(ctx context.Context, status models.TaskStatus, limit, offset int) ([]*models.CrawlJob, error)
 	ListAll(ctx context.Context, limit, offset int) ([]*models.CrawlJob, error)
+	GetLatestByConfigID(ctx context.Context, configID valueobjects.ID) (*models.CrawlJob, error)
 
 	// Export-related methods (Part B - ExportWorker)
 	// ListEligibleForExport finds jobs that are fully finished and not yet exported

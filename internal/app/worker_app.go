@@ -33,9 +33,10 @@ func init() {
 type WorkerType string
 
 const (
-	FetchWorkerType  WorkerType = "fetch"
-	ParserWorkerType WorkerType = "parser"
-	ExportWorkerType WorkerType = "export"
+	FetchWorkerType     WorkerType = "fetch"
+	ParserWorkerType    WorkerType = "parser"
+	ExportWorkerType    WorkerType = "export"
+	SchedulerWorkerType WorkerType = "scheduler"
 )
 
 type WorkerApp struct {
@@ -46,9 +47,10 @@ type WorkerApp struct {
 	rmqConfig   config.RabbitMQConfig
 	redisClient *redis.Client
 
-	fetchWorker  *worker.FetchWorker
-	parserWorker *worker.ParserWorker
-	exportWorker *worker.ExportWorker
+	fetchWorker    *worker.FetchWorker
+	parserWorker   *worker.ParserWorker
+	exportWorker   *worker.ExportWorker
+	scheduleWorker *worker.ScheduleWorker
 
 	workerCtx    context.Context
 	workerCancel context.CancelFunc
@@ -207,6 +209,8 @@ func (a *WorkerApp) initWorker(ctx context.Context) error {
 		return a.initParserWorker()
 	case ExportWorkerType:
 		return a.initExportWorker()
+	case SchedulerWorkerType:
+		return a.initScheduleWorker()
 	default:
 		log.Fatalf("unknown worker type: %s", a.workerType)
 	}
@@ -357,6 +361,25 @@ func (a *WorkerApp) initExportWorker() error {
 	return nil
 }
 
+func (a *WorkerApp) initScheduleWorker() error {
+	jobRepo := repos.NewCrawlRepository(a.pgClient)
+	jobConfigRepo := repos.NewCrawlJobConfigRepository(a.pgClient)
+	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
+	outboxRepo := repos.NewOutboxRepository(a.pgClient)
+	txManager := transaction.NewTransactorManager(a.pgClient.DB())
+
+	a.scheduleWorker = worker.NewScheduleWorker(
+		jobRepo,
+		jobConfigRepo,
+		taskRepo,
+		outboxRepo,
+		txManager,
+		a.zapLogger,
+	)
+
+	return nil
+}
+
 func (a *WorkerApp) runWorker() {
 	switch a.workerType {
 	case FetchWorkerType:
@@ -373,6 +396,11 @@ func (a *WorkerApp) runWorker() {
 		a.zapLogger.Info("Export worker started")
 		if err := a.exportWorker.Start(a.workerCtx); err != nil {
 			a.zapLogger.Fatal("Export worker failed", zap.Error(err))
+		}
+	case SchedulerWorkerType:
+		a.zapLogger.Info("Scheduler worker started")
+		if err := a.scheduleWorker.Start(a.workerCtx); err != nil {
+			a.zapLogger.Fatal("Scheduler worker failed", zap.Error(err))
 		}
 	}
 }

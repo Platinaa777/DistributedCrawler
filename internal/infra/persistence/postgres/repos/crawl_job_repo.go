@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"database/sql"
 	"distributed-crawler/internal/domain/crawl/models"
 	crawljob "distributed-crawler/internal/domain/crawl/repos/crawl_job"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	tableName       = "crawl_jobs"
+	tableName = "crawl_jobs"
 
 	idColumn          = "id"
 	jobConfigIDColumn = "job_config_id"
@@ -250,6 +251,45 @@ func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]
 	}
 
 	return jobs, nil
+}
+
+func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID valueobjects.ID) (*models.CrawlJob, error) {
+	builder := sq.Select(
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
+		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
+		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
+		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
+		"c.schedule as "+aliasConfigSchedule,
+	).
+		PlaceholderFormat(sq.Dollar).
+		From(tableName + " j").
+		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id").
+		Where(sq.Eq{"j." + jobConfigIDColumn: configID.String()}).
+		OrderBy("j." + createdAtColumn + " DESC").
+		Limit(1)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_job_repository.GetLatestByConfigID",
+		QueryRaw: query,
+	}
+
+	row := c.client.DB().QueryRowContext(ctx, q, args...)
+	crawlJob, err := scanCrawlJobWithConfig(row)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return converters.RestoreCrawlJobFromSnapshot(*crawlJob)
 }
 
 // ListEligibleForExport finds jobs that are fully finished and not yet exported (Part B - ExportWorker)
