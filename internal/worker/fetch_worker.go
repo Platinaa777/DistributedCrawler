@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"go.uber.org/zap"
@@ -30,6 +31,7 @@ type FetchWorker struct {
 	rateLimiter      services.RateLimiter
 	robotsTxtService services.RobotsTxtService
 	logger           *zap.Logger
+	activeTasks      atomic.Int64
 }
 
 // NewFetchWorker creates a new fetch worker
@@ -67,8 +69,16 @@ func (w *FetchWorker) Start(ctx context.Context) error {
 	return w.rmqClient.Consume(ctx, w.crawlQueue, w.handleMessage)
 }
 
+// ActiveTasks returns the number of tasks currently being processed.
+func (w *FetchWorker) ActiveTasks() int32 {
+	return int32(w.activeTasks.Load())
+}
+
 // handleMessage processes a single crawl task message
 func (w *FetchWorker) handleMessage(body []byte) error {
+	w.activeTasks.Add(1)
+	defer w.activeTasks.Add(-1)
+
 	// Parse message
 	var taskMsg rabbitmq.CrawlTaskMessage
 	if err := json.Unmarshal(body, &taskMsg); err != nil {

@@ -41,6 +41,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/job-details/job-details.component').then(m => m.JobDetailsComponent)
   },
   {
+    path: 'workers',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/workers/worker-monitor.component').then(m => m.WorkerMonitorComponent)
+  },
+  {
     path: '**',
     redirectTo: '/jobs'
   }

@@ -16,6 +16,9 @@
     },
     {
       "name": "AuthService"
+    },
+    {
+      "name": "WorkerService"
     }
   ],
   "host": "localhost:8080",
@@ -489,9 +492,126 @@
           "CrawlerService"
         ]
       }
+    },
+    "/api/v1/workers": {
+      "get": {
+        "summary": "List registered workers for monitoring UI",
+        "operationId": "WorkerService_ListWorkers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListWorkersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "WorkerService"
+        ]
+      }
+    },
+    "/api/v1/workers/{worker_id}:drain": {
+      "post": {
+        "summary": "Trigger graceful drain for a worker",
+        "operationId": "WorkerService_DrainWorker",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DrainWorkerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "worker_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkerServiceDrainWorkerBody"
+            }
+          }
+        ],
+        "tags": [
+          "WorkerService"
+        ]
+      }
+    },
+    "/api/v1/workers/{worker_id}:force-kill": {
+      "post": {
+        "summary": "Trigger force kill for a worker",
+        "operationId": "WorkerService_ForceKillWorker",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ForceKillWorkerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "worker_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkerServiceForceKillWorkerBody"
+            }
+          }
+        ],
+        "tags": [
+          "WorkerService"
+        ]
+      }
     }
   },
   "definitions": {
+    "WorkerServiceDrainWorkerBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "WorkerServiceForceKillWorkerBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -691,6 +811,17 @@
         }
       }
     },
+    "v1DrainWorkerResponse": {
+      "type": "object",
+      "properties": {
+        "delivered": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
     "v1ExtractionSpec": {
       "type": "object",
       "properties": {
@@ -762,6 +893,17 @@
         }
       },
       "title": "FieldSpec defines a field to extract"
+    },
+    "v1ForceKillWorkerResponse": {
+      "type": "object",
+      "properties": {
+        "delivered": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
     },
     "v1GetJobExportFileURLResponse": {
       "type": "object",
@@ -864,6 +1006,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1CrawlTask"
+          }
+        }
+      }
+    },
+    "v1ListWorkersResponse": {
+      "type": "object",
+      "properties": {
+        "workers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1WorkerInfo"
           }
         }
       }
@@ -1105,6 +1259,44 @@
         }
       },
       "title": "TransformSpec defines a transformation operation"
+    },
+    "v1WorkerInfo": {
+      "type": "object",
+      "properties": {
+        "worker_id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1WorkerStatus"
+        },
+        "last_heartbeat_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "active_tasks": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "uptime": {
+          "type": "string"
+        },
+        "worker_type": {
+          "type": "string"
+        }
+      },
+      "description": "WorkerInfo is returned by the monitoring API."
+    },
+    "v1WorkerStatus": {
+      "type": "string",
+      "enum": [
+        "WORKER_STATUS_UNSPECIFIED",
+        "WORKER_STATUS_ACTIVE",
+        "WORKER_STATUS_INACTIVE",
+        "WORKER_STATUS_DRAINING",
+        "WORKER_STATUS_DEAD"
+      ],
+      "default": "WORKER_STATUS_UNSPECIFIED",
+      "description": "WorkerStatus represents the current state of a worker."
     }
   }
 }

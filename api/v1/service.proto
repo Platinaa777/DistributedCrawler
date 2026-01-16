@@ -105,3 +105,32 @@ service AuthService {
     };
   }
 }
+
+// WorkerService defines worker monitoring and control operations
+service WorkerService {
+  // Bidirectional stream for worker heartbeats and control commands
+  rpc WorkerStream(stream WorkerHeartbeat) returns (stream WorkerCommand);
+
+  // List registered workers for monitoring UI
+  rpc ListWorkers(ListWorkersRequest) returns (ListWorkersResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/workers"
+    };
+  }
+
+  // Trigger graceful drain for a worker
+  rpc DrainWorker(DrainWorkerRequest) returns (DrainWorkerResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/workers/{worker_id}:drain"
+      body: "*"
+    };
+  }
+
+  // Trigger force kill for a worker
+  rpc ForceKillWorker(ForceKillWorkerRequest) returns (ForceKillWorkerResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/workers/{worker_id}:force-kill"
+      body: "*"
+    };
+  }
+}

@@ -2,9 +2,12 @@ package app
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
+	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"distributed-crawler/internal/config"
@@ -18,6 +21,7 @@ import (
 	"distributed-crawler/internal/infra/services/contentstore"
 	"distributed-crawler/internal/infra/services/fetcher"
 	"distributed-crawler/internal/worker"
+	crawlergrpc "distributed-crawler/pkg/v1"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -46,14 +50,28 @@ type WorkerApp struct {
 	rmqClient   rabbitmq.Client
 	rmqConfig   config.RabbitMQConfig
 	redisClient *redis.Client
+	grpcConfig  config.GRPCConfig
+
+	workerID  string
+	startedAt time.Time
+	status    atomic.Int32
 
 	fetchWorker    *worker.FetchWorker
 	parserWorker   *worker.ParserWorker
 	exportWorker   *worker.ExportWorker
 	scheduleWorker *worker.ScheduleWorker
 
-	workerCtx    context.Context
-	workerCancel context.CancelFunc
+	workerCtx     context.Context
+	workerCancel  context.CancelFunc
+	consumeCtx    context.Context
+	consumeCancel context.CancelFunc
+
+	activeTasksCounter interface {
+		ActiveTasks() int32
+	}
+
+	monitor   *worker.WorkerMonitor
+	drainOnce sync.Once
 }
 
 // NewWorkerApp creates a new worker application
@@ -89,8 +107,22 @@ func (a *WorkerApp) Run() error {
 
 	wg := sync.WaitGroup{}
 
+	a.initMonitor()
+
 	wg.Go(func() {
-		a.runWorker()
+		if a.monitor != nil {
+			a.monitor.Run(a.workerCtx)
+		}
+	})
+
+	wg.Go(func() {
+		if err := a.runWorker(); err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				a.zapLogger.Info("Worker stopped gracefully")
+				return
+			}
+			a.zapLogger.Fatal("Worker failed", zap.Error(err))
+		}
 	})
 
 	wg.Wait()
@@ -101,6 +133,7 @@ func (a *WorkerApp) Run() error {
 func (a *WorkerApp) initDeps(ctx context.Context) error {
 	inits := []func(context.Context) error{
 		a.initConfig,
+		a.initGRPCConfig,
 		a.initLogger,
 		a.initPostgreSQL,
 		a.initRabbitMQ,
@@ -124,6 +157,15 @@ func (a *WorkerApp) initConfig(_ context.Context) error {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
+	return nil
+}
+
+func (a *WorkerApp) initGRPCConfig(_ context.Context) error {
+	grpcCfg, err := env.NewGrpcConfig()
+	if err != nil {
+		log.Fatalf("failed to get grpc config: %v", err)
+	}
+	a.grpcConfig = grpcCfg
 	return nil
 }
 
@@ -201,6 +243,9 @@ func (a *WorkerApp) initRedis(_ context.Context) error {
 
 func (a *WorkerApp) initWorker(ctx context.Context) error {
 	a.workerCtx, a.workerCancel = context.WithCancel(ctx)
+	a.consumeCtx, a.consumeCancel = context.WithCancel(a.workerCtx)
+	a.startedAt = time.Now().UTC()
+	a.status.Store(int32(crawlergrpc.WorkerStatus_WORKER_STATUS_ACTIVE))
 
 	switch a.workerType {
 	case FetchWorkerType:
@@ -269,6 +314,7 @@ func (a *WorkerApp) initFetchWorker() error {
 		robotsTxtService,
 		a.zapLogger,
 	)
+	a.activeTasksCounter = a.fetchWorker
 
 	return nil
 }
@@ -324,6 +370,7 @@ func (a *WorkerApp) initParserWorker() error {
 		robotsTxtService,
 		a.zapLogger,
 	)
+	a.activeTasksCounter = a.parserWorker
 
 	return nil
 }
@@ -365,6 +412,7 @@ func (a *WorkerApp) initExportWorker() error {
 		batchSize,
 		a.zapLogger,
 	)
+	a.activeTasksCounter = a.exportWorker
 
 	return nil
 }
@@ -384,33 +432,27 @@ func (a *WorkerApp) initScheduleWorker() error {
 		txManager,
 		a.zapLogger,
 	)
+	a.activeTasksCounter = a.scheduleWorker
 
 	return nil
 }
 
-func (a *WorkerApp) runWorker() {
+func (a *WorkerApp) runWorker() error {
 	switch a.workerType {
 	case FetchWorkerType:
 		a.zapLogger.Info("Fetch worker started")
-		if err := a.fetchWorker.Start(a.workerCtx); err != nil {
-			a.zapLogger.Fatal("Fetch worker failed", zap.Error(err))
-		}
+		return a.fetchWorker.Start(a.consumeCtx)
 	case ParserWorkerType:
 		a.zapLogger.Info("Parser worker started")
-		if err := a.parserWorker.Start(a.workerCtx); err != nil {
-			a.zapLogger.Fatal("Parser worker failed", zap.Error(err))
-		}
+		return a.parserWorker.Start(a.consumeCtx)
 	case ExportWorkerType:
 		a.zapLogger.Info("Export worker started")
-		if err := a.exportWorker.Start(a.workerCtx); err != nil {
-			a.zapLogger.Fatal("Export worker failed", zap.Error(err))
-		}
+		return a.exportWorker.Start(a.consumeCtx)
 	case SchedulerWorkerType:
 		a.zapLogger.Info("Scheduler worker started")
-		if err := a.scheduleWorker.Start(a.workerCtx); err != nil {
-			a.zapLogger.Fatal("Scheduler worker failed", zap.Error(err))
-		}
+		return a.scheduleWorker.Start(a.consumeCtx)
 	}
+	return nil
 }
 
 // Stop gracefully stops the worker
@@ -419,4 +461,94 @@ func (a *WorkerApp) Stop() {
 		a.zapLogger.Info("Stopping worker...")
 		a.workerCancel()
 	}
+}
+
+func (a *WorkerApp) initMonitor() {
+	if a.grpcConfig == nil {
+		return
+	}
+
+	a.workerID = os.Getenv("WORKER_ID")
+	if a.workerID == "" {
+		id, err := worker.NewWorkerID(string(a.workerType))
+		if err != nil {
+			a.zapLogger.Warn("Failed to generate worker ID", zap.Error(err))
+		} else {
+			a.workerID = id
+		}
+	}
+
+	if a.workerID == "" {
+		a.workerID = string(a.workerType)
+	}
+
+	a.monitor = worker.NewWorkerMonitor(
+		a.grpcConfig.Address(),
+		a.workerID,
+		string(a.workerType),
+		a.startedAt,
+		a.activeTasksCount,
+		a.currentStatus,
+		a.beginDrain,
+		a.forceKill,
+		a.zapLogger,
+	)
+}
+
+func (a *WorkerApp) activeTasksCount() int32 {
+	if a.activeTasksCounter == nil {
+		return 0
+	}
+	return a.activeTasksCounter.ActiveTasks()
+}
+
+func (a *WorkerApp) currentStatus() crawlergrpc.WorkerStatus {
+	return crawlergrpc.WorkerStatus(a.status.Load())
+}
+
+func (a *WorkerApp) beginDrain() {
+	a.drainOnce.Do(func() {
+		a.zapLogger.Warn("Drain requested, stopping intake of new tasks")
+		a.status.Store(int32(crawlergrpc.WorkerStatus_WORKER_STATUS_DRAINING))
+
+		switch a.workerType {
+		case FetchWorkerType, ParserWorkerType:
+			if a.consumeCancel != nil {
+				a.consumeCancel()
+			}
+		case ExportWorkerType:
+			if a.exportWorker != nil {
+				a.exportWorker.StopAccepting()
+			}
+		case SchedulerWorkerType:
+			if a.scheduleWorker != nil {
+				a.scheduleWorker.StopAccepting()
+			}
+		}
+
+		go func() {
+			ticker := time.NewTicker(500 * time.Millisecond)
+			defer ticker.Stop()
+
+			for {
+				if a.activeTasksCount() == 0 {
+					a.zapLogger.Info("Drain complete, shutting down worker")
+					a.Stop()
+					return
+				}
+
+				select {
+				case <-a.workerCtx.Done():
+					return
+				case <-ticker.C:
+				}
+			}
+		}()
+	})
+}
+
+func (a *WorkerApp) forceKill() {
+	a.status.Store(int32(crawlergrpc.WorkerStatus_WORKER_STATUS_DEAD))
+	a.zapLogger.Warn("Force kill requested, exiting immediately")
+	os.Exit(1)
 }

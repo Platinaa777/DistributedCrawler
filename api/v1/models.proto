@@ -3,6 +3,7 @@ syntax = "proto3";
 package crawler.v1;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 import "validate/validate.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
@@ -311,4 +312,75 @@ message LogoutRequest {
 
 message LogoutResponse {
   // Empty response
+}
+
+// Worker monitoring messages
+
+// WorkerStatus represents the current state of a worker.
+enum WorkerStatus {
+  WORKER_STATUS_UNSPECIFIED = 0;
+  WORKER_STATUS_ACTIVE = 1;
+  WORKER_STATUS_INACTIVE = 2;
+  WORKER_STATUS_DRAINING = 3;
+  WORKER_STATUS_DEAD = 4;
+}
+
+// WorkerHeartbeat is sent periodically by workers to report health.
+message WorkerHeartbeat {
+  string worker_id = 1 [json_name = "worker_id"];
+  google.protobuf.Timestamp timestamp = 2;
+  WorkerStatus status = 3;
+  int32 active_tasks = 4 [json_name = "active_tasks"];
+  google.protobuf.Timestamp started_at = 5 [json_name = "started_at"];
+  string worker_type = 6 [json_name = "worker_type"];
+}
+
+// WorkerInfo is returned by the monitoring API.
+message WorkerInfo {
+  string worker_id = 1 [json_name = "worker_id"];
+  WorkerStatus status = 2;
+  google.protobuf.Timestamp last_heartbeat_at = 3 [json_name = "last_heartbeat_at"];
+  int32 active_tasks = 4 [json_name = "active_tasks"];
+  google.protobuf.Duration uptime = 5;
+  string worker_type = 6 [json_name = "worker_type"];
+}
+
+message ListWorkersRequest {}
+
+message ListWorkersResponse {
+  repeated WorkerInfo workers = 1;
+}
+
+// WorkerCommandType defines commands from Coordinator to worker.
+enum WorkerCommandType {
+  WORKER_COMMAND_UNSPECIFIED = 0;
+  WORKER_COMMAND_DRAIN = 1;
+  WORKER_COMMAND_FORCE_KILL = 2;
+}
+
+// WorkerCommand is sent from Coordinator to worker.
+message WorkerCommand {
+  WorkerCommandType type = 1;
+  string reason = 2;
+  google.protobuf.Timestamp issued_at = 3 [json_name = "issued_at"];
+}
+
+message DrainWorkerRequest {
+  string worker_id = 1 [json_name = "worker_id"];
+  string reason = 2;
+}
+
+message DrainWorkerResponse {
+  bool delivered = 1;
+  string message = 2;
+}
+
+message ForceKillWorkerRequest {
+  string worker_id = 1 [json_name = "worker_id"];
+  string reason = 2;
+}
+
+message ForceKillWorkerResponse {
+  bool delivered = 1;
+  string message = 2;
 }

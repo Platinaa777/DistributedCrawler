@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   JOBS: '/jobs',
   TASKS: '/tasks',
   PREVIEWS: '/previews',
+  WORKERS: '/workers',
   AUTH: {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',

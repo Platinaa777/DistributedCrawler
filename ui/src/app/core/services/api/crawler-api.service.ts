@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CrawlJob, CrawlJobConfig, CrawlTask, FileType, JobExportFileType, JobExportFileURLResponse, TaskFileURLResponse } from '../../models';
+import { CrawlJob, CrawlJobConfig, CrawlTask, FileType, JobExportFileType, JobExportFileURLResponse, ListWorkersResponse, TaskFileURLResponse } from '../../models';
 import { API_CONFIG, API_ENDPOINTS } from '../../constants/api.constants';
 
 // Filter options for listing jobs
@@ -96,5 +96,10 @@ export class CrawlerApiService {
       `${this.baseUrl}${API_ENDPOINTS.TASKS}/${taskId}/file-url`,
       { params }
     );
+  }
+
+  // Workers
+  listWorkers(): Observable<ListWorkersResponse> {
+    return this.http.get<ListWorkersResponse>(`${this.baseUrl}${API_ENDPOINTS.WORKERS}`);
   }
 }

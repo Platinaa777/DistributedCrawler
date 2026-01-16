@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"distributed-crawler/internal/domain/crawl/models"
@@ -28,6 +29,8 @@ type ExportWorker struct {
 	pollInterval time.Duration
 	batchSize    int
 	logger       *zap.Logger
+	activeTasks  atomic.Int64
+	accepting    atomic.Bool
 }
 
 // NewExportWorker creates a new export worker
@@ -40,7 +43,7 @@ func NewExportWorker(
 	batchSize int,
 	logger *zap.Logger,
 ) *ExportWorker {
-	return &ExportWorker{
+	worker := &ExportWorker{
 		jobRepo:      jobRepo,
 		taskRepo:     taskRepo,
 		contentStore: contentStore,
@@ -49,6 +52,8 @@ func NewExportWorker(
 		batchSize:    batchSize,
 		logger:       logger,
 	}
+	worker.accepting.Store(true)
+	return worker
 }
 
 // Start starts the export worker polling loop
@@ -62,6 +67,10 @@ func (w *ExportWorker) Start(ctx context.Context) error {
 	defer ticker.Stop()
 
 	// Process immediately on startup
+	if !w.accepting.Load() {
+		w.logger.Info("Export worker drain requested before start")
+		return nil
+	}
 	w.processEligibleJobs(ctx)
 
 	for {
@@ -70,9 +79,23 @@ func (w *ExportWorker) Start(ctx context.Context) error {
 			w.logger.Info("Export worker stopped")
 			return ctx.Err()
 		case <-ticker.C:
+			if !w.accepting.Load() {
+				w.logger.Info("Export worker drain completed")
+				return nil
+			}
 			w.processEligibleJobs(ctx)
 		}
 	}
+}
+
+// ActiveTasks returns the number of jobs currently being exported.
+func (w *ExportWorker) ActiveTasks() int32 {
+	return int32(w.activeTasks.Load())
+}
+
+// StopAccepting prevents new export batches from starting.
+func (w *ExportWorker) StopAccepting() {
+	w.accepting.Store(false)
 }
 
 // processEligibleJobs finds and processes jobs that need exporting
@@ -108,6 +131,9 @@ func (w *ExportWorker) processEligibleJobs(ctx context.Context) {
 
 // processJob processes export for a single job
 func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) error {
+	w.activeTasks.Add(1)
+	defer w.activeTasks.Add(-1)
+
 	w.logger.Info("Starting export for job", zap.String("job_id", job.ID.String()))
 
 	// Load all tasks for the job

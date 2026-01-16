@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"distributed-crawler/internal/domain/crawl/events"
@@ -35,6 +36,8 @@ type ScheduleWorker struct {
 	pollInterval  time.Duration
 	batchSize     int
 	logger        *zap.Logger
+	activeTasks   atomic.Int64
+	accepting     atomic.Bool
 }
 
 // NewScheduleWorker creates a new schedule worker.
@@ -46,7 +49,7 @@ func NewScheduleWorker(
 	txManager persistence.TxManager,
 	logger *zap.Logger,
 ) *ScheduleWorker {
-	return &ScheduleWorker{
+	worker := &ScheduleWorker{
 		jobRepo:       jobRepo,
 		jobConfigRepo: jobConfigRepo,
 		taskRepo:      taskRepo,
@@ -56,6 +59,8 @@ func NewScheduleWorker(
 		batchSize:     DefaultScheduleBatchSize,
 		logger:        logger,
 	}
+	worker.accepting.Store(true)
+	return worker
 }
 
 // Start starts the scheduling loop.
@@ -76,9 +81,23 @@ func (w *ScheduleWorker) Start(ctx context.Context) error {
 			w.logger.Info("Schedule worker stopped")
 			return ctx.Err()
 		case <-ticker.C:
+			if !w.accepting.Load() {
+				w.logger.Info("Schedule worker drain completed")
+				return nil
+			}
 			w.processSchedules(ctx)
 		}
 	}
+}
+
+// ActiveTasks returns the number of schedule configs currently being processed.
+func (w *ScheduleWorker) ActiveTasks() int32 {
+	return int32(w.activeTasks.Load())
+}
+
+// StopAccepting prevents new scheduling cycles from starting.
+func (w *ScheduleWorker) StopAccepting() {
+	w.accepting.Store(false)
 }
 
 func (w *ScheduleWorker) processSchedules(ctx context.Context) {
@@ -112,6 +131,9 @@ func (w *ScheduleWorker) processSchedules(ctx context.Context) {
 }
 
 func (w *ScheduleWorker) processConfig(ctx context.Context, config *models.CrawlJobConfig) error {
+	w.activeTasks.Add(1)
+	defer w.activeTasks.Add(-1)
+
 	cronExpr := strings.TrimSpace(config.Schedule.Cron)
 	if cronExpr == "" {
 		return nil

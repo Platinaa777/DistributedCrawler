@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"distributed-crawler/internal/domain/crawl/events"
@@ -39,6 +40,7 @@ type ParserWorker struct {
 	scopeValidator   services.ScopeValidator
 	robotsTxtService services.RobotsTxtService
 	logger           *zap.Logger
+	activeTasks      atomic.Int64
 }
 
 // NewParserWorker creates a new parser worker
@@ -76,8 +78,16 @@ func (w *ParserWorker) Start(ctx context.Context) error {
 	return w.rmqClient.Consume(ctx, w.parsingQueue, w.handleMessage)
 }
 
+// ActiveTasks returns the number of tasks currently being processed.
+func (w *ParserWorker) ActiveTasks() int32 {
+	return int32(w.activeTasks.Load())
+}
+
 // handleMessage processes a single parsing task message
 func (w *ParserWorker) handleMessage(body []byte) error {
+	w.activeTasks.Add(1)
+	defer w.activeTasks.Add(-1)
+
 	// Parse message
 	var task rabbitmq.ParsingTaskMessage
 	if err := json.Unmarshal(body, &task); err != nil {

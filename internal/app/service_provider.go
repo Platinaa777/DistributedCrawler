@@ -8,6 +8,7 @@ import (
 	authapi "distributed-crawler/internal/api/auth"
 	crawljob "distributed-crawler/internal/api/crawl_job"
 	previewapi "distributed-crawler/internal/api/preview"
+	workerapi "distributed-crawler/internal/api/worker"
 	"distributed-crawler/internal/application/service"
 	authservice "distributed-crawler/internal/application/service/auth"
 	crawljobservice "distributed-crawler/internal/application/service/crawl_job"
@@ -34,6 +35,7 @@ import (
 	"distributed-crawler/internal/infra/services/fetcher"
 	"distributed-crawler/internal/infra/services/sanitizer"
 	"distributed-crawler/internal/worker"
+	"distributed-crawler/internal/workerhealth"
 
 	"go.uber.org/zap"
 )
@@ -71,7 +73,9 @@ type serviceProvider struct {
 	crawlerServiceImpl *crawljob.CrawlJobImplementation
 	previewServiceImpl *previewapi.PreviewImplementation
 	authServiceImpl    *authapi.AuthImplementation
+	workerServiceImpl  *workerapi.WorkerImplementation
 	outboxPublisher    *worker.OutboxPublisher
+	workerRegistry     *workerhealth.Registry
 
 	logger *zap.Logger
 }
@@ -450,6 +454,25 @@ func (s *serviceProvider) AuthServiceImpl(ctx context.Context) *authapi.AuthImpl
 	}
 
 	return s.authServiceImpl
+}
+
+func (s *serviceProvider) WorkerRegistry() *workerhealth.Registry {
+	if s.workerRegistry == nil {
+		s.workerRegistry = workerhealth.NewRegistry(12 * time.Second)
+	}
+
+	return s.workerRegistry
+}
+
+func (s *serviceProvider) WorkerServiceImpl(_ context.Context) *workerapi.WorkerImplementation {
+	if s.workerServiceImpl == nil {
+		s.workerServiceImpl = workerapi.NewImplementation(
+			s.WorkerRegistry(),
+			s.Logger(),
+		)
+	}
+
+	return s.workerServiceImpl
 }
 
 func (s *serviceProvider) Close() error {
