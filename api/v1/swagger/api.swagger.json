@@ -297,6 +297,43 @@
         ]
       }
     },
+    "/api/v1/jobs/{job_id}/export-url": {
+      "get": {
+        "summary": "Get a presigned URL for downloading a job export file (JSON or CSV)",
+        "operationId": "CrawlerService_GetJobExportFileURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetJobExportFileURLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "file_type",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CrawlerService"
+        ]
+      }
+    },
     "/api/v1/previews": {
       "post": {
         "summary": "Fetch URL, sanitize HTML, store in MinIO, return preview reference",
@@ -499,6 +536,19 @@
         "completed_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "export_json_key": {
+          "type": "string"
+        },
+        "export_csv_key": {
+          "type": "string"
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "export_status": {
+          "type": "string"
         }
       },
       "title": "CrawlJob represents a crawling job"
@@ -688,6 +738,19 @@
         }
       },
       "title": "FieldSpec defines a field to extract"
+    },
+    "v1GetJobExportFileURLResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "expires_in_seconds": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "GetJobExportFileURLResponse contains the presigned URL for downloading a job export file"
     },
     "v1GetJobResponse": {
       "type": "object",

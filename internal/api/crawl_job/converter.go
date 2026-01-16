@@ -179,15 +179,28 @@ func ToProtoCrawlJob(job *models.CrawlJob) *crawlergrpc.CrawlJob {
 	}
 
 	protoJob := &crawlergrpc.CrawlJob{
-		Id:          job.ID.String(),
-		JobConfigId: job.JobConfigID.String(),
-		JobConfig:   ToProtoCrawlJobConfig(job.JobConfig),
-		Status:      job.Status.String(),
-		CreatedAt:   timestamppb.New(job.CreatedAt),
+		Id:           job.ID.String(),
+		JobConfigId:  job.JobConfigID.String(),
+		JobConfig:    ToProtoCrawlJobConfig(job.JobConfig),
+		Status:       job.Status.String(),
+		CreatedAt:    timestamppb.New(job.CreatedAt),
+		ExportStatus: job.ExportStatus.String(),
 	}
 
 	if job.CompletedAt != nil {
 		protoJob.CompletedAt = timestamppb.New(*job.CompletedAt)
+	}
+
+	if job.ExportJSONKey != nil {
+		protoJob.ExportJsonKey = job.ExportJSONKey
+	}
+
+	if job.ExportCSVKey != nil {
+		protoJob.ExportCsvKey = job.ExportCSVKey
+	}
+
+	if job.ExportedAt != nil {
+		protoJob.ExportedAt = timestamppb.New(*job.ExportedAt)
 	}
 
 	return protoJob

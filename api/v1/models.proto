@@ -130,6 +130,10 @@ message CrawlJob {
   string status = 4;
   google.protobuf.Timestamp created_at = 5 [json_name = "created_at"];
   optional google.protobuf.Timestamp completed_at = 6 [json_name = "completed_at"];
+  optional string export_json_key = 7 [json_name = "export_json_key"];
+  optional string export_csv_key = 8 [json_name = "export_csv_key"];
+  optional google.protobuf.Timestamp exported_at = 9 [json_name = "exported_at"];
+  string export_status = 10 [json_name = "export_status"];
 }
 
 // CrawlTask represents a single crawl task within a job
@@ -194,6 +198,18 @@ message ListTasksByJobRequest {
 
 message ListTasksByJobResponse {
   repeated CrawlTask tasks = 1;
+}
+
+// GetJobExportFileURLRequest requests a presigned URL for a job export file
+message GetJobExportFileURLRequest {
+  string job_id = 1 [(validate.rules).string.min_len = 1, json_name = "job_id"];
+  string file_type = 2 [(validate.rules).string = {in: ["json", "csv"]}, json_name = "file_type"];
+}
+
+// GetJobExportFileURLResponse contains the presigned URL for downloading a job export file
+message GetJobExportFileURLResponse {
+  string url = 1;
+  int32 expires_in_seconds = 2 [json_name = "expires_in_seconds"];
 }
 
 // GetTaskFileURLRequest requests a presigned URL for a task file

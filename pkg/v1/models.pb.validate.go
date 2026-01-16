@@ -1820,6 +1820,8 @@ func (m *CrawlJob) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for ExportStatus
+
 	if m.JobConfig != nil {
 
 		if all {
@@ -1878,6 +1880,47 @@ func (m *CrawlJob) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CrawlJobValidationError{
 					field:  "CompletedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.ExportJsonKey != nil {
+		// no validation rules for ExportJsonKey
+	}
+
+	if m.ExportCsvKey != nil {
+		// no validation rules for ExportCsvKey
+	}
+
+	if m.ExportedAt != nil {
+
+		if all {
+			switch v := interface{}(m.GetExportedAt()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CrawlJobValidationError{
+						field:  "ExportedAt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CrawlJobValidationError{
+						field:  "ExportedAt",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetExportedAt()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CrawlJobValidationError{
+					field:  "ExportedAt",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -3457,6 +3500,242 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ListTasksByJobResponseValidationError{}
+
+// Validate checks the field values on GetJobExportFileURLRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetJobExportFileURLRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetJobExportFileURLRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetJobExportFileURLRequestMultiError, or nil if none found.
+func (m *GetJobExportFileURLRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetJobExportFileURLRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetJobId()) < 1 {
+		err := GetJobExportFileURLRequestValidationError{
+			field:  "JobId",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _GetJobExportFileURLRequest_FileType_InLookup[m.GetFileType()]; !ok {
+		err := GetJobExportFileURLRequestValidationError{
+			field:  "FileType",
+			reason: "value must be in list [json csv]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return GetJobExportFileURLRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetJobExportFileURLRequestMultiError is an error wrapping multiple
+// validation errors returned by GetJobExportFileURLRequest.ValidateAll() if
+// the designated constraints aren't met.
+type GetJobExportFileURLRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetJobExportFileURLRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetJobExportFileURLRequestMultiError) AllErrors() []error { return m }
+
+// GetJobExportFileURLRequestValidationError is the validation error returned
+// by GetJobExportFileURLRequest.Validate if the designated constraints aren't met.
+type GetJobExportFileURLRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetJobExportFileURLRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetJobExportFileURLRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetJobExportFileURLRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetJobExportFileURLRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetJobExportFileURLRequestValidationError) ErrorName() string {
+	return "GetJobExportFileURLRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetJobExportFileURLRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetJobExportFileURLRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetJobExportFileURLRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetJobExportFileURLRequestValidationError{}
+
+var _GetJobExportFileURLRequest_FileType_InLookup = map[string]struct{}{
+	"json": {},
+	"csv":  {},
+}
+
+// Validate checks the field values on GetJobExportFileURLResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetJobExportFileURLResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetJobExportFileURLResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetJobExportFileURLResponseMultiError, or nil if none found.
+func (m *GetJobExportFileURLResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetJobExportFileURLResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Url
+
+	// no validation rules for ExpiresInSeconds
+
+	if len(errors) > 0 {
+		return GetJobExportFileURLResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetJobExportFileURLResponseMultiError is an error wrapping multiple
+// validation errors returned by GetJobExportFileURLResponse.ValidateAll() if
+// the designated constraints aren't met.
+type GetJobExportFileURLResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetJobExportFileURLResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetJobExportFileURLResponseMultiError) AllErrors() []error { return m }
+
+// GetJobExportFileURLResponseValidationError is the validation error returned
+// by GetJobExportFileURLResponse.Validate if the designated constraints
+// aren't met.
+type GetJobExportFileURLResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetJobExportFileURLResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetJobExportFileURLResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetJobExportFileURLResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetJobExportFileURLResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetJobExportFileURLResponseValidationError) ErrorName() string {
+	return "GetJobExportFileURLResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetJobExportFileURLResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetJobExportFileURLResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetJobExportFileURLResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetJobExportFileURLResponseValidationError{}
 
 // Validate checks the field values on GetTaskFileURLRequest with the rules
 // defined in the proto definition for this message. If any rules are

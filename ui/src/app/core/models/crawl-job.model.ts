@@ -7,6 +7,10 @@ export interface CrawlJob {
   status: string;
   created_at: string;
   completed_at?: string;
+  export_json_key?: string;
+  export_csv_key?: string;
+  exported_at?: string;
+  export_status?: string;
 }
 
 export interface CrawlJobConfig {
@@ -52,4 +56,11 @@ export interface AuthOptions {
 
 export interface ScheduleOptions {
   cron?: string;
+}
+
+export type JobExportFileType = 'json' | 'csv';
+
+export interface JobExportFileURLResponse {
+  url: string;
+  expires_in_seconds: number;
 }

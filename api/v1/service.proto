@@ -26,6 +26,12 @@ service CrawlerService {
       get: "/api/v1/jobs/{id}"
     };
   }
+  // Get a presigned URL for downloading a job export file (JSON or CSV)
+  rpc GetJobExportFileURL(GetJobExportFileURLRequest) returns (GetJobExportFileURLResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/jobs/{job_id}/export-url"
+    };
+  }
 
   // Task operations
   rpc GetTask(GetTaskRequest) returns (GetTaskResponse) {

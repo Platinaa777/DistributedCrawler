@@ -26,11 +26,12 @@ var File_v1_service_proto protoreflect.FileDescriptor
 const file_v1_service_proto_rawDesc = "" +
 	"\n" +
 	"\x10v1/service.proto\x12\n" +
-	"crawler.v1\x1a\x0fv1/models.proto\x1a\x1cgoogle/api/annotations.proto2\x8e\x05\n" +
+	"crawler.v1\x1a\x0fv1/models.proto\x1a\x1cgoogle/api/annotations.proto2\xa1\x06\n" +
 	"\x0eCrawlerService\x12[\n" +
 	"\bListJobs\x12\x1b.crawler.v1.ListJobsRequest\x1a\x1c.crawler.v1.ListJobsResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/api/v1/jobs\x12a\n" +
 	"\tCreateJob\x12\x1c.crawler.v1.CreateJobRequest\x1a\x1d.crawler.v1.CreateJobResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/api/v1/jobs\x12Z\n" +
-	"\x06GetJob\x12\x19.crawler.v1.GetJobRequest\x1a\x1a.crawler.v1.GetJobResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/jobs/{id}\x12^\n" +
+	"\x06GetJob\x12\x19.crawler.v1.GetJobRequest\x1a\x1a.crawler.v1.GetJobResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/api/v1/jobs/{id}\x12\x90\x01\n" +
+	"\x13GetJobExportFileURL\x12&.crawler.v1.GetJobExportFileURLRequest\x1a'.crawler.v1.GetJobExportFileURLResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/jobs/{job_id}/export-url\x12^\n" +
 	"\aGetTask\x12\x1a.crawler.v1.GetTaskRequest\x1a\x1b.crawler.v1.GetTaskResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/tasks/{id}\x12|\n" +
 	"\x0eListTasksByJob\x12!.crawler.v1.ListTasksByJobRequest\x1a\".crawler.v1.ListTasksByJobResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/jobs/{job_id}/tasks\x12\x81\x01\n" +
 	"\x0eGetTaskFileURL\x12!.crawler.v1.GetTaskFileURLRequest\x1a\".crawler.v1.GetTaskFileURLResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/tasks/{task_id}/file-url2\xef\x01\n" +
@@ -48,58 +49,62 @@ const file_v1_service_proto_rawDesc = "" +
 	"Crawler\\V1\xe2\x02\x16Crawler\\V1\\GPBMetadata\xea\x02\vCrawler::V1b\x06proto3"
 
 var file_v1_service_proto_goTypes = []any{
-	(*ListJobsRequest)(nil),        // 0: crawler.v1.ListJobsRequest
-	(*CreateJobRequest)(nil),       // 1: crawler.v1.CreateJobRequest
-	(*GetJobRequest)(nil),          // 2: crawler.v1.GetJobRequest
-	(*GetTaskRequest)(nil),         // 3: crawler.v1.GetTaskRequest
-	(*ListTasksByJobRequest)(nil),  // 4: crawler.v1.ListTasksByJobRequest
-	(*GetTaskFileURLRequest)(nil),  // 5: crawler.v1.GetTaskFileURLRequest
-	(*CreatePreviewRequest)(nil),   // 6: crawler.v1.CreatePreviewRequest
-	(*GetPreviewRequest)(nil),      // 7: crawler.v1.GetPreviewRequest
-	(*RegisterRequest)(nil),        // 8: crawler.v1.RegisterRequest
-	(*LoginRequest)(nil),           // 9: crawler.v1.LoginRequest
-	(*RefreshRequest)(nil),         // 10: crawler.v1.RefreshRequest
-	(*LogoutRequest)(nil),          // 11: crawler.v1.LogoutRequest
-	(*ListJobsResponse)(nil),       // 12: crawler.v1.ListJobsResponse
-	(*CreateJobResponse)(nil),      // 13: crawler.v1.CreateJobResponse
-	(*GetJobResponse)(nil),         // 14: crawler.v1.GetJobResponse
-	(*GetTaskResponse)(nil),        // 15: crawler.v1.GetTaskResponse
-	(*ListTasksByJobResponse)(nil), // 16: crawler.v1.ListTasksByJobResponse
-	(*GetTaskFileURLResponse)(nil), // 17: crawler.v1.GetTaskFileURLResponse
-	(*CreatePreviewResponse)(nil),  // 18: crawler.v1.CreatePreviewResponse
-	(*GetPreviewResponse)(nil),     // 19: crawler.v1.GetPreviewResponse
-	(*RegisterResponse)(nil),       // 20: crawler.v1.RegisterResponse
-	(*LoginResponse)(nil),          // 21: crawler.v1.LoginResponse
-	(*RefreshResponse)(nil),        // 22: crawler.v1.RefreshResponse
-	(*LogoutResponse)(nil),         // 23: crawler.v1.LogoutResponse
+	(*ListJobsRequest)(nil),             // 0: crawler.v1.ListJobsRequest
+	(*CreateJobRequest)(nil),            // 1: crawler.v1.CreateJobRequest
+	(*GetJobRequest)(nil),               // 2: crawler.v1.GetJobRequest
+	(*GetJobExportFileURLRequest)(nil),  // 3: crawler.v1.GetJobExportFileURLRequest
+	(*GetTaskRequest)(nil),              // 4: crawler.v1.GetTaskRequest
+	(*ListTasksByJobRequest)(nil),       // 5: crawler.v1.ListTasksByJobRequest
+	(*GetTaskFileURLRequest)(nil),       // 6: crawler.v1.GetTaskFileURLRequest
+	(*CreatePreviewRequest)(nil),        // 7: crawler.v1.CreatePreviewRequest
+	(*GetPreviewRequest)(nil),           // 8: crawler.v1.GetPreviewRequest
+	(*RegisterRequest)(nil),             // 9: crawler.v1.RegisterRequest
+	(*LoginRequest)(nil),                // 10: crawler.v1.LoginRequest
+	(*RefreshRequest)(nil),              // 11: crawler.v1.RefreshRequest
+	(*LogoutRequest)(nil),               // 12: crawler.v1.LogoutRequest
+	(*ListJobsResponse)(nil),            // 13: crawler.v1.ListJobsResponse
+	(*CreateJobResponse)(nil),           // 14: crawler.v1.CreateJobResponse
+	(*GetJobResponse)(nil),              // 15: crawler.v1.GetJobResponse
+	(*GetJobExportFileURLResponse)(nil), // 16: crawler.v1.GetJobExportFileURLResponse
+	(*GetTaskResponse)(nil),             // 17: crawler.v1.GetTaskResponse
+	(*ListTasksByJobResponse)(nil),      // 18: crawler.v1.ListTasksByJobResponse
+	(*GetTaskFileURLResponse)(nil),      // 19: crawler.v1.GetTaskFileURLResponse
+	(*CreatePreviewResponse)(nil),       // 20: crawler.v1.CreatePreviewResponse
+	(*GetPreviewResponse)(nil),          // 21: crawler.v1.GetPreviewResponse
+	(*RegisterResponse)(nil),            // 22: crawler.v1.RegisterResponse
+	(*LoginResponse)(nil),               // 23: crawler.v1.LoginResponse
+	(*RefreshResponse)(nil),             // 24: crawler.v1.RefreshResponse
+	(*LogoutResponse)(nil),              // 25: crawler.v1.LogoutResponse
 }
 var file_v1_service_proto_depIdxs = []int32{
 	0,  // 0: crawler.v1.CrawlerService.ListJobs:input_type -> crawler.v1.ListJobsRequest
 	1,  // 1: crawler.v1.CrawlerService.CreateJob:input_type -> crawler.v1.CreateJobRequest
 	2,  // 2: crawler.v1.CrawlerService.GetJob:input_type -> crawler.v1.GetJobRequest
-	3,  // 3: crawler.v1.CrawlerService.GetTask:input_type -> crawler.v1.GetTaskRequest
-	4,  // 4: crawler.v1.CrawlerService.ListTasksByJob:input_type -> crawler.v1.ListTasksByJobRequest
-	5,  // 5: crawler.v1.CrawlerService.GetTaskFileURL:input_type -> crawler.v1.GetTaskFileURLRequest
-	6,  // 6: crawler.v1.PreviewService.CreatePreview:input_type -> crawler.v1.CreatePreviewRequest
-	7,  // 7: crawler.v1.PreviewService.GetPreview:input_type -> crawler.v1.GetPreviewRequest
-	8,  // 8: crawler.v1.AuthService.Register:input_type -> crawler.v1.RegisterRequest
-	9,  // 9: crawler.v1.AuthService.Login:input_type -> crawler.v1.LoginRequest
-	10, // 10: crawler.v1.AuthService.Refresh:input_type -> crawler.v1.RefreshRequest
-	11, // 11: crawler.v1.AuthService.Logout:input_type -> crawler.v1.LogoutRequest
-	12, // 12: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
-	13, // 13: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
-	14, // 14: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
-	15, // 15: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
-	16, // 16: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
-	17, // 17: crawler.v1.CrawlerService.GetTaskFileURL:output_type -> crawler.v1.GetTaskFileURLResponse
-	18, // 18: crawler.v1.PreviewService.CreatePreview:output_type -> crawler.v1.CreatePreviewResponse
-	19, // 19: crawler.v1.PreviewService.GetPreview:output_type -> crawler.v1.GetPreviewResponse
-	20, // 20: crawler.v1.AuthService.Register:output_type -> crawler.v1.RegisterResponse
-	21, // 21: crawler.v1.AuthService.Login:output_type -> crawler.v1.LoginResponse
-	22, // 22: crawler.v1.AuthService.Refresh:output_type -> crawler.v1.RefreshResponse
-	23, // 23: crawler.v1.AuthService.Logout:output_type -> crawler.v1.LogoutResponse
-	12, // [12:24] is the sub-list for method output_type
-	0,  // [0:12] is the sub-list for method input_type
+	3,  // 3: crawler.v1.CrawlerService.GetJobExportFileURL:input_type -> crawler.v1.GetJobExportFileURLRequest
+	4,  // 4: crawler.v1.CrawlerService.GetTask:input_type -> crawler.v1.GetTaskRequest
+	5,  // 5: crawler.v1.CrawlerService.ListTasksByJob:input_type -> crawler.v1.ListTasksByJobRequest
+	6,  // 6: crawler.v1.CrawlerService.GetTaskFileURL:input_type -> crawler.v1.GetTaskFileURLRequest
+	7,  // 7: crawler.v1.PreviewService.CreatePreview:input_type -> crawler.v1.CreatePreviewRequest
+	8,  // 8: crawler.v1.PreviewService.GetPreview:input_type -> crawler.v1.GetPreviewRequest
+	9,  // 9: crawler.v1.AuthService.Register:input_type -> crawler.v1.RegisterRequest
+	10, // 10: crawler.v1.AuthService.Login:input_type -> crawler.v1.LoginRequest
+	11, // 11: crawler.v1.AuthService.Refresh:input_type -> crawler.v1.RefreshRequest
+	12, // 12: crawler.v1.AuthService.Logout:input_type -> crawler.v1.LogoutRequest
+	13, // 13: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
+	14, // 14: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
+	15, // 15: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
+	16, // 16: crawler.v1.CrawlerService.GetJobExportFileURL:output_type -> crawler.v1.GetJobExportFileURLResponse
+	17, // 17: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
+	18, // 18: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
+	19, // 19: crawler.v1.CrawlerService.GetTaskFileURL:output_type -> crawler.v1.GetTaskFileURLResponse
+	20, // 20: crawler.v1.PreviewService.CreatePreview:output_type -> crawler.v1.CreatePreviewResponse
+	21, // 21: crawler.v1.PreviewService.GetPreview:output_type -> crawler.v1.GetPreviewResponse
+	22, // 22: crawler.v1.AuthService.Register:output_type -> crawler.v1.RegisterResponse
+	23, // 23: crawler.v1.AuthService.Login:output_type -> crawler.v1.LoginResponse
+	24, // 24: crawler.v1.AuthService.Refresh:output_type -> crawler.v1.RefreshResponse
+	25, // 25: crawler.v1.AuthService.Logout:output_type -> crawler.v1.LogoutResponse
+	13, // [13:26] is the sub-list for method output_type
+	0,  // [0:13] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

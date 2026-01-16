@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin } from 'rxjs';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
-import { CrawlJob, CrawlTask, FileType } from '../../core/models';
+import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/models';
 
 @Component({
   selector: 'app-job-details',
@@ -95,6 +95,38 @@ import { CrawlJob, CrawlTask, FileType } from '../../core/models';
                     <mat-chip *ngIf="pag.multiple" class="text-xs">multiple</mat-chip>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <p class="text-sm text-gray-600">Export Results</p>
+              <div class="flex flex-wrap items-center gap-2 mt-2">
+                <mat-chip [class]="getStatusClass(job?.export_status || 'NOT_STARTED')">
+                  {{ job?.export_status || 'NOT_STARTED' }}
+                </mat-chip>
+                <span *ngIf="job?.exported_at" class="text-sm text-gray-500">
+                  Exported: {{ job?.exported_at | date:'short' }}
+                </span>
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  [disabled]="!job?.export_json_key || loadingFile['job-export-json']"
+                  [matTooltip]="job?.export_json_key ? 'Download JSON export' : 'JSON export not available'"
+                  (click)="downloadJobExport('json')">
+                  <mat-icon *ngIf="!loadingFile['job-export-json']">download</mat-icon>
+                  <mat-spinner *ngIf="loadingFile['job-export-json']" diameter="20"></mat-spinner>
+                  JSON
+                </button>
+                <button
+                  mat-stroked-button
+                  color="accent"
+                  [disabled]="!job?.export_csv_key || loadingFile['job-export-csv']"
+                  [matTooltip]="job?.export_csv_key ? 'Download CSV export' : 'CSV export not available'"
+                  (click)="downloadJobExport('csv')">
+                  <mat-icon *ngIf="!loadingFile['job-export-csv']">download</mat-icon>
+                  <mat-spinner *ngIf="loadingFile['job-export-csv']" diameter="20"></mat-spinner>
+                  CSV
+                </button>
               </div>
             </div>
 
@@ -325,7 +357,8 @@ export class JobDetailsComponent implements OnInit, AfterViewInit {
   }
 
   getStatusClass(status: string): string {
-    switch (status.toLowerCase()) {
+    const normalized = status.toLowerCase().replace(/_/g, '');
+    switch (normalized) {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'failed':
@@ -379,6 +412,48 @@ export class JobDetailsComponent implements OnInit, AfterViewInit {
       error: (err) => {
         this.loadingFile[loadingKey] = false;
         console.error(`Failed to get file URL: ${err.message}`);
+      }
+    });
+  }
+
+  downloadJobExport(fileType: JobExportFileType): void {
+    if (!this.job) {
+      return;
+    }
+
+    const loadingKey = `job-export-${fileType}`;
+    this.loadingFile[loadingKey] = true;
+
+    this.crawlerApi.getJobExportFileURL(this.job.id, fileType).subscribe({
+      next: (response) => {
+        fetch(response.url)
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.blob();
+          })
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `job-${this.job?.id}-export.${fileType}`;
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            window.URL.revokeObjectURL(url);
+            this.loadingFile[loadingKey] = false;
+          })
+          .catch(err => {
+            this.loadingFile[loadingKey] = false;
+            console.error(`Failed to download export: ${err.message}`);
+          });
+      },
+      error: (err) => {
+        this.loadingFile[loadingKey] = false;
+        console.error(`Failed to get export URL: ${err.message}`);
       }
     });
   }
