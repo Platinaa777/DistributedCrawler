@@ -29,4 +29,5 @@ func (job *CrawlJob) MarkAsExported(jsonKey, csvKey string, exportedAt time.Time
 	job.ExportedAt = &exportedAt
 	job.CompletedAt = &exportedAt
 	job.ExportStatus = ExportStatusCompleted
+	job.Status = TaskStatusCompleted
 }
