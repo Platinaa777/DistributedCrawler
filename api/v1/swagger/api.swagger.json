@@ -182,24 +182,48 @@
         },
         "parameters": [
           {
-            "name": "status",
+            "name": "cursor",
+            "description": "Cursor for pagination (opaque string, empty for first page)",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "limit",
+            "description": "Number of items per page (default: 20, max: 100)",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "offset",
+            "name": "filter.name",
+            "description": "Filter by job name (partial match, case-insensitive)",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int32"
+            "type": "string"
+          },
+          {
+            "name": "filter.status",
+            "description": "Filter by job status (exact match)",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter.created_from",
+            "description": "Filter by created_at date range",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.created_to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
           }
         ],
         "tags": [
@@ -789,6 +813,29 @@
         }
       }
     },
+    "v1JobListFilter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Filter by job name (partial match, case-insensitive)"
+        },
+        "status": {
+          "type": "string",
+          "title": "Filter by job status (exact match)"
+        },
+        "created_from": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Filter by created_at date range"
+        },
+        "created_to": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "JobListFilter defines filtering options for listing jobs"
+    },
     "v1ListJobsResponse": {
       "type": "object",
       "properties": {
@@ -798,6 +845,14 @@
             "type": "object",
             "$ref": "#/definitions/v1CrawlJob"
           }
+        },
+        "next_cursor": {
+          "type": "string",
+          "title": "Cursor for the next page (empty if no more results)"
+        },
+        "has_more": {
+          "type": "boolean",
+          "title": "Indicates if there are more results after this page"
         }
       }
     },

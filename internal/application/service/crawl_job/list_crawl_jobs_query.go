@@ -2,32 +2,41 @@ package crawljob
 
 import (
 	"context"
+	"fmt"
+
 	"distributed-crawler/internal/application/service"
 	"distributed-crawler/internal/domain/crawl/models"
-	"fmt"
 )
 
-func (s *crawlJobServ) ListCrawlJobs(ctx context.Context, query service.ListCrawlJobsQuery) ([]*models.CrawlJob, error) {
+func (s *crawlJobServ) ListCrawlJobs(ctx context.Context, query service.ListCrawlJobsQuery) (*service.ListCrawlJobsResult, error) {
+	// Set defaults
 	if query.Limit == 0 {
-		query.Limit = 50
+		query.Limit = 20
+	}
+	if query.Limit > 100 {
+		query.Limit = 100
 	}
 
-	var jobs []*models.CrawlJob
-	var err error
-
-	if query.Status != "" {
-		status := models.TaskStatus(query.Status)
+	// Validate status if provided
+	if query.Filter.Status != nil && *query.Filter.Status != "" {
+		status := models.TaskStatus(*query.Filter.Status)
 		if !status.IsValid() {
-			return nil, fmt.Errorf("invalid status: %s", query.Status)
+			return nil, fmt.Errorf("invalid status: %s", *query.Filter.Status)
 		}
-		jobs, err = s.crawlJobRepo.List(ctx, status, query.Limit, query.Offset)
-	} else {
-		jobs, err = s.crawlJobRepo.ListAll(ctx, query.Limit, query.Offset)
 	}
 
+	// Validate date range
+	if query.Filter.CreatedFrom != nil && query.Filter.CreatedTo != nil {
+		if query.Filter.CreatedFrom.After(*query.Filter.CreatedTo) {
+			return nil, fmt.Errorf("created_from cannot be after created_to")
+		}
+	}
+
+	// Call repository with cursor-based pagination
+	result, err := s.crawlJobRepo.ListWithCursor(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list crawl jobs: %w", err)
 	}
 
-	return jobs, nil
+	return result, nil
 }

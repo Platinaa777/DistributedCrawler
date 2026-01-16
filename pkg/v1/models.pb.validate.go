@@ -2189,6 +2189,180 @@ var _ interface {
 	ErrorName() string
 } = CrawlTaskValidationError{}
 
+// Validate checks the field values on JobListFilter with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *JobListFilter) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on JobListFilter with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in JobListFilterMultiError, or
+// nil if none found.
+func (m *JobListFilter) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *JobListFilter) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.Name != nil {
+		// no validation rules for Name
+	}
+
+	if m.Status != nil {
+		// no validation rules for Status
+	}
+
+	if m.CreatedFrom != nil {
+
+		if all {
+			switch v := interface{}(m.GetCreatedFrom()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, JobListFilterValidationError{
+						field:  "CreatedFrom",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, JobListFilterValidationError{
+						field:  "CreatedFrom",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCreatedFrom()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return JobListFilterValidationError{
+					field:  "CreatedFrom",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.CreatedTo != nil {
+
+		if all {
+			switch v := interface{}(m.GetCreatedTo()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, JobListFilterValidationError{
+						field:  "CreatedTo",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, JobListFilterValidationError{
+						field:  "CreatedTo",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCreatedTo()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return JobListFilterValidationError{
+					field:  "CreatedTo",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return JobListFilterMultiError(errors)
+	}
+
+	return nil
+}
+
+// JobListFilterMultiError is an error wrapping multiple validation errors
+// returned by JobListFilter.ValidateAll() if the designated constraints
+// aren't met.
+type JobListFilterMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m JobListFilterMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m JobListFilterMultiError) AllErrors() []error { return m }
+
+// JobListFilterValidationError is the validation error returned by
+// JobListFilter.Validate if the designated constraints aren't met.
+type JobListFilterValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e JobListFilterValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e JobListFilterValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e JobListFilterValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e JobListFilterValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e JobListFilterValidationError) ErrorName() string { return "JobListFilterValidationError" }
+
+// Error satisfies the builtin error interface
+func (e JobListFilterValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sJobListFilter.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = JobListFilterValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = JobListFilterValidationError{}
+
 // Validate checks the field values on ListJobsRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
@@ -2213,10 +2387,37 @@ func (m *ListJobsRequest) validate(all bool) error {
 
 	// no validation rules for Limit
 
-	// no validation rules for Offset
+	if all {
+		switch v := interface{}(m.GetFilter()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ListJobsRequestValidationError{
+					field:  "Filter",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ListJobsRequestValidationError{
+					field:  "Filter",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFilter()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ListJobsRequestValidationError{
+				field:  "Filter",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
-	if m.Status != nil {
-		// no validation rules for Status
+	if m.Cursor != nil {
+		// no validation rules for Cursor
 	}
 
 	if len(errors) > 0 {
@@ -2352,6 +2553,10 @@ func (m *ListJobsResponse) validate(all bool) error {
 		}
 
 	}
+
+	// no validation rules for NextCursor
+
+	// no validation rules for HasMore
 
 	if len(errors) > 0 {
 		return ListJobsResponseMultiError(errors)

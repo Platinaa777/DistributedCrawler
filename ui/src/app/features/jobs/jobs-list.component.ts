@@ -1,16 +1,18 @@
-import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { CrawlerApiService, JobListFilter } from '../../core/services/api/crawler-api.service';
 import { CrawlJob } from '../../core/models';
+import { JobFiltersComponent } from './components/job-filters.component';
 
 @Component({
   selector: 'app-jobs-list',
@@ -23,7 +25,7 @@ import { CrawlJob } from '../../core/models';
     MatChipsModule,
     MatIconModule,
     MatCardModule,
-    MatPaginatorModule
+    JobFiltersComponent
   ],
   template: `
     <div class="container mx-auto p-6">
@@ -35,7 +37,10 @@ import { CrawlJob } from '../../core/models';
         </button>
       </div>
 
-      <mat-card *ngIf="loading" class="text-center p-8">
+      <!-- Filters -->
+      <app-job-filters (filterChange)="onFilterChange($event)"></app-job-filters>
+
+      <mat-card *ngIf="loading && jobs.length === 0" class="text-center p-8">
         <mat-spinner class="mx-auto"></mat-spinner>
         <p class="mt-4">Loading jobs...</p>
       </mat-card>
@@ -44,8 +49,8 @@ import { CrawlJob } from '../../core/models';
         <p class="text-red-700">{{ error }}</p>
       </mat-card>
 
-      <mat-card *ngIf="!loading && !error">
-        <table mat-table [dataSource]="dataSource" class="w-full" multiTemplateDataRows>
+      <mat-card *ngIf="!loading || jobs.length > 0">
+        <table mat-table [dataSource]="jobs" class="w-full" multiTemplateDataRows>
           <!-- Expand Toggle Column -->
           <ng-container matColumnDef="expand">
             <th mat-header-cell *matHeaderCellDef></th>
@@ -120,14 +125,19 @@ import { CrawlJob } from '../../core/models';
               [class.detail-open]="expandedJobId === row.id">
           </tr>
         </table>
-        <mat-paginator
-          [length]="jobs.length"
-          [pageSize]="10"
-          [pageSizeOptions]="[5, 10, 25, 50]"
-          showFirstLastButtons>
-        </mat-paginator>
 
-        <div *ngIf="jobs.length === 0" class="text-center p-8 text-gray-500">
+        <!-- Load More Button -->
+        <div class="flex justify-center p-4" *ngIf="hasMore">
+          <button mat-raised-button
+                  color="primary"
+                  (click)="loadMore()"
+                  [disabled]="loadingMore">
+            <mat-spinner *ngIf="loadingMore" diameter="20" class="inline-spinner mr-2"></mat-spinner>
+            {{ loadingMore ? 'Loading...' : 'Load More' }}
+          </button>
+        </div>
+
+        <div *ngIf="jobs.length === 0 && !loading" class="text-center p-8 text-gray-500">
           <mat-icon class="text-6xl">work_outline</mat-icon>
           <p class="mt-4">No jobs found. Create your first crawl job!</p>
         </div>
@@ -187,6 +197,11 @@ import { CrawlJob } from '../../core/models';
       font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 13px;
     }
+
+    .inline-spinner {
+      display: inline-block;
+      vertical-align: middle;
+    }
   `],
   animations: [
     trigger('expandCollapse', [
@@ -206,16 +221,21 @@ import { CrawlJob } from '../../core/models';
     ])
   ]
 })
-export class JobsListComponent implements OnInit, AfterViewInit {
-  @ViewChild(MatPaginator) paginator?: MatPaginator;
+export class JobsListComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
 
   jobs: CrawlJob[] = [];
-  dataSource = new MatTableDataSource<CrawlJob>([]);
   displayedColumns: string[] = ['expand', 'name', 'status', 'created_at'];
   detailColumns: string[] = ['detail'];
   loading = false;
+  loadingMore = false;
   error: string | null = null;
   expandedJobId: string | null = null;
+  hasMore = false;
+
+  private nextCursor: string | null = null;
+  private currentFilter: JobListFilter = {};
+  private readonly pageSize = 20;
 
   constructor(
     private crawlerApi: CrawlerApiService,
@@ -226,28 +246,61 @@ export class JobsListComponent implements OnInit, AfterViewInit {
     this.loadJobs();
   }
 
-  ngAfterViewInit(): void {
-    if (this.paginator) {
-      this.dataSource.paginator = this.paginator;
-    }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onFilterChange(filter: JobListFilter): void {
+    this.currentFilter = filter;
+    this.jobs = [];
+    this.nextCursor = null;
+    this.loadJobs();
   }
 
   loadJobs(): void {
     this.loading = true;
     this.error = null;
 
-    this.crawlerApi.listJobs().subscribe({
+    this.crawlerApi.listJobs({
+      limit: this.pageSize,
+      filter: this.currentFilter
+    }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (response) => {
-        this.jobs = response.jobs;
-        this.dataSource.data = response.jobs;
-        if (this.paginator) {
-          this.dataSource.paginator = this.paginator;
-        }
+        this.jobs = response.jobs || [];
+        this.nextCursor = response.next_cursor || null;
+        this.hasMore = response.has_more;
         this.loading = false;
       },
       error: (err) => {
         this.error = `Failed to load jobs: ${err.message}`;
         this.loading = false;
+      }
+    });
+  }
+
+  loadMore(): void {
+    if (!this.nextCursor || this.loadingMore) return;
+
+    this.loadingMore = true;
+    this.crawlerApi.listJobs({
+      cursor: this.nextCursor,
+      limit: this.pageSize,
+      filter: this.currentFilter
+    }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response) => {
+        this.jobs = [...this.jobs, ...(response.jobs || [])];
+        this.nextCursor = response.next_cursor || null;
+        this.hasMore = response.has_more;
+        this.loadingMore = false;
+      },
+      error: (err) => {
+        this.error = `Failed to load more jobs: ${err.message}`;
+        this.loadingMore = false;
       }
     });
   }

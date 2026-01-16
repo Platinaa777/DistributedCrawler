@@ -4,6 +4,28 @@ import { Observable } from 'rxjs';
 import { CrawlJob, CrawlJobConfig, CrawlTask, FileType, JobExportFileType, JobExportFileURLResponse, TaskFileURLResponse } from '../../models';
 import { API_CONFIG, API_ENDPOINTS } from '../../constants/api.constants';
 
+// Filter options for listing jobs
+export interface JobListFilter {
+  name?: string;
+  status?: string;
+  created_from?: string; // ISO 8601 timestamp
+  created_to?: string;   // ISO 8601 timestamp
+}
+
+// Parameters for listing jobs with cursor pagination
+export interface JobListParams {
+  cursor?: string;
+  limit?: number;
+  filter?: JobListFilter;
+}
+
+// Response from list jobs API with cursor pagination
+export interface JobListResponse {
+  jobs: CrawlJob[];
+  next_cursor: string;
+  has_more: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -13,19 +35,33 @@ export class CrawlerApiService {
   constructor(private http: HttpClient) {}
 
   // Jobs
-  listJobs(params?: { status?: string; limit?: number; offset?: number }): Observable<{ jobs: CrawlJob[] }> {
+  listJobs(params?: JobListParams): Observable<JobListResponse> {
     let httpParams = new HttpParams();
-    if (params?.status) {
-      httpParams = httpParams.set('status', params.status);
+
+    if (params?.cursor) {
+      httpParams = httpParams.set('cursor', params.cursor);
     }
     if (params?.limit) {
       httpParams = httpParams.set('limit', params.limit.toString());
     }
-    if (params?.offset) {
-      httpParams = httpParams.set('offset', params.offset.toString());
+
+    // Add filter params
+    if (params?.filter) {
+      if (params.filter.name) {
+        httpParams = httpParams.set('filter.name', params.filter.name);
+      }
+      if (params.filter.status) {
+        httpParams = httpParams.set('filter.status', params.filter.status);
+      }
+      if (params.filter.created_from) {
+        httpParams = httpParams.set('filter.created_from', params.filter.created_from);
+      }
+      if (params.filter.created_to) {
+        httpParams = httpParams.set('filter.created_to', params.filter.created_to);
+      }
     }
 
-    return this.http.get<{ jobs: CrawlJob[] }>(`${this.baseUrl}${API_ENDPOINTS.JOBS}`, { params: httpParams });
+    return this.http.get<JobListResponse>(`${this.baseUrl}${API_ENDPOINTS.JOBS}`, { params: httpParams });
   }
 
   getJob(id: string): Observable<{ job: CrawlJob }> {

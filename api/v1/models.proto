@@ -151,14 +151,32 @@ message CrawlTask {
   optional string result_object_key = 11 [json_name = "result_object_key"];
 }
 
+// JobListFilter defines filtering options for listing jobs
+message JobListFilter {
+  // Filter by job name (partial match, case-insensitive)
+  optional string name = 1;
+  // Filter by job status (exact match)
+  optional string status = 2;
+  // Filter by created_at date range
+  optional google.protobuf.Timestamp created_from = 3 [json_name = "created_from"];
+  optional google.protobuf.Timestamp created_to = 4 [json_name = "created_to"];
+}
+
 message ListJobsRequest {
-  optional string status = 1;
+  // Cursor for pagination (opaque string, empty for first page)
+  optional string cursor = 1;
+  // Number of items per page (default: 20, max: 100)
   int32 limit = 2;
-  int32 offset = 3;
+  // Filtering options
+  JobListFilter filter = 3;
 }
 
 message ListJobsResponse {
   repeated CrawlJob jobs = 1;
+  // Cursor for the next page (empty if no more results)
+  string next_cursor = 2 [json_name = "next_cursor"];
+  // Indicates if there are more results after this page
+  bool has_more = 3 [json_name = "has_more"];
 }
 
 message CreateJobRequest {

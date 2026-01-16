@@ -64,3 +64,14 @@ export interface JobExportFileURLResponse {
   url: string;
   expires_in_seconds: number;
 }
+
+// Job status constants
+export type JobStatus = 'InProgress' | 'Parsed' | 'Completed' | 'Failed' | 'Skipped';
+
+export const JOB_STATUSES: JobStatus[] = [
+  'InProgress',
+  'Parsed',
+  'Completed',
+  'Failed',
+  'Skipped'
+];

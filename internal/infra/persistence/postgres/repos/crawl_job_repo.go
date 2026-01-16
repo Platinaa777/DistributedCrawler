@@ -3,15 +3,17 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"errors"
+
+	sq "github.com/Masterminds/squirrel"
+
+	"distributed-crawler/internal/application/service"
 	"distributed-crawler/internal/domain/crawl/models"
 	crawljob "distributed-crawler/internal/domain/crawl/repos/crawl_job"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/converters"
 	"distributed-crawler/internal/infra/persistence/postgres/snapshots"
-	"errors"
-
-	sq "github.com/Masterminds/squirrel"
 )
 
 const (
@@ -251,6 +253,120 @@ func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]
 	}
 
 	return jobs, nil
+}
+
+// ListWithCursor returns jobs with cursor-based pagination and filtering
+func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.ListCrawlJobsQuery) (*service.ListCrawlJobsResult, error) {
+	// Fetch one extra row to determine if there are more results
+	fetchLimit := query.Limit + 1
+
+	builder := sq.Select(
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
+		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
+		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
+		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
+		"c.schedule as "+aliasConfigSchedule,
+	).
+		PlaceholderFormat(sq.Dollar).
+		From(tableName + " j").
+		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id")
+
+	// Build WHERE conditions
+	conditions := sq.And{}
+
+	// Filter by status
+	if query.Filter.Status != nil && *query.Filter.Status != "" {
+		conditions = append(conditions, sq.Eq{"j." + statusColumn: *query.Filter.Status})
+	}
+
+	// Filter by name (partial match, case-insensitive)
+	if query.Filter.Name != nil && *query.Filter.Name != "" {
+		conditions = append(conditions, sq.ILike{"c.name": "%" + *query.Filter.Name + "%"})
+	}
+
+	// Filter by created_at range
+	if query.Filter.CreatedFrom != nil {
+		conditions = append(conditions, sq.GtOrEq{"j." + createdAtColumn: *query.Filter.CreatedFrom})
+	}
+	if query.Filter.CreatedTo != nil {
+		conditions = append(conditions, sq.LtOrEq{"j." + createdAtColumn: *query.Filter.CreatedTo})
+	}
+
+	// Apply cursor condition (seek method)
+	// For DESC ordering: WHERE (created_at, id) < (cursor.created_at, cursor.id)
+	if query.Cursor != nil {
+		cursorCondition := sq.Expr(
+			"(j."+createdAtColumn+", j."+idColumn+") < (?, ?)",
+			query.Cursor.CreatedAt,
+			query.Cursor.ID,
+		)
+		conditions = append(conditions, cursorCondition)
+	}
+
+	if len(conditions) > 0 {
+		builder = builder.Where(conditions)
+	}
+
+	// Order by created_at DESC, id DESC for stable ordering
+	builder = builder.OrderBy("j." + createdAtColumn + " DESC", "j." + idColumn + " DESC")
+	builder = builder.Limit(uint64(fetchLimit))
+
+	sqlQuery, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_job_repository.ListWithCursor",
+		QueryRaw: sqlQuery,
+	}
+
+	rows, err := c.client.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	jobs := make([]*models.CrawlJob, 0, query.Limit)
+	for rows.Next() {
+		snapshot, err := scanCrawlJobWithConfig(rows)
+		if err != nil {
+			return nil, err
+		}
+		job, err := converters.RestoreCrawlJobFromSnapshot(*snapshot)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Determine if there are more results
+	hasMore := len(jobs) > query.Limit
+	if hasMore {
+		jobs = jobs[:query.Limit] // Trim extra row
+	}
+
+	// Build next cursor from last item
+	var nextCursor *service.ListCrawlJobsCursor
+	if hasMore && len(jobs) > 0 {
+		lastJob := jobs[len(jobs)-1]
+		nextCursor = &service.ListCrawlJobsCursor{
+			CreatedAt: lastJob.CreatedAt,
+			ID:        lastJob.ID.String(),
+		}
+	}
+
+	return &service.ListCrawlJobsResult{
+		Jobs:       jobs,
+		NextCursor: nextCursor,
+		HasMore:    hasMore,
+	}, nil
 }
 
 func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID valueobjects.ID) (*models.CrawlJob, error) {
