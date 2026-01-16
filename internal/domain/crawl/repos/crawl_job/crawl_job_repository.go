@@ -22,9 +22,6 @@ type CrawlJobRepository interface {
 	// Returns true if successful, false if already in progress or completed
 	TryStartExport(ctx context.Context, jobID valueobjects.CrawlJobID) (bool, error)
 
-	// CompleteExport updates job with export file references and marks as COMPLETED
-	CompleteExport(ctx context.Context, jobID valueobjects.CrawlJobID, jsonKey, csvKey string) error
-
 	// FailExport marks export as FAILED
 	FailExport(ctx context.Context, jobID valueobjects.CrawlJobID, errorMsg string) error
 }

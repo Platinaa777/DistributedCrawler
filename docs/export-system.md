@@ -237,7 +237,7 @@ SetTaskResult(ctx, taskID, objectKey, contentType, sizeBytes) error
 ```go
 ListEligibleForExport(ctx, limit) ([]*CrawlJob, error)
 TryStartExport(ctx, jobID) (bool, error)
-CompleteExport(ctx, jobID, jsonKey, csvKey) error
+Update(ctx, job) error
 FailExport(ctx, jobID, errorMsg) error
 ```
 

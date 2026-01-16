@@ -294,7 +294,7 @@ func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID v
 
 // ListEligibleForExport finds jobs that are fully finished and not yet exported (Part B - ExportWorker)
 func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit int) ([]*models.CrawlJob, error) {
-	// A job is eligible if: completed_at IS NOT NULL AND export_status = 'NOT_STARTED'
+	// A job is eligible if: all tasks are Parsed or Completed AND export_status = 'NOT_STARTED'
 	builder := sq.Select(
 		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
@@ -308,12 +308,16 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 		From(tableName + " j").
 		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id").
 		Where(sq.And{
-			sq.NotEq{"j." + completedAtColumn: nil},
-			sq.Eq{"j." + exportStatusColumn: models.ExportStatusNotStarted.String()},
+			sq.NotEq{"j." + exportStatusColumn: models.ExportStatusCompleted.String()},
+			sq.Expr(
+				"NOT EXISTS (SELECT 1 FROM "+taskTableName+" t WHERE t."+taskJobIDColumn+" = j."+idColumn+" AND t."+taskStatusColumn+" NOT IN (?, ?))",
+				models.TaskStatusParsed.String(),
+				models.TaskStatusCompleted.String(),
+			),
 		}).
 		OrderBy("j." + completedAtColumn + " ASC").
 		Limit(uint64(limit)).
-		Suffix("FOR UPDATE SKIP LOCKED")
+		Suffix("FOR UPDATE OF j SKIP LOCKED")
 
 	query, args, err := builder.ToSql()
 	if err != nil {
@@ -384,30 +388,6 @@ func (c *crawlJobRepository) TryStartExport(ctx context.Context, jobID valueobje
 
 	// If 1 row was affected, we successfully transitioned to IN_PROGRESS
 	return rowsAffected == 1, nil
-}
-
-// CompleteExport updates job with export file references and marks as COMPLETED
-func (c *crawlJobRepository) CompleteExport(ctx context.Context, jobID valueobjects.CrawlJobID, jsonKey, csvKey string) error {
-	builder := sq.Update(tableName).
-		PlaceholderFormat(sq.Dollar).
-		Set(exportJSONKeyColumn, jsonKey).
-		Set(exportCSVKeyColumn, csvKey).
-		Set(exportedAtColumn, "NOW()").
-		Set(exportStatusColumn, models.ExportStatusCompleted.String()).
-		Where(sq.Eq{idColumn: jobID.String()})
-
-	query, args, err := builder.ToSql()
-	if err != nil {
-		return err
-	}
-
-	q := persistence.Query{
-		Name:     "crawl_job_repository.CompleteExport",
-		QueryRaw: query,
-	}
-
-	_, err = c.client.DB().ExecContext(ctx, q, args...)
-	return err
 }
 
 // FailExport marks export as FAILED

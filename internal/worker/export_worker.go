@@ -149,7 +149,9 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 	}
 
 	// Mark export as completed
-	if err := w.jobRepo.CompleteExport(ctx, job.ID, jsonKey, csvKey); err != nil {
+	exportedAt := time.Now().UTC()
+	job.MarkAsExported(jsonKey, csvKey, exportedAt)
+	if err := w.jobRepo.Update(ctx, *job); err != nil {
 		return fmt.Errorf("failed to mark export as completed: %w", err)
 	}
 
@@ -184,7 +186,7 @@ func (w *ExportWorker) loadTaskResults(ctx context.Context, tasks []*models.Craw
 		}
 
 		// Only load result JSON for completed tasks with result_object_key
-		if task.Status == models.TaskStatusCompleted && task.ResultObjectKey != nil && *task.ResultObjectKey != "" {
+		if (task.Status == models.TaskStatusCompleted || task.Status == models.TaskStatusParsed) && task.ResultObjectKey != nil && *task.ResultObjectKey != "" {
 			jsonData, err := w.contentStore.Get(ctx, *task.ResultObjectKey)
 			if err != nil {
 				w.logger.Warn("Failed to load task result from S3",

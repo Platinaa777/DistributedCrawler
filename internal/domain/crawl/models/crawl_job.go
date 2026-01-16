@@ -22,3 +22,11 @@ type CrawlJob struct {
 	ExportedAt    *time.Time   // When export was completed
 	ExportStatus  ExportStatus // Export status (NOT_STARTED, IN_PROGRESS, COMPLETED, FAILED)
 }
+
+func (job *CrawlJob) MarkAsExported(jsonKey, csvKey string, exportedAt time.Time) {
+	job.ExportJSONKey = &jsonKey
+	job.ExportCSVKey = &csvKey
+	job.ExportedAt = &exportedAt
+	job.CompletedAt = &exportedAt
+	job.ExportStatus = ExportStatusCompleted
+}

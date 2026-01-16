@@ -48,6 +48,22 @@
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/parser_worker/main.go",
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug scheduler worker",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/scheduler_worker/main.go",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug export worker",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/export_worker/main.go",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

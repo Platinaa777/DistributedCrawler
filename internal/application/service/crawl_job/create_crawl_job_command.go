@@ -35,11 +35,12 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 
 		// Create crawl job
 		crawlJob := models.CrawlJob{
-			ID:          jobID,
-			JobConfigID: createdConfigID,
-			JobConfig:   &config,
-			Status:      models.TaskStatusInProgress,
-			CreatedAt:   time.Now(),
+			ID:           jobID,
+			JobConfigID:  createdConfigID,
+			JobConfig:    &config,
+			Status:       models.TaskStatusInProgress,
+			CreatedAt:    time.Now(),
+			ExportStatus: models.ExportStatusNotStarted,
 		}
 
 		id, err := s.crawlJobRepo.Create(ctx, crawlJob)
