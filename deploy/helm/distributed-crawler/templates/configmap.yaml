@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "distributed-crawler.configMapName" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.labels" . | nindent 4 }}
+data:
+  # PostgreSQL
+  PG_HOST: {{ include "distributed-crawler.postgresHost" . | quote }}
+  PG_PORT: {{ .Values.config.postgres.port | quote }}
+  PG_DATABASE_NAME: {{ .Values.config.postgres.database | quote }}
+  PG_USER: {{ .Values.config.postgres.user | quote }}
+  PG_SSL_MODE: {{ .Values.config.postgres.sslMode | quote }}
+
+  # RabbitMQ
+  RABBITMQ_HOST: {{ include "distributed-crawler.rabbitmqHost" . | quote }}
+  RABBITMQ_PORT: {{ .Values.config.rabbitmq.port | quote }}
+  RABBITMQ_USER: {{ .Values.config.rabbitmq.user | quote }}
+  RABBITMQ_CRAWL_QUEUE_NAME: {{ .Values.config.rabbitmq.crawlQueueName | quote }}
+  RABBITMQ_PARSING_QUEUE_NAME: {{ .Values.config.rabbitmq.parsingQueueName | quote }}
+  RABBITMQ_EXPORT_QUEUE_NAME: {{ .Values.config.rabbitmq.exportQueueName | quote }}
+
+  # MinIO
+  MINIO_ENDPOINT: {{ include "distributed-crawler.minioEndpoint" . | quote }}
+  MINIO_USE_SSL: {{ .Values.config.minio.useSSL | quote }}
+  MINIO_BUCKET_NAME: {{ .Values.config.minio.bucketName | quote }}
+
+  # Redis
+  REDIS_HOST: {{ include "distributed-crawler.redisHost" . | quote }}
+  REDIS_PORT: {{ .Values.config.redis.port | quote }}
+  REDIS_DB: {{ .Values.config.redis.db | quote }}
+
+  # gRPC Server
+  GRPC_HOST: "0.0.0.0"
+  GRPC_PORT: {{ .Values.grpcServer.service.grpcPort | quote }}
+
+  # HTTP Server
+  HTTP_HOST: "0.0.0.0"
+  HTTP_PORT: {{ .Values.grpcServer.service.httpPort | quote }}
+
+  # Logging
+  LOG_LEVEL: {{ .Values.config.log.level | quote }}
+  LOG_ENV: {{ .Values.config.log.env | quote }}

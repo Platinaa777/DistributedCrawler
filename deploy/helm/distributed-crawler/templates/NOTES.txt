@@ -1,0 +1,56 @@
+Distributed Crawler has been deployed!
+
+{{- if .Values.grpcServer.enabled }}
+
+=== gRPC Server ===
+{{- if .Values.grpcServer.ingress.enabled }}
+Access the API at:
+{{- range $host := .Values.grpcServer.ingress.hosts }}
+  http{{ if $.Values.grpcServer.ingress.tls }}s{{ end }}://{{ $host.host }}
+{{- end }}
+{{- else }}
+The gRPC server is available within the cluster at:
+  gRPC: {{ include "distributed-crawler.grpcServer.fullname" . }}:{{ .Values.grpcServer.service.grpcPort }}
+  HTTP: {{ include "distributed-crawler.grpcServer.fullname" . }}:{{ .Values.grpcServer.service.httpPort }}
+
+To access from outside the cluster, use port-forward:
+  kubectl port-forward svc/{{ include "distributed-crawler.grpcServer.fullname" . }} 8083:{{ .Values.grpcServer.service.grpcPort }} 8084:{{ .Values.grpcServer.service.httpPort }} -n {{ include "distributed-crawler.namespace" . }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.fetchWorker.enabled }}
+
+=== Fetch Worker ===
+Running {{ .Values.fetchWorker.replicaCount }} replica(s)
+{{- end }}
+
+{{- if .Values.parserWorker.enabled }}
+
+=== Parser Worker ===
+Running {{ .Values.parserWorker.replicaCount }} replica(s)
+{{- end }}
+
+{{- if .Values.exportWorker.enabled }}
+
+=== Export Worker ===
+Running {{ .Values.exportWorker.replicaCount }} replica(s)
+{{- end }}
+
+=== Infrastructure ===
+{{- if .Values.postgresql.enabled }}
+PostgreSQL: {{ .Release.Name }}-postgresql:5432
+{{- end }}
+{{- if .Values.rabbitmq.enabled }}
+RabbitMQ: {{ .Release.Name }}-rabbitmq:5672
+  Management UI: kubectl port-forward svc/{{ .Release.Name }}-rabbitmq 15672:15672 -n {{ include "distributed-crawler.namespace" . }}
+{{- end }}
+{{- if .Values.minio.enabled }}
+MinIO: {{ .Release.Name }}-minio:9000
+  Console: kubectl port-forward svc/{{ .Release.Name }}-minio 9001:9001 -n {{ include "distributed-crawler.namespace" . }}
+{{- end }}
+{{- if .Values.redis.enabled }}
+Redis: {{ .Release.Name }}-redis-master:6379
+{{- end }}
+
+For more information, check the documentation at:
+  https://github.com/your-org/distributed-crawler

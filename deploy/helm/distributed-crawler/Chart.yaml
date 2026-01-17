@@ -1,0 +1,33 @@
+apiVersion: v2
+name: distributed-crawler
+description: A Helm chart for Distributed Crawling System
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+keywords:
+  - crawler
+  - distributed
+  - golang
+  - grpc
+
+maintainers:
+  - name: distributed-crawler-team
+
+dependencies:
+  - name: postgresql
+    version: "15.5.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: rabbitmq
+    version: "14.4.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: rabbitmq.enabled
+  - name: minio
+    version: "14.6.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: minio.enabled
+  - name: redis
+    version: "19.5.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled

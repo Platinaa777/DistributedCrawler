@@ -1,0 +1,22 @@
+{{- if .Values.grpcServer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "distributed-crawler.grpcServer.fullname" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.grpcServer.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.grpcServer.service.type }}
+  ports:
+    - port: {{ .Values.grpcServer.service.grpcPort }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+    - port: {{ .Values.grpcServer.service.httpPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "distributed-crawler.grpcServer.selectorLabels" . | nindent 4 }}
+{{- end }}
