@@ -106,6 +106,24 @@ service AuthService {
   }
 }
 
+// UserService defines user management operations
+service UserService {
+  // List registered users
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users"
+    };
+  }
+
+  // Update user role (admin only)
+  rpc UpdateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/users/{id}/role"
+      body: "*"
+    };
+  }
+}
+
 // WorkerService defines worker monitoring and control operations
 service WorkerService {
   // Bidirectional stream for worker heartbeats and control commands

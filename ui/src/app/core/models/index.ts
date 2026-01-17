@@ -4,3 +4,4 @@ export * from './crawl-task.model';
 export * from './preview.model';
 export * from './auth.model';
 export * from './worker.model';
+export * from './user.model';

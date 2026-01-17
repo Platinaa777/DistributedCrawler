@@ -1,3 +1,24 @@
 <div class="min-h-screen flex flex-col">
+  <header *ngIf="isAuthenticated" class="border-b bg-white">
+    <div class="container mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="text-lg font-semibold text-gray-900">Distributed Crawler</div>
+      <div class="flex items-center gap-2">
+        <button mat-stroked-button [matMenuTriggerFor]="accountMenu" class="flex items-center gap-2">
+          <mat-icon>account_circle</mat-icon>
+          <span class="flex flex-col items-start leading-tight">
+            <span class="text-sm font-medium">My account</span>
+            <span *ngIf="accountEmail" class="text-xs text-gray-500">{{ accountEmail }}</span>
+          </span>
+        </button>
+        <mat-menu #accountMenu="matMenu">
+          <div *ngIf="accountEmail" class="px-4 py-2 text-xs text-gray-500">{{ accountEmail }}</div>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+  </header>
   <router-outlet />
 </div>

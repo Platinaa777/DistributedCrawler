@@ -314,6 +314,37 @@ message LogoutResponse {
   // Empty response
 }
 
+// Role represents user authorization role.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_READ = 1;
+  ROLE_READ_WRITE = 2;
+  ROLE_ADMINISTRATOR = 3;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  Role role = 3;
+  google.protobuf.Timestamp created_at = 4 [json_name = "created_at"];
+  google.protobuf.Timestamp updated_at = 5 [json_name = "updated_at"];
+}
+
+message ListUsersRequest {}
+
+message ListUsersResponse {
+  repeated User users = 1;
+}
+
+message UpdateUserRoleRequest {
+  string id = 1;
+  Role role = 2;
+}
+
+message UpdateUserRoleResponse {
+  bool updated = 1;
+}
+
 // Worker monitoring messages
 
 // WorkerStatus represents the current state of a worker.

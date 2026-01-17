@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"distributed-crawler/internal/domain/auth/models"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -16,6 +17,7 @@ var (
 // Claims represents JWT claims
 type Claims struct {
 	UserID string `json:"sub"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -36,10 +38,11 @@ func NewJWTService(secret, issuer, audience string) *JWTService {
 }
 
 // SignAccessToken creates a new access token
-func (s *JWTService) SignAccessToken(userID string, ttl time.Duration) (string, error) {
+func (s *JWTService) SignAccessToken(userID string, role models.Role, ttl time.Duration) (string, error) {
 	now := time.Now()
 	claims := Claims{
 		UserID: userID,
+		Role:   string(role),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID,
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
@@ -76,6 +79,10 @@ func (s *JWTService) VerifyToken(tokenString string) (*Claims, error) {
 	}
 
 	if claims.UserID == "" {
+		return nil, ErrMissingClaims
+	}
+
+	if _, err := models.ParseRole(claims.Role); err != nil {
 		return nil, ErrMissingClaims
 	}
 

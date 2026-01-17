@@ -12,6 +12,8 @@ const (
 	refreshTokenTTLEnvName = "REFRESH_TOKEN_TTL"
 	jwtIssuerEnvName       = "JWT_ISSUER"
 	jwtAudienceEnvName     = "JWT_AUDIENCE"
+	defaultUserEmailEnv    = "DEFAULT_USER_EMAIL"
+	defaultUserPasswordEnv = "DEFAULT_USER_PWD"
 
 	defaultAccessTokenTTL  = "15m"
 	defaultRefreshTokenTTL = "720h" // 30 days
@@ -25,6 +27,8 @@ type authConfig struct {
 	refreshTokenTTL string
 	issuer          string
 	audience        string
+	defaultEmail    string
+	defaultPassword string
 }
 
 func NewAuthConfig() (config.AuthConfig, error) {
@@ -53,12 +57,24 @@ func NewAuthConfig() (config.AuthConfig, error) {
 		audience = defaultAudience
 	}
 
+	defaultEmail := os.Getenv(defaultUserEmailEnv)
+	if len(defaultEmail) == 0 {
+		return nil, fmt.Errorf("%s environment variable is required", defaultUserEmailEnv)
+	}
+
+	defaultPassword := os.Getenv(defaultUserPasswordEnv)
+	if len(defaultPassword) == 0 {
+		return nil, fmt.Errorf("%s environment variable is required", defaultUserPasswordEnv)
+	}
+
 	return &authConfig{
 		jwtSecret:       jwtSecret,
 		accessTokenTTL:  accessTokenTTL,
 		refreshTokenTTL: refreshTokenTTL,
 		issuer:          issuer,
 		audience:        audience,
+		defaultEmail:    defaultEmail,
+		defaultPassword: defaultPassword,
 	}, nil
 }
 
@@ -80,4 +96,12 @@ func (cfg *authConfig) Issuer() string {
 
 func (cfg *authConfig) Audience() string {
 	return cfg.audience
+}
+
+func (cfg *authConfig) DefaultUserEmail() string {
+	return cfg.defaultEmail
+}
+
+func (cfg *authConfig) DefaultUserPassword() string {
+	return cfg.defaultPassword
 }

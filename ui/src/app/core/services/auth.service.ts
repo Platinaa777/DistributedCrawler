@@ -3,7 +3,7 @@ import { Router, UrlTree } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, finalize, map, shareReplay, tap } from 'rxjs/operators';
 import { AuthApiService } from './api/auth-api.service';
-import { AuthResponse, AuthTokens } from '../models';
+import { AuthResponse, AuthTokens, UserRole } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -28,6 +28,18 @@ export class AuthService {
     return this.tokens?.refreshToken;
   }
 
+  get email(): string | undefined {
+    return this.tokens?.email;
+  }
+
+  get role(): UserRole | undefined {
+    const token = this.tokens?.accessToken;
+    if (!token) {
+      return undefined;
+    }
+    return this.extractRoleFromToken(token);
+  }
+
   hasValidAccessToken(): boolean {
     if (!this.tokens) {
       return false;
@@ -39,13 +51,13 @@ export class AuthService {
 
   login(email: string, password: string): Observable<AuthTokens> {
     return this.authApi.login(email, password).pipe(
-      map((response) => this.persistTokens(response))
+      map((response) => this.persistTokens(response, email))
     );
   }
 
   register(email: string, password: string): Observable<AuthTokens> {
     return this.authApi.register(email, password).pipe(
-      map((response) => this.persistTokens(response))
+      map((response) => this.persistTokens(response, email))
     );
   }
 
@@ -89,11 +101,28 @@ export class AuthService {
     localStorage.removeItem(this.storageKey);
   }
 
-  private persistTokens(response: AuthResponse): AuthTokens {
+  hasRole(allowed: UserRole[]): boolean {
+    const role = this.role;
+    if (!role) {
+      return false;
+    }
+    return allowed.includes(role);
+  }
+
+  hasMinimumRole(minRole: UserRole): boolean {
+    const role = this.role;
+    if (!role) {
+      return false;
+    }
+    return this.roleLevel(role) >= this.roleLevel(minRole);
+  }
+
+  private persistTokens(response: AuthResponse, email?: string): AuthTokens {
     const tokens: AuthTokens = {
       accessToken: response.access_token,
       refreshToken: response.refresh_token,
-      expiresAt: Date.now() + response.expires_in * 1000
+      expiresAt: Date.now() + response.expires_in * 1000,
+      email: email ?? this.tokens?.email
     };
 
     this.tokens = tokens;
@@ -116,6 +145,47 @@ export class AuthService {
       return parsed;
     } catch {
       return undefined;
+    }
+  }
+
+  private extractRoleFromToken(token: string): UserRole | undefined {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return undefined;
+      }
+
+      const payload = JSON.parse(this.decodeBase64Url(parts[1])) as { role?: string };
+      if (!payload.role) {
+        return undefined;
+      }
+
+      if (payload.role === 'READ' || payload.role === 'READ_WRITE' || payload.role === 'ADMINISTRATOR') {
+        return payload.role;
+      }
+
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private decodeBase64Url(value: string): string {
+    const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + (4 - (normalized.length % 4)) % 4, '=');
+    return atob(padded);
+  }
+
+  private roleLevel(role: UserRole): number {
+    switch (role) {
+      case 'READ':
+        return 1;
+      case 'READ_WRITE':
+        return 2;
+      case 'ADMINISTRATOR':
+        return 3;
+      default:
+        return 0;
     }
   }
 

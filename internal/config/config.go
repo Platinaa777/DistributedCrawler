@@ -59,4 +59,6 @@ type AuthConfig interface {
 	RefreshTokenTTL() string
 	Issuer() string
 	Audience() string
+	DefaultUserEmail() string
+	DefaultUserPassword() string
 }

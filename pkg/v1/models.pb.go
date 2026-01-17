@@ -25,6 +25,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Role represents user authorization role.
+type Role int32
+
+const (
+	Role_ROLE_UNSPECIFIED   Role = 0
+	Role_ROLE_READ          Role = 1
+	Role_ROLE_READ_WRITE    Role = 2
+	Role_ROLE_ADMINISTRATOR Role = 3
+)
+
+// Enum value maps for Role.
+var (
+	Role_name = map[int32]string{
+		0: "ROLE_UNSPECIFIED",
+		1: "ROLE_READ",
+		2: "ROLE_READ_WRITE",
+		3: "ROLE_ADMINISTRATOR",
+	}
+	Role_value = map[string]int32{
+		"ROLE_UNSPECIFIED":   0,
+		"ROLE_READ":          1,
+		"ROLE_READ_WRITE":    2,
+		"ROLE_ADMINISTRATOR": 3,
+	}
+)
+
+func (x Role) Enum() *Role {
+	p := new(Role)
+	*p = x
+	return p
+}
+
+func (x Role) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Role) Descriptor() protoreflect.EnumDescriptor {
+	return file_v1_models_proto_enumTypes[0].Descriptor()
+}
+
+func (Role) Type() protoreflect.EnumType {
+	return &file_v1_models_proto_enumTypes[0]
+}
+
+func (x Role) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Role.Descriptor instead.
+func (Role) EnumDescriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{0}
+}
+
 // WorkerStatus represents the current state of a worker.
 type WorkerStatus int32
 
@@ -65,11 +118,11 @@ func (x WorkerStatus) String() string {
 }
 
 func (WorkerStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_v1_models_proto_enumTypes[0].Descriptor()
+	return file_v1_models_proto_enumTypes[1].Descriptor()
 }
 
 func (WorkerStatus) Type() protoreflect.EnumType {
-	return &file_v1_models_proto_enumTypes[0]
+	return &file_v1_models_proto_enumTypes[1]
 }
 
 func (x WorkerStatus) Number() protoreflect.EnumNumber {
@@ -78,7 +131,7 @@ func (x WorkerStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WorkerStatus.Descriptor instead.
 func (WorkerStatus) EnumDescriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{0}
+	return file_v1_models_proto_rawDescGZIP(), []int{1}
 }
 
 // WorkerCommandType defines commands from Coordinator to worker.
@@ -115,11 +168,11 @@ func (x WorkerCommandType) String() string {
 }
 
 func (WorkerCommandType) Descriptor() protoreflect.EnumDescriptor {
-	return file_v1_models_proto_enumTypes[1].Descriptor()
+	return file_v1_models_proto_enumTypes[2].Descriptor()
 }
 
 func (WorkerCommandType) Type() protoreflect.EnumType {
-	return &file_v1_models_proto_enumTypes[1]
+	return &file_v1_models_proto_enumTypes[2]
 }
 
 func (x WorkerCommandType) Number() protoreflect.EnumNumber {
@@ -128,7 +181,7 @@ func (x WorkerCommandType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WorkerCommandType.Descriptor instead.
 func (WorkerCommandType) EnumDescriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{1}
+	return file_v1_models_proto_rawDescGZIP(), []int{2}
 }
 
 // AuthOptions contains authentication options for crawling
@@ -2704,6 +2757,258 @@ func (*LogoutResponse) Descriptor() ([]byte, []int) {
 	return file_v1_models_proto_rawDescGZIP(), []int{43}
 }
 
+type User struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Role          Role                   `protobuf:"varint,3,opt,name=role,proto3,enum=crawler.v1.Role" json:"role,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *User) Reset() {
+	*x = User{}
+	mi := &file_v1_models_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *User) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*User) ProtoMessage() {}
+
+func (x *User) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use User.ProtoReflect.Descriptor instead.
+func (*User) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *User) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *User) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *User) GetRole() Role {
+	if x != nil {
+		return x.Role
+	}
+	return Role_ROLE_UNSPECIFIED
+}
+
+func (x *User) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *User) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type ListUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUsersRequest) Reset() {
+	*x = ListUsersRequest{}
+	mi := &file_v1_models_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUsersRequest) ProtoMessage() {}
+
+func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUsersRequest.ProtoReflect.Descriptor instead.
+func (*ListUsersRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{45}
+}
+
+type ListUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUsersResponse) Reset() {
+	*x = ListUsersResponse{}
+	mi := &file_v1_models_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUsersResponse) ProtoMessage() {}
+
+func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
+func (*ListUsersResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *ListUsersResponse) GetUsers() []*User {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+type UpdateUserRoleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Role          Role                   `protobuf:"varint,2,opt,name=role,proto3,enum=crawler.v1.Role" json:"role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUserRoleRequest) Reset() {
+	*x = UpdateUserRoleRequest{}
+	mi := &file_v1_models_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUserRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUserRoleRequest) ProtoMessage() {}
+
+func (x *UpdateUserRoleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUserRoleRequest.ProtoReflect.Descriptor instead.
+func (*UpdateUserRoleRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *UpdateUserRoleRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateUserRoleRequest) GetRole() Role {
+	if x != nil {
+		return x.Role
+	}
+	return Role_ROLE_UNSPECIFIED
+}
+
+type UpdateUserRoleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Updated       bool                   `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUserRoleResponse) Reset() {
+	*x = UpdateUserRoleResponse{}
+	mi := &file_v1_models_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUserRoleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUserRoleResponse) ProtoMessage() {}
+
+func (x *UpdateUserRoleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUserRoleResponse.ProtoReflect.Descriptor instead.
+func (*UpdateUserRoleResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *UpdateUserRoleResponse) GetUpdated() bool {
+	if x != nil {
+		return x.Updated
+	}
+	return false
+}
+
 // WorkerHeartbeat is sent periodically by workers to report health.
 type WorkerHeartbeat struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -2719,7 +3024,7 @@ type WorkerHeartbeat struct {
 
 func (x *WorkerHeartbeat) Reset() {
 	*x = WorkerHeartbeat{}
-	mi := &file_v1_models_proto_msgTypes[44]
+	mi := &file_v1_models_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2731,7 +3036,7 @@ func (x *WorkerHeartbeat) String() string {
 func (*WorkerHeartbeat) ProtoMessage() {}
 
 func (x *WorkerHeartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[44]
+	mi := &file_v1_models_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2744,7 +3049,7 @@ func (x *WorkerHeartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkerHeartbeat.ProtoReflect.Descriptor instead.
 func (*WorkerHeartbeat) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{44}
+	return file_v1_models_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *WorkerHeartbeat) GetWorkerId() string {
@@ -2804,7 +3109,7 @@ type WorkerInfo struct {
 
 func (x *WorkerInfo) Reset() {
 	*x = WorkerInfo{}
-	mi := &file_v1_models_proto_msgTypes[45]
+	mi := &file_v1_models_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2816,7 +3121,7 @@ func (x *WorkerInfo) String() string {
 func (*WorkerInfo) ProtoMessage() {}
 
 func (x *WorkerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[45]
+	mi := &file_v1_models_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2829,7 +3134,7 @@ func (x *WorkerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkerInfo.ProtoReflect.Descriptor instead.
 func (*WorkerInfo) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{45}
+	return file_v1_models_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *WorkerInfo) GetWorkerId() string {
@@ -2882,7 +3187,7 @@ type ListWorkersRequest struct {
 
 func (x *ListWorkersRequest) Reset() {
 	*x = ListWorkersRequest{}
-	mi := &file_v1_models_proto_msgTypes[46]
+	mi := &file_v1_models_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2894,7 +3199,7 @@ func (x *ListWorkersRequest) String() string {
 func (*ListWorkersRequest) ProtoMessage() {}
 
 func (x *ListWorkersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[46]
+	mi := &file_v1_models_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2907,7 +3212,7 @@ func (x *ListWorkersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWorkersRequest.ProtoReflect.Descriptor instead.
 func (*ListWorkersRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{46}
+	return file_v1_models_proto_rawDescGZIP(), []int{51}
 }
 
 type ListWorkersResponse struct {
@@ -2919,7 +3224,7 @@ type ListWorkersResponse struct {
 
 func (x *ListWorkersResponse) Reset() {
 	*x = ListWorkersResponse{}
-	mi := &file_v1_models_proto_msgTypes[47]
+	mi := &file_v1_models_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2931,7 +3236,7 @@ func (x *ListWorkersResponse) String() string {
 func (*ListWorkersResponse) ProtoMessage() {}
 
 func (x *ListWorkersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[47]
+	mi := &file_v1_models_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2944,7 +3249,7 @@ func (x *ListWorkersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWorkersResponse.ProtoReflect.Descriptor instead.
 func (*ListWorkersResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{47}
+	return file_v1_models_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ListWorkersResponse) GetWorkers() []*WorkerInfo {
@@ -2966,7 +3271,7 @@ type WorkerCommand struct {
 
 func (x *WorkerCommand) Reset() {
 	*x = WorkerCommand{}
-	mi := &file_v1_models_proto_msgTypes[48]
+	mi := &file_v1_models_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2978,7 +3283,7 @@ func (x *WorkerCommand) String() string {
 func (*WorkerCommand) ProtoMessage() {}
 
 func (x *WorkerCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[48]
+	mi := &file_v1_models_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2991,7 +3296,7 @@ func (x *WorkerCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkerCommand.ProtoReflect.Descriptor instead.
 func (*WorkerCommand) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{48}
+	return file_v1_models_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *WorkerCommand) GetType() WorkerCommandType {
@@ -3025,7 +3330,7 @@ type DrainWorkerRequest struct {
 
 func (x *DrainWorkerRequest) Reset() {
 	*x = DrainWorkerRequest{}
-	mi := &file_v1_models_proto_msgTypes[49]
+	mi := &file_v1_models_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3037,7 +3342,7 @@ func (x *DrainWorkerRequest) String() string {
 func (*DrainWorkerRequest) ProtoMessage() {}
 
 func (x *DrainWorkerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[49]
+	mi := &file_v1_models_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3050,7 +3355,7 @@ func (x *DrainWorkerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DrainWorkerRequest.ProtoReflect.Descriptor instead.
 func (*DrainWorkerRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{49}
+	return file_v1_models_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *DrainWorkerRequest) GetWorkerId() string {
@@ -3077,7 +3382,7 @@ type DrainWorkerResponse struct {
 
 func (x *DrainWorkerResponse) Reset() {
 	*x = DrainWorkerResponse{}
-	mi := &file_v1_models_proto_msgTypes[50]
+	mi := &file_v1_models_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3089,7 +3394,7 @@ func (x *DrainWorkerResponse) String() string {
 func (*DrainWorkerResponse) ProtoMessage() {}
 
 func (x *DrainWorkerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[50]
+	mi := &file_v1_models_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3102,7 +3407,7 @@ func (x *DrainWorkerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DrainWorkerResponse.ProtoReflect.Descriptor instead.
 func (*DrainWorkerResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{50}
+	return file_v1_models_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *DrainWorkerResponse) GetDelivered() bool {
@@ -3129,7 +3434,7 @@ type ForceKillWorkerRequest struct {
 
 func (x *ForceKillWorkerRequest) Reset() {
 	*x = ForceKillWorkerRequest{}
-	mi := &file_v1_models_proto_msgTypes[51]
+	mi := &file_v1_models_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3141,7 +3446,7 @@ func (x *ForceKillWorkerRequest) String() string {
 func (*ForceKillWorkerRequest) ProtoMessage() {}
 
 func (x *ForceKillWorkerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[51]
+	mi := &file_v1_models_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3154,7 +3459,7 @@ func (x *ForceKillWorkerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForceKillWorkerRequest.ProtoReflect.Descriptor instead.
 func (*ForceKillWorkerRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{51}
+	return file_v1_models_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ForceKillWorkerRequest) GetWorkerId() string {
@@ -3181,7 +3486,7 @@ type ForceKillWorkerResponse struct {
 
 func (x *ForceKillWorkerResponse) Reset() {
 	*x = ForceKillWorkerResponse{}
-	mi := &file_v1_models_proto_msgTypes[52]
+	mi := &file_v1_models_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3193,7 +3498,7 @@ func (x *ForceKillWorkerResponse) String() string {
 func (*ForceKillWorkerResponse) ProtoMessage() {}
 
 func (x *ForceKillWorkerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[52]
+	mi := &file_v1_models_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3206,7 +3511,7 @@ func (x *ForceKillWorkerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForceKillWorkerResponse.ProtoReflect.Descriptor instead.
 func (*ForceKillWorkerResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{52}
+	return file_v1_models_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *ForceKillWorkerResponse) GetDelivered() bool {
@@ -3441,7 +3746,25 @@ const file_v1_models_proto_rawDesc = "" +
 	"expires_in\">\n" +
 	"\rLogoutRequest\x12-\n" +
 	"\rrefresh_token\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\rrefresh_token\"\x10\n" +
-	"\x0eLogoutResponse\"\x9d\x02\n" +
+	"\x0eLogoutResponse\"\xca\x01\n" +
+	"\x04User\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12$\n" +
+	"\x04role\x18\x03 \x01(\x0e2\x10.crawler.v1.RoleR\x04role\x12:\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12:\n" +
+	"\n" +
+	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updated_at\"\x12\n" +
+	"\x10ListUsersRequest\";\n" +
+	"\x11ListUsersResponse\x12&\n" +
+	"\x05users\x18\x01 \x03(\v2\x10.crawler.v1.UserR\x05users\"M\n" +
+	"\x15UpdateUserRoleRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
+	"\x04role\x18\x02 \x01(\x0e2\x10.crawler.v1.RoleR\x04role\"2\n" +
+	"\x16UpdateUserRoleResponse\x12\x18\n" +
+	"\aupdated\x18\x01 \x01(\bR\aupdated\"\x9d\x02\n" +
 	"\x0fWorkerHeartbeat\x12\x1c\n" +
 	"\tworker_id\x18\x01 \x01(\tR\tworker_id\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x120\n" +
@@ -3477,7 +3800,12 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\"Q\n" +
 	"\x17ForceKillWorkerResponse\x12\x1c\n" +
 	"\tdelivered\x18\x01 \x01(\bR\tdelivered\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage*\x97\x01\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*X\n" +
+	"\x04Role\x12\x14\n" +
+	"\x10ROLE_UNSPECIFIED\x10\x00\x12\r\n" +
+	"\tROLE_READ\x10\x01\x12\x13\n" +
+	"\x0fROLE_READ_WRITE\x10\x02\x12\x16\n" +
+	"\x12ROLE_ADMINISTRATOR\x10\x03*\x97\x01\n" +
 	"\fWorkerStatus\x12\x1d\n" +
 	"\x19WORKER_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14WORKER_STATUS_ACTIVE\x10\x01\x12\x1a\n" +
@@ -3506,111 +3834,122 @@ func file_v1_models_proto_rawDescGZIP() []byte {
 	return file_v1_models_proto_rawDescData
 }
 
-var file_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 53)
+var file_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 58)
 var file_v1_models_proto_goTypes = []any{
-	(WorkerStatus)(0),                   // 0: crawler.v1.WorkerStatus
-	(WorkerCommandType)(0),              // 1: crawler.v1.WorkerCommandType
-	(*AuthOptions)(nil),                 // 2: crawler.v1.AuthOptions
-	(*RateLimitPolicy)(nil),             // 3: crawler.v1.RateLimitPolicy
-	(*RetryPolicy)(nil),                 // 4: crawler.v1.RetryPolicy
-	(*ScheduleOptions)(nil),             // 5: crawler.v1.ScheduleOptions
-	(*ScopeRules)(nil),                  // 6: crawler.v1.ScopeRules
-	(*Seed)(nil),                        // 7: crawler.v1.Seed
-	(*ExtractorSpec)(nil),               // 8: crawler.v1.ExtractorSpec
-	(*TransformSpec)(nil),               // 9: crawler.v1.TransformSpec
-	(*FieldSpec)(nil),                   // 10: crawler.v1.FieldSpec
-	(*MetricSpec)(nil),                  // 11: crawler.v1.MetricSpec
-	(*PaginationSpec)(nil),              // 12: crawler.v1.PaginationSpec
-	(*ExtractionSpec)(nil),              // 13: crawler.v1.ExtractionSpec
-	(*CrawlJobConfig)(nil),              // 14: crawler.v1.CrawlJobConfig
-	(*CrawlJob)(nil),                    // 15: crawler.v1.CrawlJob
-	(*CrawlTask)(nil),                   // 16: crawler.v1.CrawlTask
-	(*JobListFilter)(nil),               // 17: crawler.v1.JobListFilter
-	(*ListJobsRequest)(nil),             // 18: crawler.v1.ListJobsRequest
-	(*ListJobsResponse)(nil),            // 19: crawler.v1.ListJobsResponse
-	(*CreateJobRequest)(nil),            // 20: crawler.v1.CreateJobRequest
-	(*CreateJobResponse)(nil),           // 21: crawler.v1.CreateJobResponse
-	(*GetJobRequest)(nil),               // 22: crawler.v1.GetJobRequest
-	(*GetJobResponse)(nil),              // 23: crawler.v1.GetJobResponse
-	(*CreateTaskRequest)(nil),           // 24: crawler.v1.CreateTaskRequest
-	(*GetTaskRequest)(nil),              // 25: crawler.v1.GetTaskRequest
-	(*GetTaskResponse)(nil),             // 26: crawler.v1.GetTaskResponse
-	(*ListTasksByJobRequest)(nil),       // 27: crawler.v1.ListTasksByJobRequest
-	(*ListTasksByJobResponse)(nil),      // 28: crawler.v1.ListTasksByJobResponse
-	(*GetJobExportFileURLRequest)(nil),  // 29: crawler.v1.GetJobExportFileURLRequest
-	(*GetJobExportFileURLResponse)(nil), // 30: crawler.v1.GetJobExportFileURLResponse
-	(*GetTaskFileURLRequest)(nil),       // 31: crawler.v1.GetTaskFileURLRequest
-	(*GetTaskFileURLResponse)(nil),      // 32: crawler.v1.GetTaskFileURLResponse
-	(*Preview)(nil),                     // 33: crawler.v1.Preview
-	(*CreatePreviewRequest)(nil),        // 34: crawler.v1.CreatePreviewRequest
-	(*CreatePreviewResponse)(nil),       // 35: crawler.v1.CreatePreviewResponse
-	(*GetPreviewRequest)(nil),           // 36: crawler.v1.GetPreviewRequest
-	(*GetPreviewResponse)(nil),          // 37: crawler.v1.GetPreviewResponse
-	(*RegisterRequest)(nil),             // 38: crawler.v1.RegisterRequest
-	(*RegisterResponse)(nil),            // 39: crawler.v1.RegisterResponse
-	(*LoginRequest)(nil),                // 40: crawler.v1.LoginRequest
-	(*LoginResponse)(nil),               // 41: crawler.v1.LoginResponse
-	(*RefreshRequest)(nil),              // 42: crawler.v1.RefreshRequest
-	(*RefreshResponse)(nil),             // 43: crawler.v1.RefreshResponse
-	(*LogoutRequest)(nil),               // 44: crawler.v1.LogoutRequest
-	(*LogoutResponse)(nil),              // 45: crawler.v1.LogoutResponse
-	(*WorkerHeartbeat)(nil),             // 46: crawler.v1.WorkerHeartbeat
-	(*WorkerInfo)(nil),                  // 47: crawler.v1.WorkerInfo
-	(*ListWorkersRequest)(nil),          // 48: crawler.v1.ListWorkersRequest
-	(*ListWorkersResponse)(nil),         // 49: crawler.v1.ListWorkersResponse
-	(*WorkerCommand)(nil),               // 50: crawler.v1.WorkerCommand
-	(*DrainWorkerRequest)(nil),          // 51: crawler.v1.DrainWorkerRequest
-	(*DrainWorkerResponse)(nil),         // 52: crawler.v1.DrainWorkerResponse
-	(*ForceKillWorkerRequest)(nil),      // 53: crawler.v1.ForceKillWorkerRequest
-	(*ForceKillWorkerResponse)(nil),     // 54: crawler.v1.ForceKillWorkerResponse
-	(*timestamppb.Timestamp)(nil),       // 55: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),         // 56: google.protobuf.Duration
+	(Role)(0),                           // 0: crawler.v1.Role
+	(WorkerStatus)(0),                   // 1: crawler.v1.WorkerStatus
+	(WorkerCommandType)(0),              // 2: crawler.v1.WorkerCommandType
+	(*AuthOptions)(nil),                 // 3: crawler.v1.AuthOptions
+	(*RateLimitPolicy)(nil),             // 4: crawler.v1.RateLimitPolicy
+	(*RetryPolicy)(nil),                 // 5: crawler.v1.RetryPolicy
+	(*ScheduleOptions)(nil),             // 6: crawler.v1.ScheduleOptions
+	(*ScopeRules)(nil),                  // 7: crawler.v1.ScopeRules
+	(*Seed)(nil),                        // 8: crawler.v1.Seed
+	(*ExtractorSpec)(nil),               // 9: crawler.v1.ExtractorSpec
+	(*TransformSpec)(nil),               // 10: crawler.v1.TransformSpec
+	(*FieldSpec)(nil),                   // 11: crawler.v1.FieldSpec
+	(*MetricSpec)(nil),                  // 12: crawler.v1.MetricSpec
+	(*PaginationSpec)(nil),              // 13: crawler.v1.PaginationSpec
+	(*ExtractionSpec)(nil),              // 14: crawler.v1.ExtractionSpec
+	(*CrawlJobConfig)(nil),              // 15: crawler.v1.CrawlJobConfig
+	(*CrawlJob)(nil),                    // 16: crawler.v1.CrawlJob
+	(*CrawlTask)(nil),                   // 17: crawler.v1.CrawlTask
+	(*JobListFilter)(nil),               // 18: crawler.v1.JobListFilter
+	(*ListJobsRequest)(nil),             // 19: crawler.v1.ListJobsRequest
+	(*ListJobsResponse)(nil),            // 20: crawler.v1.ListJobsResponse
+	(*CreateJobRequest)(nil),            // 21: crawler.v1.CreateJobRequest
+	(*CreateJobResponse)(nil),           // 22: crawler.v1.CreateJobResponse
+	(*GetJobRequest)(nil),               // 23: crawler.v1.GetJobRequest
+	(*GetJobResponse)(nil),              // 24: crawler.v1.GetJobResponse
+	(*CreateTaskRequest)(nil),           // 25: crawler.v1.CreateTaskRequest
+	(*GetTaskRequest)(nil),              // 26: crawler.v1.GetTaskRequest
+	(*GetTaskResponse)(nil),             // 27: crawler.v1.GetTaskResponse
+	(*ListTasksByJobRequest)(nil),       // 28: crawler.v1.ListTasksByJobRequest
+	(*ListTasksByJobResponse)(nil),      // 29: crawler.v1.ListTasksByJobResponse
+	(*GetJobExportFileURLRequest)(nil),  // 30: crawler.v1.GetJobExportFileURLRequest
+	(*GetJobExportFileURLResponse)(nil), // 31: crawler.v1.GetJobExportFileURLResponse
+	(*GetTaskFileURLRequest)(nil),       // 32: crawler.v1.GetTaskFileURLRequest
+	(*GetTaskFileURLResponse)(nil),      // 33: crawler.v1.GetTaskFileURLResponse
+	(*Preview)(nil),                     // 34: crawler.v1.Preview
+	(*CreatePreviewRequest)(nil),        // 35: crawler.v1.CreatePreviewRequest
+	(*CreatePreviewResponse)(nil),       // 36: crawler.v1.CreatePreviewResponse
+	(*GetPreviewRequest)(nil),           // 37: crawler.v1.GetPreviewRequest
+	(*GetPreviewResponse)(nil),          // 38: crawler.v1.GetPreviewResponse
+	(*RegisterRequest)(nil),             // 39: crawler.v1.RegisterRequest
+	(*RegisterResponse)(nil),            // 40: crawler.v1.RegisterResponse
+	(*LoginRequest)(nil),                // 41: crawler.v1.LoginRequest
+	(*LoginResponse)(nil),               // 42: crawler.v1.LoginResponse
+	(*RefreshRequest)(nil),              // 43: crawler.v1.RefreshRequest
+	(*RefreshResponse)(nil),             // 44: crawler.v1.RefreshResponse
+	(*LogoutRequest)(nil),               // 45: crawler.v1.LogoutRequest
+	(*LogoutResponse)(nil),              // 46: crawler.v1.LogoutResponse
+	(*User)(nil),                        // 47: crawler.v1.User
+	(*ListUsersRequest)(nil),            // 48: crawler.v1.ListUsersRequest
+	(*ListUsersResponse)(nil),           // 49: crawler.v1.ListUsersResponse
+	(*UpdateUserRoleRequest)(nil),       // 50: crawler.v1.UpdateUserRoleRequest
+	(*UpdateUserRoleResponse)(nil),      // 51: crawler.v1.UpdateUserRoleResponse
+	(*WorkerHeartbeat)(nil),             // 52: crawler.v1.WorkerHeartbeat
+	(*WorkerInfo)(nil),                  // 53: crawler.v1.WorkerInfo
+	(*ListWorkersRequest)(nil),          // 54: crawler.v1.ListWorkersRequest
+	(*ListWorkersResponse)(nil),         // 55: crawler.v1.ListWorkersResponse
+	(*WorkerCommand)(nil),               // 56: crawler.v1.WorkerCommand
+	(*DrainWorkerRequest)(nil),          // 57: crawler.v1.DrainWorkerRequest
+	(*DrainWorkerResponse)(nil),         // 58: crawler.v1.DrainWorkerResponse
+	(*ForceKillWorkerRequest)(nil),      // 59: crawler.v1.ForceKillWorkerRequest
+	(*ForceKillWorkerResponse)(nil),     // 60: crawler.v1.ForceKillWorkerResponse
+	(*timestamppb.Timestamp)(nil),       // 61: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),         // 62: google.protobuf.Duration
 }
 var file_v1_models_proto_depIdxs = []int32{
-	8,  // 0: crawler.v1.FieldSpec.extractor:type_name -> crawler.v1.ExtractorSpec
-	9,  // 1: crawler.v1.FieldSpec.transforms:type_name -> crawler.v1.TransformSpec
-	10, // 2: crawler.v1.ExtractionSpec.fields:type_name -> crawler.v1.FieldSpec
-	11, // 3: crawler.v1.ExtractionSpec.metrics:type_name -> crawler.v1.MetricSpec
-	12, // 4: crawler.v1.ExtractionSpec.pagination:type_name -> crawler.v1.PaginationSpec
-	13, // 5: crawler.v1.CrawlJobConfig.extraction_spec:type_name -> crawler.v1.ExtractionSpec
-	6,  // 6: crawler.v1.CrawlJobConfig.scopes:type_name -> crawler.v1.ScopeRules
-	7,  // 7: crawler.v1.CrawlJobConfig.seeds:type_name -> crawler.v1.Seed
-	3,  // 8: crawler.v1.CrawlJobConfig.rate_limit:type_name -> crawler.v1.RateLimitPolicy
-	4,  // 9: crawler.v1.CrawlJobConfig.retries:type_name -> crawler.v1.RetryPolicy
-	2,  // 10: crawler.v1.CrawlJobConfig.auth:type_name -> crawler.v1.AuthOptions
-	5,  // 11: crawler.v1.CrawlJobConfig.schedule:type_name -> crawler.v1.ScheduleOptions
-	14, // 12: crawler.v1.CrawlJob.job_config:type_name -> crawler.v1.CrawlJobConfig
-	55, // 13: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
-	55, // 14: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
-	55, // 15: crawler.v1.CrawlJob.exported_at:type_name -> google.protobuf.Timestamp
-	15, // 16: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
-	55, // 17: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
-	55, // 18: crawler.v1.JobListFilter.created_from:type_name -> google.protobuf.Timestamp
-	55, // 19: crawler.v1.JobListFilter.created_to:type_name -> google.protobuf.Timestamp
-	17, // 20: crawler.v1.ListJobsRequest.filter:type_name -> crawler.v1.JobListFilter
-	15, // 21: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
-	14, // 22: crawler.v1.CreateJobRequest.config:type_name -> crawler.v1.CrawlJobConfig
-	15, // 23: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
-	16, // 24: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	16, // 25: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
-	55, // 26: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
-	55, // 27: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
-	33, // 28: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
-	55, // 29: crawler.v1.WorkerHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 30: crawler.v1.WorkerHeartbeat.status:type_name -> crawler.v1.WorkerStatus
-	55, // 31: crawler.v1.WorkerHeartbeat.started_at:type_name -> google.protobuf.Timestamp
-	0,  // 32: crawler.v1.WorkerInfo.status:type_name -> crawler.v1.WorkerStatus
-	55, // 33: crawler.v1.WorkerInfo.last_heartbeat_at:type_name -> google.protobuf.Timestamp
-	56, // 34: crawler.v1.WorkerInfo.uptime:type_name -> google.protobuf.Duration
-	47, // 35: crawler.v1.ListWorkersResponse.workers:type_name -> crawler.v1.WorkerInfo
-	1,  // 36: crawler.v1.WorkerCommand.type:type_name -> crawler.v1.WorkerCommandType
-	55, // 37: crawler.v1.WorkerCommand.issued_at:type_name -> google.protobuf.Timestamp
-	38, // [38:38] is the sub-list for method output_type
-	38, // [38:38] is the sub-list for method input_type
-	38, // [38:38] is the sub-list for extension type_name
-	38, // [38:38] is the sub-list for extension extendee
-	0,  // [0:38] is the sub-list for field type_name
+	9,  // 0: crawler.v1.FieldSpec.extractor:type_name -> crawler.v1.ExtractorSpec
+	10, // 1: crawler.v1.FieldSpec.transforms:type_name -> crawler.v1.TransformSpec
+	11, // 2: crawler.v1.ExtractionSpec.fields:type_name -> crawler.v1.FieldSpec
+	12, // 3: crawler.v1.ExtractionSpec.metrics:type_name -> crawler.v1.MetricSpec
+	13, // 4: crawler.v1.ExtractionSpec.pagination:type_name -> crawler.v1.PaginationSpec
+	14, // 5: crawler.v1.CrawlJobConfig.extraction_spec:type_name -> crawler.v1.ExtractionSpec
+	7,  // 6: crawler.v1.CrawlJobConfig.scopes:type_name -> crawler.v1.ScopeRules
+	8,  // 7: crawler.v1.CrawlJobConfig.seeds:type_name -> crawler.v1.Seed
+	4,  // 8: crawler.v1.CrawlJobConfig.rate_limit:type_name -> crawler.v1.RateLimitPolicy
+	5,  // 9: crawler.v1.CrawlJobConfig.retries:type_name -> crawler.v1.RetryPolicy
+	3,  // 10: crawler.v1.CrawlJobConfig.auth:type_name -> crawler.v1.AuthOptions
+	6,  // 11: crawler.v1.CrawlJobConfig.schedule:type_name -> crawler.v1.ScheduleOptions
+	15, // 12: crawler.v1.CrawlJob.job_config:type_name -> crawler.v1.CrawlJobConfig
+	61, // 13: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
+	61, // 14: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
+	61, // 15: crawler.v1.CrawlJob.exported_at:type_name -> google.protobuf.Timestamp
+	16, // 16: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
+	61, // 17: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
+	61, // 18: crawler.v1.JobListFilter.created_from:type_name -> google.protobuf.Timestamp
+	61, // 19: crawler.v1.JobListFilter.created_to:type_name -> google.protobuf.Timestamp
+	18, // 20: crawler.v1.ListJobsRequest.filter:type_name -> crawler.v1.JobListFilter
+	16, // 21: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
+	15, // 22: crawler.v1.CreateJobRequest.config:type_name -> crawler.v1.CrawlJobConfig
+	16, // 23: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
+	17, // 24: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
+	17, // 25: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
+	61, // 26: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
+	61, // 27: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
+	34, // 28: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
+	0,  // 29: crawler.v1.User.role:type_name -> crawler.v1.Role
+	61, // 30: crawler.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	61, // 31: crawler.v1.User.updated_at:type_name -> google.protobuf.Timestamp
+	47, // 32: crawler.v1.ListUsersResponse.users:type_name -> crawler.v1.User
+	0,  // 33: crawler.v1.UpdateUserRoleRequest.role:type_name -> crawler.v1.Role
+	61, // 34: crawler.v1.WorkerHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
+	1,  // 35: crawler.v1.WorkerHeartbeat.status:type_name -> crawler.v1.WorkerStatus
+	61, // 36: crawler.v1.WorkerHeartbeat.started_at:type_name -> google.protobuf.Timestamp
+	1,  // 37: crawler.v1.WorkerInfo.status:type_name -> crawler.v1.WorkerStatus
+	61, // 38: crawler.v1.WorkerInfo.last_heartbeat_at:type_name -> google.protobuf.Timestamp
+	62, // 39: crawler.v1.WorkerInfo.uptime:type_name -> google.protobuf.Duration
+	53, // 40: crawler.v1.ListWorkersResponse.workers:type_name -> crawler.v1.WorkerInfo
+	2,  // 41: crawler.v1.WorkerCommand.type:type_name -> crawler.v1.WorkerCommandType
+	61, // 42: crawler.v1.WorkerCommand.issued_at:type_name -> google.protobuf.Timestamp
+	43, // [43:43] is the sub-list for method output_type
+	43, // [43:43] is the sub-list for method input_type
+	43, // [43:43] is the sub-list for extension type_name
+	43, // [43:43] is the sub-list for extension extendee
+	0,  // [0:43] is the sub-list for field type_name
 }
 
 func init() { file_v1_models_proto_init() }
@@ -3629,8 +3968,8 @@ func file_v1_models_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_models_proto_rawDesc), len(file_v1_models_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   53,
+			NumEnums:      3,
+			NumMessages:   58,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

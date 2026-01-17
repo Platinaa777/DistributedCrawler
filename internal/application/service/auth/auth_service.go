@@ -7,7 +7,6 @@ import (
 	"distributed-crawler/internal/domain/auth/models"
 	refreshtokenrepo "distributed-crawler/internal/domain/auth/repos/refresh_token"
 	userrepo "distributed-crawler/internal/domain/auth/repos/user"
-	"distributed-crawler/internal/domain/auth/valueobjects"
 	"distributed-crawler/internal/infra/persistence"
 	"errors"
 	"fmt"
@@ -88,7 +87,7 @@ func (s *authService) Register(ctx context.Context, cmd service.RegisterCommand)
 		}
 
 		// Generate tokens
-		tokens, err = s.generateTokens(ctx, user.ID.String())
+		tokens, err = s.generateTokens(ctx, user)
 		if err != nil {
 			return fmt.Errorf("failed to generate tokens: %w", err)
 		}
@@ -128,7 +127,7 @@ func (s *authService) Login(ctx context.Context, cmd service.LoginCommand) (*ser
 		}
 
 		// Generate new tokens
-		tokens, err = s.generateTokens(ctx, user.ID.String())
+		tokens, err = s.generateTokens(ctx, user)
 		if err != nil {
 			return fmt.Errorf("failed to generate tokens: %w", err)
 		}
@@ -170,8 +169,16 @@ func (s *authService) Refresh(ctx context.Context, cmd service.RefreshTokenComma
 			return fmt.Errorf("failed to revoke old token: %w", err)
 		}
 
+		user, err := s.userRepo.GetByID(ctx, refreshToken.UserID)
+		if err != nil {
+			return fmt.Errorf("failed to get user: %w", err)
+		}
+		if user == nil {
+			return ErrInvalidRefreshToken
+		}
+
 		// Generate new tokens
-		tokens, err = s.generateTokens(ctx, refreshToken.UserID.String())
+		tokens, err = s.generateTokens(ctx, user)
 		if err != nil {
 			return fmt.Errorf("failed to generate new tokens: %w", err)
 		}
@@ -199,9 +206,9 @@ func (s *authService) Logout(ctx context.Context, cmd service.LogoutCommand) err
 	return nil
 }
 
-func (s *authService) generateTokens(ctx context.Context, userID string) (*service.AuthTokens, error) {
+func (s *authService) generateTokens(ctx context.Context, user *models.User) (*service.AuthTokens, error) {
 	// Generate access token
-	accessToken, err := s.jwtService.SignAccessToken(userID, s.accessTokenTTL)
+	accessToken, err := s.jwtService.SignAccessToken(user.ID.String(), user.Role, s.accessTokenTTL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign access token: %w", err)
 	}
@@ -216,12 +223,7 @@ func (s *authService) generateTokens(ctx context.Context, userID string) (*servi
 	tokenHash := auth.HashRefreshToken(refreshTokenStr)
 	expiresAt := time.Now().Add(s.refreshTokenTTL)
 
-	userIDVO, err := valueobjects.NewUserID(userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create user ID: %w", err)
-	}
-
-	refreshTokenModel := models.NewRefreshToken(userIDVO, tokenHash, expiresAt)
+	refreshTokenModel := models.NewRefreshToken(user.ID, tokenHash, expiresAt)
 
 	_, err = s.refreshTokenRepo.Create(ctx, refreshTokenModel)
 	if err != nil {

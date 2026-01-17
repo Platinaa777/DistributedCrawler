@@ -12,10 +12,16 @@ func UserSnapshotToModel(snapshot snapshots.UserSnapshot) (*models.User, error) 
 		return nil, err
 	}
 
+	role, err := models.ParseRole(snapshot.Role)
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.User{
 		ID:           userID,
 		Email:        snapshot.Email,
 		PasswordHash: snapshot.PasswordHash,
+		Role:         role,
 		CreatedAt:    snapshot.CreatedAt,
 		UpdatedAt:    snapshot.UpdatedAt,
 	}, nil
@@ -26,6 +32,7 @@ func UserModelToSnapshot(user *models.User) snapshots.UserSnapshot {
 		ID:           user.ID.String(),
 		Email:        user.Email,
 		PasswordHash: user.PasswordHash,
+		Role:         string(user.Role),
 		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    user.UpdatedAt,
 	}

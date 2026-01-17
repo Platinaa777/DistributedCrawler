@@ -91,6 +91,7 @@ func (a *APIApp) initDeps(ctx context.Context) error {
 		a.initConfig,
 		a.initLogger,
 		a.initServiceProvider,
+		a.initDefaultAdmin,
 		a.initGRPCServer,
 		a.initHTTPServer,
 		a.initWorker,
@@ -134,6 +135,13 @@ func (a *APIApp) initServiceProvider(_ context.Context) error {
 	return nil
 }
 
+func (a *APIApp) initDefaultAdmin(ctx context.Context) error {
+	if err := a.serviceProvider.EnsureDefaultAdmin(ctx); err != nil {
+		log.Fatalf("failed to ensure default admin: %v", err)
+	}
+	return nil
+}
+
 func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
@@ -142,6 +150,7 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 				interceptor.LogInterceptor,
 				interceptor.ValidateInterceptor,
 				auth.JWTAuthInterceptor(a.serviceProvider.JWTService()),
+				auth.RBACInterceptor(),
 			),
 		),
 	)
@@ -151,6 +160,7 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	crawlergrpc.RegisterCrawlerServiceServer(a.grpcServer, a.serviceProvider.CrawlerServiceImpl(ctx))
 	crawlergrpc.RegisterPreviewServiceServer(a.grpcServer, a.serviceProvider.PreviewServiceImpl(ctx))
 	crawlergrpc.RegisterAuthServiceServer(a.grpcServer, a.serviceProvider.AuthServiceImpl(ctx))
+	crawlergrpc.RegisterUserServiceServer(a.grpcServer, a.serviceProvider.UserServiceImpl(ctx))
 	crawlergrpc.RegisterWorkerServiceServer(a.grpcServer, a.serviceProvider.WorkerServiceImpl(ctx))
 
 	return nil
@@ -181,6 +191,11 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 	}
 
 	err = crawlergrpc.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
+	}
+
+	err = crawlergrpc.RegisterUserServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
 	if err != nil {
 		return err
 	}

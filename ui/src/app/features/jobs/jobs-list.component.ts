@@ -11,6 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CrawlerApiService, JobListFilter } from '../../core/services/api/crawler-api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { CrawlJob } from '../../core/models';
 import { JobFiltersComponent } from './components/job-filters.component';
 
@@ -31,10 +32,20 @@ import { JobFiltersComponent } from './components/job-filters.component';
     <div class="container mx-auto p-6">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold">Crawl Jobs</h1>
-        <button mat-raised-button color="primary" (click)="createJob()">
-          <mat-icon>add</mat-icon>
-          Create Job
-        </button>
+        <div class="flex items-center gap-3">
+          <button
+            *ngIf="canManageUsers"
+            mat-stroked-button
+            color="primary"
+            (click)="goToUsers()">
+            <mat-icon>manage_accounts</mat-icon>
+            Users
+          </button>
+          <button mat-raised-button color="primary" (click)="createJob()" [disabled]="!canCreateJobs">
+            <mat-icon>add</mat-icon>
+            Create Job
+          </button>
+        </div>
       </div>
 
       <!-- Filters -->
@@ -139,7 +150,7 @@ import { JobFiltersComponent } from './components/job-filters.component';
 
         <div *ngIf="jobs.length === 0 && !loading" class="text-center p-8 text-gray-500">
           <mat-icon class="text-6xl">work_outline</mat-icon>
-          <p class="mt-4">No jobs found. Create your first crawl job!</p>
+          <p class="mt-4">No jobs found.</p>
         </div>
       </mat-card>
     </div>
@@ -239,7 +250,8 @@ export class JobsListComponent implements OnInit, OnDestroy {
 
   constructor(
     private crawlerApi: CrawlerApiService,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -326,6 +338,18 @@ export class JobsListComponent implements OnInit, OnDestroy {
 
   createJob(): void {
     this.router.navigate(['/jobs/simple-create']);
+  }
+
+  get canCreateJobs(): boolean {
+    return this.authService.hasMinimumRole('READ_WRITE');
+  }
+
+  get canManageUsers(): boolean {
+    return this.authService.hasMinimumRole('ADMINISTRATOR');
+  }
+
+  goToUsers(): void {
+    this.router.navigate(['/users']);
   }
 
   getStatusClass(status: string): string {

@@ -8,15 +8,18 @@ import (
 	authapi "distributed-crawler/internal/api/auth"
 	crawljob "distributed-crawler/internal/api/crawl_job"
 	previewapi "distributed-crawler/internal/api/preview"
+	userapi "distributed-crawler/internal/api/user"
 	workerapi "distributed-crawler/internal/api/worker"
 	"distributed-crawler/internal/application/service"
 	authservice "distributed-crawler/internal/application/service/auth"
 	crawljobservice "distributed-crawler/internal/application/service/crawl_job"
 	crawltaskservice "distributed-crawler/internal/application/service/crawl_task"
 	previewservice "distributed-crawler/internal/application/service/preview"
+	userservice "distributed-crawler/internal/application/service/user"
 	"distributed-crawler/internal/auth"
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
+	authmodels "distributed-crawler/internal/domain/auth/models"
 	refreshtokenrepo "distributed-crawler/internal/domain/auth/repos/refresh_token"
 	userrepo "distributed-crawler/internal/domain/auth/repos/user"
 	"distributed-crawler/internal/domain/crawl/models"
@@ -69,10 +72,12 @@ type serviceProvider struct {
 	crawlTaskService service.CrawlTaskService
 	previewService   service.PreviewService
 	authService      service.AuthService
+	userService      service.UserService
 
 	crawlerServiceImpl *crawljob.CrawlJobImplementation
 	previewServiceImpl *previewapi.PreviewImplementation
 	authServiceImpl    *authapi.AuthImplementation
+	userServiceImpl    *userapi.UserImplementation
 	workerServiceImpl  *workerapi.WorkerImplementation
 	outboxPublisher    *worker.OutboxPublisher
 	workerRegistry     *workerhealth.Registry
@@ -446,6 +451,17 @@ func (s *serviceProvider) AuthService(ctx context.Context) service.AuthService {
 	return s.authService
 }
 
+func (s *serviceProvider) UserService(ctx context.Context) service.UserService {
+	if s.userService == nil {
+		s.userService = userservice.NewUserService(
+			s.UserRepository(ctx),
+			s.TxManager(ctx),
+		)
+	}
+
+	return s.userService
+}
+
 func (s *serviceProvider) AuthServiceImpl(ctx context.Context) *authapi.AuthImplementation {
 	if s.authServiceImpl == nil {
 		s.authServiceImpl = authapi.NewImplementation(
@@ -454,6 +470,16 @@ func (s *serviceProvider) AuthServiceImpl(ctx context.Context) *authapi.AuthImpl
 	}
 
 	return s.authServiceImpl
+}
+
+func (s *serviceProvider) UserServiceImpl(ctx context.Context) *userapi.UserImplementation {
+	if s.userServiceImpl == nil {
+		s.userServiceImpl = userapi.NewImplementation(
+			s.UserService(ctx),
+		)
+	}
+
+	return s.userServiceImpl
 }
 
 func (s *serviceProvider) WorkerRegistry() *workerhealth.Registry {
@@ -473,6 +499,33 @@ func (s *serviceProvider) WorkerServiceImpl(_ context.Context) *workerapi.Worker
 	}
 
 	return s.workerServiceImpl
+}
+
+func (s *serviceProvider) EnsureDefaultAdmin(ctx context.Context) error {
+	authCfg := s.AuthConfig()
+	email := authCfg.DefaultUserEmail()
+	password := authCfg.DefaultUserPassword()
+
+	user, err := s.UserRepository(ctx).GetByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+
+	if user != nil {
+		if user.Role != authmodels.RoleAdministrator {
+			return s.UserRepository(ctx).UpdateRole(ctx, user.ID, authmodels.RoleAdministrator)
+		}
+		return nil
+	}
+
+	passwordHash, err := auth.HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	admin := authmodels.NewUserWithRole(email, passwordHash, authmodels.RoleAdministrator)
+	_, err = s.UserRepository(ctx).Create(ctx, admin)
+	return err
 }
 
 func (s *serviceProvider) Close() error {

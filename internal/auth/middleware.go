@@ -14,6 +14,7 @@ import (
 type contextKey string
 
 const UserIDContextKey contextKey = "user_id"
+const UserRoleContextKey contextKey = "user_role"
 
 // JWTAuthInterceptor creates a gRPC unary interceptor for JWT authentication
 func JWTAuthInterceptor(jwtService *JWTService) grpc.UnaryServerInterceptor {
@@ -37,6 +38,7 @@ func JWTAuthInterceptor(jwtService *JWTService) grpc.UnaryServerInterceptor {
 
 		// Add user ID to context
 		ctx = context.WithValue(ctx, UserIDContextKey, claims.UserID)
+		ctx = context.WithValue(ctx, UserRoleContextKey, claims.Role)
 
 		// Call handler
 		return handler(ctx, req)
@@ -45,12 +47,11 @@ func JWTAuthInterceptor(jwtService *JWTService) grpc.UnaryServerInterceptor {
 
 // isPublicEndpoint checks if the endpoint is public (doesn't require authentication)
 func isPublicEndpoint(method string) bool {
-	return true // TODO: fix
-
 	publicEndpoints := []string{
 		"/crawler.v1.AuthService/Register",
 		"/crawler.v1.AuthService/Login",
 		"/crawler.v1.AuthService/Refresh",
+		"/crawler.v1.AuthService/Logout",
 	}
 
 	for _, endpoint := range publicEndpoints {
@@ -89,4 +90,9 @@ func extractTokenFromMetadata(ctx context.Context) (string, error) {
 func GetUserIDFromContext(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(UserIDContextKey).(string)
 	return userID, ok
+}
+
+func GetUserRoleFromContext(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value(UserRoleContextKey).(string)
+	return role, ok
 }

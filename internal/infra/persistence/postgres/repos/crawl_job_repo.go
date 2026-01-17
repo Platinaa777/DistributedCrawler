@@ -310,7 +310,7 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 	}
 
 	// Order by created_at DESC, id DESC for stable ordering
-	builder = builder.OrderBy("j." + createdAtColumn + " DESC", "j." + idColumn + " DESC")
+	builder = builder.OrderBy("j."+createdAtColumn+" DESC", "j."+idColumn+" DESC")
 	builder = builder.Limit(uint64(fetchLimit))
 
 	sqlQuery, args, err := builder.ToSql()

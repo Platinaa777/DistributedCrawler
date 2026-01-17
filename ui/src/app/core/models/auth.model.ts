@@ -8,4 +8,5 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
   expiresAt: number; // unix ms
+  email?: string;
 }

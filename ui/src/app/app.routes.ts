@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -27,12 +28,14 @@ export const routes: Routes = [
   },
   {
     path: 'jobs/simple-create',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { minRole: 'READ_WRITE' },
     loadComponent: () => import('./features/job-create/simple-job-create.component').then(m => m.SimpleJobCreateComponent)
   },
   {
     path: 'jobs/create',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { minRole: 'READ_WRITE' },
     loadComponent: () => import('./features/job-create/job-create.component').then(m => m.JobCreateComponent)
   },
   {
@@ -42,8 +45,15 @@ export const routes: Routes = [
   },
   {
     path: 'workers',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { minRole: 'ADMINISTRATOR' },
     loadComponent: () => import('./features/workers/worker-monitor.component').then(m => m.WorkerMonitorComponent)
+  },
+  {
+    path: 'users',
+    canActivate: [authGuard, roleGuard],
+    data: { minRole: 'ADMINISTRATOR' },
+    loadComponent: () => import('./features/users').then(m => m.UsersListComponent)
   },
   {
     path: '**',

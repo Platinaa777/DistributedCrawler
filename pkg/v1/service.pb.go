@@ -43,7 +43,10 @@ const file_v1_service_proto_rawDesc = "" +
 	"\bRegister\x12\x1b.crawler.v1.RegisterRequest\x1a\x1c.crawler.v1.RegisterResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/auth/register\x12[\n" +
 	"\x05Login\x12\x18.crawler.v1.LoginRequest\x1a\x19.crawler.v1.LoginResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/v1/auth/login\x12c\n" +
 	"\aRefresh\x12\x1a.crawler.v1.RefreshRequest\x1a\x1b.crawler.v1.RefreshResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/auth/refresh\x12_\n" +
-	"\x06Logout\x12\x19.crawler.v1.LogoutRequest\x1a\x1a.crawler.v1.LogoutResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/logout2\xd2\x03\n" +
+	"\x06Logout\x12\x19.crawler.v1.LogoutRequest\x1a\x1a.crawler.v1.LogoutResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/logout2\xeb\x01\n" +
+	"\vUserService\x12_\n" +
+	"\tListUsers\x12\x1c.crawler.v1.ListUsersRequest\x1a\x1d.crawler.v1.ListUsersResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/users\x12{\n" +
+	"\x0eUpdateUserRole\x12!.crawler.v1.UpdateUserRoleRequest\x1a\".crawler.v1.UpdateUserRoleResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/api/v1/users/{id}/role2\xd2\x03\n" +
 	"\rWorkerService\x12J\n" +
 	"\fWorkerStream\x12\x1b.crawler.v1.WorkerHeartbeat\x1a\x19.crawler.v1.WorkerCommand(\x010\x01\x12g\n" +
 	"\vListWorkers\x12\x1e.crawler.v1.ListWorkersRequest\x1a\x1f.crawler.v1.ListWorkersResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/api/v1/workers\x12|\n" +
@@ -67,27 +70,31 @@ var file_v1_service_proto_goTypes = []any{
 	(*LoginRequest)(nil),                // 10: crawler.v1.LoginRequest
 	(*RefreshRequest)(nil),              // 11: crawler.v1.RefreshRequest
 	(*LogoutRequest)(nil),               // 12: crawler.v1.LogoutRequest
-	(*WorkerHeartbeat)(nil),             // 13: crawler.v1.WorkerHeartbeat
-	(*ListWorkersRequest)(nil),          // 14: crawler.v1.ListWorkersRequest
-	(*DrainWorkerRequest)(nil),          // 15: crawler.v1.DrainWorkerRequest
-	(*ForceKillWorkerRequest)(nil),      // 16: crawler.v1.ForceKillWorkerRequest
-	(*ListJobsResponse)(nil),            // 17: crawler.v1.ListJobsResponse
-	(*CreateJobResponse)(nil),           // 18: crawler.v1.CreateJobResponse
-	(*GetJobResponse)(nil),              // 19: crawler.v1.GetJobResponse
-	(*GetJobExportFileURLResponse)(nil), // 20: crawler.v1.GetJobExportFileURLResponse
-	(*GetTaskResponse)(nil),             // 21: crawler.v1.GetTaskResponse
-	(*ListTasksByJobResponse)(nil),      // 22: crawler.v1.ListTasksByJobResponse
-	(*GetTaskFileURLResponse)(nil),      // 23: crawler.v1.GetTaskFileURLResponse
-	(*CreatePreviewResponse)(nil),       // 24: crawler.v1.CreatePreviewResponse
-	(*GetPreviewResponse)(nil),          // 25: crawler.v1.GetPreviewResponse
-	(*RegisterResponse)(nil),            // 26: crawler.v1.RegisterResponse
-	(*LoginResponse)(nil),               // 27: crawler.v1.LoginResponse
-	(*RefreshResponse)(nil),             // 28: crawler.v1.RefreshResponse
-	(*LogoutResponse)(nil),              // 29: crawler.v1.LogoutResponse
-	(*WorkerCommand)(nil),               // 30: crawler.v1.WorkerCommand
-	(*ListWorkersResponse)(nil),         // 31: crawler.v1.ListWorkersResponse
-	(*DrainWorkerResponse)(nil),         // 32: crawler.v1.DrainWorkerResponse
-	(*ForceKillWorkerResponse)(nil),     // 33: crawler.v1.ForceKillWorkerResponse
+	(*ListUsersRequest)(nil),            // 13: crawler.v1.ListUsersRequest
+	(*UpdateUserRoleRequest)(nil),       // 14: crawler.v1.UpdateUserRoleRequest
+	(*WorkerHeartbeat)(nil),             // 15: crawler.v1.WorkerHeartbeat
+	(*ListWorkersRequest)(nil),          // 16: crawler.v1.ListWorkersRequest
+	(*DrainWorkerRequest)(nil),          // 17: crawler.v1.DrainWorkerRequest
+	(*ForceKillWorkerRequest)(nil),      // 18: crawler.v1.ForceKillWorkerRequest
+	(*ListJobsResponse)(nil),            // 19: crawler.v1.ListJobsResponse
+	(*CreateJobResponse)(nil),           // 20: crawler.v1.CreateJobResponse
+	(*GetJobResponse)(nil),              // 21: crawler.v1.GetJobResponse
+	(*GetJobExportFileURLResponse)(nil), // 22: crawler.v1.GetJobExportFileURLResponse
+	(*GetTaskResponse)(nil),             // 23: crawler.v1.GetTaskResponse
+	(*ListTasksByJobResponse)(nil),      // 24: crawler.v1.ListTasksByJobResponse
+	(*GetTaskFileURLResponse)(nil),      // 25: crawler.v1.GetTaskFileURLResponse
+	(*CreatePreviewResponse)(nil),       // 26: crawler.v1.CreatePreviewResponse
+	(*GetPreviewResponse)(nil),          // 27: crawler.v1.GetPreviewResponse
+	(*RegisterResponse)(nil),            // 28: crawler.v1.RegisterResponse
+	(*LoginResponse)(nil),               // 29: crawler.v1.LoginResponse
+	(*RefreshResponse)(nil),             // 30: crawler.v1.RefreshResponse
+	(*LogoutResponse)(nil),              // 31: crawler.v1.LogoutResponse
+	(*ListUsersResponse)(nil),           // 32: crawler.v1.ListUsersResponse
+	(*UpdateUserRoleResponse)(nil),      // 33: crawler.v1.UpdateUserRoleResponse
+	(*WorkerCommand)(nil),               // 34: crawler.v1.WorkerCommand
+	(*ListWorkersResponse)(nil),         // 35: crawler.v1.ListWorkersResponse
+	(*DrainWorkerResponse)(nil),         // 36: crawler.v1.DrainWorkerResponse
+	(*ForceKillWorkerResponse)(nil),     // 37: crawler.v1.ForceKillWorkerResponse
 }
 var file_v1_service_proto_depIdxs = []int32{
 	0,  // 0: crawler.v1.CrawlerService.ListJobs:input_type -> crawler.v1.ListJobsRequest
@@ -103,29 +110,33 @@ var file_v1_service_proto_depIdxs = []int32{
 	10, // 10: crawler.v1.AuthService.Login:input_type -> crawler.v1.LoginRequest
 	11, // 11: crawler.v1.AuthService.Refresh:input_type -> crawler.v1.RefreshRequest
 	12, // 12: crawler.v1.AuthService.Logout:input_type -> crawler.v1.LogoutRequest
-	13, // 13: crawler.v1.WorkerService.WorkerStream:input_type -> crawler.v1.WorkerHeartbeat
-	14, // 14: crawler.v1.WorkerService.ListWorkers:input_type -> crawler.v1.ListWorkersRequest
-	15, // 15: crawler.v1.WorkerService.DrainWorker:input_type -> crawler.v1.DrainWorkerRequest
-	16, // 16: crawler.v1.WorkerService.ForceKillWorker:input_type -> crawler.v1.ForceKillWorkerRequest
-	17, // 17: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
-	18, // 18: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
-	19, // 19: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
-	20, // 20: crawler.v1.CrawlerService.GetJobExportFileURL:output_type -> crawler.v1.GetJobExportFileURLResponse
-	21, // 21: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
-	22, // 22: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
-	23, // 23: crawler.v1.CrawlerService.GetTaskFileURL:output_type -> crawler.v1.GetTaskFileURLResponse
-	24, // 24: crawler.v1.PreviewService.CreatePreview:output_type -> crawler.v1.CreatePreviewResponse
-	25, // 25: crawler.v1.PreviewService.GetPreview:output_type -> crawler.v1.GetPreviewResponse
-	26, // 26: crawler.v1.AuthService.Register:output_type -> crawler.v1.RegisterResponse
-	27, // 27: crawler.v1.AuthService.Login:output_type -> crawler.v1.LoginResponse
-	28, // 28: crawler.v1.AuthService.Refresh:output_type -> crawler.v1.RefreshResponse
-	29, // 29: crawler.v1.AuthService.Logout:output_type -> crawler.v1.LogoutResponse
-	30, // 30: crawler.v1.WorkerService.WorkerStream:output_type -> crawler.v1.WorkerCommand
-	31, // 31: crawler.v1.WorkerService.ListWorkers:output_type -> crawler.v1.ListWorkersResponse
-	32, // 32: crawler.v1.WorkerService.DrainWorker:output_type -> crawler.v1.DrainWorkerResponse
-	33, // 33: crawler.v1.WorkerService.ForceKillWorker:output_type -> crawler.v1.ForceKillWorkerResponse
-	17, // [17:34] is the sub-list for method output_type
-	0,  // [0:17] is the sub-list for method input_type
+	13, // 13: crawler.v1.UserService.ListUsers:input_type -> crawler.v1.ListUsersRequest
+	14, // 14: crawler.v1.UserService.UpdateUserRole:input_type -> crawler.v1.UpdateUserRoleRequest
+	15, // 15: crawler.v1.WorkerService.WorkerStream:input_type -> crawler.v1.WorkerHeartbeat
+	16, // 16: crawler.v1.WorkerService.ListWorkers:input_type -> crawler.v1.ListWorkersRequest
+	17, // 17: crawler.v1.WorkerService.DrainWorker:input_type -> crawler.v1.DrainWorkerRequest
+	18, // 18: crawler.v1.WorkerService.ForceKillWorker:input_type -> crawler.v1.ForceKillWorkerRequest
+	19, // 19: crawler.v1.CrawlerService.ListJobs:output_type -> crawler.v1.ListJobsResponse
+	20, // 20: crawler.v1.CrawlerService.CreateJob:output_type -> crawler.v1.CreateJobResponse
+	21, // 21: crawler.v1.CrawlerService.GetJob:output_type -> crawler.v1.GetJobResponse
+	22, // 22: crawler.v1.CrawlerService.GetJobExportFileURL:output_type -> crawler.v1.GetJobExportFileURLResponse
+	23, // 23: crawler.v1.CrawlerService.GetTask:output_type -> crawler.v1.GetTaskResponse
+	24, // 24: crawler.v1.CrawlerService.ListTasksByJob:output_type -> crawler.v1.ListTasksByJobResponse
+	25, // 25: crawler.v1.CrawlerService.GetTaskFileURL:output_type -> crawler.v1.GetTaskFileURLResponse
+	26, // 26: crawler.v1.PreviewService.CreatePreview:output_type -> crawler.v1.CreatePreviewResponse
+	27, // 27: crawler.v1.PreviewService.GetPreview:output_type -> crawler.v1.GetPreviewResponse
+	28, // 28: crawler.v1.AuthService.Register:output_type -> crawler.v1.RegisterResponse
+	29, // 29: crawler.v1.AuthService.Login:output_type -> crawler.v1.LoginResponse
+	30, // 30: crawler.v1.AuthService.Refresh:output_type -> crawler.v1.RefreshResponse
+	31, // 31: crawler.v1.AuthService.Logout:output_type -> crawler.v1.LogoutResponse
+	32, // 32: crawler.v1.UserService.ListUsers:output_type -> crawler.v1.ListUsersResponse
+	33, // 33: crawler.v1.UserService.UpdateUserRole:output_type -> crawler.v1.UpdateUserRoleResponse
+	34, // 34: crawler.v1.WorkerService.WorkerStream:output_type -> crawler.v1.WorkerCommand
+	35, // 35: crawler.v1.WorkerService.ListWorkers:output_type -> crawler.v1.ListWorkersResponse
+	36, // 36: crawler.v1.WorkerService.DrainWorker:output_type -> crawler.v1.DrainWorkerResponse
+	37, // 37: crawler.v1.WorkerService.ForceKillWorker:output_type -> crawler.v1.ForceKillWorkerResponse
+	19, // [19:38] is the sub-list for method output_type
+	0,  // [0:19] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -145,7 +156,7 @@ func file_v1_service_proto_init() {
 			NumEnums:      0,
 			NumMessages:   0,
 			NumExtensions: 0,
-			NumServices:   4,
+			NumServices:   5,
 		},
 		GoTypes:           file_v1_service_proto_goTypes,
 		DependencyIndexes: file_v1_service_proto_depIdxs,

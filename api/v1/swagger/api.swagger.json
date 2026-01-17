@@ -18,6 +18,9 @@
       "name": "AuthService"
     },
     {
+      "name": "UserService"
+    },
+    {
       "name": "WorkerService"
     }
   ],
@@ -493,6 +496,68 @@
         ]
       }
     },
+    "/api/v1/users": {
+      "get": {
+        "summary": "List registered users",
+        "operationId": "UserService_ListUsers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "UserService"
+        ]
+      }
+    },
+    "/api/v1/users/{id}/role": {
+      "patch": {
+        "summary": "Update user role (admin only)",
+        "operationId": "UserService_UpdateUserRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateUserRoleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserServiceUpdateUserRoleBody"
+            }
+          }
+        ],
+        "tags": [
+          "UserService"
+        ]
+      }
+    },
     "/api/v1/workers": {
       "get": {
         "summary": "List registered workers for monitoring UI",
@@ -596,6 +661,14 @@
     }
   },
   "definitions": {
+    "UserServiceUpdateUserRoleBody": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "$ref": "#/definitions/v1Role"
+        }
+      }
+    },
     "WorkerServiceDrainWorkerBody": {
       "type": "object",
       "properties": {
@@ -1010,6 +1083,18 @@
         }
       }
     },
+    "v1ListUsersResponse": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1User"
+          }
+        }
+      }
+    },
     "v1ListWorkersResponse": {
       "type": "object",
       "properties": {
@@ -1206,6 +1291,17 @@
       },
       "title": "RetryPolicy defines retry configuration"
     },
+    "v1Role": {
+      "type": "string",
+      "enum": [
+        "ROLE_UNSPECIFIED",
+        "ROLE_READ",
+        "ROLE_READ_WRITE",
+        "ROLE_ADMINISTRATOR"
+      ],
+      "default": "ROLE_UNSPECIFIED",
+      "description": "Role represents user authorization role."
+    },
     "v1ScheduleOptions": {
       "type": "object",
       "properties": {
@@ -1259,6 +1355,36 @@
         }
       },
       "title": "TransformSpec defines a transformation operation"
+    },
+    "v1UpdateUserRoleResponse": {
+      "type": "object",
+      "properties": {
+        "updated": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1User": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/v1Role"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "v1WorkerInfo": {
       "type": "object",
