@@ -1,12 +1,14 @@
 import { Component, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatCardModule } from '@angular/material/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
+import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { CardModule } from 'primeng/card';
+import { FloatLabelModule } from 'primeng/floatlabel';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { PreviewLoaderService } from '../../services/preview-loader.service';
 import { JobCreateStateService } from '../../services/job-create-state.service';
 import { PreviewIframeComponent } from '../../components/preview-iframe/preview-iframe.component';
@@ -17,107 +19,98 @@ import { PreviewIframeComponent } from '../../components/preview-iframe/preview-
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatCardModule,
+    InputTextModule,
+    TextareaModule,
+    ButtonModule,
+    ProgressSpinnerModule,
+    CardModule,
+    FloatLabelModule,
+    IconFieldModule,
+    InputIconModule,
     PreviewIframeComponent
   ],
   template: `
     <div class="space-y-4">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Step 1: Load URL Preview</mat-card-title>
-          <mat-card-subtitle>
-            Enter the URL you want to crawl and inspect
-          </mat-card-subtitle>
-        </mat-card-header>
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h2 class="text-xl font-semibold">Step 1: Load URL Preview</h2>
+            <p class="text-sm text-gray-500">Enter the URL you want to crawl and inspect</p>
+          </div>
+        </ng-template>
 
-        <mat-card-content>
-          <form [formGroup]="urlForm" (ngSubmit)="loadPreview()" class="space-y-4">
-            <mat-form-field class="w-full">
-              <mat-label>Target URL</mat-label>
+        <form [formGroup]="urlForm" (ngSubmit)="loadPreview()" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Target URL</label>
+            <p-iconfield>
+              <p-inputicon styleClass="pi pi-link" />
               <input
-                matInput
+                pInputText
                 formControlName="url"
                 placeholder="https://example.com"
                 type="url"
-              />
-              <mat-icon matPrefix>link</mat-icon>
-              <mat-error *ngIf="urlForm.get('url')?.hasError('required')">
-                URL is required
-              </mat-error>
-              <mat-error *ngIf="urlForm.get('url')?.hasError('pattern')">
-                Please enter a valid URL
-              </mat-error>
-            </mat-form-field>
+                class="w-full" />
+            </p-iconfield>
+            <small *ngIf="urlForm.get('url')?.hasError('required') && urlForm.get('url')?.touched" class="text-red-500">
+              URL is required
+            </small>
+            <small *ngIf="urlForm.get('url')?.hasError('pattern') && urlForm.get('url')?.touched" class="text-red-500">
+              Please enter a valid URL
+            </small>
+          </div>
 
-            <mat-form-field class="w-full">
-              <mat-label>Cookie (optional)</mat-label>
-              <textarea
-                matInput
-                formControlName="cookie"
-                placeholder="Paste Cookie header value from your browser"
-                rows="3"
-              ></textarea>
-            </mat-form-field>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cookie (optional)</label>
+            <textarea
+              pTextarea
+              formControlName="cookie"
+              placeholder="Paste Cookie header value from your browser"
+              rows="3"
+              class="w-full"></textarea>
+          </div>
 
-            <div class="flex items-center gap-4">
-              <button
-                mat-raised-button
-                color="primary"
-                type="submit"
-                [disabled]="urlForm.invalid || loading"
-              >
-                <mat-icon>refresh</mat-icon>
-                Load Preview
-              </button>
+          <div class="flex items-center gap-4">
+            <p-button
+              type="submit"
+              [disabled]="urlForm.invalid || loading">
+              <i class="pi pi-refresh mr-2"></i>
+              Load Preview
+            </p-button>
 
-              <mat-spinner *ngIf="loading" diameter="24"></mat-spinner>
+            <p-progressSpinner *ngIf="loading" [style]="{width: '24px', height: '24px'}" />
 
-              <span *ngIf="previewHtml" class="text-sm text-green-600 flex items-center gap-1">
-                <mat-icon class="text-sm">check_circle</mat-icon>
-                Preview loaded
-              </span>
+            <span *ngIf="previewHtml" class="text-sm text-green-600 flex items-center gap-1">
+              <i class="pi pi-check-circle text-sm"></i>
+              Preview loaded
+            </span>
 
-              <span *ngIf="error" class="text-sm text-red-600 flex items-center gap-1">
-                <mat-icon class="text-sm">error</mat-icon>
-                {{ error }}
-              </span>
-            </div>
-          </form>
-        </mat-card-content>
-      </mat-card>
+            <span *ngIf="error" class="text-sm text-red-600 flex items-center gap-1">
+              <i class="pi pi-times-circle text-sm"></i>
+              {{ error }}
+            </span>
+          </div>
+        </form>
+      </p-card>
 
-      <mat-card *ngIf="previewHtml" class="flex-1">
-        <mat-card-header>
-          <mat-card-title class="text-base">HTML Preview</mat-card-title>
-          <mat-card-subtitle class="text-xs">{{ finalUrl }}</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content class="h-[500px]">
+      <p-card *ngIf="previewHtml" styleClass="flex-1">
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h3 class="text-base font-semibold">HTML Preview</h3>
+            <p class="text-xs text-gray-500">{{ finalUrl }}</p>
+          </div>
+        </ng-template>
+        <div class="h-[500px]">
           <app-preview-iframe
             [html]="previewHtml"
-            (frameReady)="onFrameReady($event)"
-          ></app-preview-iframe>
-        </mat-card-content>
-      </mat-card>
+            (frameReady)="onFrameReady($event)">
+          </app-preview-iframe>
+        </div>
+      </p-card>
     </div>
   `,
   styles: [`
     :host {
       display: block;
-    }
-
-    mat-form-field {
-      width: 100%;
-    }
-
-    input[type="url"] {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
   `]
 })

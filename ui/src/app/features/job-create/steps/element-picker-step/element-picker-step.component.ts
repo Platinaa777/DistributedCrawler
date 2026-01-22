@@ -1,10 +1,9 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { PreviewIframeComponent } from '../../components/preview-iframe/preview-iframe.component';
 import { JobCreateStateService } from '../../services/job-create-state.service';
 import { SelectorGeneratorService } from '../../../../core/services/selector-generator.service';
@@ -26,80 +25,86 @@ interface PickerElementData {
   imports: [
     CommonModule,
     FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSlideToggleModule,
+    CardModule,
+    ButtonModule,
+    InputSwitchModule,
     PreviewIframeComponent,
     FieldBuilderComponent,
     MetricBuilderComponent
   ],
   template: `
     <div class="space-y-4 h-full">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Step 2: Pick Elements & Build Spec</mat-card-title>
-          <mat-card-subtitle>
-            Hover and click on elements in the preview to extract data and build your extraction spec
-          </mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content class="space-y-4">
-          <div class="flex items-center gap-4">
-            <mat-slide-toggle
-              [(ngModel)]="pickerEnabled"
-              color="primary"
-              (change)="togglePicker()"
-            >
-              {{ pickerEnabled ? 'Picker Active' : 'Picker Inactive' }}
-            </mat-slide-toggle>
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h2 class="text-xl font-semibold">Step 2: Pick Elements & Build Spec</h2>
+            <p class="text-sm text-gray-500">
+              Hover and click on elements in the preview to extract data and build your extraction spec.
+            </p>
+          </div>
+        </ng-template>
+        <div class="p-4">
+          <div class="flex flex-wrap items-center gap-4">
+            <div class="flex items-center gap-3">
+              <p-inputSwitch
+                [(ngModel)]="pickerEnabled"
+                inputId="picker-toggle"
+                (onChange)="togglePicker()">
+              </p-inputSwitch>
+              <label for="picker-toggle" class="text-sm font-medium">
+                {{ pickerEnabled ? 'Picker Active' : 'Picker Inactive' }}
+              </label>
+            </div>
 
-            <div class="text-sm text-gray-600">
-              <mat-icon class="text-sm align-middle">info</mat-icon>
-              {{
-                pickerEnabled
-                  ? 'Hover over elements and click to select'
-                  : 'Enable picker to select elements'
-              }}
+            <div class="text-sm text-gray-600 flex items-center gap-2">
+              <i class="pi pi-info-circle text-xs"></i>
+              <span>
+                {{ pickerEnabled ? 'Hover over elements and click to select' : 'Enable picker to select elements' }}
+              </span>
             </div>
           </div>
-    </mat-card-content>
-  </mat-card>
+        </div>
+      </p-card>
 
-  <div class="layout-grid">
-    <mat-card class="full-span check-card">
-      <mat-card-header class="flex items-center justify-between gap-3">
-        <div>
-          <mat-card-title class="text-base">Check (mock)</mat-card-title>
-          <mat-card-subtitle>Generate a mock JSON preview for your current setup</mat-card-subtitle>
-        </div>
-        <div class="flex items-center gap-2">
-          <button mat-raised-button color="primary" (click)="runTrial()">
-            <mat-icon>play_arrow</mat-icon>
-            Check (mock)
-          </button>
-          <button
-            mat-icon-button
-            [disabled]="!trialResult"
-            (click)="toggleTrialVisibility()"
-            aria-label="Toggle JSON visibility"
-          >
-            <mat-icon>{{ trialExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </button>
-        </div>
-      </mat-card-header>
-      <mat-card-content *ngIf="trialResult && trialExpanded">
-        <div class="trial-result">
-          <p class="text-xs font-semibold text-gray-600 mb-2">Trial Result</p>
-          <pre class="text-xs text-gray-800">{{ trialResult }}</pre>
-        </div>
-      </mat-card-content>
-    </mat-card>
+      <div class="layout-grid">
+        <p-card class="full-span check-card">
+          <ng-template pTemplate="header">
+            <div class="p-4 pb-0 flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold">Check (mock)</h3>
+                <p class="text-sm text-gray-500">Generate a mock JSON preview for your current setup.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <p-button (onClick)="runTrial()">
+                  <i class="pi pi-play mr-2"></i>
+                  Check (mock)
+                </p-button>
+                <p-button
+                  [text]="true"
+                  [rounded]="true"
+                  severity="secondary"
+                  [disabled]="!trialResult"
+                  (onClick)="toggleTrialVisibility()">
+                  <i class="pi" [ngClass]="trialExpanded ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
+                </p-button>
+              </div>
+            </div>
+          </ng-template>
+          <div class="p-4" *ngIf="trialResult && trialExpanded">
+            <div class="trial-result">
+              <p class="text-xs font-semibold text-gray-600 mb-2">Trial Result</p>
+              <pre class="text-xs text-gray-800">{{ trialResult }}</pre>
+            </div>
+          </div>
+        </p-card>
 
-    <mat-card class="fill-card preview-card">
-      <mat-card-header>
-        <mat-card-title class="text-base">Page Preview</mat-card-title>
-      </mat-card-header>
-      <mat-card-content class="relative flex-1 min-h-0">
+        <p-card class="fill-card preview-card">
+          <ng-template pTemplate="header">
+            <div class="p-4 pb-0">
+              <h3 class="text-base font-semibold">Page Preview</h3>
+            </div>
+          </ng-template>
+          <div class="p-4 relative flex-1 min-h-0">
             <div #previewContainer class="relative h-full min-h-[360px]">
               <app-preview-iframe
                 [html]="previewHtml"
@@ -127,33 +132,31 @@ interface PickerElementData {
                 </div>
               </div>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </p-card>
 
-        <mat-card class="fill-card">
-          <mat-card-header class="flex items-center justify-between gap-3">
-            <div>
-              <mat-card-title class="text-base">Fields ({{ fields.length }})</mat-card-title>
-              <mat-card-subtitle>Define data fields to extract</mat-card-subtitle>
+        <p-card class="fill-card">
+          <ng-template pTemplate="header">
+            <div class="p-4 pb-0 flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold">Fields ({{ fields.length }})</h3>
+                <p class="text-sm text-gray-500">Define data fields to extract.</p>
+              </div>
+              <p-button
+                [rounded]="true"
+                severity="secondary"
+                (onClick)="addField()">
+                <i class="pi pi-plus"></i>
+              </p-button>
             </div>
-            <button
-              mat-mini-fab
-              color="primary"
-              class="no-shadow"
-              (click)="addField()"
-              title="Add field"
-              aria-label="Add field"
-            >
-              <mat-icon>add</mat-icon>
-            </button>
-          </mat-card-header>
-          <mat-card-content class="card-content-scroll">
+          </ng-template>
+          <div class="p-4 card-content-scroll">
             <div class="flex-1 overflow-y-auto space-y-3 pr-1">
               <div
                 *ngIf="fields.length === 0"
                 class="text-center py-10 bg-gray-50 rounded border border-dashed border-gray-200"
               >
-                <mat-icon class="text-gray-400 text-5xl mb-2">data_object</mat-icon>
+                <i class="pi pi-database text-gray-400 text-4xl mb-2"></i>
                 <p class="text-gray-500">No fields defined yet</p>
                 <p class="text-gray-400 text-sm mt-1">Click elements in the preview or add one manually</p>
               </div>
@@ -165,33 +168,31 @@ interface PickerElementData {
                 (remove)="removeField(i)"
               ></app-field-builder>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </p-card>
 
-        <mat-card class="fill-card">
-          <mat-card-header class="flex items-center justify-between gap-3">
-            <div>
-              <mat-card-title class="text-base">Metrics ({{ metrics.length }})</mat-card-title>
-              <mat-card-subtitle>Define metrics to calculate from extracted data</mat-card-subtitle>
+        <p-card class="fill-card">
+          <ng-template pTemplate="header">
+            <div class="p-4 pb-0 flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold">Metrics ({{ metrics.length }})</h3>
+                <p class="text-sm text-gray-500">Define metrics to calculate from extracted data.</p>
+              </div>
+              <p-button
+                [rounded]="true"
+                severity="secondary"
+                (onClick)="addMetric()">
+                <i class="pi pi-plus"></i>
+              </p-button>
             </div>
-            <button
-              mat-mini-fab
-              color="primary"
-              class="no-shadow"
-              (click)="addMetric()"
-              title="Add metric"
-              aria-label="Add metric"
-            >
-              <mat-icon>add</mat-icon>
-            </button>
-          </mat-card-header>
-          <mat-card-content class="card-content-scroll space-y-3">
+          </ng-template>
+          <div class="p-4 card-content-scroll space-y-3">
             <div class="flex-1 overflow-y-auto space-y-3 pr-1">
               <div
                 *ngIf="metrics.length === 0"
                 class="text-center py-10 bg-gray-50 rounded border border-dashed border-gray-200"
               >
-                <mat-icon class="text-gray-400 text-5xl mb-2">analytics</mat-icon>
+                <i class="pi pi-chart-line text-gray-400 text-4xl mb-2"></i>
                 <p class="text-gray-500">No metrics defined yet</p>
                 <p class="text-gray-400 text-sm mt-1">Add a metric to track data quality</p>
               </div>
@@ -204,8 +205,8 @@ interface PickerElementData {
                 (remove)="removeMetric(i)"
               ></app-metric-builder>
             </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </p-card>
       </div>
     </div>
   `,
@@ -262,15 +263,11 @@ interface PickerElementData {
       min-height: 0;
     }
 
-    .fill-card mat-card-content {
+    .fill-card .p-card-body {
       display: flex;
       flex-direction: column;
       flex: 1;
       min-height: 0;
-    }
-
-    .no-shadow {
-      box-shadow: none !important;
     }
   `]
 })

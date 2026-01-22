@@ -2,12 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { FloatLabelModule } from 'primeng/floatlabel';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -17,74 +17,80 @@ import { AuthService } from '../../core/services/auth.service';
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule
+    CardModule,
+    InputTextModule,
+    PasswordModule,
+    ButtonModule,
+    ProgressSpinnerModule,
+    FloatLabelModule
   ],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 flex items-center justify-center p-6">
       <div class="max-w-md w-full space-y-6">
         <div class="text-center text-white space-y-2">
           <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-            <mat-icon class="text-amber-300">travel_explore</mat-icon>
+            <i class="pi pi-globe text-amber-300 text-xl"></i>
             <span class="tracking-wide text-sm uppercase">Distributed Crawler</span>
           </div>
           <h1 class="text-3xl font-bold">Welcome back</h1>
           <p class="text-slate-200">Sign in to orchestrate and monitor your crawling pipeline.</p>
         </div>
 
-        <mat-card class="bg-white/95 backdrop-blur-lg shadow-2xl border border-slate-200/60 p-8">
-          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+        <p-card styleClass="bg-white/95 backdrop-blur-lg shadow-2xl border border-slate-200/60">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6 p-2">
             <div class="space-y-2">
               <h2 class="text-xl font-semibold text-slate-900 tracking-tight">Login</h2>
               <p class="text-sm text-slate-600">Use your account credentials to continue.</p>
             </div>
 
-            <mat-form-field appearance="fill" class="w-full">
-              <mat-label>Email</mat-label>
-              <input matInput type="email" formControlName="email" autocomplete="email" />
-              <mat-error *ngIf="email?.invalid && email?.touched">Enter a valid email</mat-error>
-            </mat-form-field>
+            <div class="space-y-4">
+              <p-floatlabel>
+                <input
+                  pInputText
+                  id="email"
+                  type="email"
+                  formControlName="email"
+                  autocomplete="email"
+                  class="w-full" />
+                <label for="email">Email</label>
+              </p-floatlabel>
+              <small *ngIf="email?.invalid && email?.touched" class="text-red-500">
+                Enter a valid email
+              </small>
 
-            <mat-form-field appearance="fill" class="w-full">
-              <mat-label>Password</mat-label>
-              <input matInput [type]="showPassword ? 'text' : 'password'" formControlName="password" autocomplete="current-password" />
-              <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
-                <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-              <mat-error *ngIf="password?.invalid && password?.touched">Password is required</mat-error>
-            </mat-form-field>
+              <p-floatlabel>
+                <p-password
+                  id="password"
+                  formControlName="password"
+                  [feedback]="false"
+                  [toggleMask]="true"
+                  autocomplete="current-password"
+                  styleClass="w-full"
+                  inputStyleClass="w-full" />
+                <label for="password">Password</label>
+              </p-floatlabel>
+              <small *ngIf="password?.invalid && password?.touched" class="text-red-500">
+                Password is required
+              </small>
+            </div>
 
             <div *ngIf="error" class="rounded-lg border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">
               {{ error }}
             </div>
 
-            <button
-              mat-raised-button
-              color="primary"
-              class="w-full h-12 flex items-center justify-center gap-3 text-base font-semibold"
+            <p-button
+              type="submit"
+              [label]="loading ? 'Signing in...' : 'Sign in'"
               [disabled]="form.invalid || loading"
-              type="submit">
-              <mat-progress-spinner
-                *ngIf="loading"
-                mode="indeterminate"
-                diameter="16"
-                strokeWidth="3"
-                color="primary"
-                class="!w-4 !h-4">
-              </mat-progress-spinner>
-              <span>{{ loading ? 'Signing in...' : 'Sign in' }}</span>
-            </button>
+              [loading]="loading"
+              styleClass="w-full" />
 
             <div class="text-center text-sm text-slate-600">
               Don't have an account?
               <a routerLink="/auth/register" class="text-indigo-600 hover:text-indigo-700 font-semibold">Create one</a>
             </div>
           </form>
-        </mat-card>
+        </p-card>
       </div>
     </div>
   `
@@ -94,7 +100,6 @@ export class LoginComponent implements OnInit {
   loading = false;
   error: string | null = null;
   returnUrl = '/jobs';
-  showPassword = false;
 
   constructor(
     private fb: FormBuilder,
@@ -121,10 +126,6 @@ export class LoginComponent implements OnInit {
 
   get password() {
     return this.form.get('password');
-  }
-
-  togglePasswordVisibility(): void {
-    this.showPassword = !this.showPassword;
   }
 
   onSubmit(): void {

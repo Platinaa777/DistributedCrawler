@@ -1,14 +1,11 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ButtonModule } from 'primeng/button';
 import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spec.model';
 
 @Component({
@@ -17,142 +14,134 @@ import { FieldSpec, TransformSpec } from '../../../../core/models/extraction-spe
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCheckboxModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCardModule,
-    MatChipsModule
+    CardModule,
+    InputTextModule,
+    SelectModule,
+    CheckboxModule,
+    ButtonModule
   ],
   template: `
-    <mat-card class="mb-4">
-      <mat-card-header>
-        <mat-card-title class="text-base flex items-center justify-between w-full">
-          <span>Field: {{ fieldForm.value.name || 'Unnamed' }}</span>
-          <button mat-icon-button color="warn" (click)="removeField()" type="button">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </mat-card-title>
-      </mat-card-header>
+    <p-card styleClass="mb-4">
+      <ng-template pTemplate="header">
+        <div class="p-3 flex items-center justify-between">
+          <div class="text-base font-semibold">Field: {{ fieldForm.value.name || 'Unnamed' }}</div>
+          <p-button
+            [text]="true"
+            [rounded]="true"
+            severity="danger"
+            (onClick)="removeField()">
+            <i class="pi pi-trash"></i>
+          </p-button>
+        </div>
+      </ng-template>
 
-      <mat-card-content>
-        <form [formGroup]="fieldForm" class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <mat-form-field appearance="fill">
-              <mat-label>Field Name</mat-label>
-              <input matInput formControlName="name" placeholder="title" />
-              <mat-error *ngIf="fieldForm.get('name')?.hasError('required')">
-                Name is required
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="fill">
-              <mat-label>Type</mat-label>
-              <mat-select formControlName="type">
-                <mat-option value="string">String</mat-option>
-                <mat-option value="int">Integer</mat-option>
-                <mat-option value="float">Float</mat-option>
-                <mat-option value="bool">Boolean</mat-option>
-                <mat-option value="url">URL</mat-option>
-                <mat-option value="json">JSON</mat-option>
-              </mat-select>
-            </mat-form-field>
+      <form [formGroup]="fieldForm" class="p-4 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
+            <input pInputText formControlName="name" placeholder="title" class="w-full" />
+            <small *ngIf="fieldForm.get('name')?.hasError('required')" class="text-red-500">Name is required</small>
           </div>
 
-          <div class="flex items-center gap-4">
-            <mat-checkbox formControlName="required">Required</mat-checkbox>
-            <div formGroupName="extractor" class="flex items-center gap-4">
-              <mat-checkbox formControlName="multiple">Multiple</mat-checkbox>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <p-select
+              [options]="typeOptions"
+              optionLabel="label"
+              optionValue="value"
+              formControlName="type"
+              styleClass="w-full">
+            </p-select>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-6">
+          <p-checkbox formControlName="required" [binary]="true" inputId="required-{{ fieldForm.value.name }}"></p-checkbox>
+          <label for="required-{{ fieldForm.value.name }}" class="text-sm text-gray-700">Required</label>
+
+          <div formGroupName="extractor" class="flex items-center gap-2">
+            <p-checkbox formControlName="multiple" [binary]="true" inputId="multiple-{{ fieldForm.value.name }}"></p-checkbox>
+            <label for="multiple-{{ fieldForm.value.name }}" class="text-sm text-gray-700">Multiple</label>
+          </div>
+        </div>
+
+        <div class="border-t pt-4">
+          <h4 class="text-sm font-semibold mb-3">Extractor Configuration</h4>
+          <div formGroupName="extractor" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">CSS Selector</label>
+              <input pInputText formControlName="selector" placeholder=".title" class="w-full" />
+              <small *ngIf="fieldForm.get('extractor.selector')?.hasError('required')" class="text-red-500">
+                Selector is required
+              </small>
             </div>
-          </div>
 
-          <div class="border-t pt-4">
-            <h4 class="text-sm font-semibold mb-3">Extractor Configuration</h4>
-            <div formGroupName="extractor" class="space-y-4">
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>CSS Selector</mat-label>
-                <input matInput formControlName="selector" placeholder=".title" />
-                <mat-error *ngIf="fieldForm.get('extractor.selector')?.hasError('required')">
-                  Selector is required
-                </mat-error>
-              </mat-form-field>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Attribute</label>
+                <p-select
+                  [options]="attributeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  formControlName="attribute"
+                  styleClass="w-full">
+                </p-select>
+              </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <mat-form-field appearance="fill">
-                  <mat-label>Attribute</mat-label>
-                  <mat-select formControlName="attribute">
-                    <mat-option value="text">Text Content</mat-option>
-                    <mat-option value="href">href</mat-option>
-                    <mat-option value="src">src</mat-option>
-                    <mat-option value="alt">alt</mat-option>
-                    <mat-option value="title">title</mat-option>
-                    <mat-option value="data-*">data-*</mat-option>
-                  </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="fill">
-                  <mat-label>Default Value (Optional)</mat-label>
-                  <input matInput formControlName="default_value" />
-                </mat-form-field>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Default Value (Optional)</label>
+                <input pInputText formControlName="default_value" class="w-full" />
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="border-t pt-4">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="text-sm font-semibold">Transforms</h4>
-              <button mat-stroked-button (click)="addTransform()" type="button">
-                <mat-icon>add</mat-icon>
-                Add Transform
-              </button>
-            </div>
+        <div class="border-t pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-sm font-semibold">Transforms</h4>
+            <p-button [outlined]="true" severity="secondary" (onClick)="addTransform()">
+              <i class="pi pi-plus mr-2"></i>
+              Add Transform
+            </p-button>
+          </div>
 
-            <div formArrayName="transforms" class="space-y-3">
-              <div
-                *ngFor="let transform of transforms.controls; let i = index"
-                [formGroupName]="i"
-                class="transform-row"
-              >
-                <div class="transform-top">
-                  <mat-form-field appearance="fill" class="flex-1">
-                    <mat-label>Operation</mat-label>
-                    <mat-select formControlName="op">
-                      <mat-option value="trim">Trim</mat-option>
-                      <mat-option value="lower">Lowercase</mat-option>
-                      <mat-option value="upper">Uppercase</mat-option>
-                      <mat-option value="normalize_url">Normalize URL</mat-option>
-                      <mat-option value="html_to_text">HTML to Text</mat-option>
-                      <mat-option value="collapse_ws">Collapse Whitespace</mat-option>
-                      <mat-option value="to_int">To Integer</mat-option>
-                      <mat-option value="to_float">To Float</mat-option>
-                      <mat-option value="parse_price">Parse Price</mat-option>
-                    </mat-select>
-                  </mat-form-field>
-
-                  <button
-                    mat-stroked-button
-                    color="warn"
-                    class="transform-remove"
-                    (click)="removeTransform(i)"
-                    type="button"
-                  >
-                    <mat-icon>close</mat-icon>
-                    Remove
-                  </button>
+          <div formArrayName="transforms" class="space-y-3">
+            <div
+              *ngFor="let transform of transforms.controls; let i = index"
+              [formGroupName]="i"
+              class="transform-row"
+            >
+              <div class="transform-top">
+                <div class="flex-1">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Operation</label>
+                  <p-select
+                    [options]="transformOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    formControlName="op"
+                    styleClass="w-full">
+                  </p-select>
                 </div>
 
-                <mat-form-field appearance="fill" class="w-full">
-                  <mat-label>Argument (Optional)</mat-label>
-                  <input matInput formControlName="arg" />
-                </mat-form-field>
+                <p-button
+                  [outlined]="true"
+                  severity="danger"
+                  class="transform-remove"
+                  (onClick)="removeTransform(i)">
+                  <i class="pi pi-times mr-2"></i>
+                  Remove
+                </p-button>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Argument (Optional)</label>
+                <input pInputText formControlName="arg" class="w-full" />
               </div>
             </div>
           </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+        </div>
+      </form>
+    </p-card>
   `,
   styles: [`
     :host {
@@ -195,6 +184,33 @@ export class FieldBuilderComponent implements OnInit {
   @Output() remove = new EventEmitter<void>();
 
   fieldForm!: FormGroup;
+  typeOptions = [
+    { label: 'String', value: 'string' },
+    { label: 'Integer', value: 'int' },
+    { label: 'Float', value: 'float' },
+    { label: 'Boolean', value: 'bool' },
+    { label: 'URL', value: 'url' },
+    { label: 'JSON', value: 'json' }
+  ];
+  attributeOptions = [
+    { label: 'Text Content', value: 'text' },
+    { label: 'href', value: 'href' },
+    { label: 'src', value: 'src' },
+    { label: 'alt', value: 'alt' },
+    { label: 'title', value: 'title' },
+    { label: 'data-*', value: 'data-*' }
+  ];
+  transformOptions = [
+    { label: 'Trim', value: 'trim' },
+    { label: 'Lowercase', value: 'lower' },
+    { label: 'Uppercase', value: 'upper' },
+    { label: 'Normalize URL', value: 'normalize_url' },
+    { label: 'HTML to Text', value: 'html_to_text' },
+    { label: 'Collapse Whitespace', value: 'collapse_ws' },
+    { label: 'To Integer', value: 'to_int' },
+    { label: 'To Float', value: 'to_float' },
+    { label: 'Parse Price', value: 'parse_price' }
+  ];
 
   constructor(private fb: FormBuilder) {}
 

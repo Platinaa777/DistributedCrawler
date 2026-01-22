@@ -4,7 +4,7 @@ import (
 	"context"
 	"distributed-crawler/internal/domain/crawl/models"
 	crawljobconfig "distributed-crawler/internal/domain/crawl/repos/crawl_job_config"
-	"distributed-crawler/internal/domain/crawl/repos/crawl_task"
+	crawltask "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"

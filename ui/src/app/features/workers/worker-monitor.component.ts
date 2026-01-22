@@ -1,11 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { CardModule } from 'primeng/card';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Subject, interval } from 'rxjs';
 import { startWith, switchMap, takeUntil } from 'rxjs/operators';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
@@ -16,12 +15,11 @@ import { WorkerInfo } from '../../core/models';
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
-    MatTableModule,
-    MatChipsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule
+    CardModule,
+    TableModule,
+    TagModule,
+    ButtonModule,
+    ProgressSpinnerModule
   ],
   template: `
     <div class="container mx-auto p-6">
@@ -30,96 +28,84 @@ import { WorkerInfo } from '../../core/models';
           <h1 class="text-3xl font-bold">Worker Health</h1>
           <p class="text-sm text-gray-500 mt-1">Live heartbeats and capacity signals from the fleet</p>
         </div>
-        <button mat-stroked-button color="primary" (click)="refresh()">
-          <mat-icon>refresh</mat-icon>
+        <p-button
+          [outlined]="true"
+          severity="secondary"
+          (onClick)="refresh()">
+          <i class="pi pi-refresh mr-2"></i>
           Refresh
-        </button>
+        </p-button>
       </div>
 
       <div class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <mat-card class="p-4">
+        <p-card styleClass="p-4">
           <div class="text-sm text-gray-500">Total Workers</div>
           <div class="text-2xl font-semibold mt-1">{{ workers.length }}</div>
-        </mat-card>
-        <mat-card class="p-4">
+        </p-card>
+        <p-card styleClass="p-4">
           <div class="text-sm text-gray-500">Active</div>
           <div class="text-2xl font-semibold mt-1 text-green-600">{{ countByStatus('ACTIVE') }}</div>
-        </mat-card>
-        <mat-card class="p-4">
+        </p-card>
+        <p-card styleClass="p-4">
           <div class="text-sm text-gray-500">Draining</div>
           <div class="text-2xl font-semibold mt-1 text-amber-600">{{ countByStatus('DRAINING') }}</div>
-        </mat-card>
-        <mat-card class="p-4">
+        </p-card>
+        <p-card styleClass="p-4">
           <div class="text-sm text-gray-500">Inactive</div>
           <div class="text-2xl font-semibold mt-1 text-red-600">{{ countByStatus('INACTIVE') }}</div>
-        </mat-card>
+        </p-card>
       </div>
 
-      <mat-card *ngIf="loading" class="text-center p-8">
-        <mat-spinner class="mx-auto"></mat-spinner>
+      <p-card *ngIf="loading" styleClass="text-center p-8">
+        <p-progressSpinner />
         <p class="mt-4">Fetching worker status...</p>
-      </mat-card>
+      </p-card>
 
-      <mat-card *ngIf="error && !loading" class="bg-red-50 p-4">
+      <p-card *ngIf="error && !loading" styleClass="bg-red-50 p-4">
         <p class="text-red-700">{{ error }}</p>
-      </mat-card>
+      </p-card>
 
-      <mat-card *ngIf="!loading">
-        <table mat-table [dataSource]="workers" class="w-full">
-          <ng-container matColumnDef="worker_id">
-            <th mat-header-cell *matHeaderCellDef>Worker ID</th>
-            <td mat-cell *matCellDef="let worker" class="font-mono text-xs">{{ worker.worker_id }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="worker_type">
-            <th mat-header-cell *matHeaderCellDef>Type</th>
-            <td mat-cell *matCellDef="let worker">{{ worker.worker_type || 'unknown' }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let worker">
-              <mat-chip [class]="getStatusClass(worker.status)">
-                {{ normalizeStatus(worker.status) }}
-              </mat-chip>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="active_tasks">
-            <th mat-header-cell *matHeaderCellDef>Active Tasks</th>
-            <td mat-cell *matCellDef="let worker">{{ worker.active_tasks }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="last_heartbeat_at">
-            <th mat-header-cell *matHeaderCellDef>Last Heartbeat</th>
-            <td mat-cell *matCellDef="let worker">
-              {{ worker.last_heartbeat_at ? (worker.last_heartbeat_at | date:'short') : '—' }}
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="uptime">
-            <th mat-header-cell *matHeaderCellDef>Uptime</th>
-            <td mat-cell *matCellDef="let worker">{{ formatUptime(worker.uptime) }}</td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-        </table>
-
-        <div *ngIf="workers.length === 0 && !loading" class="text-center p-8 text-gray-500">
-          <mat-icon class="text-6xl">insights</mat-icon>
-          <p class="mt-4">No workers have reported heartbeats yet.</p>
-        </div>
-      </mat-card>
+      <p-card *ngIf="!loading">
+        <p-table [value]="workers" [tableStyle]="{'min-width': '60rem'}">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Worker ID</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Active Tasks</th>
+              <th>Last Heartbeat</th>
+              <th>Uptime</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-worker>
+            <tr>
+              <td class="font-mono text-xs">{{ worker.worker_id }}</td>
+              <td>{{ worker.worker_type || 'unknown' }}</td>
+              <td>
+                <p-tag
+                  [value]="normalizeStatus(worker.status)"
+                  [severity]="getStatusSeverity(worker.status)" />
+              </td>
+              <td>{{ worker.active_tasks }}</td>
+              <td>{{ worker.last_heartbeat_at ? (worker.last_heartbeat_at | date:'short') : '—' }}</td>
+              <td>{{ formatUptime(worker.uptime) }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center p-8 text-gray-500">
+                <i class="pi pi-chart-line text-6xl block mb-4"></i>
+                <p>No workers have reported heartbeats yet.</p>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
     </div>
   `,
   styles: [`
     :host {
       display: block;
-    }
-
-    table {
-      width: 100%;
     }
   `]
 })
@@ -127,14 +113,6 @@ export class WorkerMonitorComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   workers: WorkerInfo[] = [];
-  displayedColumns: string[] = [
-    'worker_id',
-    'worker_type',
-    'status',
-    'active_tasks',
-    'last_heartbeat_at',
-    'uptime'
-  ];
   loading = false;
   error: string | null = null;
 
@@ -191,18 +169,17 @@ export class WorkerMonitorComponent implements OnInit, OnDestroy {
     return this.workers.filter(worker => this.normalizeStatus(worker.status).toUpperCase() === status).length;
   }
 
-  getStatusClass(status: string): string {
+  getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     switch (this.normalizeStatus(status).toUpperCase()) {
       case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
+        return 'success';
       case 'DRAINING':
-        return 'bg-amber-100 text-amber-800';
+        return 'warn';
       case 'INACTIVE':
-        return 'bg-red-100 text-red-800';
       case 'DEAD':
-        return 'bg-gray-900 text-white';
+        return 'danger';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'secondary';
     }
   }
 

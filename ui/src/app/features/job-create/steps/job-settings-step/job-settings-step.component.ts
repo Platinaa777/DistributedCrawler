@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { FloatLabelModule } from 'primeng/floatlabel';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { JobCreateStateService } from '../../services/job-create-state.service';
 import { Seed, ScopeRules, RateLimitPolicy } from '../../../../core/models/crawl-job.model';
 
@@ -16,139 +17,159 @@ import { Seed, ScopeRules, RateLimitPolicy } from '../../../../core/models/crawl
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCardModule,
-    MatChipsModule
+    InputTextModule,
+    InputNumberModule,
+    ButtonModule,
+    CardModule,
+    FloatLabelModule,
+    IconFieldModule,
+    InputIconModule
   ],
   template: `
     <div class="space-y-4">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Step 3: Job Settings</mat-card-title>
-          <mat-card-subtitle>
-            Configure crawl scope, rate limits, and initial seeds
-          </mat-card-subtitle>
-        </mat-card-header>
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h2 class="text-xl font-semibold">Step 3: Job Settings</h2>
+            <p class="text-sm text-gray-500">Configure crawl scope, rate limits, and initial seeds</p>
+          </div>
+        </ng-template>
 
-        <mat-card-content>
-          <form [formGroup]="settingsForm" class="space-y-6">
-            <!-- Job Name -->
+        <form [formGroup]="settingsForm" class="space-y-6">
+          <!-- Job Name -->
+          <div>
+            <h3 class="text-sm font-semibold mb-3">Job Information</h3>
             <div>
-              <h3 class="text-sm font-semibold mb-3">Job Information</h3>
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Job Name</mat-label>
-                <input matInput formControlName="jobName" placeholder="My Crawl Job" />
-                <mat-error *ngIf="settingsForm.get('jobName')?.hasError('required')">
-                  Job name is required
-                </mat-error>
-              </mat-form-field>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Job Name</label>
+              <input pInputText formControlName="jobName" placeholder="My Crawl Job" class="w-full" />
+              <small *ngIf="settingsForm.get('jobName')?.hasError('required') && settingsForm.get('jobName')?.touched" class="text-red-500">
+                Job name is required
+              </small>
+            </div>
+          </div>
+
+          <!-- Seeds -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold">Seed URLs</h3>
+              <p-button (onClick)="addSeed()" severity="secondary" [outlined]="true">
+                <i class="pi pi-plus mr-2"></i>
+                Add Seed
+              </p-button>
             </div>
 
-            <!-- Seeds -->
-            <div>
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold">Seed URLs</h3>
-                <button mat-raised-button color="primary" (click)="addSeed()" type="button">
-                  <mat-icon>add</mat-icon>
-                  Add Seed
-                </button>
-              </div>
-
-              <div formArrayName="seeds" class="space-y-2">
-                <div
-                  *ngFor="let seed of seeds.controls; let i = index"
-                  [formGroupName]="i"
-                  class="flex items-center gap-2"
-                >
-                  <mat-form-field appearance="outline" class="flex-1">
-                    <mat-label>Seed URL {{ i + 1 }}</mat-label>
-                    <input matInput formControlName="url" placeholder="https://example.com" />
-                    <mat-icon matPrefix>link</mat-icon>
-                    <mat-error *ngIf="seed.get('url')?.hasError('required')">
-                      URL is required
-                    </mat-error>
-                    <mat-error *ngIf="seed.get('url')?.hasError('pattern')">
-                      Must be a valid URL
-                    </mat-error>
-                  </mat-form-field>
-
-                  <button
-                    mat-icon-button
-                    color="warn"
-                    (click)="removeSeed(i)"
-                    type="button"
-                    [disabled]="seeds.length === 1"
-                  >
-                    <mat-icon>delete</mat-icon>
-                  </button>
+            <div formArrayName="seeds" class="space-y-2">
+              <div
+                *ngFor="let seed of seeds.controls; let i = index"
+                [formGroupName]="i"
+                class="flex items-center gap-2">
+                <div class="flex-1">
+                  <p-iconfield>
+                    <p-inputicon styleClass="pi pi-link" />
+                    <input
+                      pInputText
+                      formControlName="url"
+                      [placeholder]="'https://example.com'"
+                      class="w-full" />
+                  </p-iconfield>
+                  <small *ngIf="seed.get('url')?.hasError('required') && seed.get('url')?.touched" class="text-red-500">
+                    URL is required
+                  </small>
+                  <small *ngIf="seed.get('url')?.hasError('pattern') && seed.get('url')?.touched" class="text-red-500">
+                    Must be a valid URL
+                  </small>
                 </div>
+
+                <p-button
+                  [text]="true"
+                  [rounded]="true"
+                  severity="danger"
+                  (onClick)="removeSeed(i)"
+                  [disabled]="seeds.length === 1">
+                  <i class="pi pi-trash"></i>
+                </p-button>
               </div>
             </div>
+          </div>
 
-            <!-- Scope Rules -->
-            <div formGroupName="scopeRules">
-              <h3 class="text-sm font-semibold mb-3">Crawl Scope</h3>
-              <div class="space-y-4">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Maximum Depth</mat-label>
-                  <input matInput type="number" formControlName="max_depth" />
-                  <mat-hint>0 = seeds only, 1 = seeds + direct links, etc.</mat-hint>
-                  <mat-error *ngIf="settingsForm.get('scopeRules.max_depth')?.hasError('min')">
-                    Must be at least 0
-                  </mat-error>
-                </mat-form-field>
+          <!-- Scope Rules -->
+          <div formGroupName="scopeRules">
+            <h3 class="text-sm font-semibold mb-3">Crawl Scope</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Maximum Depth</label>
+                <p-inputNumber
+                  formControlName="max_depth"
+                  [showButtons]="true"
+                  [min]="0"
+                  styleClass="w-full" />
+                <small class="text-gray-500">0 = seeds only, 1 = seeds + direct links, etc.</small>
+                <small *ngIf="settingsForm.get('scopeRules.max_depth')?.hasError('min')" class="text-red-500 block">
+                  Must be at least 0
+                </small>
+              </div>
 
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <label class="text-sm font-medium">Allowed Domains</label>
-                    <button mat-stroked-button (click)="addDomain()" type="button">
-                      <mat-icon>add</mat-icon>
-                      Add Domain
-                    </button>
-                  </div>
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-sm font-medium">Allowed Domains</label>
+                  <p-button [outlined]="true" severity="secondary" (onClick)="addDomain()">
+                    <i class="pi pi-plus mr-2"></i>
+                    Add Domain
+                  </p-button>
+                </div>
 
-                  <div formArrayName="allowed_domains" class="space-y-2">
-                    <div
-                      *ngFor="let domain of allowedDomains.controls; let i = index"
-                      class="flex items-center gap-2"
-                    >
-                      <mat-form-field appearance="outline" class="flex-1">
-                        <mat-label>Domain {{ i + 1 }}</mat-label>
-                        <input matInput [formControlName]="i" placeholder="example.com" />
-                        <mat-icon matPrefix>public</mat-icon>
-                      </mat-form-field>
-
-                      <button mat-icon-button color="warn" (click)="removeDomain(i)" type="button">
-                        <mat-icon>delete</mat-icon>
-                      </button>
+                <div formArrayName="allowed_domains" class="space-y-2">
+                  <div
+                    *ngFor="let domain of allowedDomains.controls; let i = index"
+                    class="flex items-center gap-2">
+                    <div class="flex-1">
+                      <p-iconfield>
+                        <p-inputicon styleClass="pi pi-globe" />
+                        <input
+                          pInputText
+                          [formControlName]="i"
+                          placeholder="example.com"
+                          class="w-full" />
+                      </p-iconfield>
                     </div>
-                  </div>
 
-                  <p class="text-xs text-gray-500 mt-2">
-                    Leave empty to allow all domains
-                  </p>
+                    <p-button
+                      [text]="true"
+                      [rounded]="true"
+                      severity="danger"
+                      (onClick)="removeDomain(i)">
+                      <i class="pi pi-trash"></i>
+                    </p-button>
+                  </div>
                 </div>
+
+                <p class="text-xs text-gray-500 mt-2">
+                  Leave empty to allow all domains
+                </p>
               </div>
             </div>
+          </div>
 
-            <!-- Rate Limit -->
-            <div formGroupName="rateLimit">
-              <h3 class="text-sm font-semibold mb-3">Rate Limiting</h3>
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Requests Per Second (RPS)</mat-label>
-                <input matInput type="number" formControlName="rps" />
-                <mat-hint>Number of requests per second to send</mat-hint>
-                <mat-error *ngIf="settingsForm.get('rateLimit.rps')?.hasError('min')">
-                  RPS must be at least 0.1
-                </mat-error>
-              </mat-form-field>
+          <!-- Rate Limit -->
+          <div formGroupName="rateLimit">
+            <h3 class="text-sm font-semibold mb-3">Rate Limiting</h3>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Requests Per Second (RPS)</label>
+              <p-inputNumber
+                formControlName="rps"
+                [showButtons]="true"
+                [min]="0.1"
+                [step]="0.1"
+                mode="decimal"
+                styleClass="w-full" />
+              <small class="text-gray-500">Number of requests per second to send</small>
+              <small *ngIf="settingsForm.get('rateLimit.rps')?.hasError('min')" class="text-red-500 block">
+                RPS must be at least 0.1
+              </small>
             </div>
-          </form>
-        </mat-card-content>
-      </mat-card>
+          </div>
+        </form>
+      </p-card>
     </div>
   `,
   styles: [`

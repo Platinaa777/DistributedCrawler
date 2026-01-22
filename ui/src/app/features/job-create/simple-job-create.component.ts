@@ -1,17 +1,18 @@
+
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatSelectModule } from '@angular/material/select';
+import { CardModule } from 'primeng/card';
+import { PanelModule } from 'primeng/panel';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
+import { CheckboxModule } from 'primeng/checkbox';
+import { SelectModule } from 'primeng/select';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
 import { CrawlJobConfig, RetryPolicy, ScheduleOptions } from '../../core/models/crawl-job.model';
 import { FieldSpec, MetricSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
@@ -39,81 +40,65 @@ interface SimpleJobFormValue {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatDividerModule,
-    MatCheckboxModule,
-    MatSnackBarModule,
-    MatSelectModule
+    CardModule,
+    PanelModule,
+    InputTextModule,
+    InputNumberModule,
+    ButtonModule,
+    DividerModule,
+    CheckboxModule,
+    SelectModule,
+    ToastModule
   ],
+  providers: [MessageService],
   template: `
+    <p-toast position="top-right" />
+
     <form class="container mx-auto p-6 space-y-4" [formGroup]="jobForm">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
-          <button mat-button type="button" (click)="goBack()">
-            <mat-icon>arrow_back</mat-icon>
+          <p-button [text]="true" (onClick)="goBack()" type="button">
+            <i class="pi pi-arrow-left mr-2"></i>
             Back to Jobs
-          </button>
+          </p-button>
           <h1 class="text-2xl font-semibold">Simple Crawl Job</h1>
         </div>
         <div class="flex items-center gap-2">
-          <button
-            mat-raised-button
-            color="primary"
+          <p-button
             type="button"
-            (click)="submit()"
-            [disabled]="creating || !canSubmit()"
-          >
-            <mat-icon>play_arrow</mat-icon>
-            Create Job
-          </button>
+            (onClick)="submit()"
+            [disabled]="creating || !canSubmit()">
+            <i class="pi pi-send mr-2"></i>
+            {{ creating ? 'Creating...' : 'Create Job' }}
+          </p-button>
         </div>
       </div>
 
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Job Basics</mat-card-title>
-          <mat-card-subtitle>Minimal settings to register a crawl job</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <mat-form-field class="w-full" [matTooltip]="'Human-friendly job name'">
-            <mat-label>Name</mat-label>
-            <input matInput formControlName="name" placeholder="Example crawl job" />
-            <mat-icon matSuffix>info_outline</mat-icon>
-            <mat-error *ngIf="jobForm.get('name')?.hasError('required')">
-              Name is required
-            </mat-error>
-          </mat-form-field>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card>
-        <mat-card-header class="flex items-center justify-between">
-          <div>
-            <mat-card-title>Seeds & Scope</mat-card-title>
-            <mat-card-subtitle>Where to start and what to allow</mat-card-subtitle>
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h2 class="text-lg font-semibold">Job Basics</h2>
+            <p class="text-sm text-gray-500">Minimal settings to register a crawl job.</p>
           </div>
-          <button
-            mat-icon-button
-            type="button"
-            (click)="toggleSeedsScope()"
-            [attr.aria-label]="seedsScopeExpanded ? 'Collapse Seeds & Scope' : 'Expand Seeds & Scope'"
-          >
-            <mat-icon>{{ seedsScopeExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </button>
-        </mat-card-header>
-        <mat-card-content class="space-y-4" *ngIf="seedsScopeExpanded">
+        </ng-template>
+        <div class="p-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <input pInputText formControlName="name" placeholder="Example crawl job" class="w-full" />
+          <small *ngIf="jobForm.get('name')?.hasError('required')" class="text-red-500">
+            Name is required
+          </small>
+        </div>
+      </p-card>
+
+      <p-panel header="Seeds & Scope" [toggleable]="true" [collapsed]="true">
+        <div class="p-4 space-y-4">
           <div>
             <div class="flex items-center justify-between mb-2">
               <p class="text-sm font-semibold">Seed URLs</p>
-              <button mat-stroked-button color="primary" type="button" (click)="addSeed()">
-                <mat-icon>add</mat-icon>
+              <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addSeed()">
+                <i class="pi pi-plus mr-2"></i>
                 Add Seed
-              </button>
+              </p-button>
             </div>
             <div formArrayName="seeds" class="space-y-2">
               <div
@@ -121,63 +106,55 @@ interface SimpleJobFormValue {
                 [formGroupName]="i"
                 class="flex items-center gap-2"
               >
-                <mat-form-field
-                 
-                  class="flex-1"
-                  [matTooltip]="'Starting URL for the crawler'"
-                >
-                  <mat-label>Seed {{ i + 1 }}</mat-label>
-                  <input matInput formControlName="url" placeholder="https://example.com" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <button
-                  mat-icon-button
-                  color="warn"
+                <div class="flex-1">
+                  <input pInputText formControlName="url" placeholder="https://example.com" class="w-full" />
+                  <small *ngIf="seed.get('url')?.hasError('required') && seed.get('url')?.touched" class="text-red-500">
+                    URL is required
+                  </small>
+                  <small *ngIf="seed.get('url')?.hasError('pattern') && seed.get('url')?.touched" class="text-red-500">
+                    Must be a valid URL
+                  </small>
+                </div>
+                <p-button
+                  [text]="true"
+                  [rounded]="true"
+                  severity="danger"
                   type="button"
-                  (click)="removeSeed(i)"
-                  [disabled]="seeds.length === 1"
-                  aria-label="Remove seed"
-                >
-                  <mat-icon>delete</mat-icon>
-                </button>
+                  (onClick)="removeSeed(i)"
+                  [disabled]="seeds.length === 1">
+                  <i class="pi pi-trash"></i>
+                </p-button>
               </div>
             </div>
           </div>
 
-          <mat-divider></mat-divider>
+          <p-divider></p-divider>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <mat-form-field class="w-full" [matTooltip]="'How deep to follow links (0 = only seeds)'">
-              <mat-label>Max Depth</mat-label>
-              <input matInput type="number" formControlName="max_depth" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
-
-            <mat-form-field class="w-full" [matTooltip]="'Requests per second limit for this job'">
-              <mat-label>RPS</mat-label>
-              <input matInput type="number" formControlName="rps" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Max Depth</label>
+              <p-inputNumber formControlName="max_depth" [min]="0" styleClass="w-full"></p-inputNumber>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">RPS</label>
+              <p-inputNumber formControlName="rps" [min]="0.1" [step]="0.1" mode="decimal" styleClass="w-full"></p-inputNumber>
+            </div>
           </div>
 
           <div>
             <div class="flex items-center justify-between mb-2">
               <p class="text-sm font-semibold">Allowed Domains</p>
-              <button mat-stroked-button type="button" (click)="addAllowedDomain()">
-                <mat-icon>add</mat-icon>
+              <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addAllowedDomain()">
+                <i class="pi pi-plus mr-2"></i>
                 Add
-              </button>
+              </p-button>
             </div>
             <div formArrayName="allowed_domains" class="space-y-2">
               <div *ngFor="let domain of allowedDomains.controls; let i = index" class="flex items-center gap-2">
-                <mat-form-field class="flex-1" [matTooltip]="'Only crawl URLs inside these domains'">
-                  <mat-label>Domain {{ i + 1 }}</mat-label>
-                  <input matInput [formControlName]="i" placeholder="example.com" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <button mat-icon-button color="warn" type="button" (click)="removeAllowedDomain(i)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                <input pInputText [formControlName]="i" placeholder="example.com" class="flex-1" />
+                <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeAllowedDomain(i)">
+                  <i class="pi pi-trash"></i>
+                </p-button>
               </div>
             </div>
           </div>
@@ -185,114 +162,79 @@ interface SimpleJobFormValue {
           <div>
             <div class="flex items-center justify-between mb-2">
               <p class="text-sm font-semibold">Deny URL Patterns</p>
-              <button mat-stroked-button type="button" (click)="addDenyPattern()">
-                <mat-icon>add</mat-icon>
+              <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addDenyPattern()">
+                <i class="pi pi-plus mr-2"></i>
                 Add
-              </button>
+              </p-button>
             </div>
             <div formArrayName="deny_url_patterns" class="space-y-2">
               <div *ngFor="let pattern of denyPatterns.controls; let i = index" class="flex items-center gap-2">
-                <mat-form-field class="flex-1" [matTooltip]="'Paths to skip during crawl'">
-                  <mat-label>Pattern {{ i + 1 }}</mat-label>
-                  <input matInput [formControlName]="i" placeholder="/login" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <button mat-icon-button color="warn" type="button" (click)="removeDenyPattern(i)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                <input pInputText [formControlName]="i" placeholder="/login" class="flex-1" />
+                <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeDenyPattern(i)">
+                  <i class="pi pi-trash"></i>
+                </p-button>
               </div>
             </div>
           </div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card>
-        <mat-card-header class="flex items-center justify-between">
-          <mat-card-title>Rate Limit, Retries & Schedule</mat-card-title>
-          <button
-            mat-icon-button
-            type="button"
-            (click)="toggleRateLimit()"
-            [attr.aria-label]="rateLimitExpanded ? 'Collapse Rate Limit, Retries & Schedule' : 'Expand Rate Limit, Retries & Schedule'"
-          >
-            <mat-icon>{{ rateLimitExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </button>
-        </mat-card-header>
-        <mat-card-content class="grid grid-cols-1 md:grid-cols-3 gap-4" *ngIf="rateLimitExpanded">
+        </div>
+      </p-panel>
+
+      <p-panel header="Rate Limit, Retries & Schedule" [toggleable]="true" [collapsed]="true">
+        <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div [formGroup]="retriesGroup" class="space-y-4">
             <p class="text-sm font-semibold">Retry Policy</p>
-            <mat-form-field class="w-full" [matTooltip]="'Maximum retry attempts'">
-              <mat-label>Max Attempts</mat-label>
-              <input matInput type="number" formControlName="max_attempts" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
-            <mat-form-field class="w-full" [matTooltip]="'First retry backoff in ms'">
-              <mat-label>Backoff Initial (ms)</mat-label>
-              <input matInput type="number" formControlName="backoff_initial_ms" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
-            <mat-form-field class="w-full" [matTooltip]="'Multiplier applied per retry attempt'">
-              <mat-label>Backoff Multiplier</mat-label>
-              <input matInput type="number" formControlName="backoff_multiplier" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Max Attempts</label>
+              <p-inputNumber formControlName="max_attempts" [min]="0" styleClass="w-full"></p-inputNumber>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Backoff Initial (ms)</label>
+              <p-inputNumber formControlName="backoff_initial_ms" [min]="0" styleClass="w-full"></p-inputNumber>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Backoff Multiplier</label>
+              <p-inputNumber formControlName="backoff_multiplier" [min]="0" mode="decimal" styleClass="w-full"></p-inputNumber>
+            </div>
           </div>
 
           <div [formGroup]="scheduleGroup" class="space-y-4">
             <p class="text-sm font-semibold">Schedule</p>
-            <mat-form-field class="w-full" [matTooltip]="'Cron expression for periodic runs (optional)'">
-              <mat-label>Cron</mat-label>
-              <input matInput formControlName="cron" placeholder="0 9 * * 1" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Cron</label>
+              <input pInputText formControlName="cron" placeholder="0 9 * * 1" class="w-full" />
+            </div>
           </div>
 
           <div [formGroup]="authGroup" class="space-y-4">
             <p class="text-sm font-semibold">Auth (optional)</p>
-            <mat-form-field class="w-full" [matTooltip]="'Basic auth username'">
-              <mat-label>Basic User</mat-label>
-              <input matInput formControlName="basic_user" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
-            <mat-form-field class="w-full" [matTooltip]="'Basic auth password'">
-              <mat-label>Basic Password</mat-label>
-              <input matInput type="password" formControlName="basic_password" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
-            <mat-form-field class="w-full" [matTooltip]="'Bearer token for Authorization header'">
-              <mat-label>Bearer Token</mat-label>
-              <input matInput formControlName="bearer_token" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
-            <mat-form-field class="w-full" [matTooltip]="'Cookie header value'">
-              <mat-label>Cookie</mat-label>
-              <input matInput formControlName="cookie" />
-              <mat-icon matSuffix>info_outline</mat-icon>
-            </mat-form-field>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Basic User</label>
+              <input pInputText formControlName="basic_user" class="w-full" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Basic Password</label>
+              <input pInputText type="password" formControlName="basic_password" class="w-full" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Bearer Token</label>
+              <input pInputText formControlName="bearer_token" class="w-full" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Cookie</label>
+              <input pInputText formControlName="cookie" class="w-full" />
+            </div>
           </div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card>
-        <mat-card-header class="flex items-center justify-between">
-          <div>
-            <mat-card-title>Extraction Spec</mat-card-title>
-            <mat-card-subtitle>Fields and metrics that mirror the backend payload</mat-card-subtitle>
-          </div>
-          <button
-            mat-icon-button
-            type="button"
-            (click)="toggleExtraction()"
-            [attr.aria-label]="extractionExpanded ? 'Collapse Extraction Spec' : 'Expand Extraction Spec'"
-          >
-            <mat-icon>{{ extractionExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
-          </button>
-        </mat-card-header>
-        <mat-card-content class="space-y-4" *ngIf="extractionExpanded">
+        </div>
+      </p-panel>
+
+      <p-panel header="Extraction Spec" [toggleable]="true">
+        <div class="p-4 space-y-4">
           <div class="flex items-center justify-between">
             <p class="text-sm font-semibold">Fields</p>
-            <button mat-stroked-button color="primary" type="button" (click)="addExtractionField()">
-              <mat-icon>add</mat-icon>
+            <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addExtractionField()">
+              <i class="pi pi-plus mr-2"></i>
               Add Field
-            </button>
+            </p-button>
           </div>
 
           <div formArrayName="extraction_fields" class="space-y-4">
@@ -303,120 +245,100 @@ interface SimpleJobFormValue {
             >
               <div class="flex items-center justify-between">
                 <div class="font-semibold">Field #{{ i + 1 }}</div>
-                <button mat-icon-button color="warn" type="button" (click)="removeExtractionField(i)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeExtractionField(i)">
+                  <i class="pi pi-trash"></i>
+                </p-button>
               </div>
 
               <div class="grid grid-cols-1 gap-3">
-                <mat-form-field class="w-full" [matTooltip]="'Key saved to the output JSON and referenced by metrics'">
-                  <mat-label>Name</mat-label>
-                  <input matInput formControlName="name" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input pInputText formControlName="name" class="w-full" />
+                </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <mat-form-field class="w-full" [matTooltip]="'Target type enforced by the parser (string/int/float/bool/url/json)'">
-                  <mat-label>Type</mat-label>
-                  <mat-select formControlName="type">
-                    <mat-option *ngFor="let option of fieldTypeOptions" [value]="option">{{ option }}</mat-option>
-                  </mat-select>
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Attribute to return (text/html/href/src/content). href/src are resolved against the page URL.'">
-                  <mat-label>Attribute</mat-label>
-                  <mat-select formControlName="attribute">
-                    <mat-option *ngFor="let option of attributeOptions" [value]="option">{{ option }}</mat-option>
-                  </mat-select>
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <p-select [options]="fieldTypeSelectOptions" optionLabel="label" optionValue="value" formControlName="type" styleClass="w-full"></p-select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Attribute</label>
+                  <p-select [options]="attributeSelectOptions" optionLabel="label" optionValue="value" formControlName="attribute" styleClass="w-full"></p-select>
+                </div>
               </div>
 
               <div class="grid grid-cols-1 gap-3 items-center">
-                <mat-form-field class="w-full" [matTooltip]="'Selector or pattern used for extraction (CSS rule, regex body, meta name, etc.)'">
-                  <mat-label>Selector</mat-label>
-                  <input matInput formControlName="selector" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Selector</label>
+                  <input pInputText formControlName="selector" class="w-full" />
+                </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                <mat-form-field
-                  class="w-full"
-                  [matTooltip]="'Index is used only when Multiple is enabled; pick a specific match (0-based, negative from the end)'"
-                >
-                  <mat-label>Index</mat-label>
-                  <input
-                    matInput
-                    type="number"
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Index</label>
+                  <p-inputNumber
                     formControlName="index"
                     [disabled]="!field.get('multiple')?.value"
-                    [readonly]="!field.get('multiple')?.value"
-                    [ngClass]="{
-                      'bg-gray-100 text-gray-500 cursor-not-allowed': !field.get('multiple')?.value
-                    }"
-                  />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                  <mat-hint>Works only with Multiple: true</mat-hint>
-                </mat-form-field>
-                <mat-checkbox
-                  formControlName="multiple"
-                  [matTooltip]="'Return all matches as an array instead of a single value'"
-                  class="mt-2"
-                  (change)="handleMultipleToggle(i)"
-                >
-                  Multiple
-                </mat-checkbox>
-                <mat-checkbox formControlName="required" [matTooltip]="'If true, missing extraction is logged as a warning but does not stop the job'" class="mt-2">
-                  Required
-                </mat-checkbox>
+                    styleClass="w-full">
+                  </p-inputNumber>
+                  <small class="text-xs text-gray-500">Works only with Multiple: true</small>
+                </div>
+                <div class="flex items-center gap-2 mt-6">
+                  <p-checkbox
+                    formControlName="multiple"
+                    [binary]="true"
+                    inputId="multiple-{{ i }}"
+                    (onChange)="handleMultipleToggle(i)">
+                  </p-checkbox>
+                  <label for="multiple-{{ i }}" class="text-sm text-gray-700">Multiple</label>
+                </div>
+                <div class="flex items-center gap-2 mt-6">
+                  <p-checkbox formControlName="required" [binary]="true" inputId="required-{{ i }}"></p-checkbox>
+                  <label for="required-{{ i }}" class="text-sm text-gray-700">Required</label>
+                </div>
               </div>
 
               <div formArrayName="transforms" class="space-y-2">
                 <div class="flex items-center justify-between">
                   <p class="text-sm font-semibold">Transforms</p>
-                  <button mat-stroked-button type="button" (click)="addTransform(i)">
-                    <mat-icon>add</mat-icon>
+                  <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addTransform(i)">
+                    <i class="pi pi-plus mr-2"></i>
                     Add Transform
-                  </button>
+                  </p-button>
                 </div>
                 <div
                   *ngFor="let transform of getTransforms(i).controls; let tIdx = index"
                   [formGroupName]="tIdx"
                   class="grid grid-cols-1 md:grid-cols-2 gap-2 items-center"
                 >
-                  <mat-form-field class="w-full" [matTooltip]="'Transform operation, e.g., trim, lower, limit'">
-                    <mat-label>Op</mat-label>
-                    <mat-select formControlName="op">
-                      <mat-option *ngFor="let option of transformOpOptions" [value]="option">{{ option }}</mat-option>
-                    </mat-select>
-                    <mat-icon matSuffix>info_outline</mat-icon>
-                  </mat-form-field>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Op</label>
+                    <p-select [options]="transformOpSelectOptions" optionLabel="label" optionValue="value" formControlName="op" styleClass="w-full"></p-select>
+                  </div>
                   <div class="flex items-center gap-2">
-                    <mat-form-field class="flex-1" [matTooltip]="'Optional transform argument'">
-                      <mat-label>Arg</mat-label>
-                      <input matInput formControlName="arg" />
-                      <mat-icon matSuffix>info_outline</mat-icon>
-                    </mat-form-field>
-                    <button mat-icon-button color="warn" type="button" (click)="removeTransform(i, tIdx)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                    <div class="flex-1">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Arg</label>
+                      <input pInputText formControlName="arg" class="w-full" />
+                    </div>
+                    <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeTransform(i, tIdx)">
+                      <i class="pi pi-trash"></i>
+                    </p-button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <mat-divider></mat-divider>
-
+          <p-divider></p-divider>
           <div>
             <div class="flex items-center justify-between mb-2">
               <p class="text-sm font-semibold">Metrics</p>
-              <button mat-stroked-button color="primary" type="button" (click)="addMetric()">
-                <mat-icon>add</mat-icon>
+              <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addMetric()">
+                <i class="pi pi-plus mr-2"></i>
                 Add Metric
-              </button>
+              </p-button>
             </div>
             <div formArrayName="metrics" class="space-y-3">
               <div
@@ -424,43 +346,35 @@ interface SimpleJobFormValue {
                 [formGroupName]="m"
                 class="border rounded p-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-start"
               >
-                <mat-form-field class="w-full" [matTooltip]="'Metric key saved to the output JSON'">
-                  <mat-label>Name</mat-label>
-                  <input matInput formControlName="name" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Parser operations: len (string length), count (array size), word_count (split by whitespace), field_present (bool), count_external_links'">
-                  <mat-label>Op</mat-label>
-                  <mat-select formControlName="op">
-                    <mat-option *ngFor="let option of metricOpOptions" [value]="option">{{ option }}</mat-option>
-                  </mat-select>
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Field name to run the metric on; for word_count you may also use body_text to count the whole page'">
-                  <mat-label>Input</mat-label>
-                  <mat-select formControlName="input">
-                    <mat-option *ngFor="let option of fieldNameOptions" [value]="option">
-                      {{ option }}
-                    </mat-option>
-                  </mat-select>
-                  <mat-hint *ngIf="fieldNameOptions.length === 0">Add a field first</mat-hint>
-                </mat-form-field>
-                <button mat-icon-button color="warn" type="button" (click)="removeMetric(m)">
-                  <mat-icon>delete</mat-icon>
-                </button>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input pInputText formControlName="name" class="w-full" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Op</label>
+                  <p-select [options]="metricOpSelectOptions" optionLabel="label" optionValue="value" formControlName="op" styleClass="w-full"></p-select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Input</label>
+                  <p-select [options]="fieldNameSelectOptions" optionLabel="label" optionValue="value" formControlName="input" styleClass="w-full"></p-select>
+                  <small *ngIf="fieldNameOptions.length === 0" class="text-xs text-gray-500">Add a field first</small>
+                </div>
+                <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeMetric(m)">
+                  <i class="pi pi-trash"></i>
+                </p-button>
               </div>
             </div>
           </div>
 
-          <mat-divider></mat-divider>
+          <p-divider></p-divider>
 
           <div>
             <div class="flex items-center justify-between mb-2">
               <p class="text-sm font-semibold">Pagination</p>
-              <button mat-stroked-button color="primary" type="button" (click)="addPagination()">
-                <mat-icon>add</mat-icon>
+              <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addPagination()">
+                <i class="pi pi-plus mr-2"></i>
                 Add Pagination
-              </button>
+              </p-button>
             </div>
             <div formArrayName="pagination" class="space-y-3">
               <div
@@ -468,33 +382,24 @@ interface SimpleJobFormValue {
                 [formGroupName]="p"
                 class="border rounded p-3 grid grid-cols-1 md:grid-cols-4 gap-3 items-start"
               >
-                <mat-form-field class="w-full" [matTooltip]="'Optional name for the pagination source (e.g., next_page, load_more)'">
-                  <mat-label>Name</mat-label>
-                  <input matInput formControlName="name" placeholder="next_page" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'CSS selector for pagination elements (e.g., a.next-page, .pagination a)'">
-                  <mat-label>Selector</mat-label>
-                  <input matInput formControlName="selector" placeholder="a.next-page" />
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <mat-form-field class="w-full" [matTooltip]="'Attribute to extract URL from (default: href)'">
-                  <mat-label>Attribute</mat-label>
-                  <mat-select formControlName="attribute">
-                    <mat-option value="href">href</mat-option>
-                    <mat-option value="src">src</mat-option>
-                    <mat-option value="data-url">data-url</mat-option>
-                    <mat-option value="content">content</mat-option>
-                  </mat-select>
-                  <mat-icon matSuffix>info_outline</mat-icon>
-                </mat-form-field>
-                <div class="flex items-center gap-2">
-                  <mat-checkbox formControlName="multiple" [matTooltip]="'Extract all matching elements (true) or just first (false)'">
-                    Multiple
-                  </mat-checkbox>
-                  <button mat-icon-button color="warn" type="button" (click)="removePagination(p)">
-                    <mat-icon>delete</mat-icon>
-                  </button>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input pInputText formControlName="name" placeholder="next_page" class="w-full" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Selector</label>
+                  <input pInputText formControlName="selector" placeholder="a.next-page" class="w-full" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Attribute</label>
+                  <p-select [options]="paginationAttributeSelectOptions" optionLabel="label" optionValue="value" formControlName="attribute" styleClass="w-full"></p-select>
+                </div>
+                <div class="flex items-center gap-2 mt-6">
+                  <p-checkbox formControlName="multiple" [binary]="true" inputId="pagination-multiple-{{ p }}"></p-checkbox>
+                  <label for="pagination-multiple-{{ p }}" class="text-sm text-gray-700">Multiple</label>
+                  <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removePagination(p)">
+                    <i class="pi pi-trash"></i>
+                  </p-button>
                 </div>
               </div>
             </div>
@@ -502,20 +407,23 @@ interface SimpleJobFormValue {
               No pagination selectors configured. Add pagination to follow next-page links.
             </div>
           </div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Preview Payload</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
+        </div>
+      </p-panel>
+
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h3 class="text-base font-semibold">Preview Payload</h3>
+          </div>
+        </ng-template>
+        <div class="p-4">
           <pre class="bg-gray-100 p-3 rounded text-xs overflow-auto">{{ previewJson }}</pre>
           <div *ngIf="error" class="text-red-600 text-sm flex items-center gap-2 mt-2">
-            <mat-icon>error</mat-icon>
+            <i class="pi pi-times-circle"></i>
             {{ error }}
           </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </p-card>
     </form>
   `,
   styles: [`
@@ -532,11 +440,8 @@ interface SimpleJobFormValue {
 export class SimpleJobCreateComponent implements OnInit {
   jobForm!: FormGroup;
   creating = false;
-  error: string | null = null;
+  error?: string;
   previewJson = '';
-  seedsScopeExpanded = false;
-  rateLimitExpanded = false;
-  extractionExpanded = true;
   readonly fieldTypeOptions: FieldSpec['type'][] = ['string', 'int', 'float', 'bool', 'url', 'json'];
   readonly attributeOptions = ['text', 'html', 'href', 'src', 'content'];
   readonly metricOpOptions: MetricSpec['op'][] = ['len', 'count', 'word_count', 'field_present', 'status_is_error', 'count_external_links'];
@@ -554,6 +459,12 @@ export class SimpleJobCreateComponent implements OnInit {
     'collapse_ws',
     'sha256'
   ];
+
+  fieldTypeSelectOptions = this.fieldTypeOptions.map(option => ({ label: option, value: option }));
+  attributeSelectOptions = this.attributeOptions.map(option => ({ label: option, value: option }));
+  metricOpSelectOptions = this.metricOpOptions.map(option => ({ label: option, value: option }));
+  transformOpSelectOptions = this.transformOpOptions.map(option => ({ label: option, value: option }));
+  paginationAttributeSelectOptions = ['href', 'src', 'data-url', 'content'].map(option => ({ label: option, value: option }));
 
   private readonly sampleConfig: CrawlJobConfig = {
     name: 'Example Crawl Job',
@@ -606,7 +517,7 @@ export class SimpleJobCreateComponent implements OnInit {
     private fb: FormBuilder,
     private crawlerApi: CrawlerApiService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private messageService: MessageService
   ) {}
 
   ngOnInit(): void {
@@ -687,20 +598,12 @@ export class SimpleJobCreateComponent implements OnInit {
       .filter(name => name.trim() !== '');
   }
 
+  get fieldNameSelectOptions(): { label: string; value: string }[] {
+    return this.fieldNameOptions.map(option => ({ label: option, value: option }));
+  }
+
   goBack(): void {
     this.router.navigate(['/jobs']);
-  }
-
-  toggleSeedsScope(): void {
-    this.seedsScopeExpanded = !this.seedsScopeExpanded;
-  }
-
-  toggleRateLimit(): void {
-    this.rateLimitExpanded = !this.rateLimitExpanded;
-  }
-
-  toggleExtraction(): void {
-    this.extractionExpanded = !this.extractionExpanded;
   }
 
   addSeed(url = ''): void {
@@ -824,18 +727,29 @@ export class SimpleJobCreateComponent implements OnInit {
     }
 
     this.creating = true;
-    this.error = null;
+      this.error = undefined;
     const payload = { config: this.buildConfig() };
 
     this.crawlerApi.createJob(payload.config as CrawlJobConfig).subscribe({
       next: (response) => {
         this.creating = false;
-        this.snackBar.open('Job created successfully', 'Close', { duration: 3000 });
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Job created successfully',
+          life: 3000
+        });
         this.router.navigate(['/jobs', response.id]);
       },
       error: (err) => {
         this.creating = false;
         this.error = err.message || 'Failed to create job';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: this.error ?? 'Failed to create job',
+          life: 5000
+        });
       }
     });
   }

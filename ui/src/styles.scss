@@ -1,9 +1,43 @@
 /* Tailwind CSS imports */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer tailwind-base, primeng, tailwind-utilities;
 
-/* You can add global styles to this file, and also import other style files */
+@layer tailwind-base {
+  @tailwind base;
+}
 
+@layer tailwind-utilities {
+  @tailwind components;
+  @tailwind utilities;
+}
+
+/* PrimeIcons */
+@import 'primeicons/primeicons.css';
+
+/* Global styles */
 html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+body { margin: 0; font-family: Inter, "Helvetica Neue", sans-serif; }
+
+/* Status utility classes for tags */
+.status-completed { --p-tag-success-background: var(--p-green-500); }
+.status-in-progress { --p-tag-info-background: var(--p-blue-500); }
+.status-queued { --p-tag-info-background: var(--p-cyan-500); }
+.status-failed { --p-tag-danger-background: var(--p-red-500); }
+.status-pending { --p-tag-secondary-background: var(--p-gray-500); }
+
+/* PrimeNG component adjustments for Tailwind compatibility */
+.p-button {
+  @apply font-medium;
+}
+
+.p-card {
+  @apply shadow-md;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Form field spacing */
+.p-field {
+  @apply mb-4;
+}

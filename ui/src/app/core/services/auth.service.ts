@@ -40,6 +40,14 @@ export class AuthService {
     return this.extractRoleFromToken(token);
   }
 
+  get userId(): string | undefined {
+    const token = this.tokens?.accessToken;
+    if (!token) {
+      return undefined;
+    }
+    return this.extractUserIdFromToken(token);
+  }
+
   hasValidAccessToken(): boolean {
     if (!this.tokens) {
       return false;
@@ -165,6 +173,20 @@ export class AuthService {
       }
 
       return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private extractUserIdFromToken(token: string): string | undefined {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return undefined;
+      }
+
+      const payload = JSON.parse(this.decodeBase64Url(parts[1])) as { sub?: string };
+      return payload.sub;
     } catch {
       return undefined;
     }

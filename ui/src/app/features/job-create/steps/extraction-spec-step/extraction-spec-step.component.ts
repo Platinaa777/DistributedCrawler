@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { TabViewModule } from 'primeng/tabview';
 import { FieldBuilderComponent } from '../../components/field-builder/field-builder.component';
 import { MetricBuilderComponent } from '../../components/metric-builder/metric-builder.component';
 import { JobCreateStateService } from '../../services/job-create-state.service';
@@ -14,41 +13,38 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTabsModule,
+    CardModule,
+    ButtonModule,
+    TabViewModule,
     FieldBuilderComponent,
     MetricBuilderComponent
   ],
   template: `
     <div class="space-y-4">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Step 3: Build Extraction Spec</mat-card-title>
-          <mat-card-subtitle>
-            Define fields and metrics to extract from pages
-          </mat-card-subtitle>
-        </mat-card-header>
-      </mat-card>
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h2 class="text-xl font-semibold">Step 3: Build Extraction Spec</h2>
+            <p class="text-sm text-gray-500">Define fields and metrics to extract from pages.</p>
+          </div>
+        </ng-template>
+      </p-card>
 
-      <mat-tab-group>
-        <mat-tab label="Fields ({{ fields.length }})">
+      <p-tabView>
+        <p-tabPanel header="Fields ({{ fields.length }})">
           <div class="p-4 space-y-4">
             <div class="flex items-center justify-between mb-4">
-              <p class="text-sm text-gray-600">
-            Define data fields to extract from each page
-          </p>
-          <button mat-raised-button color="primary" (click)="addField()">
-            <mat-icon>add</mat-icon>
-            Add Field
-          </button>
-        </div>
+              <p class="text-sm text-gray-600">Define data fields to extract from each page.</p>
+              <p-button (onClick)="addField()">
+                <i class="pi pi-plus mr-2"></i>
+                Add Field
+              </p-button>
+            </div>
 
-        <div *ngIf="fields.length === 0" class="text-center py-12 bg-gray-50 rounded">
-          <mat-icon class="text-gray-400 text-5xl mb-2">data_object</mat-icon>
-          <p class="text-gray-500">No fields defined yet</p>
-          <p class="text-gray-400 text-sm mt-1">Add a field to start extracting data</p>
+            <div *ngIf="fields.length === 0" class="text-center py-12 bg-gray-50 rounded">
+              <i class="pi pi-database text-gray-400 text-4xl mb-2"></i>
+              <p class="text-gray-500">No fields defined yet</p>
+              <p class="text-gray-400 text-sm mt-1">Add a field to start extracting data</p>
             </div>
 
             <app-field-builder
@@ -58,22 +54,20 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
               (remove)="removeField(i)"
             ></app-field-builder>
           </div>
-        </mat-tab>
+        </p-tabPanel>
 
-        <mat-tab label="Metrics ({{ metrics.length }})">
+        <p-tabPanel header="Metrics ({{ metrics.length }})">
           <div class="p-4 space-y-4">
             <div class="flex items-center justify-between mb-4">
-              <p class="text-sm text-gray-600">
-                Define metrics to calculate from extracted data
-              </p>
-              <button mat-raised-button color="primary" (click)="addMetric()">
-                <mat-icon>add</mat-icon>
+              <p class="text-sm text-gray-600">Define metrics to calculate from extracted data.</p>
+              <p-button (onClick)="addMetric()">
+                <i class="pi pi-plus mr-2"></i>
                 Add Metric
-              </button>
+              </p-button>
             </div>
 
             <div *ngIf="metrics.length === 0" class="text-center py-12 bg-gray-50 rounded">
-              <mat-icon class="text-gray-400 text-5xl mb-2">analytics</mat-icon>
+              <i class="pi pi-chart-line text-gray-400 text-4xl mb-2"></i>
               <p class="text-gray-500">No metrics defined yet</p>
               <p class="text-gray-400 text-sm mt-1">Add a metric to track data quality</p>
             </div>
@@ -85,27 +79,27 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
               (remove)="removeMetric(i)"
             ></app-metric-builder>
           </div>
-        </mat-tab>
-      </mat-tab-group>
+        </p-tabPanel>
+      </p-tabView>
 
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title class="text-base">Trial Run</mat-card-title>
-          <mat-card-subtitle>
-            Check what the backend would extract with the current spec
-          </mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content class="space-y-3">
-          <button mat-raised-button color="primary" (click)="runTrial()">
-            <mat-icon>play_arrow</mat-icon>
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h3 class="text-base font-semibold">Trial Run</h3>
+            <p class="text-sm text-gray-500">Check what the backend would extract with the current spec.</p>
+          </div>
+        </ng-template>
+        <div class="p-4 space-y-3">
+          <p-button (onClick)="runTrial()">
+            <i class="pi pi-play mr-2"></i>
             Check
-          </button>
+          </p-button>
           <div *ngIf="trialResult" class="border rounded bg-gray-50 p-3">
             <p class="text-xs font-semibold text-gray-600 mb-2">Trial Result (mock)</p>
             <pre class="text-xs text-gray-800 overflow-auto">{{ trialResult }}</pre>
           </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </p-card>
     </div>
   `,
   styles: [`

@@ -1,8 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { API_CONFIG, API_ENDPOINTS } from '../../constants/api.constants';
-import { ListUsersResponse, UpdateUserRoleResponse, UserRole } from '../../models';
+import {
+  ApiListUsersResponse,
+  ListUsersResponse,
+  UpdateUserRoleResponse,
+  UserRole,
+  mapApiUser,
+  toProtoRole
+} from '../../models';
 
 @Injectable({
   providedIn: 'root'
@@ -13,13 +21,17 @@ export class UserApiService {
   constructor(private http: HttpClient) {}
 
   listUsers(): Observable<ListUsersResponse> {
-    return this.http.get<ListUsersResponse>(`${this.baseUrl}${API_ENDPOINTS.USERS}`);
+    return this.http.get<ApiListUsersResponse>(`${this.baseUrl}${API_ENDPOINTS.USERS}`).pipe(
+      map(response => ({
+        users: (response.users || []).map(mapApiUser)
+      }))
+    );
   }
 
   updateUserRole(id: string, role: UserRole): Observable<UpdateUserRoleResponse> {
     return this.http.patch<UpdateUserRoleResponse>(
       `${this.baseUrl}${API_ENDPOINTS.USERS}/${id}/role`,
-      { id, role }
+      { role: toProtoRole(role) }
     );
   }
 }

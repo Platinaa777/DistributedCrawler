@@ -1,12 +1,10 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatCardModule } from '@angular/material/card';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { ButtonModule } from 'primeng/button';
 import { MetricSpec } from '../../../../core/models/extraction-spec.model';
 
 @Component({
@@ -15,76 +13,72 @@ import { MetricSpec } from '../../../../core/models/extraction-spec.model';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCardModule
+    CardModule,
+    InputTextModule,
+    SelectModule,
+    ButtonModule
   ],
   template: `
-    <mat-card class="mb-4">
-      <mat-card-content>
-        <form [formGroup]="metricForm" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <mat-form-field appearance="fill">
-              <mat-label>Metric Name</mat-label>
-              <input matInput formControlName="name" placeholder="total_items" />
-              <mat-error *ngIf="metricForm.get('name')?.hasError('required')">
-                Name is required
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="fill">
-              <mat-label>Operation</mat-label>
-              <mat-select formControlName="op">
-                <mat-option value="len">Length</mat-option>
-                <mat-option value="count">Count</mat-option>
-                <mat-option value="word_count">Word Count</mat-option>
-                <mat-option value="field_present">Field Present</mat-option>
-                <mat-option value="status_is_error">Status Is Error</mat-option>
-                <mat-option value="count_external_links">Count External Links</mat-option>
-              </mat-select>
-              <mat-error *ngIf="metricForm.get('op')?.hasError('required')">
-                Operation is required
-              </mat-error>
-            </mat-form-field>
+    <p-card styleClass="mb-4">
+      <form [formGroup]="metricForm" class="p-4 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Metric Name</label>
+            <input pInputText formControlName="name" placeholder="total_items" class="w-full" />
+            <small *ngIf="metricForm.get('name')?.hasError('required')" class="text-red-500">
+              Name is required
+            </small>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <mat-form-field appearance="fill">
-              <mat-label>Input Field</mat-label>
-              <mat-select formControlName="input" placeholder="Select field">
-                <mat-option *ngFor="let field of fieldOptions" [value]="field">
-                  {{ field }}
-                </mat-option>
-              </mat-select>
-              <mat-hint *ngIf="!fieldOptions.length">Add a field to enable metrics</mat-hint>
-              <mat-error *ngIf="metricForm.get('input')?.hasError('required')">
-                Input is required
-              </mat-error>
-            </mat-form-field>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Operation</label>
+            <p-select
+              [options]="operationOptions"
+              optionLabel="label"
+              optionValue="value"
+              formControlName="op"
+              styleClass="w-full">
+            </p-select>
+            <small *ngIf="metricForm.get('op')?.hasError('required')" class="text-red-500">
+              Operation is required
+            </small>
+          </div>
+        </div>
 
-            <mat-form-field appearance="fill">
-              <mat-label>Argument (Optional)</mat-label>
-              <input matInput formControlName="arg" />
-            </mat-form-field>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Input Field</label>
+            <p-select
+              [options]="fieldSelectOptions"
+              optionLabel="label"
+              optionValue="value"
+              formControlName="input"
+              styleClass="w-full"
+              placeholder="Select field">
+            </p-select>
+            <small *ngIf="!fieldOptions.length" class="text-xs text-gray-500">Add a field to enable metrics</small>
+            <small *ngIf="metricForm.get('input')?.hasError('required')" class="text-red-500 block">
+              Input is required
+            </small>
           </div>
 
-          <div class="flex justify-end">
-            <button
-              mat-icon-button
-              color="warn"
-              (click)="removeMetric()"
-              type="button"
-              aria-label="Remove metric"
-            >
-              <mat-icon>delete</mat-icon>
-            </button>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Argument (Optional)</label>
+            <input pInputText formControlName="arg" class="w-full" />
           </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+        </div>
+
+        <div class="flex justify-end">
+          <p-button
+            [text]="true"
+            [rounded]="true"
+            severity="danger"
+            (onClick)="removeMetric()">
+            <i class="pi pi-trash"></i>
+          </p-button>
+        </div>
+      </form>
+    </p-card>
   `,
   styles: [`
     :host {
@@ -100,6 +94,15 @@ export class MetricBuilderComponent implements OnInit, OnChanges {
 
   metricForm!: FormGroup;
   fieldOptions: string[] = [];
+  operationOptions = [
+    { label: 'Length', value: 'len' },
+    { label: 'Count', value: 'count' },
+    { label: 'Word Count', value: 'word_count' },
+    { label: 'Field Present', value: 'field_present' },
+    { label: 'Status Is Error', value: 'status_is_error' },
+    { label: 'Count External Links', value: 'count_external_links' }
+  ];
+  fieldSelectOptions: { label: string; value: string }[] = [];
 
   constructor(private fb: FormBuilder) {}
 
@@ -156,6 +159,7 @@ export class MetricBuilderComponent implements OnInit, OnChanges {
 
   private refreshFieldOptions(): void {
     this.fieldOptions = [...this.availableFields];
+    this.fieldSelectOptions = this.fieldOptions.map(field => ({ label: field, value: field }));
 
     if (!this.metricForm) {
       return;
