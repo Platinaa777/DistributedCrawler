@@ -1,0 +1,26 @@
+<div class="min-h-screen flex flex-col">
+  <header *ngIf="isAuthenticated" class="border-b bg-white">
+    <div class="container mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="text-lg font-semibold text-gray-900">Distributed Crawler</div>
+      <div class="flex items-center gap-2">
+        <p-button
+          [text]="true"
+          (onClick)="menu.toggle($event)"
+          styleClass="flex items-center gap-2">
+          <i class="pi pi-user"></i>
+          <span class="flex flex-col items-start leading-tight">
+            <span class="text-sm font-medium">My account</span>
+            <span *ngIf="accountEmail" class="text-xs text-gray-500">{{ accountEmail }}</span>
+          </span>
+          <i class="pi pi-chevron-down text-xs"></i>
+        </p-button>
+        <p-menu #menu [model]="menuItems" [popup]="true">
+          <ng-template pTemplate="start">
+            <div *ngIf="accountEmail" class="px-4 py-2 text-xs text-gray-500 border-b">{{ accountEmail }}</div>
+          </ng-template>
+        </p-menu>
+      </div>
+    </div>
+  </header>
+  <router-outlet />
+</div>

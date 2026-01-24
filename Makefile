@@ -15,7 +15,7 @@ GO_FILES := $(shell find . -name '*.go' -type f)
 # Без этого, если в директории есть файл с именем "build" или "test",
 # make подумает что цель уже выполнена и не запустит команду.
 # Это защищает от конфликтов имен и улучшает производительность.
-.PHONY: help build run test clean docker-up docker-down all info
+.PHONY: help build run test clean docker-up docker-down docker-logs all info docker-build
 
 .bin-deps: export GOBIN := $(LOCAL_BIN_WIN)
 .bin-deps:
@@ -46,9 +46,21 @@ build:
 	go build -o $(LOCAL_BIN)/$(APP_NAME) ./cmd/grpc_server/main.go
 	@echo "Build completed! File: $(LOCAL_BIN)/$(APP_NAME)"
 
-run:
-	@echo "Run app..."
-	go run ./cmd/http_server/main.go
+run-grpc-server:
+	@echo "Run grpc app..."
+	go run ./cmd/grpc_server/main.go --config-path=.env
+
+run-fetcher:
+	@echo "Run fetcher..."
+	go run ./cmd/fetch_worker/main.go --config-path=.worker.env
+
+run-parser:
+	@echo "Run parser..."
+	go run ./cmd/parser_worker/main.go --config-path=.worker.env
+
+run-export:
+	@echo "Run export worker..."
+	go run ./cmd/export_worker/main.go --config-path=.worker.env
 
 test:
 	go clean -testcache
@@ -71,3 +83,20 @@ local-migration-up:
 
 local-migration-down:
 	$(GOOSE) -dir $(LOCAL_MIGRATION_DIR) postgres $(LOCAL_MIGRATION_DSN) down -v
+
+local-migration-create:
+	$(GOOSE) -dir $(LOCAL_MIGRATION_DIR) create $(NAME) sql
+
+docker-build:
+	@echo "Building docker image for $(APP)..."
+	@if [ -z "$(APP)" ]; then echo "APP is required (e.g. APP=grpc_server)"; exit 1; fi
+	docker build -f docker/$(APP)/Dockerfile -t distributed-crawler-$(APP) .
+
+docker-up:
+	docker compose -f docker/docker-compose.yaml up -d
+
+docker-down:
+	docker compose -f docker/docker-compose.yaml down
+
+docker-logs:
+	docker compose -f docker/docker-compose.yaml logs -f

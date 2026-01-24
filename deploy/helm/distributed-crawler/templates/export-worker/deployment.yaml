@@ -1,0 +1,59 @@
+{{- if .Values.exportWorker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "distributed-crawler.exportWorker.fullname" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.exportWorker.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.exportWorker.autoscaling.enabled }}
+  replicas: {{ .Values.exportWorker.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "distributed-crawler.exportWorker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.exportWorker.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "distributed-crawler.exportWorker.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "distributed-crawler.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.exportWorker.podSecurityContext | nindent 8 }}
+      containers:
+        - name: export-worker
+          securityContext:
+            {{- toYaml .Values.exportWorker.securityContext | nindent 12 }}
+          image: "{{ .Values.exportWorker.image.repository }}:{{ .Values.exportWorker.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.exportWorker.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "distributed-crawler.configMapName" . }}
+            - secretRef:
+                name: {{ include "distributed-crawler.secretName" . }}
+          resources:
+            {{- toYaml .Values.exportWorker.resources | nindent 12 }}
+      {{- with .Values.exportWorker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.exportWorker.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.exportWorker.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

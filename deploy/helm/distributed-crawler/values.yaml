@@ -1,0 +1,423 @@
+# Global configuration
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# Common labels and annotations
+commonLabels: {}
+commonAnnotations: {}
+
+# Namespace to deploy to (if not set, uses release namespace)
+namespaceOverride: ""
+
+# =============================================================================
+# gRPC Server Configuration
+# =============================================================================
+grpcServer:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: distributed-crawler/grpc-server
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    grpcPort: 8083
+    httpPort: 8084
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: crawler-api.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# =============================================================================
+# Fetch Worker Configuration
+# =============================================================================
+fetchWorker:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: distributed-crawler/fetch-worker
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+# =============================================================================
+# Parser Worker Configuration
+# =============================================================================
+parserWorker:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: distributed-crawler/parser-worker
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+# =============================================================================
+# Export Worker Configuration
+# =============================================================================
+exportWorker:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: distributed-crawler/export-worker
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+# =============================================================================
+# Application Configuration
+# =============================================================================
+config:
+  # PostgreSQL connection
+  postgres:
+    host: ""  # If empty, uses subchart service name
+    port: 5432
+    database: crawler
+    user: crawler
+    # password is in secrets
+    sslMode: disable
+
+  # RabbitMQ connection
+  rabbitmq:
+    host: ""  # If empty, uses subchart service name
+    port: 5672
+    user: guest
+    # password is in secrets
+    crawlQueueName: crawl_queue
+    parsingQueueName: parsing_queue
+    exportQueueName: export_queue
+
+  # MinIO/S3 connection
+  minio:
+    endpoint: ""  # If empty, uses subchart service name
+    port: 9000
+    useSSL: false
+    bucketName: pages
+    # user and password are in secrets
+
+  # Redis connection
+  redis:
+    host: ""  # If empty, uses subchart service name
+    port: 6379
+    db: 0
+    # password is in secrets
+
+  # Logging
+  log:
+    level: info
+    env: production
+
+# =============================================================================
+# Secrets Configuration
+# =============================================================================
+secrets:
+  # Set to true to create secrets from values
+  create: true
+  # Alternatively, provide existing secret names
+  existingSecret: ""
+
+  postgres:
+    password: "changeme-postgres-password"
+
+  rabbitmq:
+    password: "guest"
+
+  minio:
+    user: "minioadmin"
+    password: "changeme-minio-password"
+
+  redis:
+    password: "changeme-redis-password"
+
+# =============================================================================
+# Database Migrations Job
+# =============================================================================
+migrations:
+  enabled: true
+
+  image:
+    repository: distributed-crawler/grpc-server
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# =============================================================================
+# PostgreSQL Subchart Configuration
+# =============================================================================
+postgresql:
+  enabled: true
+
+  auth:
+    username: crawler
+    password: ""  # Will use secret
+    database: crawler
+    existingSecret: ""
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+# =============================================================================
+# RabbitMQ Subchart Configuration
+# =============================================================================
+rabbitmq:
+  enabled: true
+
+  auth:
+    username: guest
+    password: ""  # Will use secret
+    existingPasswordSecret: ""
+
+  persistence:
+    enabled: true
+    size: 8Gi
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# =============================================================================
+# MinIO Subchart Configuration
+# =============================================================================
+minio:
+  enabled: true
+
+  auth:
+    rootUser: minioadmin
+    rootPassword: ""  # Will use secret
+    existingSecret: ""
+
+  defaultBuckets: "pages"
+
+  persistence:
+    enabled: true
+    size: 20Gi
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# =============================================================================
+# Redis Subchart Configuration
+# =============================================================================
+redis:
+  enabled: true
+
+  auth:
+    enabled: true
+    password: ""  # Will use secret
+    existingSecret: ""
+    existingSecretPasswordKey: redis-password
+
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+  replica:
+    replicaCount: 0
+
+# =============================================================================
+# Service Account
+# =============================================================================
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# =============================================================================
+# Pod Disruption Budget
+# =============================================================================
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# =============================================================================
+# Network Policies
+# =============================================================================
+networkPolicy:
+  enabled: false

@@ -4,7 +4,17 @@ go.work.sum
 
 /bin
 .env
+.worker.env
 /vendor.protobuf
-/.vscode
+*/.vscode/
 /.claude/
 coverage.out
+
+*.exe
+
+*/.angular/
+*/node_modules/
+
+.playwright-mcp/*
+
+CLAUDE.md

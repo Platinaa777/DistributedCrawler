@@ -1,0 +1,42 @@
+{{- if and .Values.grpcServer.enabled .Values.grpcServer.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "distributed-crawler.grpcServer.fullname" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.grpcServer.labels" . | nindent 4 }}
+  {{- with .Values.grpcServer.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.grpcServer.ingress.className }}
+  ingressClassName: {{ .Values.grpcServer.ingress.className }}
+  {{- end }}
+  {{- if .Values.grpcServer.ingress.tls }}
+  tls:
+    {{- range .Values.grpcServer.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.grpcServer.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "distributed-crawler.grpcServer.fullname" $ }}
+                port:
+                  number: {{ $.Values.grpcServer.service.httpPort }}
+          {{- end }}
+    {{- end }}
+{{- end }}

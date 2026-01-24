@@ -1,0 +1,25 @@
+{{- if and .Values.parserWorker.enabled .Values.parserWorker.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "distributed-crawler.parserWorker.fullname" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.parserWorker.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "distributed-crawler.parserWorker.fullname" . }}
+  minReplicas: {{ .Values.parserWorker.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.parserWorker.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.parserWorker.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.parserWorker.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+{{- end }}

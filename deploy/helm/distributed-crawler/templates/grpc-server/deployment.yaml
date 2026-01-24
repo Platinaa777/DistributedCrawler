@@ -1,0 +1,84 @@
+{{- if .Values.grpcServer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "distributed-crawler.grpcServer.fullname" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.grpcServer.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.grpcServer.autoscaling.enabled }}
+  replicas: {{ .Values.grpcServer.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "distributed-crawler.grpcServer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.grpcServer.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "distributed-crawler.grpcServer.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "distributed-crawler.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.grpcServer.podSecurityContext | nindent 8 }}
+      containers:
+        - name: grpc-server
+          securityContext:
+            {{- toYaml .Values.grpcServer.securityContext | nindent 12 }}
+          image: "{{ .Values.grpcServer.image.repository }}:{{ .Values.grpcServer.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.grpcServer.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.grpcServer.service.grpcPort }}
+              protocol: TCP
+            - name: http
+              containerPort: {{ .Values.grpcServer.service.httpPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "distributed-crawler.configMapName" . }}
+            - secretRef:
+                name: {{ include "distributed-crawler.secretName" . }}
+          {{- if .Values.grpcServer.livenessProbe.enabled }}
+          livenessProbe:
+            grpc:
+              port: {{ .Values.grpcServer.service.grpcPort }}
+            initialDelaySeconds: {{ .Values.grpcServer.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.grpcServer.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.grpcServer.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.grpcServer.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.grpcServer.readinessProbe.enabled }}
+          readinessProbe:
+            grpc:
+              port: {{ .Values.grpcServer.service.grpcPort }}
+            initialDelaySeconds: {{ .Values.grpcServer.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.grpcServer.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.grpcServer.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.grpcServer.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.grpcServer.resources | nindent 12 }}
+      {{- with .Values.grpcServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.grpcServer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.grpcServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

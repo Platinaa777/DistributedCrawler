@@ -1,0 +1,276 @@
+package fetcher
+
+import (
+	"context"
+	"crypto/sha256"
+	"distributed-crawler/internal/domain/crawl/models"
+	"distributed-crawler/internal/domain/crawl/services"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/chromedp"
+)
+
+const (
+	defaultBrowserTimeout = 30 * time.Second
+	defaultUserAgent      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	defaultViewportWidth  = 1366
+	defaultViewportHeight = 768
+	networkIdleWindow     = 800 * time.Millisecond
+	networkIdleTimeout    = 8 * time.Second
+	domStableTimeout      = 5 * time.Second
+	domStableInterval     = 400 * time.Millisecond
+	domStableSamples      = 3
+)
+
+// BrowserFetcher renders pages using a headless browser (Chromium).
+type BrowserFetcher struct {
+	authOptions models.AuthOptions
+	retryPolicy models.RetryPolicy
+	timeout     time.Duration
+}
+
+// NewBrowserFetcher creates a browser-based fetcher with specified options.
+func NewBrowserFetcher(auth models.AuthOptions, retry models.RetryPolicy) *BrowserFetcher {
+	if retry.MaxAttempts == 0 {
+		retry.MaxAttempts = 1
+	}
+
+	return &BrowserFetcher{
+		authOptions: auth,
+		retryPolicy: retry,
+		timeout:     defaultBrowserTimeout,
+	}
+}
+
+// Fetch performs a browser-rendered fetch with retry logic and returns the result.
+func (f *BrowserFetcher) Fetch(ctx context.Context, url string) (*services.FetchResult, error) {
+	var lastErr error
+	backoff := time.Duration(f.retryPolicy.BackoffInitialMs) * time.Millisecond
+
+	for attempt := uint64(0); attempt < f.retryPolicy.MaxAttempts; attempt++ {
+		result, err := f.doFetch(ctx, url)
+		if err == nil {
+			return result, nil
+		}
+
+		lastErr = err
+
+		if attempt < f.retryPolicy.MaxAttempts-1 {
+			select {
+			case <-ctx.Done():
+				return nil, fmt.Errorf("context cancelled during retry: %w", ctx.Err())
+			case <-time.After(backoff):
+			}
+
+			backoff = time.Duration(float64(backoff) * f.retryPolicy.BackoffMultiplier)
+		}
+	}
+
+	return nil, fmt.Errorf("failed after %d attempts: %w", f.retryPolicy.MaxAttempts, lastErr)
+}
+
+func (f *BrowserFetcher) doFetch(ctx context.Context, url string) (*services.FetchResult, error) {
+	ctx, cancel := context.WithTimeout(ctx, f.timeout)
+	defer cancel()
+
+	allocOpts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", true),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("no-sandbox", true),
+	)
+	allocCtx, allocCancel := chromedp.NewExecAllocator(ctx, allocOpts...)
+	defer allocCancel()
+
+	browserCtx, browserCancel := chromedp.NewContext(allocCtx)
+	defer browserCancel()
+
+	var (
+		html        string
+		finalURL    string
+		statusCode  int
+		contentType = "text/html"
+	)
+	var responseLock sync.Mutex
+	var networkLock sync.Mutex
+	inFlight := 0
+	lastActivity := time.Now()
+
+	chromedp.ListenTarget(browserCtx, func(ev interface{}) {
+		switch e := ev.(type) {
+		case *network.EventResponseReceived:
+			if e.Type == network.ResourceTypeDocument {
+				responseLock.Lock()
+				if statusCode == 0 {
+					statusCode = int(e.Response.Status)
+					if e.Response.MimeType != "" {
+						contentType = e.Response.MimeType
+					}
+					if e.Response.URL != "" {
+						finalURL = e.Response.URL
+					}
+				}
+				responseLock.Unlock()
+			}
+		case *network.EventRequestWillBeSent:
+			networkLock.Lock()
+			inFlight++
+			lastActivity = time.Now()
+			networkLock.Unlock()
+		case *network.EventLoadingFinished, *network.EventLoadingFailed:
+			networkLock.Lock()
+			if inFlight > 0 {
+				inFlight--
+			}
+			lastActivity = time.Now()
+			networkLock.Unlock()
+		}
+	})
+
+	headers := network.Headers{
+		"User-Agent":      defaultUserAgent,
+		"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+		"Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+	}
+	if f.authOptions.Cookie != "" {
+		headers["Cookie"] = f.authOptions.Cookie
+	}
+	if f.authOptions.BasicUser != "" {
+		cred := f.authOptions.BasicUser + ":" + f.authOptions.BasicPassword
+		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(cred))
+	}
+	if f.authOptions.BearerToken != "" {
+		headers["Authorization"] = "Bearer " + f.authOptions.BearerToken
+	}
+
+	if err := chromedp.Run(
+		browserCtx,
+		network.Enable(),
+		network.SetExtraHTTPHeaders(headers),
+		emulation.SetUserAgentOverride(defaultUserAgent),
+		emulation.SetDeviceMetricsOverride(defaultViewportWidth, defaultViewportHeight, 1, false),
+		chromedp.Navigate(url),
+		chromedp.WaitReady("body", chromedp.ByQuery),
+		waitForReadyState("complete"),
+		waitForNetworkIdle(&networkLock, &inFlight, &lastActivity, networkIdleWindow, networkIdleTimeout),
+		waitForDOMStable(domStableTimeout, domStableInterval, domStableSamples),
+		chromedp.Location(&finalURL),
+		chromedp.OuterHTML("html", &html, chromedp.ByQuery),
+	); err != nil {
+		return nil, fmt.Errorf("failed to render page: %w", err)
+	}
+
+	if html == "" {
+		return nil, fmt.Errorf("empty HTML after render")
+	}
+	if finalURL == "" {
+		finalURL = url
+	}
+	if statusCode == 0 {
+		statusCode = httpStatusOK
+	}
+
+	body := []byte(html)
+	hash := sha256.Sum256(body)
+	bodyHash := hex.EncodeToString(hash[:])
+
+	return &services.FetchResult{
+		Body:        body,
+		BodyHash:    bodyHash,
+		FinalURL:    finalURL,
+		StatusCode:  statusCode,
+		ContentType: contentType,
+	}, nil
+}
+
+const httpStatusOK = 200
+
+func waitForReadyState(state string) chromedp.ActionFunc {
+	return func(ctx context.Context) error {
+		var readyState string
+		if err := chromedp.Evaluate(`document.readyState`, &readyState).Do(ctx); err != nil {
+			return err
+		}
+		if readyState == state {
+			return nil
+		}
+		pollCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		defer cancel()
+		return chromedp.Poll(
+			`document.readyState`,
+			&readyState,
+			chromedp.WithPollingInterval(200*time.Millisecond),
+		).Do(pollCtx)
+	}
+}
+
+func waitForNetworkIdle(lock *sync.Mutex, inFlight *int, lastActivity *time.Time, idleWindow time.Duration, timeout time.Duration) chromedp.ActionFunc {
+	return func(ctx context.Context) error {
+		deadline := time.Now().Add(timeout)
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-ticker.C:
+				lock.Lock()
+				active := *inFlight
+				last := *lastActivity
+				lock.Unlock()
+
+				if active == 0 && time.Since(last) >= idleWindow {
+					return nil
+				}
+				if time.Now().After(deadline) {
+					return nil
+				}
+			}
+		}
+	}
+}
+
+func waitForDOMStable(timeout time.Duration, interval time.Duration, samples int) chromedp.ActionFunc {
+	return func(ctx context.Context) error {
+		deadline := time.Now().Add(timeout)
+		prev := -1
+		stable := 0
+
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			var length int
+			if err := chromedp.Evaluate(`document.documentElement ? document.documentElement.outerHTML.length : 0`, &length).Do(ctx); err != nil {
+				return err
+			}
+
+			if length == prev {
+				stable++
+				if stable >= samples {
+					return nil
+				}
+			} else {
+				stable = 0
+				prev = length
+			}
+
+			if time.Now().After(deadline) {
+				return nil
+			}
+
+			if err := chromedp.Sleep(interval).Do(ctx); err != nil {
+				return err
+			}
+		}
+	}
+}

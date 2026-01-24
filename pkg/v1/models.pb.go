@@ -11,6 +11,7 @@ import (
 	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -24,21 +25,1019 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Role represents user authorization role.
+type Role int32
+
+const (
+	Role_ROLE_UNSPECIFIED   Role = 0
+	Role_ROLE_READ          Role = 1
+	Role_ROLE_READ_WRITE    Role = 2
+	Role_ROLE_ADMINISTRATOR Role = 3
+)
+
+// Enum value maps for Role.
+var (
+	Role_name = map[int32]string{
+		0: "ROLE_UNSPECIFIED",
+		1: "ROLE_READ",
+		2: "ROLE_READ_WRITE",
+		3: "ROLE_ADMINISTRATOR",
+	}
+	Role_value = map[string]int32{
+		"ROLE_UNSPECIFIED":   0,
+		"ROLE_READ":          1,
+		"ROLE_READ_WRITE":    2,
+		"ROLE_ADMINISTRATOR": 3,
+	}
+)
+
+func (x Role) Enum() *Role {
+	p := new(Role)
+	*p = x
+	return p
+}
+
+func (x Role) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Role) Descriptor() protoreflect.EnumDescriptor {
+	return file_v1_models_proto_enumTypes[0].Descriptor()
+}
+
+func (Role) Type() protoreflect.EnumType {
+	return &file_v1_models_proto_enumTypes[0]
+}
+
+func (x Role) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Role.Descriptor instead.
+func (Role) EnumDescriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{0}
+}
+
+// WorkerStatus represents the current state of a worker.
+type WorkerStatus int32
+
+const (
+	WorkerStatus_WORKER_STATUS_UNSPECIFIED WorkerStatus = 0
+	WorkerStatus_WORKER_STATUS_ACTIVE      WorkerStatus = 1
+	WorkerStatus_WORKER_STATUS_INACTIVE    WorkerStatus = 2
+	WorkerStatus_WORKER_STATUS_DRAINING    WorkerStatus = 3
+	WorkerStatus_WORKER_STATUS_DEAD        WorkerStatus = 4
+)
+
+// Enum value maps for WorkerStatus.
+var (
+	WorkerStatus_name = map[int32]string{
+		0: "WORKER_STATUS_UNSPECIFIED",
+		1: "WORKER_STATUS_ACTIVE",
+		2: "WORKER_STATUS_INACTIVE",
+		3: "WORKER_STATUS_DRAINING",
+		4: "WORKER_STATUS_DEAD",
+	}
+	WorkerStatus_value = map[string]int32{
+		"WORKER_STATUS_UNSPECIFIED": 0,
+		"WORKER_STATUS_ACTIVE":      1,
+		"WORKER_STATUS_INACTIVE":    2,
+		"WORKER_STATUS_DRAINING":    3,
+		"WORKER_STATUS_DEAD":        4,
+	}
+)
+
+func (x WorkerStatus) Enum() *WorkerStatus {
+	p := new(WorkerStatus)
+	*p = x
+	return p
+}
+
+func (x WorkerStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WorkerStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_v1_models_proto_enumTypes[1].Descriptor()
+}
+
+func (WorkerStatus) Type() protoreflect.EnumType {
+	return &file_v1_models_proto_enumTypes[1]
+}
+
+func (x WorkerStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use WorkerStatus.Descriptor instead.
+func (WorkerStatus) EnumDescriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{1}
+}
+
+// WorkerCommandType defines commands from Coordinator to worker.
+type WorkerCommandType int32
+
+const (
+	WorkerCommandType_WORKER_COMMAND_UNSPECIFIED WorkerCommandType = 0
+	WorkerCommandType_WORKER_COMMAND_DRAIN       WorkerCommandType = 1
+	WorkerCommandType_WORKER_COMMAND_FORCE_KILL  WorkerCommandType = 2
+)
+
+// Enum value maps for WorkerCommandType.
+var (
+	WorkerCommandType_name = map[int32]string{
+		0: "WORKER_COMMAND_UNSPECIFIED",
+		1: "WORKER_COMMAND_DRAIN",
+		2: "WORKER_COMMAND_FORCE_KILL",
+	}
+	WorkerCommandType_value = map[string]int32{
+		"WORKER_COMMAND_UNSPECIFIED": 0,
+		"WORKER_COMMAND_DRAIN":       1,
+		"WORKER_COMMAND_FORCE_KILL":  2,
+	}
+)
+
+func (x WorkerCommandType) Enum() *WorkerCommandType {
+	p := new(WorkerCommandType)
+	*p = x
+	return p
+}
+
+func (x WorkerCommandType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WorkerCommandType) Descriptor() protoreflect.EnumDescriptor {
+	return file_v1_models_proto_enumTypes[2].Descriptor()
+}
+
+func (WorkerCommandType) Type() protoreflect.EnumType {
+	return &file_v1_models_proto_enumTypes[2]
+}
+
+func (x WorkerCommandType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use WorkerCommandType.Descriptor instead.
+func (WorkerCommandType) EnumDescriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{2}
+}
+
+// AuthOptions contains authentication options for crawling
+type AuthOptions struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cookie        string                 `protobuf:"bytes,1,opt,name=cookie,proto3" json:"cookie,omitempty"`
+	BasicUser     string                 `protobuf:"bytes,2,opt,name=basic_user,proto3" json:"basic_user,omitempty"`
+	BasicPassword string                 `protobuf:"bytes,3,opt,name=basic_password,proto3" json:"basic_password,omitempty"`
+	BearerToken   string                 `protobuf:"bytes,4,opt,name=bearer_token,proto3" json:"bearer_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthOptions) Reset() {
+	*x = AuthOptions{}
+	mi := &file_v1_models_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthOptions) ProtoMessage() {}
+
+func (x *AuthOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthOptions.ProtoReflect.Descriptor instead.
+func (*AuthOptions) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *AuthOptions) GetCookie() string {
+	if x != nil {
+		return x.Cookie
+	}
+	return ""
+}
+
+func (x *AuthOptions) GetBasicUser() string {
+	if x != nil {
+		return x.BasicUser
+	}
+	return ""
+}
+
+func (x *AuthOptions) GetBasicPassword() string {
+	if x != nil {
+		return x.BasicPassword
+	}
+	return ""
+}
+
+func (x *AuthOptions) GetBearerToken() string {
+	if x != nil {
+		return x.BearerToken
+	}
+	return ""
+}
+
+// RateLimitPolicy defines rate limiting configuration
+type RateLimitPolicy struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rps           float64                `protobuf:"fixed64,3,opt,name=rps,proto3" json:"rps,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RateLimitPolicy) Reset() {
+	*x = RateLimitPolicy{}
+	mi := &file_v1_models_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RateLimitPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RateLimitPolicy) ProtoMessage() {}
+
+func (x *RateLimitPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RateLimitPolicy.ProtoReflect.Descriptor instead.
+func (*RateLimitPolicy) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *RateLimitPolicy) GetRps() float64 {
+	if x != nil {
+		return x.Rps
+	}
+	return 0
+}
+
+// RetryPolicy defines retry configuration
+type RetryPolicy struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	MaxAttempts       uint64                 `protobuf:"varint,1,opt,name=max_attempts,proto3" json:"max_attempts,omitempty"`
+	BackoffInitialMs  uint64                 `protobuf:"varint,2,opt,name=backoff_initial_ms,proto3" json:"backoff_initial_ms,omitempty"`
+	BackoffMultiplier float64                `protobuf:"fixed64,3,opt,name=backoff_multiplier,proto3" json:"backoff_multiplier,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *RetryPolicy) Reset() {
+	*x = RetryPolicy{}
+	mi := &file_v1_models_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetryPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetryPolicy) ProtoMessage() {}
+
+func (x *RetryPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetryPolicy.ProtoReflect.Descriptor instead.
+func (*RetryPolicy) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RetryPolicy) GetMaxAttempts() uint64 {
+	if x != nil {
+		return x.MaxAttempts
+	}
+	return 0
+}
+
+func (x *RetryPolicy) GetBackoffInitialMs() uint64 {
+	if x != nil {
+		return x.BackoffInitialMs
+	}
+	return 0
+}
+
+func (x *RetryPolicy) GetBackoffMultiplier() float64 {
+	if x != nil {
+		return x.BackoffMultiplier
+	}
+	return 0
+}
+
+// ScheduleOptions defines scheduling configuration
+type ScheduleOptions struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cron          string                 `protobuf:"bytes,1,opt,name=cron,proto3" json:"cron,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScheduleOptions) Reset() {
+	*x = ScheduleOptions{}
+	mi := &file_v1_models_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScheduleOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScheduleOptions) ProtoMessage() {}
+
+func (x *ScheduleOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScheduleOptions.ProtoReflect.Descriptor instead.
+func (*ScheduleOptions) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ScheduleOptions) GetCron() string {
+	if x != nil {
+		return x.Cron
+	}
+	return ""
+}
+
+// ScopeRules defines crawling scope rules
+type ScopeRules struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	MaxDepth        uint64                 `protobuf:"varint,1,opt,name=max_depth,proto3" json:"max_depth,omitempty"`
+	AllowedDomains  []string               `protobuf:"bytes,2,rep,name=allowed_domains,proto3" json:"allowed_domains,omitempty"`
+	DenyUrlPatterns []string               `protobuf:"bytes,3,rep,name=deny_url_patterns,proto3" json:"deny_url_patterns,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ScopeRules) Reset() {
+	*x = ScopeRules{}
+	mi := &file_v1_models_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScopeRules) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScopeRules) ProtoMessage() {}
+
+func (x *ScopeRules) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScopeRules.ProtoReflect.Descriptor instead.
+func (*ScopeRules) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ScopeRules) GetMaxDepth() uint64 {
+	if x != nil {
+		return x.MaxDepth
+	}
+	return 0
+}
+
+func (x *ScopeRules) GetAllowedDomains() []string {
+	if x != nil {
+		return x.AllowedDomains
+	}
+	return nil
+}
+
+func (x *ScopeRules) GetDenyUrlPatterns() []string {
+	if x != nil {
+		return x.DenyUrlPatterns
+	}
+	return nil
+}
+
+// Seed represents a starting URL
+type Seed struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Seed) Reset() {
+	*x = Seed{}
+	mi := &file_v1_models_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Seed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Seed) ProtoMessage() {}
+
+func (x *Seed) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Seed.ProtoReflect.Descriptor instead.
+func (*Seed) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Seed) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+// ExtractorSpec defines how to extract a field
+type ExtractorSpec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Selector      string                 `protobuf:"bytes,1,opt,name=selector,proto3" json:"selector,omitempty"`
+	Attribute     string                 `protobuf:"bytes,2,opt,name=attribute,proto3" json:"attribute,omitempty"`
+	Multiple      bool                   `protobuf:"varint,3,opt,name=multiple,proto3" json:"multiple,omitempty"`
+	Index         *int32                 `protobuf:"varint,4,opt,name=index,proto3,oneof" json:"index,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExtractorSpec) Reset() {
+	*x = ExtractorSpec{}
+	mi := &file_v1_models_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExtractorSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExtractorSpec) ProtoMessage() {}
+
+func (x *ExtractorSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExtractorSpec.ProtoReflect.Descriptor instead.
+func (*ExtractorSpec) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ExtractorSpec) GetSelector() string {
+	if x != nil {
+		return x.Selector
+	}
+	return ""
+}
+
+func (x *ExtractorSpec) GetAttribute() string {
+	if x != nil {
+		return x.Attribute
+	}
+	return ""
+}
+
+func (x *ExtractorSpec) GetMultiple() bool {
+	if x != nil {
+		return x.Multiple
+	}
+	return false
+}
+
+func (x *ExtractorSpec) GetIndex() int32 {
+	if x != nil && x.Index != nil {
+		return *x.Index
+	}
+	return 0
+}
+
+// TransformSpec defines a transformation operation
+type TransformSpec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Op            string                 `protobuf:"bytes,1,opt,name=op,proto3" json:"op,omitempty"`   // "trim" | "lower" | "upper" | "normalize_url" | "unique" | "limit" | "to_int" | "to_float" | "parse_price" | "html_to_text" | "collapse_ws" | "sha256"
+	Arg           string                 `protobuf:"bytes,2,opt,name=arg,proto3" json:"arg,omitempty"` // JSON-encoded argument
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TransformSpec) Reset() {
+	*x = TransformSpec{}
+	mi := &file_v1_models_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransformSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransformSpec) ProtoMessage() {}
+
+func (x *TransformSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransformSpec.ProtoReflect.Descriptor instead.
+func (*TransformSpec) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *TransformSpec) GetOp() string {
+	if x != nil {
+		return x.Op
+	}
+	return ""
+}
+
+func (x *TransformSpec) GetArg() string {
+	if x != nil {
+		return x.Arg
+	}
+	return ""
+}
+
+// FieldSpec defines a field to extract
+type FieldSpec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"` // "string" | "int" | "float" | "bool" | "url" | "json"
+	Required      bool                   `protobuf:"varint,3,opt,name=required,proto3" json:"required,omitempty"`
+	Extractor     *ExtractorSpec         `protobuf:"bytes,4,opt,name=extractor,proto3" json:"extractor,omitempty"`
+	Transforms    []*TransformSpec       `protobuf:"bytes,5,rep,name=transforms,proto3" json:"transforms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FieldSpec) Reset() {
+	*x = FieldSpec{}
+	mi := &file_v1_models_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FieldSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FieldSpec) ProtoMessage() {}
+
+func (x *FieldSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FieldSpec.ProtoReflect.Descriptor instead.
+func (*FieldSpec) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FieldSpec) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FieldSpec) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *FieldSpec) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+func (x *FieldSpec) GetExtractor() *ExtractorSpec {
+	if x != nil {
+		return x.Extractor
+	}
+	return nil
+}
+
+func (x *FieldSpec) GetTransforms() []*TransformSpec {
+	if x != nil {
+		return x.Transforms
+	}
+	return nil
+}
+
+// MetricSpec defines a metric to compute
+type MetricSpec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Op            string                 `protobuf:"bytes,2,opt,name=op,proto3" json:"op,omitempty"` // "len" | "count" | "word_count" | "field_present" | "status_is_error" | "count_external_links"
+	Input         string                 `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MetricSpec) Reset() {
+	*x = MetricSpec{}
+	mi := &file_v1_models_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MetricSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetricSpec) ProtoMessage() {}
+
+func (x *MetricSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetricSpec.ProtoReflect.Descriptor instead.
+func (*MetricSpec) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MetricSpec) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *MetricSpec) GetOp() string {
+	if x != nil {
+		return x.Op
+	}
+	return ""
+}
+
+func (x *MetricSpec) GetInput() string {
+	if x != nil {
+		return x.Input
+	}
+	return ""
+}
+
+// PaginationSpec defines a pagination selector for extracting next-page URLs
+type PaginationSpec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`           // Optional name for the pagination source (e.g., "next_page", "load_more")
+	Selector      string                 `protobuf:"bytes,2,opt,name=selector,proto3" json:"selector,omitempty"`   // CSS selector for pagination elements (e.g., "a.next-page", ".pagination a")
+	Attribute     string                 `protobuf:"bytes,3,opt,name=attribute,proto3" json:"attribute,omitempty"` // Attribute to extract URL from (default: "href")
+	Multiple      bool                   `protobuf:"varint,4,opt,name=multiple,proto3" json:"multiple,omitempty"`  // Extract all matching elements (true) or just first (false)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PaginationSpec) Reset() {
+	*x = PaginationSpec{}
+	mi := &file_v1_models_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PaginationSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaginationSpec) ProtoMessage() {}
+
+func (x *PaginationSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaginationSpec.ProtoReflect.Descriptor instead.
+func (*PaginationSpec) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *PaginationSpec) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PaginationSpec) GetSelector() string {
+	if x != nil {
+		return x.Selector
+	}
+	return ""
+}
+
+func (x *PaginationSpec) GetAttribute() string {
+	if x != nil {
+		return x.Attribute
+	}
+	return ""
+}
+
+func (x *PaginationSpec) GetMultiple() bool {
+	if x != nil {
+		return x.Multiple
+	}
+	return false
+}
+
+// ExtractionSpec defines extraction configuration
+type ExtractionSpec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fields        []*FieldSpec           `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
+	Metrics       []*MetricSpec          `protobuf:"bytes,2,rep,name=metrics,proto3" json:"metrics,omitempty"`
+	Pagination    []*PaginationSpec      `protobuf:"bytes,3,rep,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExtractionSpec) Reset() {
+	*x = ExtractionSpec{}
+	mi := &file_v1_models_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExtractionSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExtractionSpec) ProtoMessage() {}
+
+func (x *ExtractionSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExtractionSpec.ProtoReflect.Descriptor instead.
+func (*ExtractionSpec) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ExtractionSpec) GetFields() []*FieldSpec {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
+func (x *ExtractionSpec) GetMetrics() []*MetricSpec {
+	if x != nil {
+		return x.Metrics
+	}
+	return nil
+}
+
+func (x *ExtractionSpec) GetPagination() []*PaginationSpec {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+// CrawlJobConfig represents crawl job configuration
+type CrawlJobConfig struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ExtractionSpec *ExtractionSpec        `protobuf:"bytes,3,opt,name=extraction_spec,proto3" json:"extraction_spec,omitempty"`
+	Scopes         *ScopeRules            `protobuf:"bytes,4,opt,name=scopes,proto3" json:"scopes,omitempty"`
+	Seeds          []*Seed                `protobuf:"bytes,5,rep,name=seeds,proto3" json:"seeds,omitempty"`
+	RateLimit      *RateLimitPolicy       `protobuf:"bytes,6,opt,name=rate_limit,proto3" json:"rate_limit,omitempty"`
+	Retries        *RetryPolicy           `protobuf:"bytes,7,opt,name=retries,proto3" json:"retries,omitempty"`
+	Auth           *AuthOptions           `protobuf:"bytes,8,opt,name=auth,proto3" json:"auth,omitempty"`
+	Schedule       *ScheduleOptions       `protobuf:"bytes,9,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	// If true, fetch and follow robots.txt rules; if false, ignore robots.txt
+	RespectRobotsTxt bool `protobuf:"varint,10,opt,name=respect_robots_txt,proto3" json:"respect_robots_txt,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CrawlJobConfig) Reset() {
+	*x = CrawlJobConfig{}
+	mi := &file_v1_models_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CrawlJobConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CrawlJobConfig) ProtoMessage() {}
+
+func (x *CrawlJobConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CrawlJobConfig.ProtoReflect.Descriptor instead.
+func (*CrawlJobConfig) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *CrawlJobConfig) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CrawlJobConfig) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CrawlJobConfig) GetExtractionSpec() *ExtractionSpec {
+	if x != nil {
+		return x.ExtractionSpec
+	}
+	return nil
+}
+
+func (x *CrawlJobConfig) GetScopes() *ScopeRules {
+	if x != nil {
+		return x.Scopes
+	}
+	return nil
+}
+
+func (x *CrawlJobConfig) GetSeeds() []*Seed {
+	if x != nil {
+		return x.Seeds
+	}
+	return nil
+}
+
+func (x *CrawlJobConfig) GetRateLimit() *RateLimitPolicy {
+	if x != nil {
+		return x.RateLimit
+	}
+	return nil
+}
+
+func (x *CrawlJobConfig) GetRetries() *RetryPolicy {
+	if x != nil {
+		return x.Retries
+	}
+	return nil
+}
+
+func (x *CrawlJobConfig) GetAuth() *AuthOptions {
+	if x != nil {
+		return x.Auth
+	}
+	return nil
+}
+
+func (x *CrawlJobConfig) GetSchedule() *ScheduleOptions {
+	if x != nil {
+		return x.Schedule
+	}
+	return nil
+}
+
+func (x *CrawlJobConfig) GetRespectRobotsTxt() bool {
+	if x != nil {
+		return x.RespectRobotsTxt
+	}
+	return false
+}
+
 // CrawlJob represents a crawling job
 type CrawlJob struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,proto3" json:"created_at,omitempty"`
-	CompletedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=completed_at,json=completedAt,proto3,oneof" json:"completed_at,omitempty"`
+	JobConfigId   string                 `protobuf:"bytes,2,opt,name=job_config_id,proto3" json:"job_config_id,omitempty"`
+	JobConfig     *CrawlJobConfig        `protobuf:"bytes,3,opt,name=job_config,proto3,oneof" json:"job_config,omitempty"`
+	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	CompletedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=completed_at,proto3,oneof" json:"completed_at,omitempty"`
+	ExportJsonKey *string                `protobuf:"bytes,7,opt,name=export_json_key,proto3,oneof" json:"export_json_key,omitempty"`
+	ExportCsvKey  *string                `protobuf:"bytes,8,opt,name=export_csv_key,proto3,oneof" json:"export_csv_key,omitempty"`
+	ExportedAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=exported_at,proto3,oneof" json:"exported_at,omitempty"`
+	ExportStatus  string                 `protobuf:"bytes,10,opt,name=export_status,proto3" json:"export_status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CrawlJob) Reset() {
 	*x = CrawlJob{}
-	mi := &file_v1_models_proto_msgTypes[0]
+	mi := &file_v1_models_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -50,7 +1049,7 @@ func (x *CrawlJob) String() string {
 func (*CrawlJob) ProtoMessage() {}
 
 func (x *CrawlJob) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[0]
+	mi := &file_v1_models_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -63,7 +1062,7 @@ func (x *CrawlJob) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CrawlJob.ProtoReflect.Descriptor instead.
 func (*CrawlJob) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{0}
+	return file_v1_models_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CrawlJob) GetId() string {
@@ -73,11 +1072,18 @@ func (x *CrawlJob) GetId() string {
 	return ""
 }
 
-func (x *CrawlJob) GetName() string {
+func (x *CrawlJob) GetJobConfigId() string {
 	if x != nil {
-		return x.Name
+		return x.JobConfigId
 	}
 	return ""
+}
+
+func (x *CrawlJob) GetJobConfig() *CrawlJobConfig {
+	if x != nil {
+		return x.JobConfig
+	}
+	return nil
 }
 
 func (x *CrawlJob) GetStatus() string {
@@ -101,22 +1107,55 @@ func (x *CrawlJob) GetCompletedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *CrawlJob) GetExportJsonKey() string {
+	if x != nil && x.ExportJsonKey != nil {
+		return *x.ExportJsonKey
+	}
+	return ""
+}
+
+func (x *CrawlJob) GetExportCsvKey() string {
+	if x != nil && x.ExportCsvKey != nil {
+		return *x.ExportCsvKey
+	}
+	return ""
+}
+
+func (x *CrawlJob) GetExportedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExportedAt
+	}
+	return nil
+}
+
+func (x *CrawlJob) GetExportStatus() string {
+	if x != nil {
+		return x.ExportStatus
+	}
+	return ""
+}
+
 // CrawlTask represents a single crawl task within a job
 type CrawlTask struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
-	Job           *CrawlJob              `protobuf:"bytes,3,opt,name=job,proto3,oneof" json:"job,omitempty"`
-	Url           string                 `protobuf:"bytes,4,opt,name=url,proto3" json:"url,omitempty"`
-	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
-	EnqueuedAt    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=enqueued_at,json=enqueuedAt,proto3" json:"enqueued_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	JobId           string                 `protobuf:"bytes,2,opt,name=job_id,proto3" json:"job_id,omitempty"`
+	Job             *CrawlJob              `protobuf:"bytes,3,opt,name=job,proto3,oneof" json:"job,omitempty"`
+	Url             string                 `protobuf:"bytes,4,opt,name=url,proto3" json:"url,omitempty"`
+	FinalUrl        *string                `protobuf:"bytes,5,opt,name=final_url,proto3,oneof" json:"final_url,omitempty"`
+	Status          string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	EnqueuedAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=enqueued_at,proto3" json:"enqueued_at,omitempty"`
+	Depth           uint64                 `protobuf:"varint,8,opt,name=depth,proto3" json:"depth,omitempty"`
+	BodyHash        string                 `protobuf:"bytes,9,opt,name=body_hash,proto3" json:"body_hash,omitempty"`
+	MinioObjectKey  string                 `protobuf:"bytes,10,opt,name=minio_object_key,proto3" json:"minio_object_key,omitempty"`
+	ResultObjectKey *string                `protobuf:"bytes,11,opt,name=result_object_key,proto3,oneof" json:"result_object_key,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CrawlTask) Reset() {
 	*x = CrawlTask{}
-	mi := &file_v1_models_proto_msgTypes[1]
+	mi := &file_v1_models_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -128,7 +1167,7 @@ func (x *CrawlTask) String() string {
 func (*CrawlTask) ProtoMessage() {}
 
 func (x *CrawlTask) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[1]
+	mi := &file_v1_models_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -141,7 +1180,7 @@ func (x *CrawlTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CrawlTask.ProtoReflect.Descriptor instead.
 func (*CrawlTask) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{1}
+	return file_v1_models_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CrawlTask) GetId() string {
@@ -172,6 +1211,13 @@ func (x *CrawlTask) GetUrl() string {
 	return ""
 }
 
+func (x *CrawlTask) GetFinalUrl() string {
+	if x != nil && x.FinalUrl != nil {
+		return *x.FinalUrl
+	}
+	return ""
+}
+
 func (x *CrawlTask) GetStatus() string {
 	if x != nil {
 		return x.Status
@@ -186,126 +1232,63 @@ func (x *CrawlTask) GetEnqueuedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-// PageSnapshot represents a fetched page snapshot
-type PageSnapshot struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	TaskId        string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	Url           string                 `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
-	HttpStatus    int32                  `protobuf:"varint,4,opt,name=http_status,json=httpStatus,proto3" json:"http_status,omitempty"`
-	ContentType   string                 `protobuf:"bytes,5,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
-	StorageKey    string                 `protobuf:"bytes,6,opt,name=storage_key,json=storageKey,proto3" json:"storage_key,omitempty"`
-	FetchedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PageSnapshot) Reset() {
-	*x = PageSnapshot{}
-	mi := &file_v1_models_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PageSnapshot) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PageSnapshot) ProtoMessage() {}
-
-func (x *PageSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[2]
+func (x *CrawlTask) GetDepth() uint64 {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PageSnapshot.ProtoReflect.Descriptor instead.
-func (*PageSnapshot) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *PageSnapshot) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *PageSnapshot) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
-	}
-	return ""
-}
-
-func (x *PageSnapshot) GetUrl() string {
-	if x != nil {
-		return x.Url
-	}
-	return ""
-}
-
-func (x *PageSnapshot) GetHttpStatus() int32 {
-	if x != nil {
-		return x.HttpStatus
+		return x.Depth
 	}
 	return 0
 }
 
-func (x *PageSnapshot) GetContentType() string {
+func (x *CrawlTask) GetBodyHash() string {
 	if x != nil {
-		return x.ContentType
+		return x.BodyHash
 	}
 	return ""
 }
 
-func (x *PageSnapshot) GetStorageKey() string {
+func (x *CrawlTask) GetMinioObjectKey() string {
 	if x != nil {
-		return x.StorageKey
+		return x.MinioObjectKey
 	}
 	return ""
 }
 
-func (x *PageSnapshot) GetFetchedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.FetchedAt
+func (x *CrawlTask) GetResultObjectKey() string {
+	if x != nil && x.ResultObjectKey != nil {
+		return *x.ResultObjectKey
 	}
-	return nil
+	return ""
 }
 
-// ExtractedRecord represents extracted/parsed data from a page
-type ExtractedRecord struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	TaskId        string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	SourceUrl     string                 `protobuf:"bytes,3,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
-	Data          map[string]string      `protobuf:"bytes,4,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	ParsedAt      *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=parsed_at,json=parsedAt,proto3" json:"parsed_at,omitempty"`
+// JobListFilter defines filtering options for listing jobs
+type JobListFilter struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Filter by job name (partial match, case-insensitive)
+	Name *string `protobuf:"bytes,1,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	// Filter by job status (exact match)
+	Status *string `protobuf:"bytes,2,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	// Filter by created_at date range
+	CreatedFrom   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_from,proto3,oneof" json:"created_from,omitempty"`
+	CreatedTo     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_to,proto3,oneof" json:"created_to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ExtractedRecord) Reset() {
-	*x = ExtractedRecord{}
-	mi := &file_v1_models_proto_msgTypes[3]
+func (x *JobListFilter) Reset() {
+	*x = JobListFilter{}
+	mi := &file_v1_models_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ExtractedRecord) String() string {
+func (x *JobListFilter) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExtractedRecord) ProtoMessage() {}
+func (*JobListFilter) ProtoMessage() {}
 
-func (x *ExtractedRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[3]
+func (x *JobListFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -316,58 +1299,54 @@ func (x *ExtractedRecord) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ExtractedRecord.ProtoReflect.Descriptor instead.
-func (*ExtractedRecord) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{3}
+// Deprecated: Use JobListFilter.ProtoReflect.Descriptor instead.
+func (*JobListFilter) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *ExtractedRecord) GetId() string {
-	if x != nil {
-		return x.Id
+func (x *JobListFilter) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
 	}
 	return ""
 }
 
-func (x *ExtractedRecord) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
+func (x *JobListFilter) GetStatus() string {
+	if x != nil && x.Status != nil {
+		return *x.Status
 	}
 	return ""
 }
 
-func (x *ExtractedRecord) GetSourceUrl() string {
+func (x *JobListFilter) GetCreatedFrom() *timestamppb.Timestamp {
 	if x != nil {
-		return x.SourceUrl
-	}
-	return ""
-}
-
-func (x *ExtractedRecord) GetData() map[string]string {
-	if x != nil {
-		return x.Data
+		return x.CreatedFrom
 	}
 	return nil
 }
 
-func (x *ExtractedRecord) GetParsedAt() *timestamppb.Timestamp {
+func (x *JobListFilter) GetCreatedTo() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ParsedAt
+		return x.CreatedTo
 	}
 	return nil
 }
 
 type ListJobsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        *string                `protobuf:"bytes,1,opt,name=status,proto3,oneof" json:"status,omitempty"`
-	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Cursor for pagination (opaque string, empty for first page)
+	Cursor *string `protobuf:"bytes,1,opt,name=cursor,proto3,oneof" json:"cursor,omitempty"`
+	// Number of items per page (default: 20, max: 100)
+	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Filtering options
+	Filter        *JobListFilter `protobuf:"bytes,3,opt,name=filter,proto3" json:"filter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListJobsRequest) Reset() {
 	*x = ListJobsRequest{}
-	mi := &file_v1_models_proto_msgTypes[4]
+	mi := &file_v1_models_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -379,7 +1358,7 @@ func (x *ListJobsRequest) String() string {
 func (*ListJobsRequest) ProtoMessage() {}
 
 func (x *ListJobsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[4]
+	mi := &file_v1_models_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -392,12 +1371,12 @@ func (x *ListJobsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListJobsRequest.ProtoReflect.Descriptor instead.
 func (*ListJobsRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{4}
+	return file_v1_models_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *ListJobsRequest) GetStatus() string {
-	if x != nil && x.Status != nil {
-		return *x.Status
+func (x *ListJobsRequest) GetCursor() string {
+	if x != nil && x.Cursor != nil {
+		return *x.Cursor
 	}
 	return ""
 }
@@ -409,23 +1388,27 @@ func (x *ListJobsRequest) GetLimit() int32 {
 	return 0
 }
 
-func (x *ListJobsRequest) GetOffset() int32 {
+func (x *ListJobsRequest) GetFilter() *JobListFilter {
 	if x != nil {
-		return x.Offset
+		return x.Filter
 	}
-	return 0
+	return nil
 }
 
 type ListJobsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Jobs          []*CrawlJob            `protobuf:"bytes,1,rep,name=jobs,proto3" json:"jobs,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Jobs  []*CrawlJob            `protobuf:"bytes,1,rep,name=jobs,proto3" json:"jobs,omitempty"`
+	// Cursor for the next page (empty if no more results)
+	NextCursor string `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
+	// Indicates if there are more results after this page
+	HasMore       bool `protobuf:"varint,3,opt,name=has_more,proto3" json:"has_more,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListJobsResponse) Reset() {
 	*x = ListJobsResponse{}
-	mi := &file_v1_models_proto_msgTypes[5]
+	mi := &file_v1_models_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -437,7 +1420,7 @@ func (x *ListJobsResponse) String() string {
 func (*ListJobsResponse) ProtoMessage() {}
 
 func (x *ListJobsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[5]
+	mi := &file_v1_models_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -450,7 +1433,7 @@ func (x *ListJobsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListJobsResponse.ProtoReflect.Descriptor instead.
 func (*ListJobsResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{5}
+	return file_v1_models_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListJobsResponse) GetJobs() []*CrawlJob {
@@ -460,17 +1443,30 @@ func (x *ListJobsResponse) GetJobs() []*CrawlJob {
 	return nil
 }
 
+func (x *ListJobsResponse) GetNextCursor() string {
+	if x != nil {
+		return x.NextCursor
+	}
+	return ""
+}
+
+func (x *ListJobsResponse) GetHasMore() bool {
+	if x != nil {
+		return x.HasMore
+	}
+	return false
+}
+
 type CreateJobRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Config        *CrawlJobConfig        `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateJobRequest) Reset() {
 	*x = CreateJobRequest{}
-	mi := &file_v1_models_proto_msgTypes[6]
+	mi := &file_v1_models_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -482,7 +1478,7 @@ func (x *CreateJobRequest) String() string {
 func (*CreateJobRequest) ProtoMessage() {}
 
 func (x *CreateJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[6]
+	mi := &file_v1_models_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -495,21 +1491,14 @@ func (x *CreateJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateJobRequest.ProtoReflect.Descriptor instead.
 func (*CreateJobRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{6}
+	return file_v1_models_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *CreateJobRequest) GetName() string {
+func (x *CreateJobRequest) GetConfig() *CrawlJobConfig {
 	if x != nil {
-		return x.Name
+		return x.Config
 	}
-	return ""
-}
-
-func (x *CreateJobRequest) GetStatus() string {
-	if x != nil {
-		return x.Status
-	}
-	return ""
+	return nil
 }
 
 type CreateJobResponse struct {
@@ -521,7 +1510,7 @@ type CreateJobResponse struct {
 
 func (x *CreateJobResponse) Reset() {
 	*x = CreateJobResponse{}
-	mi := &file_v1_models_proto_msgTypes[7]
+	mi := &file_v1_models_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -533,7 +1522,7 @@ func (x *CreateJobResponse) String() string {
 func (*CreateJobResponse) ProtoMessage() {}
 
 func (x *CreateJobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[7]
+	mi := &file_v1_models_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +1535,7 @@ func (x *CreateJobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateJobResponse.ProtoReflect.Descriptor instead.
 func (*CreateJobResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{7}
+	return file_v1_models_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CreateJobResponse) GetId() string {
@@ -565,7 +1554,7 @@ type GetJobRequest struct {
 
 func (x *GetJobRequest) Reset() {
 	*x = GetJobRequest{}
-	mi := &file_v1_models_proto_msgTypes[8]
+	mi := &file_v1_models_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -577,7 +1566,7 @@ func (x *GetJobRequest) String() string {
 func (*GetJobRequest) ProtoMessage() {}
 
 func (x *GetJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[8]
+	mi := &file_v1_models_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -590,7 +1579,7 @@ func (x *GetJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetJobRequest.ProtoReflect.Descriptor instead.
 func (*GetJobRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{8}
+	return file_v1_models_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetJobRequest) GetId() string {
@@ -609,7 +1598,7 @@ type GetJobResponse struct {
 
 func (x *GetJobResponse) Reset() {
 	*x = GetJobResponse{}
-	mi := &file_v1_models_proto_msgTypes[9]
+	mi := &file_v1_models_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -621,7 +1610,7 @@ func (x *GetJobResponse) String() string {
 func (*GetJobResponse) ProtoMessage() {}
 
 func (x *GetJobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[9]
+	mi := &file_v1_models_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -634,106 +1623,10 @@ func (x *GetJobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetJobResponse.ProtoReflect.Descriptor instead.
 func (*GetJobResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{9}
+	return file_v1_models_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetJobResponse) GetJob() *CrawlJob {
-	if x != nil {
-		return x.Job
-	}
-	return nil
-}
-
-type UpdateJobRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UpdateJobRequest) Reset() {
-	*x = UpdateJobRequest{}
-	mi := &file_v1_models_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UpdateJobRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UpdateJobRequest) ProtoMessage() {}
-
-func (x *UpdateJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UpdateJobRequest.ProtoReflect.Descriptor instead.
-func (*UpdateJobRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *UpdateJobRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *UpdateJobRequest) GetStatus() string {
-	if x != nil {
-		return x.Status
-	}
-	return ""
-}
-
-type UpdateJobResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Job           *CrawlJob              `protobuf:"bytes,1,opt,name=job,proto3" json:"job,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UpdateJobResponse) Reset() {
-	*x = UpdateJobResponse{}
-	mi := &file_v1_models_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UpdateJobResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UpdateJobResponse) ProtoMessage() {}
-
-func (x *UpdateJobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UpdateJobResponse.ProtoReflect.Descriptor instead.
-func (*UpdateJobResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *UpdateJobResponse) GetJob() *CrawlJob {
 	if x != nil {
 		return x.Job
 	}
@@ -750,7 +1643,7 @@ type CreateTaskRequest struct {
 
 func (x *CreateTaskRequest) Reset() {
 	*x = CreateTaskRequest{}
-	mi := &file_v1_models_proto_msgTypes[12]
+	mi := &file_v1_models_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -762,7 +1655,7 @@ func (x *CreateTaskRequest) String() string {
 func (*CreateTaskRequest) ProtoMessage() {}
 
 func (x *CreateTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[12]
+	mi := &file_v1_models_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -775,7 +1668,7 @@ func (x *CreateTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTaskRequest.ProtoReflect.Descriptor instead.
 func (*CreateTaskRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{12}
+	return file_v1_models_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateTaskRequest) GetJobId() string {
@@ -792,50 +1685,6 @@ func (x *CreateTaskRequest) GetUrl() string {
 	return ""
 }
 
-type CreateTaskResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Task          *CrawlTask             `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateTaskResponse) Reset() {
-	*x = CreateTaskResponse{}
-	mi := &file_v1_models_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateTaskResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateTaskResponse) ProtoMessage() {}
-
-func (x *CreateTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateTaskResponse.ProtoReflect.Descriptor instead.
-func (*CreateTaskResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *CreateTaskResponse) GetTask() *CrawlTask {
-	if x != nil {
-		return x.Task
-	}
-	return nil
-}
-
 type GetTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -845,7 +1694,7 @@ type GetTaskRequest struct {
 
 func (x *GetTaskRequest) Reset() {
 	*x = GetTaskRequest{}
-	mi := &file_v1_models_proto_msgTypes[14]
+	mi := &file_v1_models_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -857,7 +1706,7 @@ func (x *GetTaskRequest) String() string {
 func (*GetTaskRequest) ProtoMessage() {}
 
 func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[14]
+	mi := &file_v1_models_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -870,7 +1719,7 @@ func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskRequest.ProtoReflect.Descriptor instead.
 func (*GetTaskRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{14}
+	return file_v1_models_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetTaskRequest) GetId() string {
@@ -889,7 +1738,7 @@ type GetTaskResponse struct {
 
 func (x *GetTaskResponse) Reset() {
 	*x = GetTaskResponse{}
-	mi := &file_v1_models_proto_msgTypes[15]
+	mi := &file_v1_models_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -901,7 +1750,7 @@ func (x *GetTaskResponse) String() string {
 func (*GetTaskResponse) ProtoMessage() {}
 
 func (x *GetTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[15]
+	mi := &file_v1_models_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,7 +1763,7 @@ func (x *GetTaskResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskResponse.ProtoReflect.Descriptor instead.
 func (*GetTaskResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{15}
+	return file_v1_models_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetTaskResponse) GetTask() *CrawlTask {
@@ -933,7 +1782,7 @@ type ListTasksByJobRequest struct {
 
 func (x *ListTasksByJobRequest) Reset() {
 	*x = ListTasksByJobRequest{}
-	mi := &file_v1_models_proto_msgTypes[16]
+	mi := &file_v1_models_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -945,7 +1794,7 @@ func (x *ListTasksByJobRequest) String() string {
 func (*ListTasksByJobRequest) ProtoMessage() {}
 
 func (x *ListTasksByJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[16]
+	mi := &file_v1_models_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -958,7 +1807,7 @@ func (x *ListTasksByJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTasksByJobRequest.ProtoReflect.Descriptor instead.
 func (*ListTasksByJobRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{16}
+	return file_v1_models_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListTasksByJobRequest) GetJobId() string {
@@ -977,7 +1826,7 @@ type ListTasksByJobResponse struct {
 
 func (x *ListTasksByJobResponse) Reset() {
 	*x = ListTasksByJobResponse{}
-	mi := &file_v1_models_proto_msgTypes[17]
+	mi := &file_v1_models_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -989,7 +1838,7 @@ func (x *ListTasksByJobResponse) String() string {
 func (*ListTasksByJobResponse) ProtoMessage() {}
 
 func (x *ListTasksByJobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[17]
+	mi := &file_v1_models_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1002,7 +1851,7 @@ func (x *ListTasksByJobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTasksByJobResponse.ProtoReflect.Descriptor instead.
 func (*ListTasksByJobResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{17}
+	return file_v1_models_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ListTasksByJobResponse) GetTasks() []*CrawlTask {
@@ -1012,29 +1861,30 @@ func (x *ListTasksByJobResponse) GetTasks() []*CrawlTask {
 	return nil
 }
 
-type UpdateTaskRequest struct {
+// GetJobExportFileURLRequest requests a presigned URL for a job export file
+type GetJobExportFileURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,proto3" json:"job_id,omitempty"`
+	FileType      string                 `protobuf:"bytes,2,opt,name=file_type,proto3" json:"file_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateTaskRequest) Reset() {
-	*x = UpdateTaskRequest{}
-	mi := &file_v1_models_proto_msgTypes[18]
+func (x *GetJobExportFileURLRequest) Reset() {
+	*x = GetJobExportFileURLRequest{}
+	mi := &file_v1_models_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateTaskRequest) String() string {
+func (x *GetJobExportFileURLRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateTaskRequest) ProtoMessage() {}
+func (*GetJobExportFileURLRequest) ProtoMessage() {}
 
-func (x *UpdateTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[18]
+func (x *GetJobExportFileURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1045,47 +1895,49 @@ func (x *UpdateTaskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateTaskRequest.ProtoReflect.Descriptor instead.
-func (*UpdateTaskRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{18}
+// Deprecated: Use GetJobExportFileURLRequest.ProtoReflect.Descriptor instead.
+func (*GetJobExportFileURLRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *UpdateTaskRequest) GetId() string {
+func (x *GetJobExportFileURLRequest) GetJobId() string {
 	if x != nil {
-		return x.Id
+		return x.JobId
 	}
 	return ""
 }
 
-func (x *UpdateTaskRequest) GetStatus() string {
+func (x *GetJobExportFileURLRequest) GetFileType() string {
 	if x != nil {
-		return x.Status
+		return x.FileType
 	}
 	return ""
 }
 
-type UpdateTaskResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Task          *CrawlTask             `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+// GetJobExportFileURLResponse contains the presigned URL for downloading a job export file
+type GetJobExportFileURLResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Url              string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	ExpiresInSeconds int32                  `protobuf:"varint,2,opt,name=expires_in_seconds,proto3" json:"expires_in_seconds,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
-func (x *UpdateTaskResponse) Reset() {
-	*x = UpdateTaskResponse{}
-	mi := &file_v1_models_proto_msgTypes[19]
+func (x *GetJobExportFileURLResponse) Reset() {
+	*x = GetJobExportFileURLResponse{}
+	mi := &file_v1_models_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateTaskResponse) String() string {
+func (x *GetJobExportFileURLResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateTaskResponse) ProtoMessage() {}
+func (*GetJobExportFileURLResponse) ProtoMessage() {}
 
-func (x *UpdateTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[19]
+func (x *GetJobExportFileURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1096,116 +1948,49 @@ func (x *UpdateTaskResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateTaskResponse.ProtoReflect.Descriptor instead.
-func (*UpdateTaskResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{19}
+// Deprecated: Use GetJobExportFileURLResponse.ProtoReflect.Descriptor instead.
+func (*GetJobExportFileURLResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *UpdateTaskResponse) GetTask() *CrawlTask {
-	if x != nil {
-		return x.Task
-	}
-	return nil
-}
-
-type CreateSnapshotRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
-	HttpStatus    int32                  `protobuf:"varint,3,opt,name=http_status,json=httpStatus,proto3" json:"http_status,omitempty"`
-	ContentType   string                 `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
-	StorageKey    string                 `protobuf:"bytes,5,opt,name=storage_key,json=storageKey,proto3" json:"storage_key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateSnapshotRequest) Reset() {
-	*x = CreateSnapshotRequest{}
-	mi := &file_v1_models_proto_msgTypes[20]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateSnapshotRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateSnapshotRequest) ProtoMessage() {}
-
-func (x *CreateSnapshotRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[20]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateSnapshotRequest.ProtoReflect.Descriptor instead.
-func (*CreateSnapshotRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{20}
-}
-
-func (x *CreateSnapshotRequest) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
-	}
-	return ""
-}
-
-func (x *CreateSnapshotRequest) GetUrl() string {
+func (x *GetJobExportFileURLResponse) GetUrl() string {
 	if x != nil {
 		return x.Url
 	}
 	return ""
 }
 
-func (x *CreateSnapshotRequest) GetHttpStatus() int32 {
+func (x *GetJobExportFileURLResponse) GetExpiresInSeconds() int32 {
 	if x != nil {
-		return x.HttpStatus
+		return x.ExpiresInSeconds
 	}
 	return 0
 }
 
-func (x *CreateSnapshotRequest) GetContentType() string {
-	if x != nil {
-		return x.ContentType
-	}
-	return ""
-}
-
-func (x *CreateSnapshotRequest) GetStorageKey() string {
-	if x != nil {
-		return x.StorageKey
-	}
-	return ""
-}
-
-type CreateSnapshotResponse struct {
+// GetTaskFileURLRequest requests a presigned URL for a task file
+type GetTaskFileURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Snapshot      *PageSnapshot          `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,proto3" json:"task_id,omitempty"`
+	FileType      string                 `protobuf:"bytes,2,opt,name=file_type,proto3" json:"file_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateSnapshotResponse) Reset() {
-	*x = CreateSnapshotResponse{}
-	mi := &file_v1_models_proto_msgTypes[21]
+func (x *GetTaskFileURLRequest) Reset() {
+	*x = GetTaskFileURLRequest{}
+	mi := &file_v1_models_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateSnapshotResponse) String() string {
+func (x *GetTaskFileURLRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateSnapshotResponse) ProtoMessage() {}
+func (*GetTaskFileURLRequest) ProtoMessage() {}
 
-func (x *CreateSnapshotResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[21]
+func (x *GetTaskFileURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1216,40 +2001,107 @@ func (x *CreateSnapshotResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateSnapshotResponse.ProtoReflect.Descriptor instead.
-func (*CreateSnapshotResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{21}
+// Deprecated: Use GetTaskFileURLRequest.ProtoReflect.Descriptor instead.
+func (*GetTaskFileURLRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *CreateSnapshotResponse) GetSnapshot() *PageSnapshot {
+func (x *GetTaskFileURLRequest) GetTaskId() string {
 	if x != nil {
-		return x.Snapshot
+		return x.TaskId
 	}
-	return nil
+	return ""
 }
 
-type GetSnapshotRequest struct {
+func (x *GetTaskFileURLRequest) GetFileType() string {
+	if x != nil {
+		return x.FileType
+	}
+	return ""
+}
+
+// GetTaskFileURLResponse contains the presigned URL for downloading a file
+type GetTaskFileURLResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Url              string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	ExpiresInSeconds int32                  `protobuf:"varint,2,opt,name=expires_in_seconds,proto3" json:"expires_in_seconds,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetTaskFileURLResponse) Reset() {
+	*x = GetTaskFileURLResponse{}
+	mi := &file_v1_models_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTaskFileURLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTaskFileURLResponse) ProtoMessage() {}
+
+func (x *GetTaskFileURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTaskFileURLResponse.ProtoReflect.Descriptor instead.
+func (*GetTaskFileURLResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *GetTaskFileURLResponse) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *GetTaskFileURLResponse) GetExpiresInSeconds() int32 {
+	if x != nil {
+		return x.ExpiresInSeconds
+	}
+	return 0
+}
+
+type Preview struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	SourceUrl     string                 `protobuf:"bytes,2,opt,name=source_url,proto3" json:"source_url,omitempty"`
+	FinalUrl      *string                `protobuf:"bytes,3,opt,name=final_url,proto3,oneof" json:"final_url,omitempty"`
+	MinioKey      string                 `protobuf:"bytes,4,opt,name=minio_key,proto3" json:"minio_key,omitempty"`
+	ContentType   string                 `protobuf:"bytes,5,opt,name=content_type,proto3" json:"content_type,omitempty"`
+	DownloadUrl   string                 `protobuf:"bytes,6,opt,name=download_url,proto3" json:"download_url,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,proto3,oneof" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetSnapshotRequest) Reset() {
-	*x = GetSnapshotRequest{}
-	mi := &file_v1_models_proto_msgTypes[22]
+func (x *Preview) Reset() {
+	*x = Preview{}
+	mi := &file_v1_models_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetSnapshotRequest) String() string {
+func (x *Preview) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetSnapshotRequest) ProtoMessage() {}
+func (*Preview) ProtoMessage() {}
 
-func (x *GetSnapshotRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[22]
+func (x *Preview) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1260,232 +2112,89 @@ func (x *GetSnapshotRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetSnapshotRequest.ProtoReflect.Descriptor instead.
-func (*GetSnapshotRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{22}
+// Deprecated: Use Preview.ProtoReflect.Descriptor instead.
+func (*Preview) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{31}
 }
 
-func (x *GetSnapshotRequest) GetId() string {
+func (x *Preview) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-type GetSnapshotResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Snapshot      *PageSnapshot          `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetSnapshotResponse) Reset() {
-	*x = GetSnapshotResponse{}
-	mi := &file_v1_models_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetSnapshotResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetSnapshotResponse) ProtoMessage() {}
-
-func (x *GetSnapshotResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetSnapshotResponse.ProtoReflect.Descriptor instead.
-func (*GetSnapshotResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *GetSnapshotResponse) GetSnapshot() *PageSnapshot {
-	if x != nil {
-		return x.Snapshot
-	}
-	return nil
-}
-
-type ListSnapshotsByTaskRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListSnapshotsByTaskRequest) Reset() {
-	*x = ListSnapshotsByTaskRequest{}
-	mi := &file_v1_models_proto_msgTypes[24]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListSnapshotsByTaskRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListSnapshotsByTaskRequest) ProtoMessage() {}
-
-func (x *ListSnapshotsByTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[24]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListSnapshotsByTaskRequest.ProtoReflect.Descriptor instead.
-func (*ListSnapshotsByTaskRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{24}
-}
-
-func (x *ListSnapshotsByTaskRequest) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
-	}
-	return ""
-}
-
-type ListSnapshotsByTaskResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Snapshots     []*PageSnapshot        `protobuf:"bytes,1,rep,name=snapshots,proto3" json:"snapshots,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListSnapshotsByTaskResponse) Reset() {
-	*x = ListSnapshotsByTaskResponse{}
-	mi := &file_v1_models_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListSnapshotsByTaskResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListSnapshotsByTaskResponse) ProtoMessage() {}
-
-func (x *ListSnapshotsByTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListSnapshotsByTaskResponse.ProtoReflect.Descriptor instead.
-func (*ListSnapshotsByTaskResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *ListSnapshotsByTaskResponse) GetSnapshots() []*PageSnapshot {
-	if x != nil {
-		return x.Snapshots
-	}
-	return nil
-}
-
-type CreateRecordRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	SourceUrl     string                 `protobuf:"bytes,2,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
-	Data          map[string]string      `protobuf:"bytes,3,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateRecordRequest) Reset() {
-	*x = CreateRecordRequest{}
-	mi := &file_v1_models_proto_msgTypes[26]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateRecordRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateRecordRequest) ProtoMessage() {}
-
-func (x *CreateRecordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[26]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateRecordRequest.ProtoReflect.Descriptor instead.
-func (*CreateRecordRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{26}
-}
-
-func (x *CreateRecordRequest) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
-	}
-	return ""
-}
-
-func (x *CreateRecordRequest) GetSourceUrl() string {
+func (x *Preview) GetSourceUrl() string {
 	if x != nil {
 		return x.SourceUrl
 	}
 	return ""
 }
 
-func (x *CreateRecordRequest) GetData() map[string]string {
+func (x *Preview) GetFinalUrl() string {
+	if x != nil && x.FinalUrl != nil {
+		return *x.FinalUrl
+	}
+	return ""
+}
+
+func (x *Preview) GetMinioKey() string {
 	if x != nil {
-		return x.Data
+		return x.MinioKey
+	}
+	return ""
+}
+
+func (x *Preview) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *Preview) GetDownloadUrl() string {
+	if x != nil {
+		return x.DownloadUrl
+	}
+	return ""
+}
+
+func (x *Preview) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
 	}
 	return nil
 }
 
-type CreateRecordResponse struct {
+func (x *Preview) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+type CreatePreviewRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Record        *ExtractedRecord       `protobuf:"bytes,1,opt,name=record,proto3" json:"record,omitempty"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateRecordResponse) Reset() {
-	*x = CreateRecordResponse{}
-	mi := &file_v1_models_proto_msgTypes[27]
+func (x *CreatePreviewRequest) Reset() {
+	*x = CreatePreviewRequest{}
+	mi := &file_v1_models_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateRecordResponse) String() string {
+func (x *CreatePreviewRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateRecordResponse) ProtoMessage() {}
+func (*CreatePreviewRequest) ProtoMessage() {}
 
-func (x *CreateRecordResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[27]
+func (x *CreatePreviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1496,40 +2205,40 @@ func (x *CreateRecordResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateRecordResponse.ProtoReflect.Descriptor instead.
-func (*CreateRecordResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{27}
+// Deprecated: Use CreatePreviewRequest.ProtoReflect.Descriptor instead.
+func (*CreatePreviewRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *CreateRecordResponse) GetRecord() *ExtractedRecord {
+func (x *CreatePreviewRequest) GetUrl() string {
 	if x != nil {
-		return x.Record
+		return x.Url
 	}
-	return nil
+	return ""
 }
 
-type GetRecordRequest struct {
+type CreatePreviewResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetRecordRequest) Reset() {
-	*x = GetRecordRequest{}
-	mi := &file_v1_models_proto_msgTypes[28]
+func (x *CreatePreviewResponse) Reset() {
+	*x = CreatePreviewResponse{}
+	mi := &file_v1_models_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetRecordRequest) String() string {
+func (x *CreatePreviewResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetRecordRequest) ProtoMessage() {}
+func (*CreatePreviewResponse) ProtoMessage() {}
 
-func (x *GetRecordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[28]
+func (x *CreatePreviewResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1540,40 +2249,40 @@ func (x *GetRecordRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRecordRequest.ProtoReflect.Descriptor instead.
-func (*GetRecordRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{28}
+// Deprecated: Use CreatePreviewResponse.ProtoReflect.Descriptor instead.
+func (*CreatePreviewResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{33}
 }
 
-func (x *GetRecordRequest) GetId() string {
+func (x *CreatePreviewResponse) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-type GetRecordResponse struct {
+type GetPreviewRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Record        *ExtractedRecord       `protobuf:"bytes,1,opt,name=record,proto3" json:"record,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetRecordResponse) Reset() {
-	*x = GetRecordResponse{}
-	mi := &file_v1_models_proto_msgTypes[29]
+func (x *GetPreviewRequest) Reset() {
+	*x = GetPreviewRequest{}
+	mi := &file_v1_models_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetRecordResponse) String() string {
+func (x *GetPreviewRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetRecordResponse) ProtoMessage() {}
+func (*GetPreviewRequest) ProtoMessage() {}
 
-func (x *GetRecordResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[29]
+func (x *GetPreviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1584,84 +2293,40 @@ func (x *GetRecordResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRecordResponse.ProtoReflect.Descriptor instead.
-func (*GetRecordResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{29}
+// Deprecated: Use GetPreviewRequest.ProtoReflect.Descriptor instead.
+func (*GetPreviewRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{34}
 }
 
-func (x *GetRecordResponse) GetRecord() *ExtractedRecord {
+func (x *GetPreviewRequest) GetId() string {
 	if x != nil {
-		return x.Record
-	}
-	return nil
-}
-
-type ListRecordsByTaskRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListRecordsByTaskRequest) Reset() {
-	*x = ListRecordsByTaskRequest{}
-	mi := &file_v1_models_proto_msgTypes[30]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListRecordsByTaskRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListRecordsByTaskRequest) ProtoMessage() {}
-
-func (x *ListRecordsByTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[30]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListRecordsByTaskRequest.ProtoReflect.Descriptor instead.
-func (*ListRecordsByTaskRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{30}
-}
-
-func (x *ListRecordsByTaskRequest) GetTaskId() string {
-	if x != nil {
-		return x.TaskId
+		return x.Id
 	}
 	return ""
 }
 
-type ListRecordsByTaskResponse struct {
+type GetPreviewResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Records       []*ExtractedRecord     `protobuf:"bytes,1,rep,name=records,proto3" json:"records,omitempty"`
+	Preview       *Preview               `protobuf:"bytes,1,opt,name=preview,proto3" json:"preview,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListRecordsByTaskResponse) Reset() {
-	*x = ListRecordsByTaskResponse{}
-	mi := &file_v1_models_proto_msgTypes[31]
+func (x *GetPreviewResponse) Reset() {
+	*x = GetPreviewResponse{}
+	mi := &file_v1_models_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListRecordsByTaskResponse) String() string {
+func (x *GetPreviewResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListRecordsByTaskResponse) ProtoMessage() {}
+func (*GetPreviewResponse) ProtoMessage() {}
 
-func (x *ListRecordsByTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[31]
+func (x *GetPreviewResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1672,16 +2337,1195 @@ func (x *ListRecordsByTaskResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListRecordsByTaskResponse.ProtoReflect.Descriptor instead.
-func (*ListRecordsByTaskResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{31}
+// Deprecated: Use GetPreviewResponse.ProtoReflect.Descriptor instead.
+func (*GetPreviewResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{35}
 }
 
-func (x *ListRecordsByTaskResponse) GetRecords() []*ExtractedRecord {
+func (x *GetPreviewResponse) GetPreview() *Preview {
 	if x != nil {
-		return x.Records
+		return x.Preview
 	}
 	return nil
+}
+
+type RegisterRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterRequest) Reset() {
+	*x = RegisterRequest{}
+	mi := &file_v1_models_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterRequest) ProtoMessage() {}
+
+func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *RegisterRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+type RegisterResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	ExpiresIn     int32                  `protobuf:"varint,3,opt,name=expires_in,proto3" json:"expires_in,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterResponse) Reset() {
+	*x = RegisterResponse{}
+	mi := &file_v1_models_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterResponse) ProtoMessage() {}
+
+func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
+func (*RegisterResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *RegisterResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *RegisterResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *RegisterResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+type LoginRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginRequest) Reset() {
+	*x = LoginRequest{}
+	mi := &file_v1_models_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginRequest) ProtoMessage() {}
+
+func (x *LoginRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
+func (*LoginRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *LoginRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *LoginRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+type LoginResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	ExpiresIn     int32                  `protobuf:"varint,3,opt,name=expires_in,proto3" json:"expires_in,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginResponse) Reset() {
+	*x = LoginResponse{}
+	mi := &file_v1_models_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginResponse) ProtoMessage() {}
+
+func (x *LoginResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
+func (*LoginResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *LoginResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+type RefreshRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefreshRequest) Reset() {
+	*x = RefreshRequest{}
+	mi := &file_v1_models_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefreshRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefreshRequest) ProtoMessage() {}
+
+func (x *RefreshRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefreshRequest.ProtoReflect.Descriptor instead.
+func (*RefreshRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *RefreshRequest) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+type RefreshResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,proto3" json:"access_token,omitempty"`
+	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	ExpiresIn     int32                  `protobuf:"varint,3,opt,name=expires_in,proto3" json:"expires_in,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefreshResponse) Reset() {
+	*x = RefreshResponse{}
+	mi := &file_v1_models_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefreshResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefreshResponse) ProtoMessage() {}
+
+func (x *RefreshResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefreshResponse.ProtoReflect.Descriptor instead.
+func (*RefreshResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *RefreshResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *RefreshResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *RefreshResponse) GetExpiresIn() int32 {
+	if x != nil {
+		return x.ExpiresIn
+	}
+	return 0
+}
+
+type LogoutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_v1_models_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutRequest) ProtoMessage() {}
+
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *LogoutRequest) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+type LogoutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutResponse) Reset() {
+	*x = LogoutResponse{}
+	mi := &file_v1_models_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutResponse) ProtoMessage() {}
+
+func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
+func (*LogoutResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{43}
+}
+
+type User struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Role          Role                   `protobuf:"varint,3,opt,name=role,proto3,enum=crawler.v1.Role" json:"role,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *User) Reset() {
+	*x = User{}
+	mi := &file_v1_models_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *User) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*User) ProtoMessage() {}
+
+func (x *User) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use User.ProtoReflect.Descriptor instead.
+func (*User) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *User) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *User) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *User) GetRole() Role {
+	if x != nil {
+		return x.Role
+	}
+	return Role_ROLE_UNSPECIFIED
+}
+
+func (x *User) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *User) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type ListUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUsersRequest) Reset() {
+	*x = ListUsersRequest{}
+	mi := &file_v1_models_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUsersRequest) ProtoMessage() {}
+
+func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUsersRequest.ProtoReflect.Descriptor instead.
+func (*ListUsersRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{45}
+}
+
+type ListUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUsersResponse) Reset() {
+	*x = ListUsersResponse{}
+	mi := &file_v1_models_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUsersResponse) ProtoMessage() {}
+
+func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
+func (*ListUsersResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *ListUsersResponse) GetUsers() []*User {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+type UpdateUserRoleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Role          Role                   `protobuf:"varint,2,opt,name=role,proto3,enum=crawler.v1.Role" json:"role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUserRoleRequest) Reset() {
+	*x = UpdateUserRoleRequest{}
+	mi := &file_v1_models_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUserRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUserRoleRequest) ProtoMessage() {}
+
+func (x *UpdateUserRoleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUserRoleRequest.ProtoReflect.Descriptor instead.
+func (*UpdateUserRoleRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *UpdateUserRoleRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateUserRoleRequest) GetRole() Role {
+	if x != nil {
+		return x.Role
+	}
+	return Role_ROLE_UNSPECIFIED
+}
+
+type UpdateUserRoleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Updated       bool                   `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUserRoleResponse) Reset() {
+	*x = UpdateUserRoleResponse{}
+	mi := &file_v1_models_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUserRoleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUserRoleResponse) ProtoMessage() {}
+
+func (x *UpdateUserRoleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUserRoleResponse.ProtoReflect.Descriptor instead.
+func (*UpdateUserRoleResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *UpdateUserRoleResponse) GetUpdated() bool {
+	if x != nil {
+		return x.Updated
+	}
+	return false
+}
+
+// WorkerHeartbeat is sent periodically by workers to report health.
+type WorkerHeartbeat struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorkerId      string                 `protobuf:"bytes,1,opt,name=worker_id,proto3" json:"worker_id,omitempty"`
+	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Status        WorkerStatus           `protobuf:"varint,3,opt,name=status,proto3,enum=crawler.v1.WorkerStatus" json:"status,omitempty"`
+	ActiveTasks   int32                  `protobuf:"varint,4,opt,name=active_tasks,proto3" json:"active_tasks,omitempty"`
+	StartedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=started_at,proto3" json:"started_at,omitempty"`
+	WorkerType    string                 `protobuf:"bytes,6,opt,name=worker_type,proto3" json:"worker_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorkerHeartbeat) Reset() {
+	*x = WorkerHeartbeat{}
+	mi := &file_v1_models_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkerHeartbeat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkerHeartbeat) ProtoMessage() {}
+
+func (x *WorkerHeartbeat) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkerHeartbeat.ProtoReflect.Descriptor instead.
+func (*WorkerHeartbeat) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *WorkerHeartbeat) GetWorkerId() string {
+	if x != nil {
+		return x.WorkerId
+	}
+	return ""
+}
+
+func (x *WorkerHeartbeat) GetTimestamp() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Timestamp
+	}
+	return nil
+}
+
+func (x *WorkerHeartbeat) GetStatus() WorkerStatus {
+	if x != nil {
+		return x.Status
+	}
+	return WorkerStatus_WORKER_STATUS_UNSPECIFIED
+}
+
+func (x *WorkerHeartbeat) GetActiveTasks() int32 {
+	if x != nil {
+		return x.ActiveTasks
+	}
+	return 0
+}
+
+func (x *WorkerHeartbeat) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartedAt
+	}
+	return nil
+}
+
+func (x *WorkerHeartbeat) GetWorkerType() string {
+	if x != nil {
+		return x.WorkerType
+	}
+	return ""
+}
+
+// WorkerInfo is returned by the monitoring API.
+type WorkerInfo struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	WorkerId        string                 `protobuf:"bytes,1,opt,name=worker_id,proto3" json:"worker_id,omitempty"`
+	Status          WorkerStatus           `protobuf:"varint,2,opt,name=status,proto3,enum=crawler.v1.WorkerStatus" json:"status,omitempty"`
+	LastHeartbeatAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_heartbeat_at,proto3" json:"last_heartbeat_at,omitempty"`
+	ActiveTasks     int32                  `protobuf:"varint,4,opt,name=active_tasks,proto3" json:"active_tasks,omitempty"`
+	Uptime          *durationpb.Duration   `protobuf:"bytes,5,opt,name=uptime,proto3" json:"uptime,omitempty"`
+	WorkerType      string                 `protobuf:"bytes,6,opt,name=worker_type,proto3" json:"worker_type,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *WorkerInfo) Reset() {
+	*x = WorkerInfo{}
+	mi := &file_v1_models_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkerInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkerInfo) ProtoMessage() {}
+
+func (x *WorkerInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkerInfo.ProtoReflect.Descriptor instead.
+func (*WorkerInfo) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *WorkerInfo) GetWorkerId() string {
+	if x != nil {
+		return x.WorkerId
+	}
+	return ""
+}
+
+func (x *WorkerInfo) GetStatus() WorkerStatus {
+	if x != nil {
+		return x.Status
+	}
+	return WorkerStatus_WORKER_STATUS_UNSPECIFIED
+}
+
+func (x *WorkerInfo) GetLastHeartbeatAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastHeartbeatAt
+	}
+	return nil
+}
+
+func (x *WorkerInfo) GetActiveTasks() int32 {
+	if x != nil {
+		return x.ActiveTasks
+	}
+	return 0
+}
+
+func (x *WorkerInfo) GetUptime() *durationpb.Duration {
+	if x != nil {
+		return x.Uptime
+	}
+	return nil
+}
+
+func (x *WorkerInfo) GetWorkerType() string {
+	if x != nil {
+		return x.WorkerType
+	}
+	return ""
+}
+
+type ListWorkersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWorkersRequest) Reset() {
+	*x = ListWorkersRequest{}
+	mi := &file_v1_models_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWorkersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWorkersRequest) ProtoMessage() {}
+
+func (x *ListWorkersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWorkersRequest.ProtoReflect.Descriptor instead.
+func (*ListWorkersRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{51}
+}
+
+type ListWorkersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Workers       []*WorkerInfo          `protobuf:"bytes,1,rep,name=workers,proto3" json:"workers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWorkersResponse) Reset() {
+	*x = ListWorkersResponse{}
+	mi := &file_v1_models_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWorkersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWorkersResponse) ProtoMessage() {}
+
+func (x *ListWorkersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWorkersResponse.ProtoReflect.Descriptor instead.
+func (*ListWorkersResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *ListWorkersResponse) GetWorkers() []*WorkerInfo {
+	if x != nil {
+		return x.Workers
+	}
+	return nil
+}
+
+// WorkerCommand is sent from Coordinator to worker.
+type WorkerCommand struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          WorkerCommandType      `protobuf:"varint,1,opt,name=type,proto3,enum=crawler.v1.WorkerCommandType" json:"type,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	IssuedAt      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=issued_at,proto3" json:"issued_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorkerCommand) Reset() {
+	*x = WorkerCommand{}
+	mi := &file_v1_models_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkerCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkerCommand) ProtoMessage() {}
+
+func (x *WorkerCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkerCommand.ProtoReflect.Descriptor instead.
+func (*WorkerCommand) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *WorkerCommand) GetType() WorkerCommandType {
+	if x != nil {
+		return x.Type
+	}
+	return WorkerCommandType_WORKER_COMMAND_UNSPECIFIED
+}
+
+func (x *WorkerCommand) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *WorkerCommand) GetIssuedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.IssuedAt
+	}
+	return nil
+}
+
+type DrainWorkerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorkerId      string                 `protobuf:"bytes,1,opt,name=worker_id,proto3" json:"worker_id,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DrainWorkerRequest) Reset() {
+	*x = DrainWorkerRequest{}
+	mi := &file_v1_models_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DrainWorkerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DrainWorkerRequest) ProtoMessage() {}
+
+func (x *DrainWorkerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DrainWorkerRequest.ProtoReflect.Descriptor instead.
+func (*DrainWorkerRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *DrainWorkerRequest) GetWorkerId() string {
+	if x != nil {
+		return x.WorkerId
+	}
+	return ""
+}
+
+func (x *DrainWorkerRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type DrainWorkerResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Delivered     bool                   `protobuf:"varint,1,opt,name=delivered,proto3" json:"delivered,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DrainWorkerResponse) Reset() {
+	*x = DrainWorkerResponse{}
+	mi := &file_v1_models_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DrainWorkerResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DrainWorkerResponse) ProtoMessage() {}
+
+func (x *DrainWorkerResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DrainWorkerResponse.ProtoReflect.Descriptor instead.
+func (*DrainWorkerResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *DrainWorkerResponse) GetDelivered() bool {
+	if x != nil {
+		return x.Delivered
+	}
+	return false
+}
+
+func (x *DrainWorkerResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type ForceKillWorkerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorkerId      string                 `protobuf:"bytes,1,opt,name=worker_id,proto3" json:"worker_id,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ForceKillWorkerRequest) Reset() {
+	*x = ForceKillWorkerRequest{}
+	mi := &file_v1_models_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ForceKillWorkerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ForceKillWorkerRequest) ProtoMessage() {}
+
+func (x *ForceKillWorkerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ForceKillWorkerRequest.ProtoReflect.Descriptor instead.
+func (*ForceKillWorkerRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *ForceKillWorkerRequest) GetWorkerId() string {
+	if x != nil {
+		return x.WorkerId
+	}
+	return ""
+}
+
+func (x *ForceKillWorkerRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type ForceKillWorkerResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Delivered     bool                   `protobuf:"varint,1,opt,name=delivered,proto3" json:"delivered,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ForceKillWorkerResponse) Reset() {
+	*x = ForceKillWorkerResponse{}
+	mi := &file_v1_models_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ForceKillWorkerResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ForceKillWorkerResponse) ProtoMessage() {}
+
+func (x *ForceKillWorkerResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ForceKillWorkerResponse.ProtoReflect.Descriptor instead.
+func (*ForceKillWorkerResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *ForceKillWorkerResponse) GetDelivered() bool {
+	if x != nil {
+		return x.Delivered
+	}
+	return false
+}
+
+func (x *ForceKillWorkerResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
 }
 
 var File_v1_models_proto protoreflect.FileDescriptor
@@ -1689,72 +3533,145 @@ var File_v1_models_proto protoreflect.FileDescriptor
 const file_v1_models_proto_rawDesc = "" +
 	"\n" +
 	"\x0fv1/models.proto\x12\n" +
-	"crawler.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17validate/validate.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xd7\x01\n" +
-	"\bCrawlJob\x12\x0e\n" +
+	"crawler.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x17validate/validate.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\x91\x01\n" +
+	"\vAuthOptions\x12\x16\n" +
+	"\x06cookie\x18\x01 \x01(\tR\x06cookie\x12\x1e\n" +
+	"\n" +
+	"basic_user\x18\x02 \x01(\tR\n" +
+	"basic_user\x12&\n" +
+	"\x0ebasic_password\x18\x03 \x01(\tR\x0ebasic_password\x12\"\n" +
+	"\fbearer_token\x18\x04 \x01(\tR\fbearer_token\"#\n" +
+	"\x0fRateLimitPolicy\x12\x10\n" +
+	"\x03rps\x18\x03 \x01(\x01R\x03rps\"\x91\x01\n" +
+	"\vRetryPolicy\x12\"\n" +
+	"\fmax_attempts\x18\x01 \x01(\x04R\fmax_attempts\x12.\n" +
+	"\x12backoff_initial_ms\x18\x02 \x01(\x04R\x12backoff_initial_ms\x12.\n" +
+	"\x12backoff_multiplier\x18\x03 \x01(\x01R\x12backoff_multiplier\"%\n" +
+	"\x0fScheduleOptions\x12\x12\n" +
+	"\x04cron\x18\x01 \x01(\tR\x04cron\"\x82\x01\n" +
+	"\n" +
+	"ScopeRules\x12\x1c\n" +
+	"\tmax_depth\x18\x01 \x01(\x04R\tmax_depth\x12(\n" +
+	"\x0fallowed_domains\x18\x02 \x03(\tR\x0fallowed_domains\x12,\n" +
+	"\x11deny_url_patterns\x18\x03 \x03(\tR\x11deny_url_patterns\"\x18\n" +
+	"\x04Seed\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\"\x8a\x01\n" +
+	"\rExtractorSpec\x12\x1a\n" +
+	"\bselector\x18\x01 \x01(\tR\bselector\x12\x1c\n" +
+	"\tattribute\x18\x02 \x01(\tR\tattribute\x12\x1a\n" +
+	"\bmultiple\x18\x03 \x01(\bR\bmultiple\x12\x19\n" +
+	"\x05index\x18\x04 \x01(\x05H\x00R\x05index\x88\x01\x01B\b\n" +
+	"\x06_index\"1\n" +
+	"\rTransformSpec\x12\x0e\n" +
+	"\x02op\x18\x01 \x01(\tR\x02op\x12\x10\n" +
+	"\x03arg\x18\x02 \x01(\tR\x03arg\"\xc3\x01\n" +
+	"\tFieldSpec\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\x12\x1a\n" +
+	"\brequired\x18\x03 \x01(\bR\brequired\x127\n" +
+	"\textractor\x18\x04 \x01(\v2\x19.crawler.v1.ExtractorSpecR\textractor\x129\n" +
+	"\n" +
+	"transforms\x18\x05 \x03(\v2\x19.crawler.v1.TransformSpecR\n" +
+	"transforms\"F\n" +
+	"\n" +
+	"MetricSpec\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
+	"\x02op\x18\x02 \x01(\tR\x02op\x12\x14\n" +
+	"\x05input\x18\x03 \x01(\tR\x05input\"z\n" +
+	"\x0ePaginationSpec\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
+	"\bselector\x18\x02 \x01(\tR\bselector\x12\x1c\n" +
+	"\tattribute\x18\x03 \x01(\tR\tattribute\x12\x1a\n" +
+	"\bmultiple\x18\x04 \x01(\bR\bmultiple\"\xad\x01\n" +
+	"\x0eExtractionSpec\x12-\n" +
+	"\x06fields\x18\x01 \x03(\v2\x15.crawler.v1.FieldSpecR\x06fields\x120\n" +
+	"\ametrics\x18\x02 \x03(\v2\x16.crawler.v1.MetricSpecR\ametrics\x12:\n" +
+	"\n" +
+	"pagination\x18\x03 \x03(\v2\x1a.crawler.v1.PaginationSpecR\n" +
+	"pagination\"\xd8\x03\n" +
+	"\x0eCrawlJobConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\tR\x06status\x12:\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12D\n" +
+	"\x0fextraction_spec\x18\x03 \x01(\v2\x1a.crawler.v1.ExtractionSpecR\x0fextraction_spec\x12.\n" +
+	"\x06scopes\x18\x04 \x01(\v2\x16.crawler.v1.ScopeRulesR\x06scopes\x12&\n" +
+	"\x05seeds\x18\x05 \x03(\v2\x10.crawler.v1.SeedR\x05seeds\x12;\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"created_at\x12B\n" +
-	"\fcompleted_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\vcompletedAt\x88\x01\x01B\x0f\n" +
-	"\r_completed_at\"\xce\x01\n" +
+	"rate_limit\x18\x06 \x01(\v2\x1b.crawler.v1.RateLimitPolicyR\n" +
+	"rate_limit\x121\n" +
+	"\aretries\x18\a \x01(\v2\x17.crawler.v1.RetryPolicyR\aretries\x12+\n" +
+	"\x04auth\x18\b \x01(\v2\x17.crawler.v1.AuthOptionsR\x04auth\x127\n" +
+	"\bschedule\x18\t \x01(\v2\x1b.crawler.v1.ScheduleOptionsR\bschedule\x12.\n" +
+	"\x12respect_robots_txt\x18\n" +
+	" \x01(\bR\x12respect_robots_txt\"\xb6\x04\n" +
+	"\bCrawlJob\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
+	"\rjob_config_id\x18\x02 \x01(\tR\rjob_config_id\x12?\n" +
+	"\n" +
+	"job_config\x18\x03 \x01(\v2\x1a.crawler.v1.CrawlJobConfigH\x00R\n" +
+	"job_config\x88\x01\x01\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12:\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12C\n" +
+	"\fcompleted_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x01R\fcompleted_at\x88\x01\x01\x12-\n" +
+	"\x0fexport_json_key\x18\a \x01(\tH\x02R\x0fexport_json_key\x88\x01\x01\x12+\n" +
+	"\x0eexport_csv_key\x18\b \x01(\tH\x03R\x0eexport_csv_key\x88\x01\x01\x12A\n" +
+	"\vexported_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampH\x04R\vexported_at\x88\x01\x01\x12$\n" +
+	"\rexport_status\x18\n" +
+	" \x01(\tR\rexport_statusB\r\n" +
+	"\v_job_configB\x0f\n" +
+	"\r_completed_atB\x12\n" +
+	"\x10_export_json_keyB\x11\n" +
+	"\x0f_export_csv_keyB\x0e\n" +
+	"\f_exported_at\"\xaa\x03\n" +
 	"\tCrawlTask\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
-	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12+\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x06job_id\x12+\n" +
 	"\x03job\x18\x03 \x01(\v2\x14.crawler.v1.CrawlJobH\x00R\x03job\x88\x01\x01\x12\x10\n" +
-	"\x03url\x18\x04 \x01(\tR\x03url\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\tR\x06status\x12;\n" +
-	"\venqueued_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"enqueuedAtB\x06\n" +
-	"\x04_job\"\xe9\x01\n" +
-	"\fPageSnapshot\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12\x10\n" +
-	"\x03url\x18\x03 \x01(\tR\x03url\x12\x1f\n" +
-	"\vhttp_status\x18\x04 \x01(\x05R\n" +
-	"httpStatus\x12!\n" +
-	"\fcontent_type\x18\x05 \x01(\tR\vcontentType\x12\x1f\n" +
-	"\vstorage_key\x18\x06 \x01(\tR\n" +
-	"storageKey\x129\n" +
+	"\x03url\x18\x04 \x01(\tR\x03url\x12!\n" +
+	"\tfinal_url\x18\x05 \x01(\tH\x01R\tfinal_url\x88\x01\x01\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\tR\x06status\x12<\n" +
+	"\venqueued_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\venqueued_at\x12\x14\n" +
+	"\x05depth\x18\b \x01(\x04R\x05depth\x12\x1c\n" +
+	"\tbody_hash\x18\t \x01(\tR\tbody_hash\x12*\n" +
+	"\x10minio_object_key\x18\n" +
+	" \x01(\tR\x10minio_object_key\x121\n" +
+	"\x11result_object_key\x18\v \x01(\tH\x02R\x11result_object_key\x88\x01\x01B\x06\n" +
+	"\x04_jobB\f\n" +
 	"\n" +
-	"fetched_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tfetchedAt\"\x86\x02\n" +
-	"\x0fExtractedRecord\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12\x1d\n" +
+	"_final_urlB\x14\n" +
+	"\x12_result_object_key\"\xff\x01\n" +
+	"\rJobListFilter\x12\x17\n" +
+	"\x04name\x18\x01 \x01(\tH\x00R\x04name\x88\x01\x01\x12\x1b\n" +
+	"\x06status\x18\x02 \x01(\tH\x01R\x06status\x88\x01\x01\x12C\n" +
+	"\fcreated_from\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\fcreated_from\x88\x01\x01\x12?\n" +
 	"\n" +
-	"source_url\x18\x03 \x01(\tR\tsourceUrl\x129\n" +
-	"\x04data\x18\x04 \x03(\v2%.crawler.v1.ExtractedRecord.DataEntryR\x04data\x127\n" +
-	"\tparsed_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\bparsedAt\x1a7\n" +
-	"\tDataEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"g\n" +
+	"created_to\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x03R\n" +
+	"created_to\x88\x01\x01B\a\n" +
+	"\x05_nameB\t\n" +
+	"\a_statusB\x0f\n" +
+	"\r_created_fromB\r\n" +
+	"\v_created_to\"\x82\x01\n" +
 	"\x0fListJobsRequest\x12\x1b\n" +
-	"\x06status\x18\x01 \x01(\tH\x00R\x06status\x88\x01\x01\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x03 \x01(\x05R\x06offsetB\t\n" +
-	"\a_status\"<\n" +
+	"\x06cursor\x18\x01 \x01(\tH\x00R\x06cursor\x88\x01\x01\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x121\n" +
+	"\x06filter\x18\x03 \x01(\v2\x19.crawler.v1.JobListFilterR\x06filterB\t\n" +
+	"\a_cursor\"z\n" +
 	"\x10ListJobsResponse\x12(\n" +
-	"\x04jobs\x18\x01 \x03(\v2\x14.crawler.v1.CrawlJobR\x04jobs\"P\n" +
-	"\x10CreateJobRequest\x12\x1b\n" +
-	"\x04name\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x04name\x12\x1f\n" +
-	"\x06status\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06status\"#\n" +
+	"\x04jobs\x18\x01 \x03(\v2\x14.crawler.v1.CrawlJobR\x04jobs\x12 \n" +
+	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x1a\n" +
+	"\bhas_more\x18\x03 \x01(\bR\bhas_more\"P\n" +
+	"\x10CreateJobRequest\x12<\n" +
+	"\x06config\x18\x01 \x01(\v2\x1a.crawler.v1.CrawlJobConfigB\b\xfaB\x05\x8a\x01\x02\x10\x01R\x06config\"#\n" +
 	"\x11CreateJobResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x1f\n" +
 	"\rGetJobRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"8\n" +
 	"\x0eGetJobResponse\x12&\n" +
-	"\x03job\x18\x01 \x01(\v2\x14.crawler.v1.CrawlJobR\x03job\":\n" +
-	"\x10UpdateJobRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status\";\n" +
-	"\x11UpdateJobResponse\x12&\n" +
 	"\x03job\x18\x01 \x01(\v2\x14.crawler.v1.CrawlJobR\x03job\"N\n" +
 	"\x11CreateTaskRequest\x12\x1e\n" +
 	"\x06job_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x05jobId\x12\x19\n" +
-	"\x03url\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x03url\"?\n" +
-	"\x12CreateTaskResponse\x12)\n" +
-	"\x04task\x18\x01 \x01(\v2\x15.crawler.v1.CrawlTaskR\x04task\" \n" +
+	"\x03url\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x03url\" \n" +
 	"\x0eGetTaskRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"<\n" +
 	"\x0fGetTaskResponse\x12)\n" +
@@ -1762,48 +3679,143 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x15ListTasksByJobRequest\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"E\n" +
 	"\x16ListTasksByJobResponse\x12+\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x15.crawler.v1.CrawlTaskR\x05tasks\";\n" +
-	"\x11UpdateTaskRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status\"?\n" +
-	"\x12UpdateTaskResponse\x12)\n" +
-	"\x04task\x18\x01 \x01(\v2\x15.crawler.v1.CrawlTaskR\x04task\"\xa7\x01\n" +
-	"\x15CreateSnapshotRequest\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12\x10\n" +
-	"\x03url\x18\x02 \x01(\tR\x03url\x12\x1f\n" +
-	"\vhttp_status\x18\x03 \x01(\x05R\n" +
-	"httpStatus\x12!\n" +
-	"\fcontent_type\x18\x04 \x01(\tR\vcontentType\x12\x1f\n" +
-	"\vstorage_key\x18\x05 \x01(\tR\n" +
-	"storageKey\"N\n" +
-	"\x16CreateSnapshotResponse\x124\n" +
-	"\bsnapshot\x18\x01 \x01(\v2\x18.crawler.v1.PageSnapshotR\bsnapshot\"$\n" +
-	"\x12GetSnapshotRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"K\n" +
-	"\x13GetSnapshotResponse\x124\n" +
-	"\bsnapshot\x18\x01 \x01(\v2\x18.crawler.v1.PageSnapshotR\bsnapshot\"5\n" +
-	"\x1aListSnapshotsByTaskRequest\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\"U\n" +
-	"\x1bListSnapshotsByTaskResponse\x126\n" +
-	"\tsnapshots\x18\x01 \x03(\v2\x18.crawler.v1.PageSnapshotR\tsnapshots\"\xc5\x01\n" +
-	"\x13CreateRecordRequest\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12\x1d\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x15.crawler.v1.CrawlTaskR\x05tasks\"m\n" +
+	"\x1aGetJobExportFileURLRequest\x12\x1f\n" +
+	"\x06job_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x06job_id\x12.\n" +
+	"\tfile_type\x18\x02 \x01(\tB\x10\xfaB\rr\vR\x04jsonR\x03csvR\tfile_type\"_\n" +
+	"\x1bGetJobExportFileURLResponse\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12.\n" +
+	"\x12expires_in_seconds\x18\x02 \x01(\x05R\x12expires_in_seconds\"n\n" +
+	"\x15GetTaskFileURLRequest\x12!\n" +
+	"\atask_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\atask_id\x122\n" +
+	"\tfile_type\x18\x02 \x01(\tB\x14\xfaB\x11r\x0fR\x05pagesR\x06resultR\tfile_type\"Z\n" +
+	"\x16GetTaskFileURLResponse\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12.\n" +
+	"\x12expires_in_seconds\x18\x02 \x01(\x05R\x12expires_in_seconds\"\xdc\x02\n" +
+	"\aPreview\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +
-	"source_url\x18\x02 \x01(\tR\tsourceUrl\x12=\n" +
-	"\x04data\x18\x03 \x03(\v2).crawler.v1.CreateRecordRequest.DataEntryR\x04data\x1a7\n" +
-	"\tDataEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"K\n" +
-	"\x14CreateRecordResponse\x123\n" +
-	"\x06record\x18\x01 \x01(\v2\x1b.crawler.v1.ExtractedRecordR\x06record\"\"\n" +
-	"\x10GetRecordRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"H\n" +
-	"\x11GetRecordResponse\x123\n" +
-	"\x06record\x18\x01 \x01(\v2\x1b.crawler.v1.ExtractedRecordR\x06record\"3\n" +
-	"\x18ListRecordsByTaskRequest\x12\x17\n" +
-	"\atask_id\x18\x01 \x01(\tR\x06taskId\"R\n" +
-	"\x19ListRecordsByTaskResponse\x125\n" +
-	"\arecords\x18\x01 \x03(\v2\x1b.crawler.v1.ExtractedRecordR\arecordsB\x84\x02\x92Ar\x128\n" +
+	"source_url\x18\x02 \x01(\tR\n" +
+	"source_url\x12!\n" +
+	"\tfinal_url\x18\x03 \x01(\tH\x00R\tfinal_url\x88\x01\x01\x12\x1c\n" +
+	"\tminio_key\x18\x04 \x01(\tR\tminio_key\x12\"\n" +
+	"\fcontent_type\x18\x05 \x01(\tR\fcontent_type\x12\"\n" +
+	"\fdownload_url\x18\x06 \x01(\tR\fdownload_url\x12:\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12?\n" +
+	"\n" +
+	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampH\x01R\n" +
+	"expires_at\x88\x01\x01B\f\n" +
+	"\n" +
+	"_final_urlB\r\n" +
+	"\v_expires_at\"1\n" +
+	"\x14CreatePreviewRequest\x12\x19\n" +
+	"\x03url\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x03url\"'\n" +
+	"\x15CreatePreviewResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"#\n" +
+	"\x11GetPreviewRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
+	"\x12GetPreviewResponse\x12-\n" +
+	"\apreview\x18\x01 \x01(\v2\x13.crawler.v1.PreviewR\apreview\"U\n" +
+	"\x0fRegisterRequest\x12\x1d\n" +
+	"\x05email\x18\x01 \x01(\tB\a\xfaB\x04r\x02`\x01R\x05email\x12#\n" +
+	"\bpassword\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\bR\bpassword\"|\n" +
+	"\x10RegisterResponse\x12\"\n" +
+	"\faccess_token\x18\x01 \x01(\tR\faccess_token\x12$\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\rrefresh_token\x12\x1e\n" +
+	"\n" +
+	"expires_in\x18\x03 \x01(\x05R\n" +
+	"expires_in\"R\n" +
+	"\fLoginRequest\x12\x1d\n" +
+	"\x05email\x18\x01 \x01(\tB\a\xfaB\x04r\x02`\x01R\x05email\x12#\n" +
+	"\bpassword\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\bpassword\"y\n" +
+	"\rLoginResponse\x12\"\n" +
+	"\faccess_token\x18\x01 \x01(\tR\faccess_token\x12$\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\rrefresh_token\x12\x1e\n" +
+	"\n" +
+	"expires_in\x18\x03 \x01(\x05R\n" +
+	"expires_in\"?\n" +
+	"\x0eRefreshRequest\x12-\n" +
+	"\rrefresh_token\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\rrefresh_token\"{\n" +
+	"\x0fRefreshResponse\x12\"\n" +
+	"\faccess_token\x18\x01 \x01(\tR\faccess_token\x12$\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\rrefresh_token\x12\x1e\n" +
+	"\n" +
+	"expires_in\x18\x03 \x01(\x05R\n" +
+	"expires_in\">\n" +
+	"\rLogoutRequest\x12-\n" +
+	"\rrefresh_token\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\rrefresh_token\"\x10\n" +
+	"\x0eLogoutResponse\"\xca\x01\n" +
+	"\x04User\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12$\n" +
+	"\x04role\x18\x03 \x01(\x0e2\x10.crawler.v1.RoleR\x04role\x12:\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12:\n" +
+	"\n" +
+	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updated_at\"\x12\n" +
+	"\x10ListUsersRequest\";\n" +
+	"\x11ListUsersResponse\x12&\n" +
+	"\x05users\x18\x01 \x03(\v2\x10.crawler.v1.UserR\x05users\"M\n" +
+	"\x15UpdateUserRoleRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
+	"\x04role\x18\x02 \x01(\x0e2\x10.crawler.v1.RoleR\x04role\"2\n" +
+	"\x16UpdateUserRoleResponse\x12\x18\n" +
+	"\aupdated\x18\x01 \x01(\bR\aupdated\"\x9d\x02\n" +
+	"\x0fWorkerHeartbeat\x12\x1c\n" +
+	"\tworker_id\x18\x01 \x01(\tR\tworker_id\x128\n" +
+	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x120\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x18.crawler.v1.WorkerStatusR\x06status\x12\"\n" +
+	"\factive_tasks\x18\x04 \x01(\x05R\factive_tasks\x12:\n" +
+	"\n" +
+	"started_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"started_at\x12 \n" +
+	"\vworker_type\x18\x06 \x01(\tR\vworker_type\"\x9f\x02\n" +
+	"\n" +
+	"WorkerInfo\x12\x1c\n" +
+	"\tworker_id\x18\x01 \x01(\tR\tworker_id\x120\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x18.crawler.v1.WorkerStatusR\x06status\x12H\n" +
+	"\x11last_heartbeat_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x11last_heartbeat_at\x12\"\n" +
+	"\factive_tasks\x18\x04 \x01(\x05R\factive_tasks\x121\n" +
+	"\x06uptime\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\x06uptime\x12 \n" +
+	"\vworker_type\x18\x06 \x01(\tR\vworker_type\"\x14\n" +
+	"\x12ListWorkersRequest\"G\n" +
+	"\x13ListWorkersResponse\x120\n" +
+	"\aworkers\x18\x01 \x03(\v2\x16.crawler.v1.WorkerInfoR\aworkers\"\x94\x01\n" +
+	"\rWorkerCommand\x121\n" +
+	"\x04type\x18\x01 \x01(\x0e2\x1d.crawler.v1.WorkerCommandTypeR\x04type\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x128\n" +
+	"\tissued_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tissued_at\"J\n" +
+	"\x12DrainWorkerRequest\x12\x1c\n" +
+	"\tworker_id\x18\x01 \x01(\tR\tworker_id\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"M\n" +
+	"\x13DrainWorkerResponse\x12\x1c\n" +
+	"\tdelivered\x18\x01 \x01(\bR\tdelivered\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"N\n" +
+	"\x16ForceKillWorkerRequest\x12\x1c\n" +
+	"\tworker_id\x18\x01 \x01(\tR\tworker_id\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"Q\n" +
+	"\x17ForceKillWorkerResponse\x12\x1c\n" +
+	"\tdelivered\x18\x01 \x01(\bR\tdelivered\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*X\n" +
+	"\x04Role\x12\x14\n" +
+	"\x10ROLE_UNSPECIFIED\x10\x00\x12\r\n" +
+	"\tROLE_READ\x10\x01\x12\x13\n" +
+	"\x0fROLE_READ_WRITE\x10\x02\x12\x16\n" +
+	"\x12ROLE_ADMINISTRATOR\x10\x03*\x97\x01\n" +
+	"\fWorkerStatus\x12\x1d\n" +
+	"\x19WORKER_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14WORKER_STATUS_ACTIVE\x10\x01\x12\x1a\n" +
+	"\x16WORKER_STATUS_INACTIVE\x10\x02\x12\x1a\n" +
+	"\x16WORKER_STATUS_DRAINING\x10\x03\x12\x16\n" +
+	"\x12WORKER_STATUS_DEAD\x10\x04*l\n" +
+	"\x11WorkerCommandType\x12\x1e\n" +
+	"\x1aWORKER_COMMAND_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14WORKER_COMMAND_DRAIN\x10\x01\x12\x1d\n" +
+	"\x19WORKER_COMMAND_FORCE_KILL\x10\x02B\x84\x02\x92Ar\x128\n" +
 	"\x17Distributed Crawler API\"\x16\n" +
 	"\x14Denis Miroshnichenko2\x051.0.0\x1a\x0elocalhost:8080*\x02\x01\x022\x10application/json:\x10application/json\n" +
 	"\x0ecom.crawler.v1B\vModelsProtoP\x01Z'distributed-crawler/pkg/api/crawlergrpc\xa2\x02\x03CXX\xaa\x02\n" +
@@ -1822,71 +3834,122 @@ func file_v1_models_proto_rawDescGZIP() []byte {
 	return file_v1_models_proto_rawDescData
 }
 
-var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 58)
 var file_v1_models_proto_goTypes = []any{
-	(*CrawlJob)(nil),                    // 0: crawler.v1.CrawlJob
-	(*CrawlTask)(nil),                   // 1: crawler.v1.CrawlTask
-	(*PageSnapshot)(nil),                // 2: crawler.v1.PageSnapshot
-	(*ExtractedRecord)(nil),             // 3: crawler.v1.ExtractedRecord
-	(*ListJobsRequest)(nil),             // 4: crawler.v1.ListJobsRequest
-	(*ListJobsResponse)(nil),            // 5: crawler.v1.ListJobsResponse
-	(*CreateJobRequest)(nil),            // 6: crawler.v1.CreateJobRequest
-	(*CreateJobResponse)(nil),           // 7: crawler.v1.CreateJobResponse
-	(*GetJobRequest)(nil),               // 8: crawler.v1.GetJobRequest
-	(*GetJobResponse)(nil),              // 9: crawler.v1.GetJobResponse
-	(*UpdateJobRequest)(nil),            // 10: crawler.v1.UpdateJobRequest
-	(*UpdateJobResponse)(nil),           // 11: crawler.v1.UpdateJobResponse
-	(*CreateTaskRequest)(nil),           // 12: crawler.v1.CreateTaskRequest
-	(*CreateTaskResponse)(nil),          // 13: crawler.v1.CreateTaskResponse
-	(*GetTaskRequest)(nil),              // 14: crawler.v1.GetTaskRequest
-	(*GetTaskResponse)(nil),             // 15: crawler.v1.GetTaskResponse
-	(*ListTasksByJobRequest)(nil),       // 16: crawler.v1.ListTasksByJobRequest
-	(*ListTasksByJobResponse)(nil),      // 17: crawler.v1.ListTasksByJobResponse
-	(*UpdateTaskRequest)(nil),           // 18: crawler.v1.UpdateTaskRequest
-	(*UpdateTaskResponse)(nil),          // 19: crawler.v1.UpdateTaskResponse
-	(*CreateSnapshotRequest)(nil),       // 20: crawler.v1.CreateSnapshotRequest
-	(*CreateSnapshotResponse)(nil),      // 21: crawler.v1.CreateSnapshotResponse
-	(*GetSnapshotRequest)(nil),          // 22: crawler.v1.GetSnapshotRequest
-	(*GetSnapshotResponse)(nil),         // 23: crawler.v1.GetSnapshotResponse
-	(*ListSnapshotsByTaskRequest)(nil),  // 24: crawler.v1.ListSnapshotsByTaskRequest
-	(*ListSnapshotsByTaskResponse)(nil), // 25: crawler.v1.ListSnapshotsByTaskResponse
-	(*CreateRecordRequest)(nil),         // 26: crawler.v1.CreateRecordRequest
-	(*CreateRecordResponse)(nil),        // 27: crawler.v1.CreateRecordResponse
-	(*GetRecordRequest)(nil),            // 28: crawler.v1.GetRecordRequest
-	(*GetRecordResponse)(nil),           // 29: crawler.v1.GetRecordResponse
-	(*ListRecordsByTaskRequest)(nil),    // 30: crawler.v1.ListRecordsByTaskRequest
-	(*ListRecordsByTaskResponse)(nil),   // 31: crawler.v1.ListRecordsByTaskResponse
-	nil,                                 // 32: crawler.v1.ExtractedRecord.DataEntry
-	nil,                                 // 33: crawler.v1.CreateRecordRequest.DataEntry
-	(*timestamppb.Timestamp)(nil),       // 34: google.protobuf.Timestamp
+	(Role)(0),                           // 0: crawler.v1.Role
+	(WorkerStatus)(0),                   // 1: crawler.v1.WorkerStatus
+	(WorkerCommandType)(0),              // 2: crawler.v1.WorkerCommandType
+	(*AuthOptions)(nil),                 // 3: crawler.v1.AuthOptions
+	(*RateLimitPolicy)(nil),             // 4: crawler.v1.RateLimitPolicy
+	(*RetryPolicy)(nil),                 // 5: crawler.v1.RetryPolicy
+	(*ScheduleOptions)(nil),             // 6: crawler.v1.ScheduleOptions
+	(*ScopeRules)(nil),                  // 7: crawler.v1.ScopeRules
+	(*Seed)(nil),                        // 8: crawler.v1.Seed
+	(*ExtractorSpec)(nil),               // 9: crawler.v1.ExtractorSpec
+	(*TransformSpec)(nil),               // 10: crawler.v1.TransformSpec
+	(*FieldSpec)(nil),                   // 11: crawler.v1.FieldSpec
+	(*MetricSpec)(nil),                  // 12: crawler.v1.MetricSpec
+	(*PaginationSpec)(nil),              // 13: crawler.v1.PaginationSpec
+	(*ExtractionSpec)(nil),              // 14: crawler.v1.ExtractionSpec
+	(*CrawlJobConfig)(nil),              // 15: crawler.v1.CrawlJobConfig
+	(*CrawlJob)(nil),                    // 16: crawler.v1.CrawlJob
+	(*CrawlTask)(nil),                   // 17: crawler.v1.CrawlTask
+	(*JobListFilter)(nil),               // 18: crawler.v1.JobListFilter
+	(*ListJobsRequest)(nil),             // 19: crawler.v1.ListJobsRequest
+	(*ListJobsResponse)(nil),            // 20: crawler.v1.ListJobsResponse
+	(*CreateJobRequest)(nil),            // 21: crawler.v1.CreateJobRequest
+	(*CreateJobResponse)(nil),           // 22: crawler.v1.CreateJobResponse
+	(*GetJobRequest)(nil),               // 23: crawler.v1.GetJobRequest
+	(*GetJobResponse)(nil),              // 24: crawler.v1.GetJobResponse
+	(*CreateTaskRequest)(nil),           // 25: crawler.v1.CreateTaskRequest
+	(*GetTaskRequest)(nil),              // 26: crawler.v1.GetTaskRequest
+	(*GetTaskResponse)(nil),             // 27: crawler.v1.GetTaskResponse
+	(*ListTasksByJobRequest)(nil),       // 28: crawler.v1.ListTasksByJobRequest
+	(*ListTasksByJobResponse)(nil),      // 29: crawler.v1.ListTasksByJobResponse
+	(*GetJobExportFileURLRequest)(nil),  // 30: crawler.v1.GetJobExportFileURLRequest
+	(*GetJobExportFileURLResponse)(nil), // 31: crawler.v1.GetJobExportFileURLResponse
+	(*GetTaskFileURLRequest)(nil),       // 32: crawler.v1.GetTaskFileURLRequest
+	(*GetTaskFileURLResponse)(nil),      // 33: crawler.v1.GetTaskFileURLResponse
+	(*Preview)(nil),                     // 34: crawler.v1.Preview
+	(*CreatePreviewRequest)(nil),        // 35: crawler.v1.CreatePreviewRequest
+	(*CreatePreviewResponse)(nil),       // 36: crawler.v1.CreatePreviewResponse
+	(*GetPreviewRequest)(nil),           // 37: crawler.v1.GetPreviewRequest
+	(*GetPreviewResponse)(nil),          // 38: crawler.v1.GetPreviewResponse
+	(*RegisterRequest)(nil),             // 39: crawler.v1.RegisterRequest
+	(*RegisterResponse)(nil),            // 40: crawler.v1.RegisterResponse
+	(*LoginRequest)(nil),                // 41: crawler.v1.LoginRequest
+	(*LoginResponse)(nil),               // 42: crawler.v1.LoginResponse
+	(*RefreshRequest)(nil),              // 43: crawler.v1.RefreshRequest
+	(*RefreshResponse)(nil),             // 44: crawler.v1.RefreshResponse
+	(*LogoutRequest)(nil),               // 45: crawler.v1.LogoutRequest
+	(*LogoutResponse)(nil),              // 46: crawler.v1.LogoutResponse
+	(*User)(nil),                        // 47: crawler.v1.User
+	(*ListUsersRequest)(nil),            // 48: crawler.v1.ListUsersRequest
+	(*ListUsersResponse)(nil),           // 49: crawler.v1.ListUsersResponse
+	(*UpdateUserRoleRequest)(nil),       // 50: crawler.v1.UpdateUserRoleRequest
+	(*UpdateUserRoleResponse)(nil),      // 51: crawler.v1.UpdateUserRoleResponse
+	(*WorkerHeartbeat)(nil),             // 52: crawler.v1.WorkerHeartbeat
+	(*WorkerInfo)(nil),                  // 53: crawler.v1.WorkerInfo
+	(*ListWorkersRequest)(nil),          // 54: crawler.v1.ListWorkersRequest
+	(*ListWorkersResponse)(nil),         // 55: crawler.v1.ListWorkersResponse
+	(*WorkerCommand)(nil),               // 56: crawler.v1.WorkerCommand
+	(*DrainWorkerRequest)(nil),          // 57: crawler.v1.DrainWorkerRequest
+	(*DrainWorkerResponse)(nil),         // 58: crawler.v1.DrainWorkerResponse
+	(*ForceKillWorkerRequest)(nil),      // 59: crawler.v1.ForceKillWorkerRequest
+	(*ForceKillWorkerResponse)(nil),     // 60: crawler.v1.ForceKillWorkerResponse
+	(*timestamppb.Timestamp)(nil),       // 61: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),         // 62: google.protobuf.Duration
 }
 var file_v1_models_proto_depIdxs = []int32{
-	34, // 0: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
-	34, // 1: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
-	0,  // 2: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
-	34, // 3: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
-	34, // 4: crawler.v1.PageSnapshot.fetched_at:type_name -> google.protobuf.Timestamp
-	32, // 5: crawler.v1.ExtractedRecord.data:type_name -> crawler.v1.ExtractedRecord.DataEntry
-	34, // 6: crawler.v1.ExtractedRecord.parsed_at:type_name -> google.protobuf.Timestamp
-	0,  // 7: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
-	0,  // 8: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
-	0,  // 9: crawler.v1.UpdateJobResponse.job:type_name -> crawler.v1.CrawlJob
-	1,  // 10: crawler.v1.CreateTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	1,  // 11: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	1,  // 12: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
-	1,  // 13: crawler.v1.UpdateTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	2,  // 14: crawler.v1.CreateSnapshotResponse.snapshot:type_name -> crawler.v1.PageSnapshot
-	2,  // 15: crawler.v1.GetSnapshotResponse.snapshot:type_name -> crawler.v1.PageSnapshot
-	2,  // 16: crawler.v1.ListSnapshotsByTaskResponse.snapshots:type_name -> crawler.v1.PageSnapshot
-	33, // 17: crawler.v1.CreateRecordRequest.data:type_name -> crawler.v1.CreateRecordRequest.DataEntry
-	3,  // 18: crawler.v1.CreateRecordResponse.record:type_name -> crawler.v1.ExtractedRecord
-	3,  // 19: crawler.v1.GetRecordResponse.record:type_name -> crawler.v1.ExtractedRecord
-	3,  // 20: crawler.v1.ListRecordsByTaskResponse.records:type_name -> crawler.v1.ExtractedRecord
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	9,  // 0: crawler.v1.FieldSpec.extractor:type_name -> crawler.v1.ExtractorSpec
+	10, // 1: crawler.v1.FieldSpec.transforms:type_name -> crawler.v1.TransformSpec
+	11, // 2: crawler.v1.ExtractionSpec.fields:type_name -> crawler.v1.FieldSpec
+	12, // 3: crawler.v1.ExtractionSpec.metrics:type_name -> crawler.v1.MetricSpec
+	13, // 4: crawler.v1.ExtractionSpec.pagination:type_name -> crawler.v1.PaginationSpec
+	14, // 5: crawler.v1.CrawlJobConfig.extraction_spec:type_name -> crawler.v1.ExtractionSpec
+	7,  // 6: crawler.v1.CrawlJobConfig.scopes:type_name -> crawler.v1.ScopeRules
+	8,  // 7: crawler.v1.CrawlJobConfig.seeds:type_name -> crawler.v1.Seed
+	4,  // 8: crawler.v1.CrawlJobConfig.rate_limit:type_name -> crawler.v1.RateLimitPolicy
+	5,  // 9: crawler.v1.CrawlJobConfig.retries:type_name -> crawler.v1.RetryPolicy
+	3,  // 10: crawler.v1.CrawlJobConfig.auth:type_name -> crawler.v1.AuthOptions
+	6,  // 11: crawler.v1.CrawlJobConfig.schedule:type_name -> crawler.v1.ScheduleOptions
+	15, // 12: crawler.v1.CrawlJob.job_config:type_name -> crawler.v1.CrawlJobConfig
+	61, // 13: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
+	61, // 14: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
+	61, // 15: crawler.v1.CrawlJob.exported_at:type_name -> google.protobuf.Timestamp
+	16, // 16: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
+	61, // 17: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
+	61, // 18: crawler.v1.JobListFilter.created_from:type_name -> google.protobuf.Timestamp
+	61, // 19: crawler.v1.JobListFilter.created_to:type_name -> google.protobuf.Timestamp
+	18, // 20: crawler.v1.ListJobsRequest.filter:type_name -> crawler.v1.JobListFilter
+	16, // 21: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
+	15, // 22: crawler.v1.CreateJobRequest.config:type_name -> crawler.v1.CrawlJobConfig
+	16, // 23: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
+	17, // 24: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
+	17, // 25: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
+	61, // 26: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
+	61, // 27: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
+	34, // 28: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
+	0,  // 29: crawler.v1.User.role:type_name -> crawler.v1.Role
+	61, // 30: crawler.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	61, // 31: crawler.v1.User.updated_at:type_name -> google.protobuf.Timestamp
+	47, // 32: crawler.v1.ListUsersResponse.users:type_name -> crawler.v1.User
+	0,  // 33: crawler.v1.UpdateUserRoleRequest.role:type_name -> crawler.v1.Role
+	61, // 34: crawler.v1.WorkerHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
+	1,  // 35: crawler.v1.WorkerHeartbeat.status:type_name -> crawler.v1.WorkerStatus
+	61, // 36: crawler.v1.WorkerHeartbeat.started_at:type_name -> google.protobuf.Timestamp
+	1,  // 37: crawler.v1.WorkerInfo.status:type_name -> crawler.v1.WorkerStatus
+	61, // 38: crawler.v1.WorkerInfo.last_heartbeat_at:type_name -> google.protobuf.Timestamp
+	62, // 39: crawler.v1.WorkerInfo.uptime:type_name -> google.protobuf.Duration
+	53, // 40: crawler.v1.ListWorkersResponse.workers:type_name -> crawler.v1.WorkerInfo
+	2,  // 41: crawler.v1.WorkerCommand.type:type_name -> crawler.v1.WorkerCommandType
+	61, // 42: crawler.v1.WorkerCommand.issued_at:type_name -> google.protobuf.Timestamp
+	43, // [43:43] is the sub-list for method output_type
+	43, // [43:43] is the sub-list for method input_type
+	43, // [43:43] is the sub-list for extension type_name
+	43, // [43:43] is the sub-list for extension extendee
+	0,  // [0:43] is the sub-list for field type_name
 }
 
 func init() { file_v1_models_proto_init() }
@@ -1894,21 +3957,25 @@ func file_v1_models_proto_init() {
 	if File_v1_models_proto != nil {
 		return
 	}
-	file_v1_models_proto_msgTypes[0].OneofWrappers = []any{}
-	file_v1_models_proto_msgTypes[1].OneofWrappers = []any{}
-	file_v1_models_proto_msgTypes[4].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[6].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[13].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[14].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[15].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[16].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[31].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_models_proto_rawDesc), len(file_v1_models_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   34,
+			NumEnums:      3,
+			NumMessages:   58,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_v1_models_proto_goTypes,
 		DependencyIndexes: file_v1_models_proto_depIdxs,
+		EnumInfos:         file_v1_models_proto_enumTypes,
 		MessageInfos:      file_v1_models_proto_msgTypes,
 	}.Build()
 	File_v1_models_proto = out.File

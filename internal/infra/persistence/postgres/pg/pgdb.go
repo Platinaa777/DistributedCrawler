@@ -3,8 +3,6 @@ package pg
 import (
 	"context"
 	"distributed-crawler/internal/infra/persistence"
-	"fmt"
-	"log"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgconn"
@@ -96,9 +94,9 @@ func (p *pgDb) ScanOneContext(ctx context.Context, dest any, q persistence.Query
 }
 
 func logQuery(ctx context.Context, q persistence.Query, args ...any) {
-	log.Println(
-		ctx,
-		fmt.Sprintf("sql: %s", q.Name),
-		fmt.Sprintf("query: %s", q.QueryRaw),
-	)
+	// log.Println(
+	// 	ctx,
+	// 	fmt.Sprintf("sql: %s", q.Name),
+	// 	fmt.Sprintf("query: %s", q.QueryRaw),
+	// )
 }

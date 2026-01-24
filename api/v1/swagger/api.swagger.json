@@ -10,6 +10,18 @@
   "tags": [
     {
       "name": "CrawlerService"
+    },
+    {
+      "name": "PreviewService"
+    },
+    {
+      "name": "AuthService"
+    },
+    {
+      "name": "UserService"
+    },
+    {
+      "name": "WorkerService"
     }
   ],
   "host": "localhost:8080",
@@ -24,6 +36,138 @@
     "application/json"
   ],
   "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Login with email and password",
+        "operationId": "AuthService_Login",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LoginResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1LoginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "summary": "Logout and revoke refresh token",
+        "operationId": "AuthService_Logout",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LogoutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1LogoutRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "summary": "Refresh access token using refresh token",
+        "operationId": "AuthService_Refresh",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RefreshResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RefreshRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "Register a new user",
+        "operationId": "AuthService_Register",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RegisterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RegisterRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
     "/api/v1/jobs": {
       "get": {
         "summary": "Job operations",
@@ -44,24 +188,48 @@
         },
         "parameters": [
           {
-            "name": "status",
+            "name": "cursor",
+            "description": "Cursor for pagination (opaque string, empty for first page)",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "limit",
+            "description": "Number of items per page (default: 20, max: 100)",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "offset",
+            "name": "filter.name",
+            "description": "Filter by job name (partial match, case-insensitive)",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int32"
+            "type": "string"
+          },
+          {
+            "name": "filter.status",
+            "description": "Filter by job status (exact match)",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter.created_from",
+            "description": "Filter by created_at date range",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.created_to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
           }
         ],
         "tags": [
@@ -127,42 +295,6 @@
         "tags": [
           "CrawlerService"
         ]
-      },
-      "patch": {
-        "operationId": "CrawlerService_UpdateJob",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1UpdateJobResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/CrawlerServiceUpdateJobBody"
-            }
-          }
-        ],
-        "tags": [
-          "CrawlerService"
-        ]
       }
     },
     "/api/v1/jobs/{jobId}/tasks": {
@@ -195,15 +327,52 @@
         ]
       }
     },
-    "/api/v1/records": {
-      "post": {
-        "summary": "Record operations",
-        "operationId": "CrawlerService_CreateRecord",
+    "/api/v1/jobs/{job_id}/export-url": {
+      "get": {
+        "summary": "Get a presigned URL for downloading a job export file (JSON or CSV)",
+        "operationId": "CrawlerService_GetJobExportFileURL",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1CreateRecordResponse"
+              "$ref": "#/definitions/v1GetJobExportFileURLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "file_type",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CrawlerService"
+        ]
+      }
+    },
+    "/api/v1/previews": {
+      "post": {
+        "summary": "Fetch URL, sanitize HTML, store in MinIO, return preview reference",
+        "operationId": "PreviewService_CreatePreview",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreatePreviewResponse"
             }
           },
           "default": {
@@ -219,23 +388,24 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1CreateRecordRequest"
+              "$ref": "#/definitions/v1CreatePreviewRequest"
             }
           }
         ],
         "tags": [
-          "CrawlerService"
+          "PreviewService"
         ]
       }
     },
-    "/api/v1/records/{id}": {
+    "/api/v1/previews/{id}": {
       "get": {
-        "operationId": "CrawlerService_GetRecord",
+        "summary": "Return preview metadata with presigned download URL",
+        "operationId": "PreviewService_GetPreview",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1GetRecordResponse"
+              "$ref": "#/definitions/v1GetPreviewResponse"
             }
           },
           "default": {
@@ -254,108 +424,13 @@
           }
         ],
         "tags": [
-          "CrawlerService"
-        ]
-      }
-    },
-    "/api/v1/snapshots": {
-      "post": {
-        "summary": "Snapshot operations",
-        "operationId": "CrawlerService_CreateSnapshot",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1CreateSnapshotResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1CreateSnapshotRequest"
-            }
-          }
-        ],
-        "tags": [
-          "CrawlerService"
-        ]
-      }
-    },
-    "/api/v1/snapshots/{id}": {
-      "get": {
-        "operationId": "CrawlerService_GetSnapshot",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1GetSnapshotResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "CrawlerService"
-        ]
-      }
-    },
-    "/api/v1/tasks": {
-      "post": {
-        "summary": "Task operations",
-        "operationId": "CrawlerService_CreateTask",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1CreateTaskResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1CreateTaskRequest"
-            }
-          }
-        ],
-        "tags": [
-          "CrawlerService"
+          "PreviewService"
         ]
       }
     },
     "/api/v1/tasks/{id}": {
       "get": {
+        "summary": "Task operations",
         "operationId": "CrawlerService_GetTask",
         "responses": {
           "200": {
@@ -382,14 +457,77 @@
         "tags": [
           "CrawlerService"
         ]
-      },
-      "patch": {
-        "operationId": "CrawlerService_UpdateTask",
+      }
+    },
+    "/api/v1/tasks/{task_id}/file-url": {
+      "get": {
+        "summary": "Get a presigned URL for downloading a task file (HTML page or JSON result)",
+        "operationId": "CrawlerService_GetTaskFileURL",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1UpdateTaskResponse"
+              "$ref": "#/definitions/v1GetTaskFileURLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "file_type",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CrawlerService"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "summary": "List registered users",
+        "operationId": "UserService_ListUsers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "UserService"
+        ]
+      }
+    },
+    "/api/v1/users/{id}/role": {
+      "patch": {
+        "summary": "Update user role (admin only)",
+        "operationId": "UserService_UpdateUserRole",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateUserRoleResponse"
             }
           },
           "default": {
@@ -411,23 +549,47 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CrawlerServiceUpdateTaskBody"
+              "$ref": "#/definitions/UserServiceUpdateUserRoleBody"
             }
           }
         ],
         "tags": [
-          "CrawlerService"
+          "UserService"
         ]
       }
     },
-    "/api/v1/tasks/{taskId}/records": {
+    "/api/v1/workers": {
       "get": {
-        "operationId": "CrawlerService_ListRecordsByTask",
+        "summary": "List registered workers for monitoring UI",
+        "operationId": "WorkerService_ListWorkers",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ListRecordsByTaskResponse"
+              "$ref": "#/definitions/v1ListWorkersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "WorkerService"
+        ]
+      }
+    },
+    "/api/v1/workers/{worker_id}:drain": {
+      "post": {
+        "summary": "Trigger graceful drain for a worker",
+        "operationId": "WorkerService_DrainWorker",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DrainWorkerResponse"
             }
           },
           "default": {
@@ -439,25 +601,34 @@
         },
         "parameters": [
           {
-            "name": "taskId",
+            "name": "worker_id",
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkerServiceDrainWorkerBody"
+            }
           }
         ],
         "tags": [
-          "CrawlerService"
+          "WorkerService"
         ]
       }
     },
-    "/api/v1/tasks/{taskId}/snapshots": {
-      "get": {
-        "operationId": "CrawlerService_ListSnapshotsByTask",
+    "/api/v1/workers/{worker_id}:force-kill": {
+      "post": {
+        "summary": "Trigger force kill for a worker",
+        "operationId": "WorkerService_ForceKillWorker",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ListSnapshotsByTaskResponse"
+              "$ref": "#/definitions/v1ForceKillWorkerResponse"
             }
           },
           "default": {
@@ -469,31 +640,47 @@
         },
         "parameters": [
           {
-            "name": "taskId",
+            "name": "worker_id",
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/WorkerServiceForceKillWorkerBody"
+            }
           }
         ],
         "tags": [
-          "CrawlerService"
+          "WorkerService"
         ]
       }
     }
   },
   "definitions": {
-    "CrawlerServiceUpdateJobBody": {
+    "UserServiceUpdateUserRoleBody": {
       "type": "object",
       "properties": {
-        "status": {
+        "role": {
+          "$ref": "#/definitions/v1Role"
+        }
+      }
+    },
+    "WorkerServiceDrainWorkerBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
           "type": "string"
         }
       }
     },
-    "CrawlerServiceUpdateTaskBody": {
+    "WorkerServiceForceKillWorkerBody": {
       "type": "object",
       "properties": {
-        "status": {
+        "reason": {
           "type": "string"
         }
       }
@@ -526,14 +713,35 @@
         }
       }
     },
+    "v1AuthOptions": {
+      "type": "object",
+      "properties": {
+        "cookie": {
+          "type": "string"
+        },
+        "basic_user": {
+          "type": "string"
+        },
+        "basic_password": {
+          "type": "string"
+        },
+        "bearer_token": {
+          "type": "string"
+        }
+      },
+      "title": "AuthOptions contains authentication options for crawling"
+    },
     "v1CrawlJob": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string"
         },
-        "name": {
+        "job_config_id": {
           "type": "string"
+        },
+        "job_config": {
+          "$ref": "#/definitions/v1CrawlJobConfig"
         },
         "status": {
           "type": "string"
@@ -542,12 +750,66 @@
           "type": "string",
           "format": "date-time"
         },
-        "completedAt": {
+        "completed_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "export_json_key": {
+          "type": "string"
+        },
+        "export_csv_key": {
+          "type": "string"
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "export_status": {
+          "type": "string"
         }
       },
       "title": "CrawlJob represents a crawling job"
+    },
+    "v1CrawlJobConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "extraction_spec": {
+          "$ref": "#/definitions/v1ExtractionSpec"
+        },
+        "scopes": {
+          "$ref": "#/definitions/v1ScopeRules"
+        },
+        "seeds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Seed"
+          }
+        },
+        "rate_limit": {
+          "$ref": "#/definitions/v1RateLimitPolicy"
+        },
+        "retries": {
+          "$ref": "#/definitions/v1RetryPolicy"
+        },
+        "auth": {
+          "$ref": "#/definitions/v1AuthOptions"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v1ScheduleOptions"
+        },
+        "respect_robots_txt": {
+          "type": "boolean",
+          "title": "If true, fetch and follow robots.txt rules; if false, ignore robots.txt"
+        }
+      },
+      "title": "CrawlJobConfig represents crawl job configuration"
     },
     "v1CrawlTask": {
       "type": "object",
@@ -555,7 +817,7 @@
         "id": {
           "type": "string"
         },
-        "jobId": {
+        "job_id": {
           "type": "string"
         },
         "job": {
@@ -564,12 +826,28 @@
         "url": {
           "type": "string"
         },
+        "final_url": {
+          "type": "string"
+        },
         "status": {
           "type": "string"
         },
-        "enqueuedAt": {
+        "enqueued_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "depth": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "body_hash": {
+          "type": "string"
+        },
+        "minio_object_key": {
+          "type": "string"
+        },
+        "result_object_key": {
+          "type": "string"
         }
       },
       "title": "CrawlTask represents a single crawl task within a job"
@@ -577,11 +855,8 @@
     "v1CreateJobRequest": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string"
-        },
-        "status": {
-          "type": "string"
+        "config": {
+          "$ref": "#/definitions/v1CrawlJobConfig"
         }
       }
     },
@@ -593,103 +868,128 @@
         }
       }
     },
-    "v1CreateRecordRequest": {
+    "v1CreatePreviewRequest": {
       "type": "object",
       "properties": {
-        "taskId": {
-          "type": "string"
-        },
-        "sourceUrl": {
-          "type": "string"
-        },
-        "data": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "v1CreateRecordResponse": {
-      "type": "object",
-      "properties": {
-        "record": {
-          "$ref": "#/definitions/v1ExtractedRecord"
-        }
-      }
-    },
-    "v1CreateSnapshotRequest": {
-      "type": "object",
-      "properties": {
-        "taskId": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string"
-        },
-        "httpStatus": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "contentType": {
-          "type": "string"
-        },
-        "storageKey": {
-          "type": "string"
-        }
-      }
-    },
-    "v1CreateSnapshotResponse": {
-      "type": "object",
-      "properties": {
-        "snapshot": {
-          "$ref": "#/definitions/v1PageSnapshot"
-        }
-      }
-    },
-    "v1CreateTaskRequest": {
-      "type": "object",
-      "properties": {
-        "jobId": {
-          "type": "string"
-        },
         "url": {
           "type": "string"
         }
       }
     },
-    "v1CreateTaskResponse": {
-      "type": "object",
-      "properties": {
-        "task": {
-          "$ref": "#/definitions/v1CrawlTask"
-        }
-      }
-    },
-    "v1ExtractedRecord": {
+    "v1CreatePreviewResponse": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string"
+        }
+      }
+    },
+    "v1DrainWorkerResponse": {
+      "type": "object",
+      "properties": {
+        "delivered": {
+          "type": "boolean"
         },
-        "taskId": {
+        "message": {
           "type": "string"
-        },
-        "sourceUrl": {
-          "type": "string"
-        },
-        "data": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
+        }
+      }
+    },
+    "v1ExtractionSpec": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FieldSpec"
           }
         },
-        "parsedAt": {
-          "type": "string",
-          "format": "date-time"
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MetricSpec"
+          }
+        },
+        "pagination": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PaginationSpec"
+          }
         }
       },
-      "title": "ExtractedRecord represents extracted/parsed data from a page"
+      "title": "ExtractionSpec defines extraction configuration"
+    },
+    "v1ExtractorSpec": {
+      "type": "object",
+      "properties": {
+        "selector": {
+          "type": "string"
+        },
+        "attribute": {
+          "type": "string"
+        },
+        "multiple": {
+          "type": "boolean"
+        },
+        "index": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "ExtractorSpec defines how to extract a field"
+    },
+    "v1FieldSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "title": "\"string\" | \"int\" | \"float\" | \"bool\" | \"url\" | \"json\""
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "extractor": {
+          "$ref": "#/definitions/v1ExtractorSpec"
+        },
+        "transforms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TransformSpec"
+          }
+        }
+      },
+      "title": "FieldSpec defines a field to extract"
+    },
+    "v1ForceKillWorkerResponse": {
+      "type": "object",
+      "properties": {
+        "delivered": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "v1GetJobExportFileURLResponse": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "expires_in_seconds": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "GetJobExportFileURLResponse contains the presigned URL for downloading a job export file"
     },
     "v1GetJobResponse": {
       "type": "object",
@@ -699,21 +999,26 @@
         }
       }
     },
-    "v1GetRecordResponse": {
+    "v1GetPreviewResponse": {
       "type": "object",
       "properties": {
-        "record": {
-          "$ref": "#/definitions/v1ExtractedRecord"
+        "preview": {
+          "$ref": "#/definitions/v1Preview"
         }
       }
     },
-    "v1GetSnapshotResponse": {
+    "v1GetTaskFileURLResponse": {
       "type": "object",
       "properties": {
-        "snapshot": {
-          "$ref": "#/definitions/v1PageSnapshot"
+        "url": {
+          "type": "string"
+        },
+        "expires_in_seconds": {
+          "type": "integer",
+          "format": "int32"
         }
-      }
+      },
+      "title": "GetTaskFileURLResponse contains the presigned URL for downloading a file"
     },
     "v1GetTaskResponse": {
       "type": "object",
@@ -722,6 +1027,29 @@
           "$ref": "#/definitions/v1CrawlTask"
         }
       }
+    },
+    "v1JobListFilter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Filter by job name (partial match, case-insensitive)"
+        },
+        "status": {
+          "type": "string",
+          "title": "Filter by job status (exact match)"
+        },
+        "created_from": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Filter by created_at date range"
+        },
+        "created_to": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "JobListFilter defines filtering options for listing jobs"
     },
     "v1ListJobsResponse": {
       "type": "object",
@@ -732,30 +1060,14 @@
             "type": "object",
             "$ref": "#/definitions/v1CrawlJob"
           }
-        }
-      }
-    },
-    "v1ListRecordsByTaskResponse": {
-      "type": "object",
-      "properties": {
-        "records": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1ExtractedRecord"
-          }
-        }
-      }
-    },
-    "v1ListSnapshotsByTaskResponse": {
-      "type": "object",
-      "properties": {
-        "snapshots": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1PageSnapshot"
-          }
+        },
+        "next_cursor": {
+          "type": "string",
+          "title": "Cursor for the next page (empty if no more results)"
+        },
+        "has_more": {
+          "type": "boolean",
+          "title": "Indicates if there are more results after this page"
         }
       }
     },
@@ -771,50 +1083,346 @@
         }
       }
     },
-    "v1PageSnapshot": {
+    "v1ListUsersResponse": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1User"
+          }
+        }
+      }
+    },
+    "v1ListWorkersResponse": {
+      "type": "object",
+      "properties": {
+        "workers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1WorkerInfo"
+          }
+        }
+      }
+    },
+    "v1LoginRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "v1LoginResponse": {
+      "type": "object",
+      "properties": {
+        "access_token": {
+          "type": "string"
+        },
+        "refresh_token": {
+          "type": "string"
+        },
+        "expires_in": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1LogoutRequest": {
+      "type": "object",
+      "properties": {
+        "refresh_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1LogoutResponse": {
+      "type": "object",
+      "title": "Empty response"
+    },
+    "v1MetricSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "op": {
+          "type": "string",
+          "title": "\"len\" | \"count\" | \"word_count\" | \"field_present\" | \"status_is_error\" | \"count_external_links\""
+        },
+        "input": {
+          "type": "string"
+        }
+      },
+      "title": "MetricSpec defines a metric to compute"
+    },
+    "v1PaginationSpec": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Optional name for the pagination source (e.g., \"next_page\", \"load_more\")"
+        },
+        "selector": {
+          "type": "string",
+          "title": "CSS selector for pagination elements (e.g., \"a.next-page\", \".pagination a\")"
+        },
+        "attribute": {
+          "type": "string",
+          "title": "Attribute to extract URL from (default: \"href\")"
+        },
+        "multiple": {
+          "type": "boolean",
+          "title": "Extract all matching elements (true) or just first (false)"
+        }
+      },
+      "title": "PaginationSpec defines a pagination selector for extracting next-page URLs"
+    },
+    "v1Preview": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string"
         },
-        "taskId": {
+        "source_url": {
           "type": "string"
         },
-        "url": {
+        "final_url": {
           "type": "string"
         },
-        "httpStatus": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "contentType": {
+        "minio_key": {
           "type": "string"
         },
-        "storageKey": {
+        "content_type": {
           "type": "string"
         },
-        "fetchedAt": {
+        "download_url": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
           "type": "string",
           "format": "date-time"
         }
+      }
+    },
+    "v1RateLimitPolicy": {
+      "type": "object",
+      "properties": {
+        "rps": {
+          "type": "number",
+          "format": "double"
+        }
       },
-      "title": "PageSnapshot represents a fetched page snapshot"
+      "title": "RateLimitPolicy defines rate limiting configuration"
     },
-    "v1UpdateJobResponse": {
+    "v1RefreshRequest": {
       "type": "object",
       "properties": {
-        "job": {
-          "$ref": "#/definitions/v1CrawlJob"
+        "refresh_token": {
+          "type": "string"
         }
       }
     },
-    "v1UpdateTaskResponse": {
+    "v1RefreshResponse": {
       "type": "object",
       "properties": {
-        "task": {
-          "$ref": "#/definitions/v1CrawlTask"
+        "access_token": {
+          "type": "string"
+        },
+        "refresh_token": {
+          "type": "string"
+        },
+        "expires_in": {
+          "type": "integer",
+          "format": "int32"
         }
       }
+    },
+    "v1RegisterRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "v1RegisterResponse": {
+      "type": "object",
+      "properties": {
+        "access_token": {
+          "type": "string"
+        },
+        "refresh_token": {
+          "type": "string"
+        },
+        "expires_in": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1RetryPolicy": {
+      "type": "object",
+      "properties": {
+        "max_attempts": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "backoff_initial_ms": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "backoff_multiplier": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "title": "RetryPolicy defines retry configuration"
+    },
+    "v1Role": {
+      "type": "string",
+      "enum": [
+        "ROLE_UNSPECIFIED",
+        "ROLE_READ",
+        "ROLE_READ_WRITE",
+        "ROLE_ADMINISTRATOR"
+      ],
+      "default": "ROLE_UNSPECIFIED",
+      "description": "Role represents user authorization role."
+    },
+    "v1ScheduleOptions": {
+      "type": "object",
+      "properties": {
+        "cron": {
+          "type": "string"
+        }
+      },
+      "title": "ScheduleOptions defines scheduling configuration"
+    },
+    "v1ScopeRules": {
+      "type": "object",
+      "properties": {
+        "max_depth": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "allowed_domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deny_url_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "ScopeRules defines crawling scope rules"
+    },
+    "v1Seed": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        }
+      },
+      "title": "Seed represents a starting URL"
+    },
+    "v1TransformSpec": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "title": "\"trim\" | \"lower\" | \"upper\" | \"normalize_url\" | \"unique\" | \"limit\" | \"to_int\" | \"to_float\" | \"parse_price\" | \"html_to_text\" | \"collapse_ws\" | \"sha256\""
+        },
+        "arg": {
+          "type": "string",
+          "title": "JSON-encoded argument"
+        }
+      },
+      "title": "TransformSpec defines a transformation operation"
+    },
+    "v1UpdateUserRoleResponse": {
+      "type": "object",
+      "properties": {
+        "updated": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1User": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/v1Role"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1WorkerInfo": {
+      "type": "object",
+      "properties": {
+        "worker_id": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1WorkerStatus"
+        },
+        "last_heartbeat_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "active_tasks": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "uptime": {
+          "type": "string"
+        },
+        "worker_type": {
+          "type": "string"
+        }
+      },
+      "description": "WorkerInfo is returned by the monitoring API."
+    },
+    "v1WorkerStatus": {
+      "type": "string",
+      "enum": [
+        "WORKER_STATUS_UNSPECIFIED",
+        "WORKER_STATUS_ACTIVE",
+        "WORKER_STATUS_INACTIVE",
+        "WORKER_STATUS_DRAINING",
+        "WORKER_STATUS_DEAD"
+      ],
+      "default": "WORKER_STATUS_UNSPECIFIED",
+      "description": "WorkerStatus represents the current state of a worker."
     }
   }
 }

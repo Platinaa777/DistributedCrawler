@@ -1,0 +1,46 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- if .Values.grpcServer.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "distributed-crawler.grpcServer.fullname" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.grpcServer.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "distributed-crawler.grpcServer.selectorLabels" . | nindent 6 }}
+{{- end }}
+---
+{{- if .Values.fetchWorker.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "distributed-crawler.fetchWorker.fullname" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.fetchWorker.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "distributed-crawler.fetchWorker.selectorLabels" . | nindent 6 }}
+{{- end }}
+---
+{{- if .Values.parserWorker.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "distributed-crawler.parserWorker.fullname" . }}
+  namespace: {{ include "distributed-crawler.namespace" . }}
+  labels:
+    {{- include "distributed-crawler.parserWorker.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "distributed-crawler.parserWorker.selectorLabels" . | nindent 6 }}
+{{- end }}
+{{- end }}

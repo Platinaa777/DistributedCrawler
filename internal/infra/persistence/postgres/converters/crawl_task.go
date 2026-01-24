@@ -1,19 +1,67 @@
 package converters
 
 import (
+	"database/sql"
+
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/persistence/postgres/snapshots"
 )
 
 func SaveCrawlTaskToSnapshot(crawlTask models.CrawlTask) *snapshots.CrawlTaskSnapshot {
-	return &snapshots.CrawlTaskSnapshot{
-		ID:         crawlTask.ID.String(),
-		JobID:      crawlTask.JobID.String(),
-		URL:        crawlTask.URL,
-		Status:     crawlTask.Status.String(),
-		EnqueuedAt: crawlTask.EnqueuedAt,
+	snapshot := &snapshots.CrawlTaskSnapshot{
+		ID:             crawlTask.ID.String(),
+		JobID:          crawlTask.JobID.String(),
+		URL:            crawlTask.URL,
+		Status:         crawlTask.Status.String(),
+		EnqueuedAt:     crawlTask.EnqueuedAt,
+		Depth:          crawlTask.Depth,
+		MinioObjectKey: crawlTask.MinioObjectKey,
 	}
+
+	// Handle BodyHash
+	if crawlTask.BodyHash != nil {
+		snapshot.BodyHash = sql.NullString{
+			String: *crawlTask.BodyHash,
+			Valid:  true,
+		}
+	}
+
+	// Handle FinalURL
+	if crawlTask.FinalURL != nil {
+		snapshot.FinalURL = sql.NullString{
+			String: *crawlTask.FinalURL,
+			Valid:  true,
+		}
+	}
+
+	// Handle result fields
+	if crawlTask.ResultObjectKey != nil {
+		snapshot.ResultObjectKey = sql.NullString{
+			String: *crawlTask.ResultObjectKey,
+			Valid:  true,
+		}
+	}
+	if crawlTask.ResultContentType != nil {
+		snapshot.ResultContentType = sql.NullString{
+			String: *crawlTask.ResultContentType,
+			Valid:  true,
+		}
+	}
+	if crawlTask.ResultSizeBytes != nil {
+		snapshot.ResultSizeBytes = sql.NullInt64{
+			Int64: *crawlTask.ResultSizeBytes,
+			Valid: true,
+		}
+	}
+	if crawlTask.ResultCreatedAt != nil {
+		snapshot.ResultCreatedAt = sql.NullTime{
+			Time:  *crawlTask.ResultCreatedAt,
+			Valid: true,
+		}
+	}
+
+	return snapshot
 }
 
 func RestoreCrawlTaskFromSnapshot(snapshot snapshots.CrawlTaskSnapshot) (*models.CrawlTask, error) {
@@ -27,14 +75,42 @@ func RestoreCrawlTaskFromSnapshot(snapshot snapshots.CrawlTaskSnapshot) (*models
 		return nil, err
 	}
 
-	return &models.CrawlTask{
-		ID:         id,
-		JobID:      jobID,
-		Job:        nil, // not populated for non-joined queries
-		URL:        snapshot.URL,
-		Status:     models.TaskStatus(snapshot.Status),
-		EnqueuedAt: snapshot.EnqueuedAt,
-	}, nil
+	task := &models.CrawlTask{
+		ID:             id,
+		JobID:          jobID,
+		Job:            nil, // not populated for non-joined queries
+		URL:            snapshot.URL,
+		Status:         models.TaskStatus(snapshot.Status),
+		EnqueuedAt:     snapshot.EnqueuedAt,
+		Depth:          snapshot.Depth,
+		MinioObjectKey: snapshot.MinioObjectKey,
+	}
+
+	// Handle BodyHash
+	if snapshot.BodyHash.Valid {
+		task.BodyHash = &snapshot.BodyHash.String
+	}
+
+	// Handle FinalURL
+	if snapshot.FinalURL.Valid {
+		task.FinalURL = &snapshot.FinalURL.String
+	}
+
+	// Handle result fields
+	if snapshot.ResultObjectKey.Valid {
+		task.ResultObjectKey = &snapshot.ResultObjectKey.String
+	}
+	if snapshot.ResultContentType.Valid {
+		task.ResultContentType = &snapshot.ResultContentType.String
+	}
+	if snapshot.ResultSizeBytes.Valid {
+		task.ResultSizeBytes = &snapshot.ResultSizeBytes.Int64
+	}
+	if snapshot.ResultCreatedAt.Valid {
+		task.ResultCreatedAt = &snapshot.ResultCreatedAt.Time
+	}
+
+	return task, nil
 }
 
 func RestoreCrawlTaskWithJobFromSnapshot(snapshot snapshots.CrawlTaskWithJobSnapshot) (*models.CrawlTask, error) {
@@ -56,12 +132,40 @@ func RestoreCrawlTaskWithJobFromSnapshot(snapshot snapshots.CrawlTaskWithJobSnap
 		}
 	}
 
-	return &models.CrawlTask{
-		ID:         id,
-		JobID:      jobID,
-		Job:        job,
-		URL:        snapshot.URL,
-		Status:     models.TaskStatus(snapshot.Status),
-		EnqueuedAt: snapshot.EnqueuedAt,
-	}, nil
+	task := &models.CrawlTask{
+		ID:             id,
+		JobID:          jobID,
+		Job:            job,
+		URL:            snapshot.URL,
+		Status:         models.TaskStatus(snapshot.Status),
+		EnqueuedAt:     snapshot.EnqueuedAt,
+		Depth:          snapshot.Depth,
+		MinioObjectKey: snapshot.MinioObjectKey,
+	}
+
+	// Handle BodyHash
+	if snapshot.BodyHash.Valid {
+		task.BodyHash = &snapshot.BodyHash.String
+	}
+
+	// Handle FinalURL
+	if snapshot.FinalURL.Valid {
+		task.FinalURL = &snapshot.FinalURL.String
+	}
+
+	// Handle result fields
+	if snapshot.ResultObjectKey.Valid {
+		task.ResultObjectKey = &snapshot.ResultObjectKey.String
+	}
+	if snapshot.ResultContentType.Valid {
+		task.ResultContentType = &snapshot.ResultContentType.String
+	}
+	if snapshot.ResultSizeBytes.Valid {
+		task.ResultSizeBytes = &snapshot.ResultSizeBytes.Int64
+	}
+	if snapshot.ResultCreatedAt.Valid {
+		task.ResultCreatedAt = &snapshot.ResultCreatedAt.Time
+	}
+
+	return task, nil
 }

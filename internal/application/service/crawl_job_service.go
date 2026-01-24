@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"time"
+
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 )
@@ -9,11 +11,7 @@ import (
 // Commands for CrawlJob management
 
 type CreateCrawlJobCommand struct {
-	Name         string
-	Status       string
-	URL          string
-	MaxDepth     int
-	ExtractRules []string
+	Config models.CrawlJobConfig
 }
 
 type UpdateCrawlJobStatusCommand struct {
@@ -31,32 +29,32 @@ type GetCrawlJobQuery struct {
 	ID string
 }
 
+// ListCrawlJobsFilter contains filter criteria for listing jobs
+type ListCrawlJobsFilter struct {
+	Name        *string    // Partial match on config name (ILIKE %name%)
+	Status      *string    // Exact match on job status
+	CreatedFrom *time.Time // Jobs created >= this timestamp
+	CreatedTo   *time.Time // Jobs created <= this timestamp
+}
+
+// ListCrawlJobsCursor represents decoded pagination cursor
+type ListCrawlJobsCursor struct {
+	CreatedAt time.Time `json:"c"`
+	ID        string    `json:"i"`
+}
+
+// ListCrawlJobsQuery contains pagination and filter parameters
 type ListCrawlJobsQuery struct {
-	Status string
-	Limit  int
-	Offset int
+	Cursor *ListCrawlJobsCursor // nil for first page
+	Limit  int                  // Default: 20, Max: 100
+	Filter ListCrawlJobsFilter
 }
 
-// Commands for CrawlTask management
-
-type CreateCrawlTaskCommand struct {
-	JobID string
-	URL   string
-}
-
-type UpdateTaskStatusCommand struct {
-	TaskID string
-	Status string
-}
-
-// Queries for CrawlTask
-
-type GetCrawlTaskQuery struct {
-	ID string
-}
-
-type ListTasksByJobQuery struct {
-	JobID string
+// ListCrawlJobsResult contains paginated results
+type ListCrawlJobsResult struct {
+	Jobs       []*models.CrawlJob
+	NextCursor *ListCrawlJobsCursor // nil if no more results
+	HasMore    bool
 }
 
 // Service interfaces
@@ -64,14 +62,5 @@ type ListTasksByJobQuery struct {
 type CrawlJobService interface {
 	CreateCrawlJob(ctx context.Context, cmd CreateCrawlJobCommand) (valueobjects.CrawlJobID, error)
 	GetCrawlJob(ctx context.Context, query GetCrawlJobQuery) (*models.CrawlJob, error)
-	ListCrawlJobs(ctx context.Context, query ListCrawlJobsQuery) ([]*models.CrawlJob, error)
-	UpdateJobStatus(ctx context.Context, cmd UpdateCrawlJobStatusCommand) error
-	CompleteJob(ctx context.Context, cmd CompleteCrawlJobCommand) error
-}
-
-type CrawlTaskService interface {
-	CreateTask(ctx context.Context, cmd CreateCrawlTaskCommand) (valueobjects.CrawlTaskID, error)
-	GetTask(ctx context.Context, query GetCrawlTaskQuery) (*models.CrawlTask, error)
-	ListTasksByJob(ctx context.Context, query ListTasksByJobQuery) ([]*models.CrawlTask, error)
-	UpdateTaskStatus(ctx context.Context, cmd UpdateTaskStatusCommand) error
+	ListCrawlJobs(ctx context.Context, query ListCrawlJobsQuery) (*ListCrawlJobsResult, error)
 }

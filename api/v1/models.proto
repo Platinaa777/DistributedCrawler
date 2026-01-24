@@ -3,6 +3,7 @@ syntax = "proto3";
 package crawler.v1;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 import "validate/validate.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
@@ -25,60 +26,162 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   produces: "application/json",
 };
 
+// AuthOptions contains authentication options for crawling
+message AuthOptions {
+  string cookie = 1;
+  string basic_user = 2 [json_name = "basic_user"];
+  string basic_password = 3 [json_name = "basic_password"];
+  string bearer_token = 4 [json_name = "bearer_token"];
+}
+
+// RateLimitPolicy defines rate limiting configuration
+message RateLimitPolicy {
+  double rps = 3;
+}
+
+// RetryPolicy defines retry configuration
+message RetryPolicy {
+  uint64 max_attempts = 1 [json_name = "max_attempts"];
+  uint64 backoff_initial_ms = 2 [json_name = "backoff_initial_ms"];
+  double backoff_multiplier = 3 [json_name = "backoff_multiplier"];
+}
+
+// ScheduleOptions defines scheduling configuration
+message ScheduleOptions {
+  string cron = 1;
+}
+
+// ScopeRules defines crawling scope rules
+message ScopeRules {
+  uint64 max_depth = 1 [json_name = "max_depth"];
+  repeated string allowed_domains = 2 [json_name = "allowed_domains"];
+  repeated string deny_url_patterns = 3 [json_name = "deny_url_patterns"];
+}
+
+// Seed represents a starting URL
+message Seed {
+  string url = 1;
+}
+
+// ExtractorSpec defines how to extract a field
+message ExtractorSpec {
+  string selector = 1;
+  string attribute = 2;
+  bool multiple = 3;
+  optional int32 index = 4;
+}
+
+// TransformSpec defines a transformation operation
+message TransformSpec {
+  string op = 1; // "trim" | "lower" | "upper" | "normalize_url" | "unique" | "limit" | "to_int" | "to_float" | "parse_price" | "html_to_text" | "collapse_ws" | "sha256"
+  string arg = 2; // JSON-encoded argument
+}
+
+// FieldSpec defines a field to extract
+message FieldSpec {
+  string name = 1;
+  string type = 2; // "string" | "int" | "float" | "bool" | "url" | "json"
+  bool required = 3;
+  ExtractorSpec extractor = 4;
+  repeated TransformSpec transforms = 5;
+}
+
+// MetricSpec defines a metric to compute
+message MetricSpec {
+  string name = 1;
+  string op = 2; // "len" | "count" | "word_count" | "field_present" | "status_is_error" | "count_external_links"
+  string input = 3;
+}
+
+// PaginationSpec defines a pagination selector for extracting next-page URLs
+message PaginationSpec {
+  string name = 1;      // Optional name for the pagination source (e.g., "next_page", "load_more")
+  string selector = 2;  // CSS selector for pagination elements (e.g., "a.next-page", ".pagination a")
+  string attribute = 3; // Attribute to extract URL from (default: "href")
+  bool multiple = 4;    // Extract all matching elements (true) or just first (false)
+}
+
+// ExtractionSpec defines extraction configuration
+message ExtractionSpec {
+  repeated FieldSpec fields = 1;
+  repeated MetricSpec metrics = 2;
+  repeated PaginationSpec pagination = 3;
+}
+
+// CrawlJobConfig represents crawl job configuration
+message CrawlJobConfig {
+  string id = 1;
+  string name = 2;
+  ExtractionSpec extraction_spec = 3 [json_name = "extraction_spec"];
+  ScopeRules scopes = 4;
+  repeated Seed seeds = 5;
+  RateLimitPolicy rate_limit = 6 [json_name = "rate_limit"];
+  RetryPolicy retries = 7;
+  AuthOptions auth = 8;
+  ScheduleOptions schedule = 9;
+  // If true, fetch and follow robots.txt rules; if false, ignore robots.txt
+  bool respect_robots_txt = 10 [json_name = "respect_robots_txt"];
+}
+
 // CrawlJob represents a crawling job
 message CrawlJob {
   string id = 1;
-  string name = 2;
-  string status = 3;
-  google.protobuf.Timestamp created_at = 4 [json_name = "created_at"];
-  optional google.protobuf.Timestamp completed_at = 5;
+  string job_config_id = 2 [json_name = "job_config_id"];
+  optional CrawlJobConfig job_config = 3 [json_name = "job_config"];
+  string status = 4;
+  google.protobuf.Timestamp created_at = 5 [json_name = "created_at"];
+  optional google.protobuf.Timestamp completed_at = 6 [json_name = "completed_at"];
+  optional string export_json_key = 7 [json_name = "export_json_key"];
+  optional string export_csv_key = 8 [json_name = "export_csv_key"];
+  optional google.protobuf.Timestamp exported_at = 9 [json_name = "exported_at"];
+  string export_status = 10 [json_name = "export_status"];
 }
 
 // CrawlTask represents a single crawl task within a job
 message CrawlTask {
   string id = 1;
-  string job_id = 2;
+  string job_id = 2 [json_name = "job_id"];
   optional CrawlJob job = 3;
   string url = 4;
-  string status = 5;
-  google.protobuf.Timestamp enqueued_at = 6;
+  optional string final_url = 5 [json_name = "final_url"];
+  string status = 6;
+  google.protobuf.Timestamp enqueued_at = 7 [json_name = "enqueued_at"];
+  uint64 depth = 8;
+  string body_hash = 9 [json_name = "body_hash"];
+  string minio_object_key = 10 [json_name = "minio_object_key"];
+  optional string result_object_key = 11 [json_name = "result_object_key"];
 }
 
-// PageSnapshot represents a fetched page snapshot
-message PageSnapshot {
-  string id = 1;
-  string task_id = 2;
-  string url = 3;
-  int32 http_status = 4;
-  string content_type = 5;
-  string storage_key = 6;
-  google.protobuf.Timestamp fetched_at = 7;
+// JobListFilter defines filtering options for listing jobs
+message JobListFilter {
+  // Filter by job name (partial match, case-insensitive)
+  optional string name = 1;
+  // Filter by job status (exact match)
+  optional string status = 2;
+  // Filter by created_at date range
+  optional google.protobuf.Timestamp created_from = 3 [json_name = "created_from"];
+  optional google.protobuf.Timestamp created_to = 4 [json_name = "created_to"];
 }
-
-// ExtractedRecord represents extracted/parsed data from a page
-message ExtractedRecord {
-  string id = 1;
-  string task_id = 2;
-  string source_url = 3;
-  map<string, string> data = 4;
-  google.protobuf.Timestamp parsed_at = 5;
-}
-
-// Request/Response messages for Jobs
 
 message ListJobsRequest {
-  optional string status = 1;
+  // Cursor for pagination (opaque string, empty for first page)
+  optional string cursor = 1;
+  // Number of items per page (default: 20, max: 100)
   int32 limit = 2;
-  int32 offset = 3;
+  // Filtering options
+  JobListFilter filter = 3;
 }
 
 message ListJobsResponse {
   repeated CrawlJob jobs = 1;
+  // Cursor for the next page (empty if no more results)
+  string next_cursor = 2 [json_name = "next_cursor"];
+  // Indicates if there are more results after this page
+  bool has_more = 3 [json_name = "has_more"];
 }
 
 message CreateJobRequest {
-  string name = 1 [(validate.rules).string.min_len = 1];
-  string status = 2 [(validate.rules).string.min_len = 1];
+  CrawlJobConfig config = 1 [(validate.rules).message.required = true];
 }
 
 message CreateJobResponse {
@@ -93,24 +196,11 @@ message GetJobResponse {
   CrawlJob job = 1;
 }
 
-message UpdateJobRequest {
-  string id = 1;
-  string status = 2;
-}
-
-message UpdateJobResponse {
-  CrawlJob job = 1;
-}
-
 // Request/Response messages for Tasks
 
 message CreateTaskRequest {
   string job_id = 1 [(validate.rules).string.min_len = 1];
   string url = 2 [(validate.rules).string.min_len = 1];
-}
-
-message CreateTaskResponse {
-  CrawlTask task = 1;
 }
 
 message GetTaskRequest {
@@ -129,69 +219,199 @@ message ListTasksByJobResponse {
   repeated CrawlTask tasks = 1;
 }
 
-message UpdateTaskRequest {
+// GetJobExportFileURLRequest requests a presigned URL for a job export file
+message GetJobExportFileURLRequest {
+  string job_id = 1 [(validate.rules).string.min_len = 1, json_name = "job_id"];
+  string file_type = 2 [(validate.rules).string = {in: ["json", "csv"]}, json_name = "file_type"];
+}
+
+// GetJobExportFileURLResponse contains the presigned URL for downloading a job export file
+message GetJobExportFileURLResponse {
+  string url = 1;
+  int32 expires_in_seconds = 2 [json_name = "expires_in_seconds"];
+}
+
+// GetTaskFileURLRequest requests a presigned URL for a task file
+message GetTaskFileURLRequest {
+  string task_id = 1 [(validate.rules).string.min_len = 1, json_name = "task_id"];
+  string file_type = 2 [(validate.rules).string = {in: ["pages", "result"]}, json_name = "file_type"];
+}
+
+// GetTaskFileURLResponse contains the presigned URL for downloading a file
+message GetTaskFileURLResponse {
+  string url = 1;
+  int32 expires_in_seconds = 2 [json_name = "expires_in_seconds"];
+}
+
+// Preview messages
+
+message Preview {
   string id = 1;
-  string status = 2;
+  string source_url = 2 [json_name = "source_url"];
+  optional string final_url = 3 [json_name = "final_url"];
+  string minio_key = 4 [json_name = "minio_key"];
+  string content_type = 5 [json_name = "content_type"];
+  string download_url = 6 [json_name = "download_url"];
+  google.protobuf.Timestamp created_at = 7 [json_name = "created_at"];
+  optional google.protobuf.Timestamp expires_at = 8 [json_name = "expires_at"];
 }
 
-message UpdateTaskResponse {
-  CrawlTask task = 1;
+message CreatePreviewRequest {
+  string url = 1 [(validate.rules).string.min_len = 1];
 }
 
-// Request/Response messages for Snapshots
-
-message CreateSnapshotRequest {
-  string task_id = 1;
-  string url = 2;
-  int32 http_status = 3;
-  string content_type = 4;
-  string storage_key = 5;
-}
-
-message CreateSnapshotResponse {
-  PageSnapshot snapshot = 1;
-}
-
-message GetSnapshotRequest {
-  string id = 1;
-}
-
-message GetSnapshotResponse {
-  PageSnapshot snapshot = 1;
-}
-
-message ListSnapshotsByTaskRequest {
-  string task_id = 1;
-}
-
-message ListSnapshotsByTaskResponse {
-  repeated PageSnapshot snapshots = 1;
-}
-
-// Request/Response messages for Records
-
-message CreateRecordRequest {
-  string task_id = 1;
-  string source_url = 2;
-  map<string, string> data = 3;
-}
-
-message CreateRecordResponse {
-  ExtractedRecord record = 1;
-}
-
-message GetRecordRequest {
+message CreatePreviewResponse {
   string id = 1;
 }
 
-message GetRecordResponse {
-  ExtractedRecord record = 1;
+message GetPreviewRequest {
+  string id = 1;
 }
 
-message ListRecordsByTaskRequest {
-  string task_id = 1;
+message GetPreviewResponse {
+  Preview preview = 1;
 }
 
-message ListRecordsByTaskResponse {
-  repeated ExtractedRecord records = 1;
+// Auth messages
+
+message RegisterRequest {
+  string email = 1 [(validate.rules).string.email = true];
+  string password = 2 [(validate.rules).string.min_len = 8];
+}
+
+message RegisterResponse {
+  string access_token = 1 [json_name = "access_token"];
+  string refresh_token = 2 [json_name = "refresh_token"];
+  int32 expires_in = 3 [json_name = "expires_in"];
+}
+
+message LoginRequest {
+  string email = 1 [(validate.rules).string.email = true];
+  string password = 2 [(validate.rules).string.min_len = 1];
+}
+
+message LoginResponse {
+  string access_token = 1 [json_name = "access_token"];
+  string refresh_token = 2 [json_name = "refresh_token"];
+  int32 expires_in = 3 [json_name = "expires_in"];
+}
+
+message RefreshRequest {
+  string refresh_token = 1 [(validate.rules).string.min_len = 1, json_name = "refresh_token"];
+}
+
+message RefreshResponse {
+  string access_token = 1 [json_name = "access_token"];
+  string refresh_token = 2 [json_name = "refresh_token"];
+  int32 expires_in = 3 [json_name = "expires_in"];
+}
+
+message LogoutRequest {
+  string refresh_token = 1 [(validate.rules).string.min_len = 1, json_name = "refresh_token"];
+}
+
+message LogoutResponse {
+  // Empty response
+}
+
+// Role represents user authorization role.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_READ = 1;
+  ROLE_READ_WRITE = 2;
+  ROLE_ADMINISTRATOR = 3;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  Role role = 3;
+  google.protobuf.Timestamp created_at = 4 [json_name = "created_at"];
+  google.protobuf.Timestamp updated_at = 5 [json_name = "updated_at"];
+}
+
+message ListUsersRequest {}
+
+message ListUsersResponse {
+  repeated User users = 1;
+}
+
+message UpdateUserRoleRequest {
+  string id = 1;
+  Role role = 2;
+}
+
+message UpdateUserRoleResponse {
+  bool updated = 1;
+}
+
+// Worker monitoring messages
+
+// WorkerStatus represents the current state of a worker.
+enum WorkerStatus {
+  WORKER_STATUS_UNSPECIFIED = 0;
+  WORKER_STATUS_ACTIVE = 1;
+  WORKER_STATUS_INACTIVE = 2;
+  WORKER_STATUS_DRAINING = 3;
+  WORKER_STATUS_DEAD = 4;
+}
+
+// WorkerHeartbeat is sent periodically by workers to report health.
+message WorkerHeartbeat {
+  string worker_id = 1 [json_name = "worker_id"];
+  google.protobuf.Timestamp timestamp = 2;
+  WorkerStatus status = 3;
+  int32 active_tasks = 4 [json_name = "active_tasks"];
+  google.protobuf.Timestamp started_at = 5 [json_name = "started_at"];
+  string worker_type = 6 [json_name = "worker_type"];
+}
+
+// WorkerInfo is returned by the monitoring API.
+message WorkerInfo {
+  string worker_id = 1 [json_name = "worker_id"];
+  WorkerStatus status = 2;
+  google.protobuf.Timestamp last_heartbeat_at = 3 [json_name = "last_heartbeat_at"];
+  int32 active_tasks = 4 [json_name = "active_tasks"];
+  google.protobuf.Duration uptime = 5;
+  string worker_type = 6 [json_name = "worker_type"];
+}
+
+message ListWorkersRequest {}
+
+message ListWorkersResponse {
+  repeated WorkerInfo workers = 1;
+}
+
+// WorkerCommandType defines commands from Coordinator to worker.
+enum WorkerCommandType {
+  WORKER_COMMAND_UNSPECIFIED = 0;
+  WORKER_COMMAND_DRAIN = 1;
+  WORKER_COMMAND_FORCE_KILL = 2;
+}
+
+// WorkerCommand is sent from Coordinator to worker.
+message WorkerCommand {
+  WorkerCommandType type = 1;
+  string reason = 2;
+  google.protobuf.Timestamp issued_at = 3 [json_name = "issued_at"];
+}
+
+message DrainWorkerRequest {
+  string worker_id = 1 [json_name = "worker_id"];
+  string reason = 2;
+}
+
+message DrainWorkerResponse {
+  bool delivered = 1;
+  string message = 2;
+}
+
+message ForceKillWorkerRequest {
+  string worker_id = 1 [json_name = "worker_id"];
+  string reason = 2;
+}
+
+message ForceKillWorkerResponse {
+  bool delivered = 1;
+  string message = 2;
 }

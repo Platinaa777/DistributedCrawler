@@ -21,6 +21,10 @@ func TestToProtoCrawlJob(t *testing.T) {
 	now := time.Now().UTC()
 	completedTime := now.Add(1 * time.Hour)
 
+	configID := valueobjects.GenerateID()
+	jobName := gofakeit.AppName()
+	emptyName := ""
+
 	tests := []struct {
 		name     string
 		input    *models.CrawlJob
@@ -35,14 +39,17 @@ func TestToProtoCrawlJob(t *testing.T) {
 			name: "valid job without completed time",
 			input: &models.CrawlJob{
 				ID:          valueobjects.GenerateCrawlJobID(),
-				Name:        gofakeit.AppName(),
+				JobConfigID: configID,
+				JobConfig: &models.CrawlJobConfig{
+					ID:   configID,
+					Name: jobName,
+				},
 				Status:      models.TaskStatus(gofakeit.RandomString([]string{"pending", "running", "completed", "failed"})),
 				CreatedAt:   now,
 				CompletedAt: nil,
 			},
 			expected: &crawlergrpc.CrawlJob{
-				// ID and Name will be validated separately
-				// Status will be validated separately
+				// ID, JobConfigID, and Status will be validated separately
 				CreatedAt:   timestamppb.New(now),
 				CompletedAt: nil,
 			},
@@ -51,13 +58,17 @@ func TestToProtoCrawlJob(t *testing.T) {
 			name: "valid job with completed time",
 			input: &models.CrawlJob{
 				ID:          valueobjects.GenerateCrawlJobID(),
-				Name:        gofakeit.JobTitle(),
+				JobConfigID: configID,
+				JobConfig: &models.CrawlJobConfig{
+					ID:   configID,
+					Name: gofakeit.JobTitle(),
+				},
 				Status:      models.TaskStatusCompleted,
 				CreatedAt:   now,
 				CompletedAt: &completedTime,
 			},
 			expected: &crawlergrpc.CrawlJob{
-				// ID and Name will be validated separately
+				// ID and JobConfigID will be validated separately
 				Status:      "completed",
 				CreatedAt:   timestamppb.New(now),
 				CompletedAt: timestamppb.New(completedTime),
@@ -67,7 +78,11 @@ func TestToProtoCrawlJob(t *testing.T) {
 			name: "job with random generated data",
 			input: &models.CrawlJob{
 				ID:          valueobjects.GenerateCrawlJobID(),
-				Name:        gofakeit.Word(),
+				JobConfigID: configID,
+				JobConfig: &models.CrawlJobConfig{
+					ID:   configID,
+					Name: gofakeit.Word(),
+				},
 				Status:      models.TaskStatus(gofakeit.RandomString([]string{"pending", "running"})),
 				CreatedAt:   gofakeit.Date(),
 				CompletedAt: nil,
@@ -77,16 +92,35 @@ func TestToProtoCrawlJob(t *testing.T) {
 			},
 		},
 		{
-			name: "job with empty name",
+			name: "job with empty name in config",
 			input: &models.CrawlJob{
 				ID:          valueobjects.GenerateCrawlJobID(),
-				Name:        "",
-				Status:      models.TaskStatusPending,
+				JobConfigID: configID,
+				JobConfig: &models.CrawlJobConfig{
+					ID:   configID,
+					Name: emptyName,
+				},
+				Status:      models.TaskStatusInProgress,
 				CreatedAt:   now,
 				CompletedAt: nil,
 			},
 			expected: &crawlergrpc.CrawlJob{
-				Name:        "",
+				Status:      "pending",
+				CreatedAt:   timestamppb.New(now),
+				CompletedAt: nil,
+			},
+		},
+		{
+			name: "job without config",
+			input: &models.CrawlJob{
+				ID:          valueobjects.GenerateCrawlJobID(),
+				JobConfigID: configID,
+				JobConfig:   nil,
+				Status:      models.TaskStatusInProgress,
+				CreatedAt:   now,
+				CompletedAt: nil,
+			},
+			expected: &crawlergrpc.CrawlJob{
 				Status:      "pending",
 				CreatedAt:   timestamppb.New(now),
 				CompletedAt: nil,
@@ -107,8 +141,16 @@ func TestToProtoCrawlJob(t *testing.T) {
 
 			require.NotNil(t, result)
 			assert.Equal(t, tt.input.ID.String(), result.Id)
-			assert.Equal(t, tt.input.Name, result.Name)
+			assert.Equal(t, tt.input.JobConfigID.String(), result.JobConfigId)
 			assert.Equal(t, tt.input.Status.String(), result.Status)
+
+			// Validate JobConfig
+			if tt.input.JobConfig != nil {
+				require.NotNil(t, result.JobConfig)
+				assert.Equal(t, tt.input.JobConfig.Name, result.JobConfig.Name)
+			} else {
+				assert.Nil(t, result.JobConfig)
+			}
 
 			// Validate timestamps
 			require.NotNil(t, result.CreatedAt)
@@ -132,10 +174,15 @@ func TestToProtoCrawlJob_Properties(t *testing.T) {
 		t.Parallel()
 
 		jobID := valueobjects.GenerateCrawlJobID()
+		configID := valueobjects.GenerateID()
 		job := &models.CrawlJob{
-			ID:        jobID,
-			Name:      gofakeit.BuzzWord(),
-			Status:    models.TaskStatusRunning,
+			ID:          jobID,
+			JobConfigID: configID,
+			JobConfig: &models.CrawlJobConfig{
+				ID:   configID,
+				Name: gofakeit.BuzzWord(),
+			},
+			Status:    models.TaskStatusInProgress,
 			CreatedAt: time.Now(),
 		}
 
@@ -152,9 +199,14 @@ func TestToProtoCrawlJob_Properties(t *testing.T) {
 
 		// Test with nanosecond precision
 		preciseTime := time.Date(2024, 1, 15, 10, 30, 45, 123456789, time.UTC)
+		configID := valueobjects.GenerateID()
 		job := &models.CrawlJob{
-			ID:        valueobjects.GenerateCrawlJobID(),
-			Name:      gofakeit.Company(),
+			ID:          valueobjects.GenerateCrawlJobID(),
+			JobConfigID: configID,
+			JobConfig: &models.CrawlJobConfig{
+				ID:   configID,
+				Name: gofakeit.Company(),
+			},
 			Status:    models.TaskStatusCompleted,
 			CreatedAt: preciseTime,
 		}
@@ -179,26 +231,37 @@ func TestToProtoCrawlJob_Properties(t *testing.T) {
 		}
 
 		for _, name := range specialNames {
+			configID := valueobjects.GenerateID()
 			job := &models.CrawlJob{
-				ID:        valueobjects.GenerateCrawlJobID(),
-				Name:      name,
-				Status:    models.TaskStatusPending,
+				ID:          valueobjects.GenerateCrawlJobID(),
+				JobConfigID: configID,
+				JobConfig: &models.CrawlJobConfig{
+					ID:   configID,
+					Name: name,
+				},
+				Status:    models.TaskStatusInProgress,
 				CreatedAt: time.Now(),
 			}
 
 			result := crawljob.ToProtoCrawlJob(job)
 
 			require.NotNil(t, result)
-			assert.Equal(t, name, result.Name)
+			require.NotNil(t, result.JobConfig)
+			assert.Equal(t, name, result.JobConfig.Name)
 		}
 	})
 }
 
 func BenchmarkToProtoCrawlJob(b *testing.B) {
+	configID := valueobjects.GenerateID()
 	job := &models.CrawlJob{
-		ID:        valueobjects.GenerateCrawlJobID(),
-		Name:      gofakeit.AppName(),
-		Status:    models.TaskStatusRunning,
+		ID:          valueobjects.GenerateCrawlJobID(),
+		JobConfigID: configID,
+		JobConfig: &models.CrawlJobConfig{
+			ID:   configID,
+			Name: gofakeit.AppName(),
+		},
+		Status:    models.TaskStatusInProgress,
 		CreatedAt: time.Now(),
 	}
 
@@ -210,9 +273,14 @@ func BenchmarkToProtoCrawlJob(b *testing.B) {
 
 func BenchmarkToProtoCrawlJob_WithCompletedAt(b *testing.B) {
 	completedAt := time.Now()
+	configID := valueobjects.GenerateID()
 	job := &models.CrawlJob{
 		ID:          valueobjects.GenerateCrawlJobID(),
-		Name:        gofakeit.AppName(),
+		JobConfigID: configID,
+		JobConfig: &models.CrawlJobConfig{
+			ID:   configID,
+			Name: gofakeit.AppName(),
+		},
 		Status:      models.TaskStatusCompleted,
 		CreatedAt:   time.Now(),
 		CompletedAt: &completedAt,

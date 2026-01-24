@@ -6,14 +6,17 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
+	"distributed-crawler/internal/auth"
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
 	"distributed-crawler/internal/infra/logger"
@@ -31,6 +34,8 @@ type APIApp struct {
 	serviceProvider *serviceProvider
 	grpcServer      *grpc.Server
 	httpServer      *http.Server
+	workerCtx       context.Context
+	workerCancel    context.CancelFunc
 }
 
 func NewAPIApp(ctx context.Context) (*APIApp, error) {
@@ -46,13 +51,12 @@ func NewAPIApp(ctx context.Context) (*APIApp, error) {
 
 func (a *APIApp) Run() error {
 	defer func() {
+		a.serviceProvider.Close()
 		logger.Sync()
-		// closer.CloseAll()
-		// closer.Wait()
 	}()
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 
 	go func() {
 		defer wg.Done()
@@ -72,6 +76,11 @@ func (a *APIApp) Run() error {
 		}
 	}()
 
+	go func() {
+		defer wg.Done()
+		a.runWorker()
+	}()
+
 	wg.Wait()
 
 	return nil
@@ -82,8 +91,10 @@ func (a *APIApp) initDeps(ctx context.Context) error {
 		a.initConfig,
 		a.initLogger,
 		a.initServiceProvider,
+		a.initDefaultAdmin,
 		a.initGRPCServer,
 		a.initHTTPServer,
+		a.initWorker,
 	}
 
 	for _, f := range inits {
@@ -124,6 +135,13 @@ func (a *APIApp) initServiceProvider(_ context.Context) error {
 	return nil
 }
 
+func (a *APIApp) initDefaultAdmin(ctx context.Context) error {
+	if err := a.serviceProvider.EnsureDefaultAdmin(ctx); err != nil {
+		log.Fatalf("failed to ensure default admin: %v", err)
+	}
+	return nil
+}
+
 func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
@@ -131,6 +149,8 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 			grpcMiddleware.ChainUnaryServer(
 				interceptor.LogInterceptor,
 				interceptor.ValidateInterceptor,
+				auth.JWTAuthInterceptor(a.serviceProvider.JWTService()),
+				auth.RBACInterceptor(),
 			),
 		),
 	)
@@ -138,12 +158,23 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	reflection.Register(a.grpcServer)
 
 	crawlergrpc.RegisterCrawlerServiceServer(a.grpcServer, a.serviceProvider.CrawlerServiceImpl(ctx))
+	crawlergrpc.RegisterPreviewServiceServer(a.grpcServer, a.serviceProvider.PreviewServiceImpl(ctx))
+	crawlergrpc.RegisterAuthServiceServer(a.grpcServer, a.serviceProvider.AuthServiceImpl(ctx))
+	crawlergrpc.RegisterUserServiceServer(a.grpcServer, a.serviceProvider.UserServiceImpl(ctx))
+	crawlergrpc.RegisterWorkerServiceServer(a.grpcServer, a.serviceProvider.WorkerServiceImpl(ctx))
 
 	return nil
 }
 
 func (a *APIApp) initHTTPServer(ctx context.Context) error {
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
+			if strings.EqualFold(key, "x-preview-cookie") {
+				return "x-preview-cookie", true
+			}
+			return runtime.DefaultHeaderMatcher(key)
+		}),
+	)
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -154,11 +185,44 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
-	a.httpServer = &http.Server{
-		Addr:    a.serviceProvider.HTTPConfig().Address(),
-		Handler: mux,
+	err = crawlergrpc.RegisterPreviewServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
 	}
 
+	err = crawlergrpc.RegisterAuthServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
+	}
+
+	err = crawlergrpc.RegisterUserServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
+	}
+
+	err = crawlergrpc.RegisterWorkerServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
+	}
+
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:4200"}, // или []string{"*"} если без credentials
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "Accept", "X-Preview-Cookie"},
+		ExposedHeaders:   []string{"Grpc-Status", "Grpc-Message", "Grpc-Metadata-*", "Location"},
+		AllowCredentials: true,
+	})
+
+	a.httpServer = &http.Server{
+		Addr:    a.serviceProvider.HTTPConfig().Address(),
+		Handler: c.Handler(mux),
+	}
+
+	return nil
+}
+
+func (a *APIApp) initWorker(ctx context.Context) error {
+	a.workerCtx, a.workerCancel = context.WithCancel(ctx)
 	return nil
 }
 
@@ -187,4 +251,17 @@ func (a *APIApp) runHTTPServer() error {
 	}
 
 	return nil
+}
+
+func (a *APIApp) runWorker() {
+	log.Printf("Outbox publisher worker is starting...")
+
+	// Get worker from service provider with background context
+	worker := a.serviceProvider.OutboxPublisher(context.Background())
+	_ = worker
+
+	// Start worker with worker context (can be cancelled)
+	worker.Start(a.workerCtx)
+
+	log.Printf("Outbox publisher worker stopped")
 }

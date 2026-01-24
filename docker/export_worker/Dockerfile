@@ -1,0 +1,21 @@
+FROM golang:1.25.4-alpine AS build
+
+WORKDIR /src
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o /out/export_worker ./cmd/export_worker
+
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates
+RUN addgroup -S app && adduser -S app -G app
+
+WORKDIR /app
+COPY --from=build /out/export_worker /app/export_worker
+
+USER app
+ENTRYPOINT ["/app/export_worker"]

@@ -22,17 +22,10 @@ const (
 	CrawlerService_ListJobs_FullMethodName            = "/crawler.v1.CrawlerService/ListJobs"
 	CrawlerService_CreateJob_FullMethodName           = "/crawler.v1.CrawlerService/CreateJob"
 	CrawlerService_GetJob_FullMethodName              = "/crawler.v1.CrawlerService/GetJob"
-	CrawlerService_UpdateJob_FullMethodName           = "/crawler.v1.CrawlerService/UpdateJob"
-	CrawlerService_CreateTask_FullMethodName          = "/crawler.v1.CrawlerService/CreateTask"
+	CrawlerService_GetJobExportFileURL_FullMethodName = "/crawler.v1.CrawlerService/GetJobExportFileURL"
 	CrawlerService_GetTask_FullMethodName             = "/crawler.v1.CrawlerService/GetTask"
 	CrawlerService_ListTasksByJob_FullMethodName      = "/crawler.v1.CrawlerService/ListTasksByJob"
-	CrawlerService_UpdateTask_FullMethodName          = "/crawler.v1.CrawlerService/UpdateTask"
-	CrawlerService_CreateSnapshot_FullMethodName      = "/crawler.v1.CrawlerService/CreateSnapshot"
-	CrawlerService_GetSnapshot_FullMethodName         = "/crawler.v1.CrawlerService/GetSnapshot"
-	CrawlerService_ListSnapshotsByTask_FullMethodName = "/crawler.v1.CrawlerService/ListSnapshotsByTask"
-	CrawlerService_CreateRecord_FullMethodName        = "/crawler.v1.CrawlerService/CreateRecord"
-	CrawlerService_GetRecord_FullMethodName           = "/crawler.v1.CrawlerService/GetRecord"
-	CrawlerService_ListRecordsByTask_FullMethodName   = "/crawler.v1.CrawlerService/ListRecordsByTask"
+	CrawlerService_GetTaskFileURL_FullMethodName      = "/crawler.v1.CrawlerService/GetTaskFileURL"
 )
 
 // CrawlerServiceClient is the client API for CrawlerService service.
@@ -45,20 +38,13 @@ type CrawlerServiceClient interface {
 	ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error)
 	CreateJob(ctx context.Context, in *CreateJobRequest, opts ...grpc.CallOption) (*CreateJobResponse, error)
 	GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*GetJobResponse, error)
-	UpdateJob(ctx context.Context, in *UpdateJobRequest, opts ...grpc.CallOption) (*UpdateJobResponse, error)
+	// Get a presigned URL for downloading a job export file (JSON or CSV)
+	GetJobExportFileURL(ctx context.Context, in *GetJobExportFileURLRequest, opts ...grpc.CallOption) (*GetJobExportFileURLResponse, error)
 	// Task operations
-	CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*CreateTaskResponse, error)
 	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
 	ListTasksByJob(ctx context.Context, in *ListTasksByJobRequest, opts ...grpc.CallOption) (*ListTasksByJobResponse, error)
-	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*UpdateTaskResponse, error)
-	// Snapshot operations
-	CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error)
-	GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*GetSnapshotResponse, error)
-	ListSnapshotsByTask(ctx context.Context, in *ListSnapshotsByTaskRequest, opts ...grpc.CallOption) (*ListSnapshotsByTaskResponse, error)
-	// Record operations
-	CreateRecord(ctx context.Context, in *CreateRecordRequest, opts ...grpc.CallOption) (*CreateRecordResponse, error)
-	GetRecord(ctx context.Context, in *GetRecordRequest, opts ...grpc.CallOption) (*GetRecordResponse, error)
-	ListRecordsByTask(ctx context.Context, in *ListRecordsByTaskRequest, opts ...grpc.CallOption) (*ListRecordsByTaskResponse, error)
+	// Get a presigned URL for downloading a task file (HTML page or JSON result)
+	GetTaskFileURL(ctx context.Context, in *GetTaskFileURLRequest, opts ...grpc.CallOption) (*GetTaskFileURLResponse, error)
 }
 
 type crawlerServiceClient struct {
@@ -99,20 +85,10 @@ func (c *crawlerServiceClient) GetJob(ctx context.Context, in *GetJobRequest, op
 	return out, nil
 }
 
-func (c *crawlerServiceClient) UpdateJob(ctx context.Context, in *UpdateJobRequest, opts ...grpc.CallOption) (*UpdateJobResponse, error) {
+func (c *crawlerServiceClient) GetJobExportFileURL(ctx context.Context, in *GetJobExportFileURLRequest, opts ...grpc.CallOption) (*GetJobExportFileURLResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateJobResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_UpdateJob_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*CreateTaskResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateTaskResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_CreateTask_FullMethodName, in, out, cOpts...)
+	out := new(GetJobExportFileURLResponse)
+	err := c.cc.Invoke(ctx, CrawlerService_GetJobExportFileURL_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,70 +115,10 @@ func (c *crawlerServiceClient) ListTasksByJob(ctx context.Context, in *ListTasks
 	return out, nil
 }
 
-func (c *crawlerServiceClient) UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*UpdateTaskResponse, error) {
+func (c *crawlerServiceClient) GetTaskFileURL(ctx context.Context, in *GetTaskFileURLRequest, opts ...grpc.CallOption) (*GetTaskFileURLResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateTaskResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_UpdateTask_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateSnapshotResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_CreateSnapshot_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*GetSnapshotResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetSnapshotResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_GetSnapshot_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) ListSnapshotsByTask(ctx context.Context, in *ListSnapshotsByTaskRequest, opts ...grpc.CallOption) (*ListSnapshotsByTaskResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListSnapshotsByTaskResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_ListSnapshotsByTask_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) CreateRecord(ctx context.Context, in *CreateRecordRequest, opts ...grpc.CallOption) (*CreateRecordResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateRecordResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_CreateRecord_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) GetRecord(ctx context.Context, in *GetRecordRequest, opts ...grpc.CallOption) (*GetRecordResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetRecordResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_GetRecord_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *crawlerServiceClient) ListRecordsByTask(ctx context.Context, in *ListRecordsByTaskRequest, opts ...grpc.CallOption) (*ListRecordsByTaskResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListRecordsByTaskResponse)
-	err := c.cc.Invoke(ctx, CrawlerService_ListRecordsByTask_FullMethodName, in, out, cOpts...)
+	out := new(GetTaskFileURLResponse)
+	err := c.cc.Invoke(ctx, CrawlerService_GetTaskFileURL_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -219,20 +135,13 @@ type CrawlerServiceServer interface {
 	ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error)
 	CreateJob(context.Context, *CreateJobRequest) (*CreateJobResponse, error)
 	GetJob(context.Context, *GetJobRequest) (*GetJobResponse, error)
-	UpdateJob(context.Context, *UpdateJobRequest) (*UpdateJobResponse, error)
+	// Get a presigned URL for downloading a job export file (JSON or CSV)
+	GetJobExportFileURL(context.Context, *GetJobExportFileURLRequest) (*GetJobExportFileURLResponse, error)
 	// Task operations
-	CreateTask(context.Context, *CreateTaskRequest) (*CreateTaskResponse, error)
 	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
 	ListTasksByJob(context.Context, *ListTasksByJobRequest) (*ListTasksByJobResponse, error)
-	UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error)
-	// Snapshot operations
-	CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error)
-	GetSnapshot(context.Context, *GetSnapshotRequest) (*GetSnapshotResponse, error)
-	ListSnapshotsByTask(context.Context, *ListSnapshotsByTaskRequest) (*ListSnapshotsByTaskResponse, error)
-	// Record operations
-	CreateRecord(context.Context, *CreateRecordRequest) (*CreateRecordResponse, error)
-	GetRecord(context.Context, *GetRecordRequest) (*GetRecordResponse, error)
-	ListRecordsByTask(context.Context, *ListRecordsByTaskRequest) (*ListRecordsByTaskResponse, error)
+	// Get a presigned URL for downloading a task file (HTML page or JSON result)
+	GetTaskFileURL(context.Context, *GetTaskFileURLRequest) (*GetTaskFileURLResponse, error)
 	mustEmbedUnimplementedCrawlerServiceServer()
 }
 
@@ -252,11 +161,8 @@ func (UnimplementedCrawlerServiceServer) CreateJob(context.Context, *CreateJobRe
 func (UnimplementedCrawlerServiceServer) GetJob(context.Context, *GetJobRequest) (*GetJobResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetJob not implemented")
 }
-func (UnimplementedCrawlerServiceServer) UpdateJob(context.Context, *UpdateJobRequest) (*UpdateJobResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateJob not implemented")
-}
-func (UnimplementedCrawlerServiceServer) CreateTask(context.Context, *CreateTaskRequest) (*CreateTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateTask not implemented")
+func (UnimplementedCrawlerServiceServer) GetJobExportFileURL(context.Context, *GetJobExportFileURLRequest) (*GetJobExportFileURLResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetJobExportFileURL not implemented")
 }
 func (UnimplementedCrawlerServiceServer) GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTask not implemented")
@@ -264,26 +170,8 @@ func (UnimplementedCrawlerServiceServer) GetTask(context.Context, *GetTaskReques
 func (UnimplementedCrawlerServiceServer) ListTasksByJob(context.Context, *ListTasksByJobRequest) (*ListTasksByJobResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTasksByJob not implemented")
 }
-func (UnimplementedCrawlerServiceServer) UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateTask not implemented")
-}
-func (UnimplementedCrawlerServiceServer) CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateSnapshot not implemented")
-}
-func (UnimplementedCrawlerServiceServer) GetSnapshot(context.Context, *GetSnapshotRequest) (*GetSnapshotResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetSnapshot not implemented")
-}
-func (UnimplementedCrawlerServiceServer) ListSnapshotsByTask(context.Context, *ListSnapshotsByTaskRequest) (*ListSnapshotsByTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListSnapshotsByTask not implemented")
-}
-func (UnimplementedCrawlerServiceServer) CreateRecord(context.Context, *CreateRecordRequest) (*CreateRecordResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateRecord not implemented")
-}
-func (UnimplementedCrawlerServiceServer) GetRecord(context.Context, *GetRecordRequest) (*GetRecordResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetRecord not implemented")
-}
-func (UnimplementedCrawlerServiceServer) ListRecordsByTask(context.Context, *ListRecordsByTaskRequest) (*ListRecordsByTaskResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListRecordsByTask not implemented")
+func (UnimplementedCrawlerServiceServer) GetTaskFileURL(context.Context, *GetTaskFileURLRequest) (*GetTaskFileURLResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTaskFileURL not implemented")
 }
 func (UnimplementedCrawlerServiceServer) mustEmbedUnimplementedCrawlerServiceServer() {}
 func (UnimplementedCrawlerServiceServer) testEmbeddedByValue()                        {}
@@ -360,38 +248,20 @@ func _CrawlerService_GetJob_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CrawlerService_UpdateJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateJobRequest)
+func _CrawlerService_GetJobExportFileURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetJobExportFileURLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrawlerServiceServer).UpdateJob(ctx, in)
+		return srv.(CrawlerServiceServer).GetJobExportFileURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CrawlerService_UpdateJob_FullMethodName,
+		FullMethod: CrawlerService_GetJobExportFileURL_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).UpdateJob(ctx, req.(*UpdateJobRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_CreateTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).CreateTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_CreateTask_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).CreateTask(ctx, req.(*CreateTaskRequest))
+		return srv.(CrawlerServiceServer).GetJobExportFileURL(ctx, req.(*GetJobExportFileURLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -432,128 +302,20 @@ func _CrawlerService_ListTasksByJob_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CrawlerService_UpdateTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateTaskRequest)
+func _CrawlerService_GetTaskFileURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTaskFileURLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrawlerServiceServer).UpdateTask(ctx, in)
+		return srv.(CrawlerServiceServer).GetTaskFileURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CrawlerService_UpdateTask_FullMethodName,
+		FullMethod: CrawlerService_GetTaskFileURL_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).UpdateTask(ctx, req.(*UpdateTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_CreateSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateSnapshotRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).CreateSnapshot(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_CreateSnapshot_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).CreateSnapshot(ctx, req.(*CreateSnapshotRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_GetSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSnapshotRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).GetSnapshot(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_GetSnapshot_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).GetSnapshot(ctx, req.(*GetSnapshotRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_ListSnapshotsByTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListSnapshotsByTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).ListSnapshotsByTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_ListSnapshotsByTask_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).ListSnapshotsByTask(ctx, req.(*ListSnapshotsByTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_CreateRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateRecordRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).CreateRecord(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_CreateRecord_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).CreateRecord(ctx, req.(*CreateRecordRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_GetRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRecordRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).GetRecord(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_GetRecord_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).GetRecord(ctx, req.(*GetRecordRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CrawlerService_ListRecordsByTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListRecordsByTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CrawlerServiceServer).ListRecordsByTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrawlerService_ListRecordsByTask_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrawlerServiceServer).ListRecordsByTask(ctx, req.(*ListRecordsByTaskRequest))
+		return srv.(CrawlerServiceServer).GetTaskFileURL(ctx, req.(*GetTaskFileURLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -578,12 +340,8 @@ var CrawlerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CrawlerService_GetJob_Handler,
 		},
 		{
-			MethodName: "UpdateJob",
-			Handler:    _CrawlerService_UpdateJob_Handler,
-		},
-		{
-			MethodName: "CreateTask",
-			Handler:    _CrawlerService_CreateTask_Handler,
+			MethodName: "GetJobExportFileURL",
+			Handler:    _CrawlerService_GetJobExportFileURL_Handler,
 		},
 		{
 			MethodName: "GetTask",
@@ -594,34 +352,757 @@ var CrawlerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CrawlerService_ListTasksByJob_Handler,
 		},
 		{
-			MethodName: "UpdateTask",
-			Handler:    _CrawlerService_UpdateTask_Handler,
-		},
-		{
-			MethodName: "CreateSnapshot",
-			Handler:    _CrawlerService_CreateSnapshot_Handler,
-		},
-		{
-			MethodName: "GetSnapshot",
-			Handler:    _CrawlerService_GetSnapshot_Handler,
-		},
-		{
-			MethodName: "ListSnapshotsByTask",
-			Handler:    _CrawlerService_ListSnapshotsByTask_Handler,
-		},
-		{
-			MethodName: "CreateRecord",
-			Handler:    _CrawlerService_CreateRecord_Handler,
-		},
-		{
-			MethodName: "GetRecord",
-			Handler:    _CrawlerService_GetRecord_Handler,
-		},
-		{
-			MethodName: "ListRecordsByTask",
-			Handler:    _CrawlerService_ListRecordsByTask_Handler,
+			MethodName: "GetTaskFileURL",
+			Handler:    _CrawlerService_GetTaskFileURL_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1/service.proto",
+}
+
+const (
+	PreviewService_CreatePreview_FullMethodName = "/crawler.v1.PreviewService/CreatePreview"
+	PreviewService_GetPreview_FullMethodName    = "/crawler.v1.PreviewService/GetPreview"
+)
+
+// PreviewServiceClient is the client API for PreviewService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// PreviewService defines the preview service for HTML inspection
+type PreviewServiceClient interface {
+	// Fetch URL, sanitize HTML, store in MinIO, return preview reference
+	CreatePreview(ctx context.Context, in *CreatePreviewRequest, opts ...grpc.CallOption) (*CreatePreviewResponse, error)
+	// Return preview metadata with presigned download URL
+	GetPreview(ctx context.Context, in *GetPreviewRequest, opts ...grpc.CallOption) (*GetPreviewResponse, error)
+}
+
+type previewServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewPreviewServiceClient(cc grpc.ClientConnInterface) PreviewServiceClient {
+	return &previewServiceClient{cc}
+}
+
+func (c *previewServiceClient) CreatePreview(ctx context.Context, in *CreatePreviewRequest, opts ...grpc.CallOption) (*CreatePreviewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreatePreviewResponse)
+	err := c.cc.Invoke(ctx, PreviewService_CreatePreview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *previewServiceClient) GetPreview(ctx context.Context, in *GetPreviewRequest, opts ...grpc.CallOption) (*GetPreviewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPreviewResponse)
+	err := c.cc.Invoke(ctx, PreviewService_GetPreview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PreviewServiceServer is the server API for PreviewService service.
+// All implementations must embed UnimplementedPreviewServiceServer
+// for forward compatibility.
+//
+// PreviewService defines the preview service for HTML inspection
+type PreviewServiceServer interface {
+	// Fetch URL, sanitize HTML, store in MinIO, return preview reference
+	CreatePreview(context.Context, *CreatePreviewRequest) (*CreatePreviewResponse, error)
+	// Return preview metadata with presigned download URL
+	GetPreview(context.Context, *GetPreviewRequest) (*GetPreviewResponse, error)
+	mustEmbedUnimplementedPreviewServiceServer()
+}
+
+// UnimplementedPreviewServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedPreviewServiceServer struct{}
+
+func (UnimplementedPreviewServiceServer) CreatePreview(context.Context, *CreatePreviewRequest) (*CreatePreviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreatePreview not implemented")
+}
+func (UnimplementedPreviewServiceServer) GetPreview(context.Context, *GetPreviewRequest) (*GetPreviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPreview not implemented")
+}
+func (UnimplementedPreviewServiceServer) mustEmbedUnimplementedPreviewServiceServer() {}
+func (UnimplementedPreviewServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafePreviewServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PreviewServiceServer will
+// result in compilation errors.
+type UnsafePreviewServiceServer interface {
+	mustEmbedUnimplementedPreviewServiceServer()
+}
+
+func RegisterPreviewServiceServer(s grpc.ServiceRegistrar, srv PreviewServiceServer) {
+	// If the following call panics, it indicates UnimplementedPreviewServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&PreviewService_ServiceDesc, srv)
+}
+
+func _PreviewService_CreatePreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePreviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PreviewServiceServer).CreatePreview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PreviewService_CreatePreview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PreviewServiceServer).CreatePreview(ctx, req.(*CreatePreviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PreviewService_GetPreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPreviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PreviewServiceServer).GetPreview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PreviewService_GetPreview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PreviewServiceServer).GetPreview(ctx, req.(*GetPreviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// PreviewService_ServiceDesc is the grpc.ServiceDesc for PreviewService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var PreviewService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "crawler.v1.PreviewService",
+	HandlerType: (*PreviewServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreatePreview",
+			Handler:    _PreviewService_CreatePreview_Handler,
+		},
+		{
+			MethodName: "GetPreview",
+			Handler:    _PreviewService_GetPreview_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1/service.proto",
+}
+
+const (
+	AuthService_Register_FullMethodName = "/crawler.v1.AuthService/Register"
+	AuthService_Login_FullMethodName    = "/crawler.v1.AuthService/Login"
+	AuthService_Refresh_FullMethodName  = "/crawler.v1.AuthService/Refresh"
+	AuthService_Logout_FullMethodName   = "/crawler.v1.AuthService/Logout"
+)
+
+// AuthServiceClient is the client API for AuthService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// AuthService defines authentication and authorization operations
+type AuthServiceClient interface {
+	// Register a new user
+	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	// Login with email and password
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	// Refresh access token using refresh token
+	Refresh(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*RefreshResponse, error)
+	// Logout and revoke refresh token
+	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
+}
+
+type authServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
+	return &authServiceClient{cc}
+}
+
+func (c *authServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterResponse)
+	err := c.cc.Invoke(ctx, AuthService_Register_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, AuthService_Login_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) Refresh(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*RefreshResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RefreshResponse)
+	err := c.cc.Invoke(ctx, AuthService_Refresh_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogoutResponse)
+	err := c.cc.Invoke(ctx, AuthService_Logout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AuthServiceServer is the server API for AuthService service.
+// All implementations must embed UnimplementedAuthServiceServer
+// for forward compatibility.
+//
+// AuthService defines authentication and authorization operations
+type AuthServiceServer interface {
+	// Register a new user
+	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	// Login with email and password
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
+	// Refresh access token using refresh token
+	Refresh(context.Context, *RefreshRequest) (*RefreshResponse, error)
+	// Logout and revoke refresh token
+	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
+	mustEmbedUnimplementedAuthServiceServer()
+}
+
+// UnimplementedAuthServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAuthServiceServer struct{}
+
+func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedAuthServiceServer) Refresh(context.Context, *RefreshRequest) (*RefreshResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Refresh not implemented")
+}
+func (UnimplementedAuthServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
+func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
+
+// UnsafeAuthServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AuthServiceServer will
+// result in compilation errors.
+type UnsafeAuthServiceServer interface {
+	mustEmbedUnimplementedAuthServiceServer()
+}
+
+func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
+	// If the following call panics, it indicates UnimplementedAuthServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AuthService_ServiceDesc, srv)
+}
+
+func _AuthService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_Register_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).Register(ctx, req.(*RegisterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).Refresh(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_Refresh_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).Refresh(ctx, req.(*RefreshRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).Logout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_Logout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).Logout(ctx, req.(*LogoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AuthService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "crawler.v1.AuthService",
+	HandlerType: (*AuthServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Register",
+			Handler:    _AuthService_Register_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _AuthService_Login_Handler,
+		},
+		{
+			MethodName: "Refresh",
+			Handler:    _AuthService_Refresh_Handler,
+		},
+		{
+			MethodName: "Logout",
+			Handler:    _AuthService_Logout_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1/service.proto",
+}
+
+const (
+	UserService_ListUsers_FullMethodName      = "/crawler.v1.UserService/ListUsers"
+	UserService_UpdateUserRole_FullMethodName = "/crawler.v1.UserService/UpdateUserRole"
+)
+
+// UserServiceClient is the client API for UserService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// UserService defines user management operations
+type UserServiceClient interface {
+	// List registered users
+	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
+	// Update user role (admin only)
+	UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error)
+}
+
+type userServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
+	return &userServiceClient{cc}
+}
+
+func (c *userServiceClient) ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUsersResponse)
+	err := c.cc.Invoke(ctx, UserService_ListUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*UpdateUserRoleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserRoleResponse)
+	err := c.cc.Invoke(ctx, UserService_UpdateUserRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// UserServiceServer is the server API for UserService service.
+// All implementations must embed UnimplementedUserServiceServer
+// for forward compatibility.
+//
+// UserService defines user management operations
+type UserServiceServer interface {
+	// List registered users
+	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
+	// Update user role (admin only)
+	UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*UpdateUserRoleResponse, error)
+	mustEmbedUnimplementedUserServiceServer()
+}
+
+// UnimplementedUserServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedUserServiceServer struct{}
+
+func (UnimplementedUserServiceServer) ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUsers not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*UpdateUserRoleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateUserRole not implemented")
+}
+func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
+func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
+
+// UnsafeUserServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to UserServiceServer will
+// result in compilation errors.
+type UnsafeUserServiceServer interface {
+	mustEmbedUnimplementedUserServiceServer()
+}
+
+func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
+	// If the following call panics, it indicates UnimplementedUserServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&UserService_ServiceDesc, srv)
+}
+
+func _UserService_ListUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ListUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ListUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ListUsers(ctx, req.(*ListUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_UpdateUserRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdateUserRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_UpdateUserRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdateUserRole(ctx, req.(*UpdateUserRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var UserService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "crawler.v1.UserService",
+	HandlerType: (*UserServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListUsers",
+			Handler:    _UserService_ListUsers_Handler,
+		},
+		{
+			MethodName: "UpdateUserRole",
+			Handler:    _UserService_UpdateUserRole_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1/service.proto",
+}
+
+const (
+	WorkerService_WorkerStream_FullMethodName    = "/crawler.v1.WorkerService/WorkerStream"
+	WorkerService_ListWorkers_FullMethodName     = "/crawler.v1.WorkerService/ListWorkers"
+	WorkerService_DrainWorker_FullMethodName     = "/crawler.v1.WorkerService/DrainWorker"
+	WorkerService_ForceKillWorker_FullMethodName = "/crawler.v1.WorkerService/ForceKillWorker"
+)
+
+// WorkerServiceClient is the client API for WorkerService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// WorkerService defines worker monitoring and control operations
+type WorkerServiceClient interface {
+	// Bidirectional stream for worker heartbeats and control commands
+	WorkerStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[WorkerHeartbeat, WorkerCommand], error)
+	// List registered workers for monitoring UI
+	ListWorkers(ctx context.Context, in *ListWorkersRequest, opts ...grpc.CallOption) (*ListWorkersResponse, error)
+	// Trigger graceful drain for a worker
+	DrainWorker(ctx context.Context, in *DrainWorkerRequest, opts ...grpc.CallOption) (*DrainWorkerResponse, error)
+	// Trigger force kill for a worker
+	ForceKillWorker(ctx context.Context, in *ForceKillWorkerRequest, opts ...grpc.CallOption) (*ForceKillWorkerResponse, error)
+}
+
+type workerServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewWorkerServiceClient(cc grpc.ClientConnInterface) WorkerServiceClient {
+	return &workerServiceClient{cc}
+}
+
+func (c *workerServiceClient) WorkerStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[WorkerHeartbeat, WorkerCommand], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &WorkerService_ServiceDesc.Streams[0], WorkerService_WorkerStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[WorkerHeartbeat, WorkerCommand]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type WorkerService_WorkerStreamClient = grpc.BidiStreamingClient[WorkerHeartbeat, WorkerCommand]
+
+func (c *workerServiceClient) ListWorkers(ctx context.Context, in *ListWorkersRequest, opts ...grpc.CallOption) (*ListWorkersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListWorkersResponse)
+	err := c.cc.Invoke(ctx, WorkerService_ListWorkers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workerServiceClient) DrainWorker(ctx context.Context, in *DrainWorkerRequest, opts ...grpc.CallOption) (*DrainWorkerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DrainWorkerResponse)
+	err := c.cc.Invoke(ctx, WorkerService_DrainWorker_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workerServiceClient) ForceKillWorker(ctx context.Context, in *ForceKillWorkerRequest, opts ...grpc.CallOption) (*ForceKillWorkerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ForceKillWorkerResponse)
+	err := c.cc.Invoke(ctx, WorkerService_ForceKillWorker_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// WorkerServiceServer is the server API for WorkerService service.
+// All implementations must embed UnimplementedWorkerServiceServer
+// for forward compatibility.
+//
+// WorkerService defines worker monitoring and control operations
+type WorkerServiceServer interface {
+	// Bidirectional stream for worker heartbeats and control commands
+	WorkerStream(grpc.BidiStreamingServer[WorkerHeartbeat, WorkerCommand]) error
+	// List registered workers for monitoring UI
+	ListWorkers(context.Context, *ListWorkersRequest) (*ListWorkersResponse, error)
+	// Trigger graceful drain for a worker
+	DrainWorker(context.Context, *DrainWorkerRequest) (*DrainWorkerResponse, error)
+	// Trigger force kill for a worker
+	ForceKillWorker(context.Context, *ForceKillWorkerRequest) (*ForceKillWorkerResponse, error)
+	mustEmbedUnimplementedWorkerServiceServer()
+}
+
+// UnimplementedWorkerServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedWorkerServiceServer struct{}
+
+func (UnimplementedWorkerServiceServer) WorkerStream(grpc.BidiStreamingServer[WorkerHeartbeat, WorkerCommand]) error {
+	return status.Error(codes.Unimplemented, "method WorkerStream not implemented")
+}
+func (UnimplementedWorkerServiceServer) ListWorkers(context.Context, *ListWorkersRequest) (*ListWorkersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListWorkers not implemented")
+}
+func (UnimplementedWorkerServiceServer) DrainWorker(context.Context, *DrainWorkerRequest) (*DrainWorkerResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DrainWorker not implemented")
+}
+func (UnimplementedWorkerServiceServer) ForceKillWorker(context.Context, *ForceKillWorkerRequest) (*ForceKillWorkerResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ForceKillWorker not implemented")
+}
+func (UnimplementedWorkerServiceServer) mustEmbedUnimplementedWorkerServiceServer() {}
+func (UnimplementedWorkerServiceServer) testEmbeddedByValue()                       {}
+
+// UnsafeWorkerServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to WorkerServiceServer will
+// result in compilation errors.
+type UnsafeWorkerServiceServer interface {
+	mustEmbedUnimplementedWorkerServiceServer()
+}
+
+func RegisterWorkerServiceServer(s grpc.ServiceRegistrar, srv WorkerServiceServer) {
+	// If the following call panics, it indicates UnimplementedWorkerServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&WorkerService_ServiceDesc, srv)
+}
+
+func _WorkerService_WorkerStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(WorkerServiceServer).WorkerStream(&grpc.GenericServerStream[WorkerHeartbeat, WorkerCommand]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type WorkerService_WorkerStreamServer = grpc.BidiStreamingServer[WorkerHeartbeat, WorkerCommand]
+
+func _WorkerService_ListWorkers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServiceServer).ListWorkers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkerService_ListWorkers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServiceServer).ListWorkers(ctx, req.(*ListWorkersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkerService_DrainWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DrainWorkerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServiceServer).DrainWorker(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkerService_DrainWorker_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServiceServer).DrainWorker(ctx, req.(*DrainWorkerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkerService_ForceKillWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ForceKillWorkerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkerServiceServer).ForceKillWorker(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkerService_ForceKillWorker_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkerServiceServer).ForceKillWorker(ctx, req.(*ForceKillWorkerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// WorkerService_ServiceDesc is the grpc.ServiceDesc for WorkerService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var WorkerService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "crawler.v1.WorkerService",
+	HandlerType: (*WorkerServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListWorkers",
+			Handler:    _WorkerService_ListWorkers_Handler,
+		},
+		{
+			MethodName: "DrainWorker",
+			Handler:    _WorkerService_DrainWorker_Handler,
+		},
+		{
+			MethodName: "ForceKillWorker",
+			Handler:    _WorkerService_ForceKillWorker_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "WorkerStream",
+			Handler:       _WorkerService_WorkerStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "v1/service.proto",
 }
