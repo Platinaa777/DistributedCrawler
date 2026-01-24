@@ -54,7 +54,7 @@ interface SimpleJobFormValue {
   template: `
     <p-toast position="top-right" />
 
-    <form class="container mx-auto p-6 space-y-4" [formGroup]="jobForm">
+    <form class="container mx-auto p-6 space-y-8" [formGroup]="jobForm">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
           <p-button [text]="true" (onClick)="goBack()" type="button">
@@ -74,7 +74,7 @@ interface SimpleJobFormValue {
         </div>
       </div>
 
-      <p-card>
+      <p-card styleClass="mb-6">
         <ng-template pTemplate="header">
           <div class="p-4 pb-0">
             <h2 class="text-lg font-semibold">Job Basics</h2>
@@ -90,8 +90,8 @@ interface SimpleJobFormValue {
         </div>
       </p-card>
 
-      <p-panel header="Seeds & Scope" [toggleable]="true" [collapsed]="true">
-        <div class="p-4 space-y-4">
+      <p-panel header="Seeds & Scope" [toggleable]="true" [collapsed]="true" styleClass="mb-6">
+        <div class="p-4 space-y-6">
           <div>
             <div class="flex items-center justify-between mb-2">
               <p class="text-sm font-semibold">Seed URLs</p>
@@ -179,8 +179,8 @@ interface SimpleJobFormValue {
         </div>
       </p-panel>
 
-      <p-panel header="Rate Limit, Retries & Schedule" [toggleable]="true" [collapsed]="true">
-        <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <p-panel header="Rate Limit, Retries & Schedule" [toggleable]="true" [collapsed]="true" styleClass="mb-6">
+        <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div [formGroup]="retriesGroup" class="space-y-4">
             <p class="text-sm font-semibold">Retry Policy</p>
             <div>
@@ -227,8 +227,8 @@ interface SimpleJobFormValue {
         </div>
       </p-panel>
 
-      <p-panel header="Extraction Spec" [toggleable]="true">
-        <div class="p-4 space-y-4">
+      <p-panel header="Extraction Spec" [toggleable]="true" styleClass="mb-6">
+        <div class="p-4 space-y-6">
           <div class="flex items-center justify-between">
             <p class="text-sm font-semibold">Fields</p>
             <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addExtractionField()">
@@ -237,7 +237,7 @@ interface SimpleJobFormValue {
             </p-button>
           </div>
 
-          <div formArrayName="extraction_fields" class="space-y-4">
+          <div formArrayName="extraction_fields" class="space-y-6">
             <div
               *ngFor="let field of extractionFields.controls; let i = index"
               [formGroupName]="i"
@@ -340,7 +340,7 @@ interface SimpleJobFormValue {
                 Add Metric
               </p-button>
             </div>
-            <div formArrayName="metrics" class="space-y-3">
+            <div formArrayName="metrics" class="space-y-4">
               <div
                 *ngFor="let metric of metrics.controls; let m = index"
                 [formGroupName]="m"
@@ -376,7 +376,7 @@ interface SimpleJobFormValue {
                 Add Pagination
               </p-button>
             </div>
-            <div formArrayName="pagination" class="space-y-3">
+            <div formArrayName="pagination" class="space-y-4">
               <div
                 *ngFor="let pag of pagination.controls; let p = index"
                 [formGroupName]="p"

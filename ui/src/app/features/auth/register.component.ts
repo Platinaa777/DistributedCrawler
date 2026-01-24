@@ -58,17 +58,19 @@ import { AuthService } from '../../core/services/auth.service';
                 Enter a valid email
               </small>
 
-              <p-floatlabel>
-                <p-password
-                  id="password"
-                  formControlName="password"
-                  [feedback]="true"
-                  [toggleMask]="true"
-                  autocomplete="new-password"
-                  styleClass="w-full"
-                  inputStyleClass="w-full" />
-                <label for="password">Password</label>
-              </p-floatlabel>
+              <div class="mt-6" style="margin-top: 1.5rem;">
+                <p-floatlabel class="block">
+                  <p-password
+                    id="password"
+                    formControlName="password"
+                    [feedback]="true"
+                    [toggleMask]="true"
+                    autocomplete="new-password"
+                    styleClass="w-full"
+                    inputStyleClass="w-full" />
+                  <label for="password">Password</label>
+                </p-floatlabel>
+              </div>
               <small *ngIf="password?.hasError('required') && password?.touched" class="text-red-500">
                 Password is required
               </small>
@@ -104,7 +106,7 @@ import { AuthService } from '../../core/services/auth.service';
               [label]="loading ? 'Creating account...' : 'Create account'"
               [disabled]="form.invalid || loading"
               [loading]="loading"
-              styleClass="w-full" />
+              styleClass="w-full mt-2" />
 
             <div class="text-center text-sm text-slate-600">
               Already have an account?

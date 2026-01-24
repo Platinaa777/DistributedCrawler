@@ -16,3 +16,5 @@ coverage.out
 */node_modules/
 
 .playwright-mcp/*
+
+CLAUDE.md

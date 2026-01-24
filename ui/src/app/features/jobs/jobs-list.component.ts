@@ -42,6 +42,14 @@ import { JobFiltersComponent } from './components/job-filters.component';
             Users
           </p-button>
           <p-button
+            *ngIf="canManageUsers"
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="goToMonitoring()">
+            <i class="pi pi-chart-line mr-2"></i>
+            Monitoring
+          </p-button>
+          <p-button
             severity="primary"
             (onClick)="createJob()"
             [disabled]="!canCreateJobs">
@@ -307,6 +315,10 @@ export class JobsListComponent implements OnInit, OnDestroy {
 
   goToUsers(): void {
     this.router.navigate(['/users']);
+  }
+
+  goToMonitoring(): void {
+    this.router.navigate(['/workers']);
   }
 
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
