@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from './core/services/auth.service';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -16,7 +17,10 @@ export class AppComponent {
   title = 'ui';
   menuItems: MenuItem[] = [];
 
-  constructor(private authService: AuthService) {
+  constructor(
+    private authService: AuthService,
+    public themeService: ThemeService
+  ) {
     this.menuItems = [
       {
         label: 'Logout',
@@ -36,5 +40,9 @@ export class AppComponent {
 
   logout(): void {
     this.authService.logout().subscribe();
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggle();
   }
 }

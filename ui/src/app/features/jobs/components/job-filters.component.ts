@@ -26,10 +26,10 @@ import { JobListFilter } from '../../../core/services/api/crawler-api.service';
     InputIconModule
   ],
   template: `
-    <div class="filter-container flex flex-wrap gap-4 items-end p-4 bg-gray-50 rounded-lg mb-4">
+    <div class="filter-container flex flex-wrap gap-4 items-end p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mb-4 border border-gray-200 dark:border-gray-700">
       <!-- Name Search -->
       <div class="flex-1 min-w-48">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Search by name</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search by name</label>
         <p-iconfield>
           <p-inputicon styleClass="pi pi-search" />
           <input
@@ -42,7 +42,7 @@ import { JobListFilter } from '../../../core/services/api/crawler-api.service';
 
       <!-- Status Filter -->
       <div class="w-40">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
         <p-select
           [options]="statusOptions"
           [formControl]="filterForm.controls.status"
@@ -52,7 +52,7 @@ import { JobListFilter } from '../../../core/services/api/crawler-api.service';
 
       <!-- Date Range -->
       <div class="w-40">
-        <label class="block text-sm font-medium text-gray-700 mb-1">From date</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From date</label>
         <p-datepicker
           [formControl]="filterForm.controls.createdFrom"
           [showIcon]="true"
@@ -62,7 +62,7 @@ import { JobListFilter } from '../../../core/services/api/crawler-api.service';
       </div>
 
       <div class="w-40">
-        <label class="block text-sm font-medium text-gray-700 mb-1">To date</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To date</label>
         <p-datepicker
           [formControl]="filterForm.controls.createdTo"
           [showIcon]="true"
@@ -84,11 +84,6 @@ import { JobListFilter } from '../../../core/services/api/crawler-api.service';
   styles: [`
     :host {
       display: block;
-    }
-
-    .filter-container {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
     }
   `]
 })

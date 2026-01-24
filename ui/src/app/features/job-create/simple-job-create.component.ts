@@ -61,7 +61,7 @@ interface SimpleJobFormValue {
             <i class="pi pi-arrow-left mr-2"></i>
             Back to Jobs
           </p-button>
-          <h1 class="text-2xl font-semibold">Simple Crawl Job</h1>
+          <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Simple Crawl Job</h1>
         </div>
         <div class="flex items-center gap-2">
           <p-button
@@ -77,12 +77,12 @@ interface SimpleJobFormValue {
       <p-card styleClass="mb-6">
         <ng-template pTemplate="header">
           <div class="p-4 pb-0">
-            <h2 class="text-lg font-semibold">Job Basics</h2>
-            <p class="text-sm text-gray-500">Minimal settings to register a crawl job.</p>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Job Basics</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Minimal settings to register a crawl job.</p>
           </div>
         </ng-template>
         <div class="p-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
           <input pInputText formControlName="name" placeholder="Example crawl job" class="w-full" />
           <small *ngIf="jobForm.get('name')?.hasError('required')" class="text-red-500">
             Name is required
@@ -132,11 +132,11 @@ interface SimpleJobFormValue {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Max Depth</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Depth</label>
               <p-inputNumber formControlName="max_depth" [min]="0" styleClass="w-full"></p-inputNumber>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">RPS</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">RPS</label>
               <p-inputNumber formControlName="rps" [min]="0.1" [step]="0.1" mode="decimal" styleClass="w-full"></p-inputNumber>
             </div>
           </div>
@@ -184,15 +184,15 @@ interface SimpleJobFormValue {
           <div [formGroup]="retriesGroup" class="space-y-4">
             <p class="text-sm font-semibold">Retry Policy</p>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Max Attempts</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Attempts</label>
               <p-inputNumber formControlName="max_attempts" [min]="0" styleClass="w-full"></p-inputNumber>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Backoff Initial (ms)</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Backoff Initial (ms)</label>
               <p-inputNumber formControlName="backoff_initial_ms" [min]="0" styleClass="w-full"></p-inputNumber>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Backoff Multiplier</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Backoff Multiplier</label>
               <p-inputNumber formControlName="backoff_multiplier" [min]="0" mode="decimal" styleClass="w-full"></p-inputNumber>
             </div>
           </div>
@@ -200,7 +200,7 @@ interface SimpleJobFormValue {
           <div [formGroup]="scheduleGroup" class="space-y-4">
             <p class="text-sm font-semibold">Schedule</p>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Cron</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cron</label>
               <input pInputText formControlName="cron" placeholder="0 9 * * 1" class="w-full" />
             </div>
           </div>
@@ -208,19 +208,19 @@ interface SimpleJobFormValue {
           <div [formGroup]="authGroup" class="space-y-4">
             <p class="text-sm font-semibold">Auth (optional)</p>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Basic User</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic User</label>
               <input pInputText formControlName="basic_user" class="w-full" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Basic Password</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic Password</label>
               <input pInputText type="password" formControlName="basic_password" class="w-full" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Bearer Token</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bearer Token</label>
               <input pInputText formControlName="bearer_token" class="w-full" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Cookie</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cookie</label>
               <input pInputText formControlName="cookie" class="w-full" />
             </div>
           </div>
@@ -241,7 +241,7 @@ interface SimpleJobFormValue {
             <div
               *ngFor="let field of extractionFields.controls; let i = index"
               [formGroupName]="i"
-              class="border rounded p-4 space-y-3"
+              class="border border-gray-200 dark:border-gray-700 rounded p-4 space-y-3"
             >
               <div class="flex items-center justify-between">
                 <div class="font-semibold">Field #{{ i + 1 }}</div>
@@ -252,38 +252,38 @@ interface SimpleJobFormValue {
 
               <div class="grid grid-cols-1 gap-3">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                   <input pInputText formControlName="name" class="w-full" />
                 </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
                   <p-select [options]="fieldTypeSelectOptions" optionLabel="label" optionValue="value" formControlName="type" styleClass="w-full"></p-select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Attribute</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Attribute</label>
                   <p-select [options]="attributeSelectOptions" optionLabel="label" optionValue="value" formControlName="attribute" styleClass="w-full"></p-select>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 gap-3 items-center">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Selector</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selector</label>
                   <input pInputText formControlName="selector" class="w-full" />
                 </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Index</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Index</label>
                   <p-inputNumber
                     formControlName="index"
                     [disabled]="!field.get('multiple')?.value"
                     styleClass="w-full">
                   </p-inputNumber>
-                  <small class="text-xs text-gray-500">Works only with Multiple: true</small>
+                  <small class="text-xs text-gray-500 dark:text-gray-400">Works only with Multiple: true</small>
                 </div>
                 <div class="flex items-center gap-2 mt-6">
                   <p-checkbox
@@ -292,11 +292,11 @@ interface SimpleJobFormValue {
                     inputId="multiple-{{ i }}"
                     (onChange)="handleMultipleToggle(i)">
                   </p-checkbox>
-                  <label for="multiple-{{ i }}" class="text-sm text-gray-700">Multiple</label>
+                  <label for="multiple-{{ i }}" class="text-sm text-gray-700 dark:text-gray-300">Multiple</label>
                 </div>
                 <div class="flex items-center gap-2 mt-6">
                   <p-checkbox formControlName="required" [binary]="true" inputId="required-{{ i }}"></p-checkbox>
-                  <label for="required-{{ i }}" class="text-sm text-gray-700">Required</label>
+                  <label for="required-{{ i }}" class="text-sm text-gray-700 dark:text-gray-300">Required</label>
                 </div>
               </div>
 
@@ -314,12 +314,12 @@ interface SimpleJobFormValue {
                   class="grid grid-cols-1 md:grid-cols-2 gap-2 items-center"
                 >
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Op</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Op</label>
                     <p-select [options]="transformOpSelectOptions" optionLabel="label" optionValue="value" formControlName="op" styleClass="w-full"></p-select>
                   </div>
                   <div class="flex items-center gap-2">
                     <div class="flex-1">
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Arg</label>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arg</label>
                       <input pInputText formControlName="arg" class="w-full" />
                     </div>
                     <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeTransform(i, tIdx)">
@@ -344,20 +344,20 @@ interface SimpleJobFormValue {
               <div
                 *ngFor="let metric of metrics.controls; let m = index"
                 [formGroupName]="m"
-                class="border rounded p-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-start"
+                class="border border-gray-200 dark:border-gray-700 rounded p-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-start"
               >
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                   <input pInputText formControlName="name" class="w-full" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Op</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Op</label>
                   <p-select [options]="metricOpSelectOptions" optionLabel="label" optionValue="value" formControlName="op" styleClass="w-full"></p-select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Input</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Input</label>
                   <p-select [options]="fieldNameSelectOptions" optionLabel="label" optionValue="value" formControlName="input" styleClass="w-full"></p-select>
-                  <small *ngIf="fieldNameOptions.length === 0" class="text-xs text-gray-500">Add a field first</small>
+                  <small *ngIf="fieldNameOptions.length === 0" class="text-xs text-gray-500 dark:text-gray-400">Add a field first</small>
                 </div>
                 <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeMetric(m)">
                   <i class="pi pi-trash"></i>
@@ -380,30 +380,30 @@ interface SimpleJobFormValue {
               <div
                 *ngFor="let pag of pagination.controls; let p = index"
                 [formGroupName]="p"
-                class="border rounded p-3 grid grid-cols-1 md:grid-cols-4 gap-3 items-start"
+                class="border border-gray-200 dark:border-gray-700 rounded p-3 grid grid-cols-1 md:grid-cols-4 gap-3 items-start"
               >
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                   <input pInputText formControlName="name" placeholder="next_page" class="w-full" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Selector</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selector</label>
                   <input pInputText formControlName="selector" placeholder="a.next-page" class="w-full" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Attribute</label>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Attribute</label>
                   <p-select [options]="paginationAttributeSelectOptions" optionLabel="label" optionValue="value" formControlName="attribute" styleClass="w-full"></p-select>
                 </div>
                 <div class="flex items-center gap-2 mt-6">
                   <p-checkbox formControlName="multiple" [binary]="true" inputId="pagination-multiple-{{ p }}"></p-checkbox>
-                  <label for="pagination-multiple-{{ p }}" class="text-sm text-gray-700">Multiple</label>
+                  <label for="pagination-multiple-{{ p }}" class="text-sm text-gray-700 dark:text-gray-300">Multiple</label>
                   <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removePagination(p)">
                     <i class="pi pi-trash"></i>
                   </p-button>
                 </div>
               </div>
             </div>
-            <div *ngIf="pagination.length === 0" class="text-gray-500 text-sm mt-2">
+            <div *ngIf="pagination.length === 0" class="text-gray-500 dark:text-gray-400 text-sm mt-2">
               No pagination selectors configured. Add pagination to follow next-page links.
             </div>
           </div>
@@ -413,11 +413,11 @@ interface SimpleJobFormValue {
       <p-card>
         <ng-template pTemplate="header">
           <div class="p-4 pb-0">
-            <h3 class="text-base font-semibold">Preview Payload</h3>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Preview Payload</h3>
           </div>
         </ng-template>
         <div class="p-4">
-          <pre class="bg-gray-100 p-3 rounded text-xs overflow-auto">{{ previewJson }}</pre>
+          <pre class="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs overflow-auto text-gray-900 dark:text-gray-100">{{ previewJson }}</pre>
           <div *ngIf="error" class="text-red-600 text-sm flex items-center gap-2 mt-2">
             <i class="pi pi-times-circle"></i>
             {{ error }}

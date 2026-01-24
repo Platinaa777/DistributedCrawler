@@ -29,8 +29,8 @@ import { JobFiltersComponent } from './components/job-filters.component';
     <div class="container mx-auto p-6">
       <div class="flex justify-between items-center mb-6">
         <div>
-          <h1 class="text-3xl font-bold">Crawl Jobs</h1>
-          <p class="text-sm text-gray-500 mt-1">Track status, inspect configs, and launch new crawls.</p>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Crawl Jobs</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track status, inspect configs, and launch new crawls.</p>
         </div>
         <div class="flex items-center gap-3">
           <p-button
@@ -122,25 +122,25 @@ import { JobFiltersComponent } from './components/job-filters.component';
                     <div class="detail-title">Job Config (auth hidden)</div>
                   </div>
                   <div class="pagination-info mb-3" *ngIf="job.job_config?.extraction_spec?.pagination?.length">
-                    <p class="text-sm font-semibold mb-2">Pagination Selectors</p>
+                    <p class="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Pagination Selectors</p>
                     <div class="flex flex-wrap gap-2">
-                      <div *ngFor="let pag of job.job_config?.extraction_spec?.pagination" class="bg-white rounded px-3 py-1 text-sm border">
+                      <div *ngFor="let pag of job.job_config?.extraction_spec?.pagination" class="bg-white dark:bg-gray-700 rounded px-3 py-1 text-sm border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                         <span *ngIf="pag.name" class="font-medium mr-2">{{ pag.name }}:</span>
                         <code class="text-xs">{{ pag.selector }}</code>
-                        <span class="text-gray-500 ml-2">({{ pag.attribute || 'href' }})</span>
-                        <span *ngIf="pag.multiple" class="text-blue-600 ml-1">[multiple]</span>
+                        <span class="text-gray-500 dark:text-gray-400 ml-2">({{ pag.attribute || 'href' }})</span>
+                        <span *ngIf="pag.multiple" class="text-blue-600 dark:text-blue-400 ml-1">[multiple]</span>
                       </div>
                     </div>
                   </div>
                   <pre class="json-view" *ngIf="getJobConfigWithoutAuth(job) as config">{{ config | json }}</pre>
-                  <div class="text-gray-500" *ngIf="!job.job_config">No job configuration available.</div>
+                  <div class="text-gray-500 dark:text-gray-400" *ngIf="!job.job_config">No job configuration available.</div>
                 </div>
               </td>
             </tr>
           </ng-template>
           <ng-template #emptymessage>
             <tr>
-              <td colspan="5" class="text-center p-8 text-gray-500">
+              <td colspan="5" class="text-center p-8 text-gray-500 dark:text-gray-400">
                 <i class="pi pi-briefcase text-6xl block mb-4"></i>
                 <p>No jobs found.</p>
               </td>
@@ -173,6 +173,11 @@ import { JobFiltersComponent } from './components/job-filters.component';
       overflow: hidden;
     }
 
+    :host-context(.dark-mode) .detail-wrapper {
+      background: #1f2937;
+      border-top-color: #374151;
+    }
+
     .detail-header {
       display: flex;
       align-items: center;
@@ -184,6 +189,10 @@ import { JobFiltersComponent } from './components/job-filters.component';
     .detail-title {
       font-weight: 600;
       color: #111827;
+    }
+
+    :host-context(.dark-mode) .detail-title {
+      color: #f3f4f6;
     }
 
     .json-view {

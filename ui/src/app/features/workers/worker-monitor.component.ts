@@ -26,8 +26,8 @@ import { WorkerInfo } from '../../core/models';
     <div class="container mx-auto p-6">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-3xl font-bold">Worker Health</h1>
-          <p class="text-sm text-gray-500 mt-1">Live heartbeats and capacity signals from the fleet</p>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Worker Health</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Live heartbeats and capacity signals from the fleet</p>
         </div>
         <div class="flex items-center gap-3">
           <p-button
@@ -49,20 +49,20 @@ import { WorkerInfo } from '../../core/models';
 
       <div class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <p-card styleClass="p-4">
-          <div class="text-sm text-gray-500">Total Workers</div>
-          <div class="text-2xl font-semibold mt-1">{{ workers.length }}</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">Total Workers</div>
+          <div class="text-2xl font-semibold mt-1 text-gray-900 dark:text-white">{{ workers.length }}</div>
         </p-card>
         <p-card styleClass="p-4">
-          <div class="text-sm text-gray-500">Active</div>
-          <div class="text-2xl font-semibold mt-1 text-green-600">{{ countByStatus('ACTIVE') }}</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">Active</div>
+          <div class="text-2xl font-semibold mt-1 text-green-600 dark:text-green-400">{{ countByStatus('ACTIVE') }}</div>
         </p-card>
         <p-card styleClass="p-4">
-          <div class="text-sm text-gray-500">Draining</div>
-          <div class="text-2xl font-semibold mt-1 text-amber-600">{{ countByStatus('DRAINING') }}</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">Draining</div>
+          <div class="text-2xl font-semibold mt-1 text-amber-600 dark:text-amber-400">{{ countByStatus('DRAINING') }}</div>
         </p-card>
         <p-card styleClass="p-4">
-          <div class="text-sm text-gray-500">Inactive</div>
-          <div class="text-2xl font-semibold mt-1 text-red-600">{{ countByStatus('INACTIVE') }}</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">Inactive</div>
+          <div class="text-2xl font-semibold mt-1 text-red-600 dark:text-red-400">{{ countByStatus('INACTIVE') }}</div>
         </p-card>
       </div>
 
@@ -101,7 +101,7 @@ import { WorkerInfo } from '../../core/models';
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="5" class="text-center p-8 text-gray-500">
+              <td colspan="5" class="text-center p-8 text-gray-500 dark:text-gray-400">
                 <i class="pi pi-chart-line text-6xl block mb-4"></i>
                 <p>No workers have reported heartbeats yet.</p>
               </td>

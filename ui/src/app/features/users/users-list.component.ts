@@ -29,8 +29,8 @@ import { User, UserRole } from '../../core/models';
     <div class="container mx-auto p-6">
       <div class="flex justify-between items-center mb-6">
         <div>
-          <h1 class="text-3xl font-bold">Users</h1>
-          <p class="text-sm text-gray-500 mt-1">Administrators can manage user roles (except their own).</p>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Users</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Administrators can manage user roles (except their own).</p>
         </div>
         <p-button
           [outlined]="true"
@@ -61,9 +61,9 @@ import { User, UserRole } from '../../core/models';
           </ng-template>
           <ng-template pTemplate="body" let-user>
             <tr>
-              <td>
+              <td class="text-gray-900 dark:text-white">
                 {{ user.email }}
-                <span *ngIf="isCurrentUser(user.id)" class="text-gray-500 text-sm ml-2">(You)</span>
+                <span *ngIf="isCurrentUser(user.id)" class="text-gray-500 dark:text-gray-400 text-sm ml-2">(You)</span>
               </td>
               <td>
                 <div class="flex items-center gap-2">
@@ -82,7 +82,7 @@ import { User, UserRole } from '../../core/models';
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="3" class="text-center p-8 text-gray-500">
+              <td colspan="3" class="text-center p-8 text-gray-500 dark:text-gray-400">
                 <i class="pi pi-user text-6xl block mb-4"></i>
                 <p>No users found.</p>
               </td>

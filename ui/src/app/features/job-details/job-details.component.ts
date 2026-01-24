@@ -55,45 +55,45 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
         <p-card styleClass="mb-6">
           <ng-template pTemplate="header">
             <div class="p-4 pb-0">
-              <h2 class="text-xl font-semibold">{{ job?.job_config?.name || 'Unnamed Job' }}</h2>
-              <p class="text-sm text-gray-500">Job ID: {{ job?.id }}</p>
+              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ job?.job_config?.name || 'Unnamed Job' }}</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Job ID: {{ job?.id }}</p>
             </div>
           </ng-template>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <p class="text-sm text-gray-600">Status</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Status</p>
               <p-tag [value]="job?.status || ''" [severity]="getStatusSeverity(job?.status || '')" />
             </div>
             <div>
-              <p class="text-sm text-gray-600">Created At</p>
-              <p>{{ job?.created_at | date:'medium' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Created At</p>
+              <p class="text-gray-900 dark:text-white">{{ job?.created_at | date:'medium' }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-600">Max Depth</p>
-              <p>{{ job?.job_config?.scopes?.max_depth || 'N/A' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Max Depth</p>
+              <p class="text-gray-900 dark:text-white">{{ job?.job_config?.scopes?.max_depth || 'N/A' }}</p>
             </div>
             <div>
-              <p class="text-sm text-gray-600">Rate Limit (RPS)</p>
-              <p>{{ job?.job_config?.rate_limit?.rps || 'N/A' }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Rate Limit (RPS)</p>
+              <p class="text-gray-900 dark:text-white">{{ job?.job_config?.rate_limit?.rps || 'N/A' }}</p>
             </div>
           </div>
 
           <div class="mt-4" *ngIf="job?.job_config?.seeds">
-            <p class="text-sm text-gray-600">Seed URLs</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Seed URLs</p>
             <div class="flex flex-wrap gap-2 mt-2">
               <p-tag *ngFor="let seed of job?.job_config?.seeds" [value]="seed.url" severity="secondary" />
             </div>
           </div>
 
           <div class="mt-4" *ngIf="job?.job_config?.extraction_spec?.pagination?.length">
-            <p class="text-sm text-gray-600">Pagination Selectors</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Pagination Selectors</p>
             <div class="mt-2 space-y-2">
-              <div *ngFor="let pag of job?.job_config?.extraction_spec?.pagination" class="bg-gray-50 rounded p-2 text-sm">
+              <div *ngFor="let pag of job?.job_config?.extraction_spec?.pagination" class="bg-gray-50 dark:bg-gray-700 rounded p-2 text-sm text-gray-900 dark:text-gray-100">
                 <div class="flex items-center gap-4">
                   <span *ngIf="pag.name" class="font-medium">{{ pag.name }}</span>
-                  <code class="bg-gray-200 px-2 py-1 rounded text-xs">{{ pag.selector }}</code>
-                  <span class="text-gray-500">attr: {{ pag.attribute || 'href' }}</span>
+                  <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{ pag.selector }}</code>
+                  <span class="text-gray-500 dark:text-gray-400">attr: {{ pag.attribute || 'href' }}</span>
                   <p-tag *ngIf="pag.multiple" value="multiple" severity="info" styleClass="text-xs" />
                 </div>
               </div>
@@ -103,10 +103,10 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
           <p-divider />
 
           <div>
-            <p class="text-sm text-gray-600">Export Results</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Export Results</p>
             <div class="flex flex-wrap items-center gap-2 mt-2">
               <p-tag [value]="job?.export_status || 'NOT_STARTED'" [severity]="getStatusSeverity(job?.export_status || 'NOT_STARTED')" />
-              <span *ngIf="job?.exported_at" class="text-sm text-gray-500">
+              <span *ngIf="job?.exported_at" class="text-sm text-gray-500 dark:text-gray-400">
                 Exported: {{ job?.exported_at | date:'short' }}
               </span>
               <p-button
@@ -147,7 +147,7 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
               [@expandCollapse]="configExpanded ? 'expanded' : 'collapsed'"
               [attr.aria-hidden]="!configExpanded">
               <pre class="json-view" *ngIf="getJobConfigWithoutAuth(job) as config">{{ config | json }}</pre>
-              <div class="text-gray-500" *ngIf="job && !job.job_config">No job configuration available.</div>
+              <div class="text-gray-500 dark:text-gray-400" *ngIf="job && !job.job_config">No job configuration available.</div>
             </div>
           </div>
         </p-card>
@@ -158,8 +158,8 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
             <div class="p-4 pb-0">
               <div class="flex items-center justify-between gap-4">
                 <div>
-                  <h2 class="text-xl font-semibold">Task Analytics</h2>
-                  <p class="text-sm text-gray-500">Status and depth distribution.</p>
+                  <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Task Analytics</h2>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Status and depth distribution.</p>
                 </div>
                 <p-button
                   [outlined]="true"
@@ -178,14 +178,14 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
             [attr.aria-hidden]="!analyticsExpanded">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div class="chart-card">
-                <h3 class="text-sm font-medium text-gray-600 mb-3">By Status</h3>
+                <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">By Status</h3>
                 <p-chart *ngIf="statusChartData"
                   type="doughnut"
                   [data]="statusChartData"
                   [options]="statusChartOptions"></p-chart>
               </div>
               <div class="chart-card">
-                <h3 class="text-sm font-medium text-gray-600 mb-3">By Depth</h3>
+                <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">By Depth</h3>
                 <p-chart *ngIf="depthChartData"
                   type="doughnut"
                   [data]="depthChartData"
@@ -199,7 +199,7 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
         <p-card>
           <ng-template pTemplate="header">
             <div class="p-4 pb-0">
-              <h2 class="text-xl font-semibold">Tasks ({{ tasks.length }})</h2>
+              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Tasks ({{ tasks.length }})</h2>
             </div>
           </ng-template>
 
@@ -223,7 +223,7 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
             <ng-template pTemplate="body" let-task>
               <tr>
                 <td class="truncate max-w-md">
-                  <a [href]="task.url" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+                  <a [href]="task.url" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
                     {{ task.url }}
                   </a>
                 </td>
@@ -272,7 +272,7 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
             </ng-template>
             <ng-template pTemplate="emptymessage">
               <tr>
-                <td colspan="6" class="text-center p-8 text-gray-500">
+                <td colspan="6" class="text-center p-8 text-gray-500 dark:text-gray-400">
                   <i class="pi pi-list text-6xl block mb-4"></i>
                   <p>No tasks found for this job.</p>
                 </td>
@@ -291,19 +291,19 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
         [breakpoints]="{'768px': '90vw'}">
         <div *ngIf="selectedErrorTask" class="space-y-4">
           <div>
-            <p class="text-sm text-gray-600 mb-1">Task ID</p>
-            <code class="text-sm bg-gray-100 px-2 py-1 rounded">{{ selectedErrorTask.id }}</code>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Task ID</p>
+            <code class="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-gray-100">{{ selectedErrorTask.id }}</code>
           </div>
           <div>
-            <p class="text-sm text-gray-600 mb-1">URL</p>
-            <a [href]="selectedErrorTask.url" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline text-sm break-all">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">URL</p>
+            <a [href]="selectedErrorTask.url" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline text-sm break-all">
               {{ selectedErrorTask.url }}
             </a>
           </div>
           <div>
-            <p class="text-sm text-gray-600 mb-1">Error Message</p>
-            <div class="bg-red-50 border border-red-200 rounded p-3">
-              <pre class="text-sm text-red-700 whitespace-pre-wrap break-words m-0">{{ selectedErrorTask.error_message }}</pre>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Error Message</p>
+            <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded p-3">
+              <pre class="text-sm text-red-700 dark:text-red-400 whitespace-pre-wrap break-words m-0">{{ selectedErrorTask.error_message }}</pre>
             </div>
           </div>
         </div>
@@ -323,6 +323,11 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
       background: #f8fafc;
       border-top: 1px solid #e5e7eb;
       overflow: hidden;
+    }
+
+    :host-context(.dark-mode) .detail-wrapper {
+      background: #1f2937;
+      border-top-color: #374151;
     }
 
     .json-view {

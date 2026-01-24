@@ -15,7 +15,20 @@
 
 /* Global styles */
 html, body { height: 100%; }
-body { margin: 0; font-family: Inter, "Helvetica Neue", sans-serif; }
+body {
+  margin: 0;
+  font-family: Inter, "Helvetica Neue", sans-serif;
+  @apply bg-gray-50 text-gray-900;
+}
+
+.dark-mode body {
+  @apply bg-gray-900 text-gray-100;
+}
+
+/* Smooth theme transitions */
+html {
+  @apply transition-colors duration-200;
+}
 
 /* Status utility classes for tags */
 .status-completed { --p-tag-success-background: var(--p-green-500); }
@@ -37,7 +50,33 @@ body { margin: 0; font-family: Inter, "Helvetica Neue", sans-serif; }
   @apply bg-gray-50;
 }
 
+.dark-mode .p-datatable .p-datatable-tbody > tr:hover {
+  @apply bg-gray-800;
+}
+
 /* Form field spacing */
 .p-field {
   @apply mb-4;
+}
+
+/* Dark mode scrollbar styling */
+.dark-mode {
+  color-scheme: dark;
+}
+
+.dark-mode ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-mode ::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 rounded;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
 }
