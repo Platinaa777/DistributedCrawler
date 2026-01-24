@@ -77,47 +77,49 @@ import { JobFiltersComponent } from './components/job-filters.component';
           dataKey="id"
           [expandedRowKeys]="expandedRows"
           (onRowExpand)="onRowExpand($event)"
-          (onRowCollapse)="onRowCollapse()"
+          (onRowCollapse)="onRowCollapse($event)"
           [tableStyle]="{'min-width': '60rem'}">
-          <ng-template pTemplate="header">
+          <ng-template #header>
             <tr>
               <th style="width: 3rem"></th>
               <th>Name</th>
               <th>Status</th>
               <th>Created At</th>
+              <th style="width: 8rem"></th>
             </tr>
           </ng-template>
-          <ng-template pTemplate="body" let-job let-expanded="expanded">
+          <ng-template #body let-job let-expanded="expanded">
             <tr>
               <td>
-                <button
+                <p-button
                   type="button"
-                  pButton
                   [pRowToggler]="job"
-                  [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                  class="p-button-text p-button-rounded">
-                </button>
+                  [text]="true"
+                  [rounded]="true"
+                  [plain]="true"
+                  [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
               </td>
               <td>{{ job.job_config?.name || 'Unnamed Job' }}</td>
               <td>
                 <p-tag [value]="job.status" [severity]="getStatusSeverity(job.status)" />
               </td>
               <td>{{ job.created_at | date:'short' }}</td>
+              <td class="text-right">
+                <p-button
+                  [outlined]="true"
+                  severity="secondary"
+                  (onClick)="viewJob(job)">
+                  <i class="pi pi-external-link"></i>
+                </p-button>
+              </td>
             </tr>
           </ng-template>
-          <ng-template pTemplate="rowexpansion" let-job>
+          <ng-template #expandedrow let-job>
             <tr>
-              <td [attr.colspan]="4">
+              <td [attr.colspan]="5">
                 <div class="detail-wrapper">
                   <div class="detail-header">
                     <div class="detail-title">Job Config (auth hidden)</div>
-                    <p-button
-                      [outlined]="true"
-                      severity="secondary"
-                      (onClick)="viewJob(job)">
-                      <i class="pi pi-external-link mr-2"></i>
-                      Open Job
-                    </p-button>
                   </div>
                   <div class="pagination-info mb-3" *ngIf="job.job_config?.extraction_spec?.pagination?.length">
                     <p class="text-sm font-semibold mb-2">Pagination Selectors</p>
@@ -136,9 +138,9 @@ import { JobFiltersComponent } from './components/job-filters.component';
               </td>
             </tr>
           </ng-template>
-          <ng-template pTemplate="emptymessage">
+          <ng-template #emptymessage>
             <tr>
-              <td colspan="4" class="text-center p-8 text-gray-500">
+              <td colspan="5" class="text-center p-8 text-gray-500">
                 <i class="pi pi-briefcase text-6xl block mb-4"></i>
                 <p>No jobs found.</p>
               </td>
@@ -283,7 +285,7 @@ export class JobsListComponent implements OnInit, OnDestroy {
     this.expandedRows = { [event.data.id]: true };
   }
 
-  onRowCollapse(): void {
+  onRowCollapse(event: { data: CrawlJob }): void {
     this.expandedRows = {};
   }
 

@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -28,13 +29,22 @@ import { WorkerInfo } from '../../core/models';
           <h1 class="text-3xl font-bold">Worker Health</h1>
           <p class="text-sm text-gray-500 mt-1">Live heartbeats and capacity signals from the fleet</p>
         </div>
-        <p-button
-          [outlined]="true"
-          severity="secondary"
-          (onClick)="refresh()">
-          <i class="pi pi-refresh mr-2"></i>
-          Refresh
-        </p-button>
+        <div class="flex items-center gap-3">
+          <p-button
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="goBack()">
+            <i class="pi pi-arrow-left mr-2"></i>
+            Back to Jobs
+          </p-button>
+          <p-button
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="refresh()">
+            <i class="pi pi-refresh mr-2"></i>
+            Refresh
+          </p-button>
+        </div>
       </div>
 
       <div class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -72,7 +82,6 @@ import { WorkerInfo } from '../../core/models';
               <th>Worker ID</th>
               <th>Type</th>
               <th>Status</th>
-              <th>Active Tasks</th>
               <th>Last Heartbeat</th>
               <th>Uptime</th>
             </tr>
@@ -86,14 +95,13 @@ import { WorkerInfo } from '../../core/models';
                   [value]="normalizeStatus(worker.status)"
                   [severity]="getStatusSeverity(worker.status)" />
               </td>
-              <td>{{ worker.active_tasks }}</td>
               <td>{{ worker.last_heartbeat_at ? (worker.last_heartbeat_at | date:'short') : '—' }}</td>
               <td>{{ formatUptime(worker.uptime) }}</td>
             </tr>
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="6" class="text-center p-8 text-gray-500">
+              <td colspan="5" class="text-center p-8 text-gray-500">
                 <i class="pi pi-chart-line text-6xl block mb-4"></i>
                 <p>No workers have reported heartbeats yet.</p>
               </td>
@@ -116,7 +124,10 @@ export class WorkerMonitorComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
 
-  constructor(private crawlerApi: CrawlerApiService) {}
+  constructor(
+    private crawlerApi: CrawlerApiService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.startPolling();
@@ -129,6 +140,10 @@ export class WorkerMonitorComponent implements OnInit, OnDestroy {
 
   refresh(): void {
     this.fetchWorkers();
+  }
+
+  goBack(): void {
+    this.router.navigate(['/jobs']);
   }
 
   private startPolling(): void {

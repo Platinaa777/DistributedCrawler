@@ -410,7 +410,7 @@ func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID v
 
 // ListEligibleForExport finds jobs that are fully finished and not yet exported (Part B - ExportWorker)
 func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit int) ([]*models.CrawlJob, error) {
-	// A job is eligible if: all tasks are Parsed or Completed AND export_status = 'NOT_STARTED'
+	// A job is eligible if: all tasks are in a terminal state (Parsed, Completed, Failed, Skipped) AND export_status = 'NOT_STARTED'
 	builder := sq.Select(
 		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
@@ -426,9 +426,11 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 		Where(sq.And{
 			sq.NotEq{"j." + exportStatusColumn: models.ExportStatusCompleted.String()},
 			sq.Expr(
-				"NOT EXISTS (SELECT 1 FROM "+taskTableName+" t WHERE t."+taskJobIDColumn+" = j."+idColumn+" AND t."+taskStatusColumn+" NOT IN (?, ?))",
+				"NOT EXISTS (SELECT 1 FROM "+taskTableName+" t WHERE t."+taskJobIDColumn+" = j."+idColumn+" AND t."+taskStatusColumn+" NOT IN (?, ?, ?, ?))",
 				models.TaskStatusParsed.String(),
 				models.TaskStatusCompleted.String(),
+				models.TaskStatusFailed.String(),
+				models.TaskStatusSkipped.String(),
 			),
 		}).
 		OrderBy("j." + completedAtColumn + " ASC").

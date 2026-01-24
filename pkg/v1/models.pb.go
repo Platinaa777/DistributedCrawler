@@ -1149,6 +1149,7 @@ type CrawlTask struct {
 	BodyHash        string                 `protobuf:"bytes,9,opt,name=body_hash,proto3" json:"body_hash,omitempty"`
 	MinioObjectKey  string                 `protobuf:"bytes,10,opt,name=minio_object_key,proto3" json:"minio_object_key,omitempty"`
 	ResultObjectKey *string                `protobuf:"bytes,11,opt,name=result_object_key,proto3,oneof" json:"result_object_key,omitempty"`
+	ErrorMessage    *string                `protobuf:"bytes,12,opt,name=error_message,proto3,oneof" json:"error_message,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1256,6 +1257,13 @@ func (x *CrawlTask) GetMinioObjectKey() string {
 func (x *CrawlTask) GetResultObjectKey() string {
 	if x != nil && x.ResultObjectKey != nil {
 		return *x.ResultObjectKey
+	}
+	return ""
+}
+
+func (x *CrawlTask) GetErrorMessage() string {
+	if x != nil && x.ErrorMessage != nil {
+		return *x.ErrorMessage
 	}
 	return ""
 }
@@ -3623,7 +3631,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"\r_completed_atB\x12\n" +
 	"\x10_export_json_keyB\x11\n" +
 	"\x0f_export_csv_keyB\x0e\n" +
-	"\f_exported_at\"\xaa\x03\n" +
+	"\f_exported_at\"\xe7\x03\n" +
 	"\tCrawlTask\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x06job_id\x12+\n" +
@@ -3636,11 +3644,13 @@ const file_v1_models_proto_rawDesc = "" +
 	"\tbody_hash\x18\t \x01(\tR\tbody_hash\x12*\n" +
 	"\x10minio_object_key\x18\n" +
 	" \x01(\tR\x10minio_object_key\x121\n" +
-	"\x11result_object_key\x18\v \x01(\tH\x02R\x11result_object_key\x88\x01\x01B\x06\n" +
+	"\x11result_object_key\x18\v \x01(\tH\x02R\x11result_object_key\x88\x01\x01\x12)\n" +
+	"\rerror_message\x18\f \x01(\tH\x03R\rerror_message\x88\x01\x01B\x06\n" +
 	"\x04_jobB\f\n" +
 	"\n" +
 	"_final_urlB\x14\n" +
-	"\x12_result_object_key\"\xff\x01\n" +
+	"\x12_result_object_keyB\x10\n" +
+	"\x0e_error_message\"\xff\x01\n" +
 	"\rJobListFilter\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tH\x00R\x04name\x88\x01\x01\x12\x1b\n" +
 	"\x06status\x18\x02 \x01(\tH\x01R\x06status\x88\x01\x01\x12C\n" +

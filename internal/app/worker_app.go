@@ -487,7 +487,6 @@ func (a *WorkerApp) initMonitor() {
 		a.workerID,
 		string(a.workerType),
 		a.startedAt,
-		a.activeTasksCount,
 		a.currentStatus,
 		a.beginDrain,
 		a.forceKill,

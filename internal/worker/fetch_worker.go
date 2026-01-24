@@ -131,8 +131,10 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 			zap.Error(err),
 		)
 
-		// Mark task as failed
+		// Mark task as failed with error message
 		task.Status = models.TaskStatusFailed
+		errMsg := fmt.Sprintf("scope validation failed: %v", err)
+		task.ErrorMessage = &errMsg
 		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
 			w.logger.Error("Failed to update task status to failed",
 				zap.String("task_id", taskMsg.TaskID),
@@ -166,8 +168,10 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 			zap.String("url", task.URL),
 		)
 
-		// Mark task as failed due to robots.txt
+		// Mark task as failed due to robots.txt with error message
 		task.Status = models.TaskStatusFailed
+		errMsg := "URL disallowed by robots.txt"
+		task.ErrorMessage = &errMsg
 		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
 			w.logger.Error("Failed to update task status to failed",
 				zap.String("task_id", taskMsg.TaskID),
@@ -271,6 +275,8 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		// Mark task as failed for both permanent errors and exhausted retries
 		if isPermanent || retriesExhausted {
 			task.Status = models.TaskStatusFailed
+			errMsg := fmt.Sprintf("fetch failed: %v", err)
+			task.ErrorMessage = &errMsg
 			if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
 				w.logger.Error("Failed to update task status to failed",
 					zap.String("task_id", taskMsg.TaskID),
@@ -299,6 +305,40 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 
 		// For transient errors that haven't exhausted retries, return error to trigger requeue/retry
 		return fmt.Errorf("failed to fetch page: %w", err)
+	}
+
+	// Check for duplicate content (deduplication)
+	isDuplicate, err := w.taskRepo.ExistsByJobIDAndHashExcluding(ctx, task.JobID, fetchResult.BodyHash, task.ID)
+	if err != nil {
+		w.logger.Error("Failed to check for duplicate content",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("body_hash", fetchResult.BodyHash),
+			zap.Error(err),
+		)
+		return fmt.Errorf("failed to check for duplicate content: %w", err)
+	}
+
+	if isDuplicate {
+		w.logger.Info("Duplicate content detected, skipping task",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+			zap.String("body_hash", fetchResult.BodyHash),
+		)
+
+		// Mark task as skipped due to duplicate content
+		task.Status = models.TaskStatusSkipped
+		errMsg := fmt.Sprintf("duplicate content (body_hash: %s)", fetchResult.BodyHash)
+		task.ErrorMessage = &errMsg
+		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
+			w.logger.Error("Failed to update task status to skipped",
+				zap.String("task_id", taskMsg.TaskID),
+				zap.Error(updateErr),
+			)
+			return fmt.Errorf("failed to update task status: %w", updateErr)
+		}
+
+		// Task processed successfully (marked as skipped)
+		return nil
 	}
 
 	// Generate MinIO object key

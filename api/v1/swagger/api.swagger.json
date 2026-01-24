@@ -848,6 +848,9 @@
         },
         "result_object_key": {
           "type": "string"
+        },
+        "error_message": {
+          "type": "string"
         }
       },
       "title": "CrawlTask represents a single crawl task within a job"

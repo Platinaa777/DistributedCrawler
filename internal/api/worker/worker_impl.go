@@ -108,7 +108,6 @@ func (i *WorkerImplementation) ListWorkers(ctx context.Context, _ *crawlergrpc.L
 			WorkerType:      worker.WorkerType,
 			Status:          toProtoStatus(worker.Status),
 			LastHeartbeatAt: timestamppb.New(worker.LastHeartbeatAt),
-			ActiveTasks:     worker.ActiveTasks,
 			Uptime:          durationpb.New(worker.Uptime),
 		})
 	}
@@ -164,12 +163,11 @@ func (i *WorkerImplementation) ForceKillWorker(ctx context.Context, req *crawler
 
 func (i *WorkerImplementation) handleHeartbeat(heartbeat *crawlergrpc.WorkerHeartbeat) {
 	info := workerhealth.HeartbeatInfo{
-		WorkerID:    heartbeat.GetWorkerId(),
-		WorkerType:  heartbeat.GetWorkerType(),
-		Status:      fromProtoStatus(heartbeat.GetStatus()),
-		ActiveTasks: heartbeat.GetActiveTasks(),
-		Timestamp:   timestampOrNow(heartbeat.GetTimestamp()),
-		StartedAt:   timestampOrZero(heartbeat.GetStartedAt()),
+		WorkerID:   heartbeat.GetWorkerId(),
+		WorkerType: heartbeat.GetWorkerType(),
+		Status:     fromProtoStatus(heartbeat.GetStatus()),
+		Timestamp:  timestampOrNow(heartbeat.GetTimestamp()),
+		StartedAt:  timestampOrZero(heartbeat.GetStartedAt()),
 	}
 
 	i.registry.UpdateHeartbeat(info)

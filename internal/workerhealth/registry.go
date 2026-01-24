@@ -23,12 +23,11 @@ const (
 )
 
 type HeartbeatInfo struct {
-	WorkerID    string
-	WorkerType  string
-	Status      Status
-	ActiveTasks int32
-	Timestamp   time.Time
-	StartedAt   time.Time
+	WorkerID   string
+	WorkerType string
+	Status     Status
+	Timestamp  time.Time
+	StartedAt  time.Time
 }
 
 type WorkerRecord struct {
@@ -36,7 +35,6 @@ type WorkerRecord struct {
 	WorkerType      string
 	Status          Status
 	LastHeartbeatAt time.Time
-	ActiveTasks     int32
 	StartedAt       time.Time
 	LastStatusAt    time.Time
 }
@@ -58,14 +56,16 @@ type Registry struct {
 	streams           map[string]chan Command
 	pendingCommands   map[string][]Command
 	inactiveThreshold time.Duration
+	cleanupDelay      time.Duration
 }
 
-func NewRegistry(inactiveThreshold time.Duration) *Registry {
+func NewRegistry(inactiveThreshold time.Duration, cleanupDelay time.Duration) *Registry {
 	return &Registry{
 		workers:           make(map[string]*WorkerRecord),
 		streams:           make(map[string]chan Command),
 		pendingCommands:   make(map[string][]Command),
 		inactiveThreshold: inactiveThreshold,
+		cleanupDelay:      cleanupDelay,
 	}
 }
 
@@ -88,7 +88,6 @@ func (r *Registry) UpdateHeartbeat(info HeartbeatInfo) {
 			WorkerType:      info.WorkerType,
 			Status:          status,
 			LastHeartbeatAt: now,
-			ActiveTasks:     info.ActiveTasks,
 			StartedAt:       safeTime(info.StartedAt, now),
 			LastStatusAt:    now,
 		}
@@ -97,7 +96,6 @@ func (r *Registry) UpdateHeartbeat(info HeartbeatInfo) {
 
 	record.WorkerType = firstNonEmpty(info.WorkerType, record.WorkerType)
 	record.LastHeartbeatAt = now
-	record.ActiveTasks = info.ActiveTasks
 	if !info.StartedAt.IsZero() {
 		record.StartedAt = info.StartedAt
 	}
@@ -165,6 +163,7 @@ func (r *Registry) List(now time.Time) []WorkerSnapshot {
 
 	r.mu.Lock()
 	r.markInactiveLocked(now)
+	r.cleanupInactiveLocked(now)
 	workers := make([]WorkerSnapshot, 0, len(r.workers))
 	for _, worker := range r.workers {
 		workers = append(workers, WorkerSnapshot{
@@ -211,7 +210,6 @@ func (r *Registry) ensureWorkerLocked(workerID string) *WorkerRecord {
 		WorkerID:        workerID,
 		Status:          StatusUnknown,
 		LastHeartbeatAt: time.Time{},
-		ActiveTasks:     0,
 		StartedAt:       now,
 		LastStatusAt:    now,
 	}
@@ -240,6 +238,26 @@ func (r *Registry) markInactiveLocked(now time.Time) {
 	}
 }
 
+func (r *Registry) cleanupInactiveLocked(now time.Time) {
+	if r.cleanupDelay == 0 {
+		return
+	}
+
+	for workerID, worker := range r.workers {
+		if worker.Status != StatusInactive && worker.Status != StatusDead {
+			continue
+		}
+		if now.Sub(worker.LastStatusAt) > r.cleanupDelay {
+			delete(r.workers, workerID)
+			delete(r.pendingCommands, workerID)
+			if ch, ok := r.streams[workerID]; ok {
+				close(ch)
+				delete(r.streams, workerID)
+			}
+		}
+	}
+}
+
 func normalizeStatus(status Status) Status {
 	switch status {
 	case StatusActive, StatusInactive, StatusDraining, StatusDead:
@@ -255,6 +273,12 @@ func uptimeFor(worker *WorkerRecord, now time.Time) time.Duration {
 	}
 	if now.Before(worker.StartedAt) {
 		return 0
+	}
+	// For inactive or dead workers, calculate uptime until last heartbeat
+	if worker.Status == StatusInactive || worker.Status == StatusDead {
+		if !worker.LastHeartbeatAt.IsZero() && worker.LastHeartbeatAt.After(worker.StartedAt) {
+			return worker.LastHeartbeatAt.Sub(worker.StartedAt)
+		}
 	}
 	return now.Sub(worker.StartedAt)
 }

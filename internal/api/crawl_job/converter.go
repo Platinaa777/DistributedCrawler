@@ -235,6 +235,10 @@ func ToProtoCrawlTask(task *models.CrawlTask) *crawlergrpc.CrawlTask {
 		protoTask.ResultObjectKey = task.ResultObjectKey
 	}
 
+	if task.ErrorMessage != nil {
+		protoTask.ErrorMessage = task.ErrorMessage
+	}
+
 	return protoTask
 }
 

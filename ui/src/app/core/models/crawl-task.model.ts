@@ -12,6 +12,7 @@ export interface CrawlTask {
   body_hash: string;
   minio_object_key: string;
   result_object_key?: string;
+  error_message?: string;
 }
 
 export type FileType = 'pages' | 'result';

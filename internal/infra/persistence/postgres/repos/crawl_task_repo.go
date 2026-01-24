@@ -30,6 +30,9 @@ const (
 	taskResultContentTypeColumn = "result_content_type"
 	taskResultSizeBytesColumn   = "result_size_bytes"
 	taskResultCreatedAtColumn   = "result_created_at"
+
+	// Error message column
+	taskErrorMessageColumn = "error_message"
 )
 
 type crawlTaskRepository struct {
@@ -49,11 +52,13 @@ func (c *crawlTaskRepository) Create(ctx context.Context, entity models.CrawlTas
 			taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
 			taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
 			taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
+			taskErrorMessageColumn,
 		).
 		Values(
 			dbEntity.ID, dbEntity.JobID, dbEntity.URL, dbEntity.FinalURL, dbEntity.Status, dbEntity.EnqueuedAt,
 			dbEntity.Depth, dbEntity.BodyHash, dbEntity.MinioObjectKey,
 			dbEntity.ResultObjectKey, dbEntity.ResultContentType, dbEntity.ResultSizeBytes, dbEntity.ResultCreatedAt,
+			dbEntity.ErrorMessage,
 		).
 		Suffix("RETURNING id")
 
@@ -87,6 +92,7 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 			taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
 			taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
 			taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
+			taskErrorMessageColumn,
 		)
 
 	for _, entity := range entities {
@@ -95,6 +101,7 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 			dbEntity.ID, dbEntity.JobID, dbEntity.URL, dbEntity.FinalURL, dbEntity.Status, dbEntity.EnqueuedAt,
 			dbEntity.Depth, dbEntity.BodyHash, dbEntity.MinioObjectKey,
 			dbEntity.ResultObjectKey, dbEntity.ResultContentType, dbEntity.ResultSizeBytes, dbEntity.ResultCreatedAt,
+			dbEntity.ErrorMessage,
 		)
 	}
 
@@ -115,7 +122,7 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTaskID) (*models.CrawlTask, error) {
 	builder := sq.Select(
 		"t.id", "t.job_id", "t.url", "t.final_url", "t.status", "t.enqueued_at", "t.depth", "t.body_hash", "t.minio_object_key",
-		"t.result_object_key", "t.result_content_type", "t.result_size_bytes", "t.result_created_at",
+		"t.result_object_key", "t.result_content_type", "t.result_size_bytes", "t.result_created_at", "t.error_message",
 		"j.id", "j.job_config_id", "j.status", "j.created_at", "j.completed_at",
 	).
 		PlaceholderFormat(sq.Dollar).
@@ -151,6 +158,7 @@ func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTask
 		&taskSnapshot.ResultContentType,
 		&taskSnapshot.ResultSizeBytes,
 		&taskSnapshot.ResultCreatedAt,
+		&taskSnapshot.ErrorMessage,
 		&jobSnapshot.ID,
 		&jobSnapshot.JobConfigID,
 		&jobSnapshot.Status,
@@ -184,6 +192,7 @@ func (c *crawlTaskRepository) Update(ctx context.Context, entity models.CrawlTas
 		Set(taskResultContentTypeColumn, dbEntity.ResultContentType).
 		Set(taskResultSizeBytesColumn, dbEntity.ResultSizeBytes).
 		Set(taskResultCreatedAtColumn, dbEntity.ResultCreatedAt).
+		Set(taskErrorMessageColumn, dbEntity.ErrorMessage).
 		Where(sq.Eq{taskIDColumn: dbEntity.ID})
 
 	query, args, err := builder.ToSql()
@@ -205,6 +214,7 @@ func (c *crawlTaskRepository) ListByJob(ctx context.Context, jobID valueobjects.
 		taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
 		taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
 		taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
+		taskErrorMessageColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(taskTableName).
@@ -244,6 +254,7 @@ func (c *crawlTaskRepository) ListByStatus(ctx context.Context, status models.Ta
 		taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
 		taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
 		taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
+		taskErrorMessageColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(taskTableName).

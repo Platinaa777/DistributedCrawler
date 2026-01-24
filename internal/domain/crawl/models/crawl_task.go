@@ -25,6 +25,9 @@ type CrawlTask struct {
 	ResultContentType *string    // Content type (e.g., "application/json")
 	ResultSizeBytes   *int64     // Size of result file
 	ResultCreatedAt   *time.Time // When result was stored
+
+	// Error message when task failed
+	ErrorMessage *string
 }
 
 func (task *CrawlTask) MarkAsParsed(finalUrl, bodyHash, minioKey string) {

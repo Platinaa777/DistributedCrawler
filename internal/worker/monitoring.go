@@ -17,14 +17,12 @@ import (
 )
 
 type MonitorStatusFunc func() crawlergrpc.WorkerStatus
-type MonitorCountFunc func() int32
 
 type WorkerMonitor struct {
 	addr              string
 	workerID          string
 	workerType        string
 	startedAt         time.Time
-	activeTasks       MonitorCountFunc
 	status            MonitorStatusFunc
 	onDrain           func()
 	onForceKill       func()
@@ -37,7 +35,6 @@ func NewWorkerMonitor(
 	workerID string,
 	workerType string,
 	startedAt time.Time,
-	activeTasks MonitorCountFunc,
 	status MonitorStatusFunc,
 	onDrain func(),
 	onForceKill func(),
@@ -48,7 +45,6 @@ func NewWorkerMonitor(
 		workerID:          workerID,
 		workerType:        workerType,
 		startedAt:         startedAt,
-		activeTasks:       activeTasks,
 		status:            status,
 		onDrain:           onDrain,
 		onForceKill:       onForceKill,
@@ -131,12 +127,11 @@ func (m *WorkerMonitor) runStream(ctx context.Context, stream crawlergrpc.Worker
 
 func (m *WorkerMonitor) buildHeartbeat() *crawlergrpc.WorkerHeartbeat {
 	return &crawlergrpc.WorkerHeartbeat{
-		WorkerId:    m.workerID,
-		WorkerType:  m.workerType,
-		Status:      m.status(),
-		ActiveTasks: m.activeTasks(),
-		Timestamp:   timestamppb.New(time.Now().UTC()),
-		StartedAt:   timestamppb.New(m.startedAt),
+		WorkerId:   m.workerID,
+		WorkerType: m.workerType,
+		Status:     m.status(),
+		Timestamp:  timestamppb.New(time.Now().UTC()),
+		StartedAt:  timestamppb.New(m.startedAt),
 	}
 }
 

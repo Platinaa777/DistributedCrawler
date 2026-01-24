@@ -484,7 +484,7 @@ func (s *serviceProvider) UserServiceImpl(ctx context.Context) *userapi.UserImpl
 
 func (s *serviceProvider) WorkerRegistry() *workerhealth.Registry {
 	if s.workerRegistry == nil {
-		s.workerRegistry = workerhealth.NewRegistry(12 * time.Second)
+		s.workerRegistry = workerhealth.NewRegistry(12*time.Second, 1*time.Minute)
 	}
 
 	return s.workerRegistry

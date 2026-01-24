@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -9,7 +9,11 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { DividerModule } from 'primeng/divider';
-import { forkJoin } from 'rxjs';
+import { ChartModule } from 'primeng/chart';
+import { DialogModule } from 'primeng/dialog';
+import { catchError, forkJoin, interval, of, Subscription, switchMap } from 'rxjs';
+import 'chart.js/auto';
+import { ChartData, ChartOptions } from 'chart.js';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
 import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/models';
 
@@ -24,7 +28,9 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
     ProgressSpinnerModule,
     TagModule,
     TooltipModule,
-    DividerModule
+    DividerModule,
+    ChartModule,
+    DialogModule
   ],
   template: `
     <div class="container mx-auto p-6">
@@ -133,7 +139,7 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
               [outlined]="true"
               severity="secondary"
               (onClick)="toggleConfig()">
-              <i class="pi" [ngClass]="configExpanded ? 'pi-chevron-up' : 'pi-chevron-down'" class="mr-2"></i>
+              <i class="pi mr-2" [ngClass]="configExpanded ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
               Job Config (auth hidden)
             </p-button>
             <div
@@ -142,6 +148,49 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
               [attr.aria-hidden]="!configExpanded">
               <pre class="json-view" *ngIf="getJobConfigWithoutAuth(job) as config">{{ config | json }}</pre>
               <div class="text-gray-500" *ngIf="job && !job.job_config">No job configuration available.</div>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Charts -->
+        <p-card *ngIf="tasks.length" styleClass="mb-6">
+          <ng-template pTemplate="header">
+            <div class="p-4 pb-0">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h2 class="text-xl font-semibold">Task Analytics</h2>
+                  <p class="text-sm text-gray-500">Status and depth distribution.</p>
+                </div>
+                <p-button
+                  [outlined]="true"
+                  severity="secondary"
+                  (onClick)="toggleAnalytics()">
+                  <i class="pi mr-2" [ngClass]="analyticsExpanded ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
+                  {{ analyticsExpanded ? 'Collapse' : 'Expand' }}
+                </p-button>
+              </div>
+            </div>
+          </ng-template>
+
+          <div
+            class="detail-wrapper"
+            [@expandCollapse]="analyticsExpanded ? 'expanded' : 'collapsed'"
+            [attr.aria-hidden]="!analyticsExpanded">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="chart-card">
+                <h3 class="text-sm font-medium text-gray-600 mb-3">By Status</h3>
+                <p-chart *ngIf="statusChartData"
+                  type="doughnut"
+                  [data]="statusChartData"
+                  [options]="statusChartOptions"></p-chart>
+              </div>
+              <div class="chart-card">
+                <h3 class="text-sm font-medium text-gray-600 mb-3">By Depth</h3>
+                <p-chart *ngIf="depthChartData"
+                  type="doughnut"
+                  [data]="depthChartData"
+                  [options]="depthChartOptions"></p-chart>
+              </div>
             </div>
           </div>
         </p-card>
@@ -208,6 +257,15 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
                       <i *ngIf="!loadingFile[task.id + '-result']" class="pi pi-download"></i>
                       <p-progressSpinner *ngIf="loadingFile[task.id + '-result']" [style]="{width: '20px', height: '20px'}" />
                     </p-button>
+                    <p-button
+                      *ngIf="task.error_message"
+                      [text]="true"
+                      [rounded]="true"
+                      severity="danger"
+                      pTooltip="View error details"
+                      (onClick)="showErrorDialog(task)">
+                      <i class="pi pi-exclamation-triangle"></i>
+                    </p-button>
                   </div>
                 </td>
               </tr>
@@ -223,6 +281,36 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
           </p-table>
         </p-card>
       </div>
+
+      <!-- Error Dialog -->
+      <p-dialog
+        header="Task Error Details"
+        [(visible)]="errorDialogVisible"
+        [modal]="true"
+        [style]="{width: '600px'}"
+        [breakpoints]="{'768px': '90vw'}">
+        <div *ngIf="selectedErrorTask" class="space-y-4">
+          <div>
+            <p class="text-sm text-gray-600 mb-1">Task ID</p>
+            <code class="text-sm bg-gray-100 px-2 py-1 rounded">{{ selectedErrorTask.id }}</code>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 mb-1">URL</p>
+            <a [href]="selectedErrorTask.url" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline text-sm break-all">
+              {{ selectedErrorTask.url }}
+            </a>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 mb-1">Error Message</p>
+            <div class="bg-red-50 border border-red-200 rounded p-3">
+              <pre class="text-sm text-red-700 whitespace-pre-wrap break-words m-0">{{ selectedErrorTask.error_message }}</pre>
+            </div>
+          </div>
+        </div>
+        <ng-template pTemplate="footer">
+          <p-button label="Close" (onClick)="errorDialogVisible = false" />
+        </ng-template>
+      </p-dialog>
     </div>
   `,
   styles: [`
@@ -247,6 +335,11 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
       font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 13px;
     }
+
+    .chart-card :is(canvas, .p-chart) {
+      width: 100% !important;
+      height: 260px !important;
+    }
   `],
   animations: [
     trigger('expandCollapse', [
@@ -266,13 +359,23 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
     ])
   ]
 })
-export class JobDetailsComponent implements OnInit {
+export class JobDetailsComponent implements OnInit, OnDestroy {
   job: CrawlJob | null = null;
   tasks: CrawlTask[] = [];
   loading = false;
   error: string | null = null;
   configExpanded = false;
+  analyticsExpanded = false;
   loadingFile: { [key: string]: boolean } = {};
+  statusChartData: ChartData<'doughnut', number[], string> | null = null;
+  statusChartOptions: ChartOptions<'doughnut'> | null = null;
+  depthChartData: ChartData<'doughnut', number[], string> | null = null;
+  depthChartOptions: ChartOptions<'doughnut'> | null = null;
+  private tasksPollingSub: Subscription | null = null;
+
+  // Error dialog
+  errorDialogVisible = false;
+  selectedErrorTask: CrawlTask | null = null;
 
   constructor(
     private crawlerApi: CrawlerApiService,
@@ -284,7 +387,12 @@ export class JobDetailsComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadJobDetails(id);
+      this.startTaskPolling(id);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.stopTaskPolling();
   }
 
   loadJobDetails(id: string): void {
@@ -298,6 +406,7 @@ export class JobDetailsComponent implements OnInit {
       next: (response) => {
         this.job = response.job.job;
         this.tasks = response.tasks.tasks;
+        this.buildCharts();
         this.loading = false;
       },
       error: (err) => {
@@ -307,12 +416,45 @@ export class JobDetailsComponent implements OnInit {
     });
   }
 
+  private startTaskPolling(id: string): void {
+    this.stopTaskPolling();
+    this.tasksPollingSub = interval(5000)
+      .pipe(
+        switchMap(() => this.crawlerApi.listTasksByJob(id).pipe(
+          catchError((err) => {
+            console.error(`Failed to poll tasks: ${err.message}`);
+            return of({ tasks: this.tasks });
+          })
+        ))
+      )
+      .subscribe({
+        next: (response) => {
+          this.tasks = response.tasks;
+          this.buildCharts();
+        }
+      });
+  }
+
+  private stopTaskPolling(): void {
+    this.tasksPollingSub?.unsubscribe();
+    this.tasksPollingSub = null;
+  }
+
   goBack(): void {
     this.router.navigate(['/jobs']);
   }
 
   toggleConfig(): void {
     this.configExpanded = !this.configExpanded;
+  }
+
+  toggleAnalytics(): void {
+    this.analyticsExpanded = !this.analyticsExpanded;
+  }
+
+  showErrorDialog(task: CrawlTask): void {
+    this.selectedErrorTask = task;
+    this.errorDialogVisible = true;
   }
 
   getJobConfigWithoutAuth(job: CrawlJob | null) {
@@ -338,6 +480,74 @@ export class JobDetailsComponent implements OnInit {
       default:
         return 'secondary';
     }
+  }
+
+  private buildCharts(): void {
+    this.buildStatusChart();
+    this.buildDepthChart();
+  }
+
+  private buildStatusChart(): void {
+    const counts = new Map<string, number>();
+    for (const task of this.tasks) {
+      const label = task.status ? task.status.replace(/_/g, ' ') : 'unknown';
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+
+    const labels = Array.from(counts.keys());
+    const data = labels.map(label => counts.get(label) ?? 0);
+    const palette = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#64748b'];
+
+    this.statusChartData = {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: labels.map((_, index) => palette[index % palette.length]),
+          borderColor: '#ffffff',
+          borderWidth: 2
+        }
+      ]
+    };
+    this.statusChartOptions = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    };
+  }
+
+  private buildDepthChart(): void {
+    const counts = new Map<number, number>();
+    for (const task of this.tasks) {
+      const depthValue = Number.isFinite(task.depth) ? task.depth : Number(task.depth ?? 0);
+      const safeDepth = Number.isFinite(depthValue) ? depthValue : 0;
+      counts.set(safeDepth, (counts.get(safeDepth) ?? 0) + 1);
+    }
+
+    const depths = Array.from(counts.keys()).sort((a, b) => a - b);
+    const palette = ['#0ea5e9', '#22c55e', '#f97316', '#e879f9', '#f59e0b', '#14b8a6', '#6366f1'];
+    this.depthChartData = {
+      labels: depths.map(depth => `Depth ${depth}`),
+      datasets: [
+        {
+          data: depths.map(depth => counts.get(depth) ?? 0),
+          backgroundColor: depths.map((_, index) => palette[index % palette.length]),
+          borderColor: '#ffffff',
+          borderWidth: 2
+        }
+      ]
+    };
+    this.depthChartOptions = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    };
   }
 
   downloadTaskFile(task: CrawlTask, fileType: FileType): void {

@@ -193,7 +193,26 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 			zap.String("task_id", task.TaskID),
 			zap.Error(err),
 		)
-		return fmt.Errorf("failed to extract data: %w", err)
+
+		// Mark task as failed with error message
+		crawlTask.Status = models.TaskStatusFailed
+		errMsg := fmt.Sprintf("extraction failed: %v", err)
+		crawlTask.ErrorMessage = &errMsg
+		if updateErr := w.taskRepo.Update(ctx, *crawlTask); updateErr != nil {
+			w.logger.Error("Failed to update task status to failed",
+				zap.String("task_id", task.TaskID),
+				zap.Error(updateErr),
+			)
+			return fmt.Errorf("failed to update task status: %w", updateErr)
+		}
+
+		w.logger.Info("Task marked as failed due to extraction error",
+			zap.String("task_id", task.TaskID),
+			zap.String("url", crawlTask.URL),
+		)
+
+		// Don't return error - task is processed (marked as failed)
+		return nil
 	}
 
 	// Persist results to S3 and DB (Part A - result persistence)
@@ -202,7 +221,26 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 			zap.String("task_id", task.TaskID),
 			zap.Error(err),
 		)
-		return fmt.Errorf("failed to persist results: %w", err)
+
+		// Mark task as failed with error message
+		crawlTask.Status = models.TaskStatusFailed
+		errMsg := fmt.Sprintf("failed to persist results: %v", err)
+		crawlTask.ErrorMessage = &errMsg
+		if updateErr := w.taskRepo.Update(ctx, *crawlTask); updateErr != nil {
+			w.logger.Error("Failed to update task status to failed",
+				zap.String("task_id", task.TaskID),
+				zap.Error(updateErr),
+			)
+			return fmt.Errorf("failed to update task status: %w", updateErr)
+		}
+
+		w.logger.Info("Task marked as failed due to persist error",
+			zap.String("task_id", task.TaskID),
+			zap.String("url", crawlTask.URL),
+		)
+
+		// Don't return error - task is processed (marked as failed)
+		return nil
 	}
 
 	// Extract and enqueue pagination links (user-defined selectors only)

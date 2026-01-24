@@ -21,6 +21,9 @@ type CrawlTaskSnapshot struct {
 	ResultContentType sql.NullString `db:"result_content_type"`
 	ResultSizeBytes   sql.NullInt64  `db:"result_size_bytes"`
 	ResultCreatedAt   sql.NullTime   `db:"result_created_at"`
+
+	// Error message when task failed
+	ErrorMessage sql.NullString `db:"error_message"`
 }
 
 type CrawlTaskWithJobSnapshot struct {

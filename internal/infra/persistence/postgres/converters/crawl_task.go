@@ -61,6 +61,14 @@ func SaveCrawlTaskToSnapshot(crawlTask models.CrawlTask) *snapshots.CrawlTaskSna
 		}
 	}
 
+	// Handle ErrorMessage
+	if crawlTask.ErrorMessage != nil {
+		snapshot.ErrorMessage = sql.NullString{
+			String: *crawlTask.ErrorMessage,
+			Valid:  true,
+		}
+	}
+
 	return snapshot
 }
 
@@ -108,6 +116,11 @@ func RestoreCrawlTaskFromSnapshot(snapshot snapshots.CrawlTaskSnapshot) (*models
 	}
 	if snapshot.ResultCreatedAt.Valid {
 		task.ResultCreatedAt = &snapshot.ResultCreatedAt.Time
+	}
+
+	// Handle ErrorMessage
+	if snapshot.ErrorMessage.Valid {
+		task.ErrorMessage = &snapshot.ErrorMessage.String
 	}
 
 	return task, nil
@@ -165,6 +178,11 @@ func RestoreCrawlTaskWithJobFromSnapshot(snapshot snapshots.CrawlTaskWithJobSnap
 	}
 	if snapshot.ResultCreatedAt.Valid {
 		task.ResultCreatedAt = &snapshot.ResultCreatedAt.Time
+	}
+
+	// Handle ErrorMessage
+	if snapshot.ErrorMessage.Valid {
+		task.ErrorMessage = &snapshot.ErrorMessage.String
 	}
 
 	return task, nil

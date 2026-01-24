@@ -72,6 +72,7 @@ import { User, UserRole } from '../../core/models';
                     [(ngModel)]="user.role"
                     (onChange)="updateRole(user, $event.value)"
                     [disabled]="isUpdating(user.id) || user.role === 'ADMINISTRATOR' || isCurrentUser(user.id)"
+                    appendTo="body"
                     styleClass="w-44" />
                   <p-progressSpinner *ngIf="isUpdating(user.id)" [style]="{width: '18px', height: '18px'}" />
                 </div>
