@@ -9,6 +9,7 @@ export type Theme = 'light' | 'dark';
 export class ThemeService {
   private readonly STORAGE_KEY = 'theme-preference';
   private readonly platformId = inject(PLATFORM_ID);
+  private darkModeSuppressCount = 0;
 
   readonly theme = signal<Theme>(this.getInitialTheme());
 
@@ -37,7 +38,7 @@ export class ThemeService {
     }
 
     const root = document.documentElement;
-    if (theme === 'dark') {
+    if (theme === 'dark' && this.darkModeSuppressCount === 0) {
       root.classList.add('dark-mode');
     } else {
       root.classList.remove('dark-mode');
@@ -51,6 +52,31 @@ export class ThemeService {
 
   setTheme(theme: Theme): void {
     this.theme.set(theme);
+  }
+
+  suppressDarkMode(): () => void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return () => undefined;
+    }
+
+    this.darkModeSuppressCount += 1;
+    if (this.darkModeSuppressCount === 1) {
+      document.documentElement.classList.remove('dark-mode');
+    }
+
+    return () => {
+      if (!isPlatformBrowser(this.platformId)) {
+        return;
+      }
+
+      if (this.darkModeSuppressCount > 0) {
+        this.darkModeSuppressCount -= 1;
+      }
+
+      if (this.darkModeSuppressCount === 0) {
+        this.applyTheme(this.theme());
+      }
+    };
   }
 
   get isDark(): boolean {

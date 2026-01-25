@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
@@ -9,6 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { AuthService } from '../../core/services/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-register',
@@ -118,17 +119,19 @@ import { AuthService } from '../../core/services/auth.service';
     </div>
   `
 })
-export class RegisterComponent implements OnInit {
+export class RegisterComponent implements OnInit, OnDestroy {
   form: FormGroup;
   loading = false;
   error: string | null = null;
   returnUrl = '/jobs';
+  private releaseDarkMode: (() => void) | null = null;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private themeService: ThemeService
   ) {
     this.form = this.fb.group(
       {
@@ -141,10 +144,16 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.releaseDarkMode = this.themeService.suppressDarkMode();
     const fromQuery = this.route.snapshot.queryParamMap.get('returnUrl');
     if (fromQuery) {
       this.returnUrl = fromQuery;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.releaseDarkMode?.();
+    this.releaseDarkMode = null;
   }
 
   get email() {
