@@ -212,12 +212,56 @@ message GetTaskResponse {
   CrawlTask task = 1;
 }
 
+// TaskListFilter defines filtering options for listing tasks
+message TaskListFilter {
+  // Filter by task status (exact match)
+  optional string status = 1;
+  // Filter by URL (partial match, case-insensitive)
+  optional string url = 2;
+  // Filter by depth range
+  optional uint64 min_depth = 3 [json_name = "min_depth"];
+  optional uint64 max_depth = 4 [json_name = "max_depth"];
+  // Filter by enqueued_at date range
+  optional google.protobuf.Timestamp enqueued_from = 5 [json_name = "enqueued_from"];
+  optional google.protobuf.Timestamp enqueued_to = 6 [json_name = "enqueued_to"];
+}
+
 message ListTasksByJobRequest {
-  string job_id = 1;
+  string job_id = 1 [json_name = "job_id"];
+  // Cursor for pagination (opaque string, empty for first page)
+  optional string cursor = 2;
+  // Number of items per page (default: 20, max: 100)
+  int32 limit = 3;
+  // Filtering options
+  TaskListFilter filter = 4;
 }
 
 message ListTasksByJobResponse {
   repeated CrawlTask tasks = 1;
+  // Cursor for the next page (empty if no more results)
+  string next_cursor = 2 [json_name = "next_cursor"];
+  // Indicates if there are more results after this page
+  bool has_more = 3 [json_name = "has_more"];
+}
+
+// TaskAnalytics contains aggregated task statistics
+message TaskAnalytics {
+  // Count of tasks by status
+  map<string, int64> status_counts = 1 [json_name = "status_counts"];
+  // Count of tasks by depth level
+  map<uint64, int64> depth_counts = 2 [json_name = "depth_counts"];
+  // Total task count
+  int64 total_count = 3 [json_name = "total_count"];
+}
+
+// GetTaskAnalyticsRequest requests analytics for a job
+message GetTaskAnalyticsRequest {
+  string job_id = 1 [(validate.rules).string.min_len = 1, json_name = "job_id"];
+}
+
+// GetTaskAnalyticsResponse contains task analytics
+message GetTaskAnalyticsResponse {
+  TaskAnalytics analytics = 1;
 }
 
 // GetJobExportFileURLRequest requests a presigned URL for a job export file

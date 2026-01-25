@@ -2,14 +2,16 @@ package repos
 
 import (
 	"context"
+
+	sq "github.com/Masterminds/squirrel"
+
+	"distributed-crawler/internal/application/service"
 	"distributed-crawler/internal/domain/crawl/models"
 	crawltask "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/converters"
 	"distributed-crawler/internal/infra/persistence/postgres/snapshots"
-
-	sq "github.com/Masterminds/squirrel"
 )
 
 const (
@@ -344,4 +346,210 @@ func (c *crawlTaskRepository) ExistsByJobIDAndHashExcluding(ctx context.Context,
 	}
 
 	return count > 0, nil
+}
+
+// ListWithCursor returns tasks with cursor-based pagination and filtering
+func (c *crawlTaskRepository) ListWithCursor(ctx context.Context, query service.ListTasksByJobQuery) (*service.ListTasksResult, error) {
+	// Set defaults
+	effectiveLimit := query.Limit
+	if effectiveLimit == 0 {
+		effectiveLimit = 20
+	}
+	if effectiveLimit > 100 {
+		effectiveLimit = 100
+	}
+
+	// Fetch one extra row to determine if there are more results
+	fetchLimit := effectiveLimit + 1
+
+	builder := sq.Select(
+		taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
+		taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
+		taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
+		taskErrorMessageColumn,
+	).
+		PlaceholderFormat(sq.Dollar).
+		From(taskTableName)
+
+	// Build WHERE conditions
+	conditions := sq.And{
+		sq.Eq{taskJobIDColumn: query.JobID},
+	}
+
+	// Filter by status (exact match)
+	if query.Filter.Status != nil && *query.Filter.Status != "" {
+		conditions = append(conditions, sq.Eq{taskStatusColumn: *query.Filter.Status})
+	}
+
+	// Filter by URL (partial match, case-insensitive)
+	if query.Filter.URL != nil && *query.Filter.URL != "" {
+		conditions = append(conditions, sq.ILike{taskURLColumn: "%" + *query.Filter.URL + "%"})
+	}
+
+	// Filter by depth range
+	if query.Filter.MinDepth != nil {
+		conditions = append(conditions, sq.GtOrEq{taskDepthColumn: *query.Filter.MinDepth})
+	}
+	if query.Filter.MaxDepth != nil {
+		conditions = append(conditions, sq.LtOrEq{taskDepthColumn: *query.Filter.MaxDepth})
+	}
+
+	// Filter by enqueued_at range
+	if query.Filter.EnqueuedFrom != nil {
+		conditions = append(conditions, sq.GtOrEq{taskEnqueuedAtColumn: *query.Filter.EnqueuedFrom})
+	}
+	if query.Filter.EnqueuedTo != nil {
+		conditions = append(conditions, sq.LtOrEq{taskEnqueuedAtColumn: *query.Filter.EnqueuedTo})
+	}
+
+	// Apply cursor condition (seek method for keyset pagination)
+	// For ASC ordering: WHERE (enqueued_at, id) > (cursor.enqueued_at, cursor.id)
+	if query.Cursor != nil {
+		cursorCondition := sq.Expr(
+			"("+taskEnqueuedAtColumn+", "+taskIDColumn+") > (?, ?)",
+			query.Cursor.EnqueuedAt,
+			query.Cursor.ID,
+		)
+		conditions = append(conditions, cursorCondition)
+	}
+
+	builder = builder.Where(conditions)
+
+	// Order by enqueued_at ASC, id ASC for stable ordering
+	builder = builder.OrderBy(taskEnqueuedAtColumn+" ASC", taskIDColumn+" ASC")
+	builder = builder.Limit(uint64(fetchLimit))
+
+	sqlQuery, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_task_repository.ListWithCursor",
+		QueryRaw: sqlQuery,
+	}
+
+	var taskSnapshots []snapshots.CrawlTaskSnapshot
+	err = c.client.DB().ScanAllContext(ctx, &taskSnapshots, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert snapshots to models and trim to effective limit
+	tasks := make([]*models.CrawlTask, 0, effectiveLimit)
+	for _, snapshot := range taskSnapshots {
+		if len(tasks) >= effectiveLimit {
+			break
+		}
+		task, err := converters.RestoreCrawlTaskFromSnapshot(snapshot)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	// Determine if there are more results
+	hasMore := len(taskSnapshots) > effectiveLimit
+
+	// Build next cursor from last item
+	var nextCursor *service.ListTasksCursor
+	if hasMore && len(tasks) > 0 {
+		lastTask := tasks[len(tasks)-1]
+		nextCursor = &service.ListTasksCursor{
+			EnqueuedAt: lastTask.EnqueuedAt,
+			ID:         lastTask.ID.String(),
+		}
+	}
+
+	return &service.ListTasksResult{
+		Tasks:      tasks,
+		NextCursor: nextCursor,
+		HasMore:    hasMore,
+	}, nil
+}
+
+// GetAnalyticsByJob returns aggregated analytics for a job
+func (c *crawlTaskRepository) GetAnalyticsByJob(ctx context.Context, jobID valueobjects.CrawlJobID) (*service.TaskAnalytics, error) {
+	// Query for status counts
+	statusBuilder := sq.Select(taskStatusColumn, "COUNT(*) as count").
+		PlaceholderFormat(sq.Dollar).
+		From(taskTableName).
+		Where(sq.Eq{taskJobIDColumn: jobID.String()}).
+		GroupBy(taskStatusColumn)
+
+	statusQuery, statusArgs, err := statusBuilder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	statusQ := persistence.Query{
+		Name:     "crawl_task_repository.GetAnalyticsByJob.status",
+		QueryRaw: statusQuery,
+	}
+
+	rows, err := c.client.DB().QueryContext(ctx, statusQ, statusArgs...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	statusCounts := make(map[string]int64)
+	var totalCount int64
+	for rows.Next() {
+		var status string
+		var count int64
+		if err := rows.Scan(&status, &count); err != nil {
+			return nil, err
+		}
+		statusCounts[status] = count
+		totalCount += count
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Query for depth counts
+	depthBuilder := sq.Select(taskDepthColumn, "COUNT(*) as count").
+		PlaceholderFormat(sq.Dollar).
+		From(taskTableName).
+		Where(sq.Eq{taskJobIDColumn: jobID.String()}).
+		GroupBy(taskDepthColumn).
+		OrderBy(taskDepthColumn + " ASC")
+
+	depthQuery, depthArgs, err := depthBuilder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	depthQ := persistence.Query{
+		Name:     "crawl_task_repository.GetAnalyticsByJob.depth",
+		QueryRaw: depthQuery,
+	}
+
+	depthRows, err := c.client.DB().QueryContext(ctx, depthQ, depthArgs...)
+	if err != nil {
+		return nil, err
+	}
+	defer depthRows.Close()
+
+	depthCounts := make(map[uint64]int64)
+	for depthRows.Next() {
+		var depth uint64
+		var count int64
+		if err := depthRows.Scan(&depth, &count); err != nil {
+			return nil, err
+		}
+		depthCounts[depth] = count
+	}
+
+	if err := depthRows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &service.TaskAnalytics{
+		StatusCounts: statusCounts,
+		DepthCounts:  depthCounts,
+		TotalCount:   totalCount,
+	}, nil
 }

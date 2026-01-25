@@ -45,6 +45,7 @@ func requiredRoleForMethod(method string) (models.Role, bool) {
 		"/crawler.v1.CrawlerService/ListTasksByJob",
 		"/crawler.v1.CrawlerService/GetTask",
 		"/crawler.v1.CrawlerService/GetTaskFileURL",
+		"/crawler.v1.CrawlerService/GetTaskAnalytics",
 		"/crawler.v1.CrawlerService/GetJobExportFileURL":
 		return models.RoleRead, true
 	case "/crawler.v1.CrawlerService/CreateJob",

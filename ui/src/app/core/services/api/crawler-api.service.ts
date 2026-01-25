@@ -26,6 +26,41 @@ export interface JobListResponse {
   has_more: boolean;
 }
 
+// Filter options for listing tasks
+export interface TaskListFilter {
+  status?: string;
+  url?: string;
+  min_depth?: number;
+  max_depth?: number;
+  enqueued_from?: string; // ISO 8601 timestamp
+  enqueued_to?: string;   // ISO 8601 timestamp
+}
+
+// Parameters for listing tasks with cursor pagination
+export interface TaskListParams {
+  cursor?: string;
+  limit?: number;
+  filter?: TaskListFilter;
+}
+
+// Response from list tasks API with cursor pagination
+export interface TaskListResponse {
+  tasks: CrawlTask[];
+  next_cursor: string;
+  has_more: boolean;
+}
+
+// Task analytics response
+export interface TaskAnalytics {
+  status_counts: { [status: string]: number };
+  depth_counts: { [depth: string]: number };
+  total_count: number;
+}
+
+export interface TaskAnalyticsResponse {
+  analytics: TaskAnalytics;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -80,9 +115,45 @@ export class CrawlerApiService {
     return this.http.post<{ id: string }>(`${this.baseUrl}${API_ENDPOINTS.JOBS}`, { config });
   }
 
-  // Tasks
-  listTasksByJob(jobId: string): Observable<{ tasks: CrawlTask[] }> {
-    return this.http.get<{ tasks: CrawlTask[] }>(`${this.baseUrl}${API_ENDPOINTS.JOBS}/${jobId}/tasks`);
+  // Tasks - Updated with pagination and filtering
+  listTasksByJob(jobId: string, params?: TaskListParams): Observable<TaskListResponse> {
+    let httpParams = new HttpParams();
+
+    if (params?.cursor) {
+      httpParams = httpParams.set('cursor', params.cursor);
+    }
+    if (params?.limit) {
+      httpParams = httpParams.set('limit', params.limit.toString());
+    }
+
+    // Add filter params
+    if (params?.filter) {
+      if (params.filter.status) {
+        httpParams = httpParams.set('filter.status', params.filter.status);
+      }
+      if (params.filter.url) {
+        httpParams = httpParams.set('filter.url', params.filter.url);
+      }
+      if (params.filter.min_depth !== undefined) {
+        httpParams = httpParams.set('filter.min_depth', params.filter.min_depth.toString());
+      }
+      if (params.filter.max_depth !== undefined) {
+        httpParams = httpParams.set('filter.max_depth', params.filter.max_depth.toString());
+      }
+      if (params.filter.enqueued_from) {
+        httpParams = httpParams.set('filter.enqueued_from', params.filter.enqueued_from);
+      }
+      if (params.filter.enqueued_to) {
+        httpParams = httpParams.set('filter.enqueued_to', params.filter.enqueued_to);
+      }
+    }
+
+    return this.http.get<TaskListResponse>(`${this.baseUrl}${API_ENDPOINTS.JOBS}/${jobId}/tasks`, { params: httpParams });
+  }
+
+  // Get task analytics for a job
+  getTaskAnalytics(jobId: string): Observable<TaskAnalyticsResponse> {
+    return this.http.get<TaskAnalyticsResponse>(`${this.baseUrl}${API_ENDPOINTS.JOBS}/${jobId}/analytics`);
   }
 
   getTask(id: string): Observable<{ task: CrawlTask }> {

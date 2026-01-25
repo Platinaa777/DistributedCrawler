@@ -2,6 +2,8 @@ package crawltask
 
 import (
 	"context"
+
+	"distributed-crawler/internal/application/service"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 )
@@ -13,6 +15,12 @@ type CrawlTaskRepository interface {
 	Update(ctx context.Context, entity models.CrawlTask) error
 	ListByJob(ctx context.Context, jobID valueobjects.CrawlJobID) ([]*models.CrawlTask, error)
 	ListByStatus(ctx context.Context, status models.TaskStatus, limit int) ([]*models.CrawlTask, error)
+
+	// ListWithCursor returns tasks with cursor-based pagination and filtering
+	ListWithCursor(ctx context.Context, query service.ListTasksByJobQuery) (*service.ListTasksResult, error)
+
+	// GetAnalyticsByJob returns aggregated analytics for a job
+	GetAnalyticsByJob(ctx context.Context, jobID valueobjects.CrawlJobID) (*service.TaskAnalytics, error)
 
 	// SetTaskResult updates the result fields for a task (Part A - ParserWorker persistence)
 	SetTaskResult(ctx context.Context, taskID valueobjects.CrawlTaskID, objectKey string, contentType string, sizeBytes int64) error

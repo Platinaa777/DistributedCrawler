@@ -14,8 +14,9 @@ import { DialogModule } from 'primeng/dialog';
 import { catchError, forkJoin, interval, of, Subscription, switchMap } from 'rxjs';
 import 'chart.js/auto';
 import { ChartData, ChartOptions } from 'chart.js';
-import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
+import { CrawlerApiService, TaskListFilter, TaskAnalytics } from '../../core/services/api/crawler-api.service';
 import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/models';
+import { TaskFiltersComponent } from './components/task-filters.component';
 
 @Component({
   selector: 'app-job-details',
@@ -30,7 +31,8 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
     TooltipModule,
     DividerModule,
     ChartModule,
-    DialogModule
+    DialogModule,
+    TaskFiltersComponent
   ],
   template: `
     <div class="container mx-auto p-6">
@@ -153,13 +155,13 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
         </p-card>
 
         <!-- Charts -->
-        <p-card *ngIf="tasks.length" styleClass="mb-6">
+        <p-card *ngIf="analytics" styleClass="mb-6">
           <ng-template pTemplate="header">
             <div class="p-4 pb-0">
               <div class="flex items-center justify-between gap-4">
                 <div>
                   <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Task Analytics</h2>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">Status and depth distribution.</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Status and depth distribution ({{ analytics.total_count }} total tasks).</p>
                 </div>
                 <p-button
                   [outlined]="true"
@@ -199,16 +201,18 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
         <p-card>
           <ng-template pTemplate="header">
             <div class="p-4 pb-0">
-              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Tasks ({{ tasks.length }})</h2>
+              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Tasks ({{ tasks.length }} of {{ analytics?.total_count ?? '?' }})</h2>
             </div>
           </ng-template>
 
+          <!-- Task Filters -->
+          <app-task-filters
+            [maxDepthValue]="job?.job_config?.scopes?.max_depth ?? 10"
+            (filterChange)="onFilterChange($event)">
+          </app-task-filters>
+
           <p-table
             [value]="tasks"
-            [paginator]="true"
-            [rows]="10"
-            [rowsPerPageOptions]="[5, 10, 25]"
-            [showFirstLastIcon]="true"
             [tableStyle]="{'min-width': '60rem'}">
             <ng-template pTemplate="header">
               <tr>
@@ -279,6 +283,18 @@ import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/mod
               </tr>
             </ng-template>
           </p-table>
+
+          <!-- Load More Button -->
+          <div class="flex justify-center p-4" *ngIf="hasMoreTasks">
+            <p-button
+              [outlined]="true"
+              severity="secondary"
+              (onClick)="loadMoreTasks()"
+              [disabled]="loadingMoreTasks">
+              <p-progressSpinner *ngIf="loadingMoreTasks" [style]="{width: '18px', height: '18px'}" styleClass="mr-2" />
+              <span>{{ loadingMoreTasks ? 'Loading...' : 'Load More' }}</span>
+            </p-button>
+          </div>
         </p-card>
       </div>
 
@@ -376,7 +392,17 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   statusChartOptions: ChartOptions<'doughnut'> | null = null;
   depthChartData: ChartData<'doughnut', number[], string> | null = null;
   depthChartOptions: ChartOptions<'doughnut'> | null = null;
-  private tasksPollingSub: Subscription | null = null;
+  private analyticsPollingSub: Subscription | null = null;
+
+  // Pagination state
+  taskCursor: string | null = null;
+  hasMoreTasks = false;
+  loadingMoreTasks = false;
+  currentFilter: TaskListFilter = {};
+  private readonly pageSize = 20;
+
+  // Server-side analytics
+  analytics: TaskAnalytics | null = null;
 
   // Error dialog
   errorDialogVisible = false;
@@ -392,12 +418,12 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadJobDetails(id);
-      this.startTaskPolling(id);
+      this.startAnalyticsPolling(id);
     }
   }
 
   ngOnDestroy(): void {
-    this.stopTaskPolling();
+    this.stopAnalyticsPolling();
   }
 
   loadJobDetails(id: string): void {
@@ -406,12 +432,16 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
 
     forkJoin({
       job: this.crawlerApi.getJob(id),
-      tasks: this.crawlerApi.listTasksByJob(id)
+      tasks: this.crawlerApi.listTasksByJob(id, { limit: this.pageSize }),
+      analytics: this.crawlerApi.getTaskAnalytics(id)
     }).subscribe({
       next: (response) => {
         this.job = response.job.job;
         this.tasks = response.tasks.tasks;
-        this.buildCharts();
+        this.taskCursor = response.tasks.next_cursor || null;
+        this.hasMoreTasks = response.tasks.has_more;
+        this.analytics = response.analytics.analytics;
+        this.buildChartsFromAnalytics();
         this.loading = false;
       },
       error: (err) => {
@@ -421,28 +451,75 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startTaskPolling(id: string): void {
-    this.stopTaskPolling();
-    this.tasksPollingSub = interval(5000)
+  onFilterChange(filter: TaskListFilter): void {
+    this.currentFilter = filter;
+    this.taskCursor = null;
+    this.tasks = [];
+    this.loadTasks();
+  }
+
+  loadTasks(): void {
+    if (!this.job) return;
+
+    this.crawlerApi.listTasksByJob(this.job.id, {
+      limit: this.pageSize,
+      filter: this.currentFilter
+    }).subscribe({
+      next: (response) => {
+        this.tasks = response.tasks;
+        this.taskCursor = response.next_cursor || null;
+        this.hasMoreTasks = response.has_more;
+      },
+      error: (err) => {
+        console.error('Failed to load tasks:', err);
+      }
+    });
+  }
+
+  loadMoreTasks(): void {
+    if (!this.job || !this.hasMoreTasks || this.loadingMoreTasks) return;
+
+    this.loadingMoreTasks = true;
+    this.crawlerApi.listTasksByJob(this.job.id, {
+      cursor: this.taskCursor ?? undefined,
+      limit: this.pageSize,
+      filter: this.currentFilter
+    }).subscribe({
+      next: (response) => {
+        this.tasks = [...this.tasks, ...response.tasks];
+        this.taskCursor = response.next_cursor || null;
+        this.hasMoreTasks = response.has_more;
+        this.loadingMoreTasks = false;
+      },
+      error: (err) => {
+        console.error('Failed to load more tasks:', err);
+        this.loadingMoreTasks = false;
+      }
+    });
+  }
+
+  private startAnalyticsPolling(id: string): void {
+    this.stopAnalyticsPolling();
+    this.analyticsPollingSub = interval(5000)
       .pipe(
-        switchMap(() => this.crawlerApi.listTasksByJob(id).pipe(
+        switchMap(() => this.crawlerApi.getTaskAnalytics(id).pipe(
           catchError((err) => {
-            console.error(`Failed to poll tasks: ${err.message}`);
-            return of({ tasks: this.tasks });
+            console.error(`Failed to poll analytics: ${err.message}`);
+            return of({ analytics: this.analytics! });
           })
         ))
       )
       .subscribe({
         next: (response) => {
-          this.tasks = response.tasks;
-          this.buildCharts();
+          this.analytics = response.analytics;
+          this.buildChartsFromAnalytics();
         }
       });
   }
 
-  private stopTaskPolling(): void {
-    this.tasksPollingSub?.unsubscribe();
-    this.tasksPollingSub = null;
+  private stopAnalyticsPolling(): void {
+    this.analyticsPollingSub?.unsubscribe();
+    this.analyticsPollingSub = null;
   }
 
   goBack(): void {
@@ -487,20 +564,18 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  private buildCharts(): void {
+  private buildChartsFromAnalytics(): void {
+    if (!this.analytics) return;
+
     this.buildStatusChart();
     this.buildDepthChart();
   }
 
   private buildStatusChart(): void {
-    const counts = new Map<string, number>();
-    for (const task of this.tasks) {
-      const label = task.status ? task.status.replace(/_/g, ' ') : 'unknown';
-      counts.set(label, (counts.get(label) ?? 0) + 1);
-    }
+    if (!this.analytics) return;
 
-    const labels = Array.from(counts.keys());
-    const data = labels.map(label => counts.get(label) ?? 0);
+    const labels = Object.keys(this.analytics.status_counts).map(s => s.replace(/_/g, ' '));
+    const data = Object.values(this.analytics.status_counts);
     const palette = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#64748b'];
 
     this.statusChartData = {
@@ -525,20 +600,16 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   }
 
   private buildDepthChart(): void {
-    const counts = new Map<number, number>();
-    for (const task of this.tasks) {
-      const depthValue = Number.isFinite(task.depth) ? task.depth : Number(task.depth ?? 0);
-      const safeDepth = Number.isFinite(depthValue) ? depthValue : 0;
-      counts.set(safeDepth, (counts.get(safeDepth) ?? 0) + 1);
-    }
+    if (!this.analytics) return;
 
-    const depths = Array.from(counts.keys()).sort((a, b) => a - b);
+    const depths = Object.keys(this.analytics.depth_counts).map(Number).sort((a, b) => a - b);
     const palette = ['#0ea5e9', '#22c55e', '#f97316', '#e879f9', '#f59e0b', '#14b8a6', '#6366f1'];
+
     this.depthChartData = {
       labels: depths.map(depth => `Depth ${depth}`),
       datasets: [
         {
-          data: depths.map(depth => counts.get(depth) ?? 0),
+          data: depths.map(depth => this.analytics!.depth_counts[depth.toString()] ?? 0),
           backgroundColor: depths.map((_, index) => palette[index % palette.length]),
           borderColor: '#ffffff',
           borderWidth: 2

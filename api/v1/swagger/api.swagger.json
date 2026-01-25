@@ -297,14 +297,15 @@
         ]
       }
     },
-    "/api/v1/jobs/{jobId}/tasks": {
+    "/api/v1/jobs/{job_id}/analytics": {
       "get": {
-        "operationId": "CrawlerService_ListTasksByJob",
+        "summary": "Get aggregated task analytics for a job",
+        "operationId": "CrawlerService_GetTaskAnalytics",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ListTasksByJobResponse"
+              "$ref": "#/definitions/v1GetTaskAnalyticsResponse"
             }
           },
           "default": {
@@ -316,7 +317,7 @@
         },
         "parameters": [
           {
-            "name": "jobId",
+            "name": "job_id",
             "in": "path",
             "required": true,
             "type": "string"
@@ -357,6 +358,95 @@
             "in": "query",
             "required": false,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "CrawlerService"
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}/tasks": {
+      "get": {
+        "operationId": "CrawlerService_ListTasksByJob",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListTasksByJobResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "cursor",
+            "description": "Cursor for pagination (opaque string, empty for first page)",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "Number of items per page (default: 20, max: 100)",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "filter.status",
+            "description": "Filter by task status (exact match)",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter.url",
+            "description": "Filter by URL (partial match, case-insensitive)",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter.min_depth",
+            "description": "Filter by depth range",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "filter.max_depth",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "filter.enqueued_from",
+            "description": "Filter by enqueued_at date range",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.enqueued_to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
           }
         ],
         "tags": [
@@ -1010,6 +1100,15 @@
         }
       }
     },
+    "v1GetTaskAnalyticsResponse": {
+      "type": "object",
+      "properties": {
+        "analytics": {
+          "$ref": "#/definitions/v1TaskAnalytics"
+        }
+      },
+      "title": "GetTaskAnalyticsResponse contains task analytics"
+    },
     "v1GetTaskFileURLResponse": {
       "type": "object",
       "properties": {
@@ -1083,6 +1182,14 @@
             "type": "object",
             "$ref": "#/definitions/v1CrawlTask"
           }
+        },
+        "next_cursor": {
+          "type": "string",
+          "title": "Cursor for the next page (empty if no more results)"
+        },
+        "has_more": {
+          "type": "boolean",
+          "title": "Indicates if there are more results after this page"
         }
       }
     },
@@ -1344,6 +1451,65 @@
         }
       },
       "title": "Seed represents a starting URL"
+    },
+    "v1TaskAnalytics": {
+      "type": "object",
+      "properties": {
+        "status_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "format": "int64"
+          },
+          "title": "Count of tasks by status"
+        },
+        "depth_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "format": "int64"
+          },
+          "title": "Count of tasks by depth level"
+        },
+        "total_count": {
+          "type": "string",
+          "format": "int64",
+          "title": "Total task count"
+        }
+      },
+      "title": "TaskAnalytics contains aggregated task statistics"
+    },
+    "v1TaskListFilter": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "title": "Filter by task status (exact match)"
+        },
+        "url": {
+          "type": "string",
+          "title": "Filter by URL (partial match, case-insensitive)"
+        },
+        "min_depth": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Filter by depth range"
+        },
+        "max_depth": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "enqueued_from": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Filter by enqueued_at date range"
+        },
+        "enqueued_to": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "TaskListFilter defines filtering options for listing tasks"
     },
     "v1TransformSpec": {
       "type": "object",

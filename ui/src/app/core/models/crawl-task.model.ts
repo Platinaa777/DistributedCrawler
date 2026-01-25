@@ -21,3 +21,16 @@ export interface TaskFileURLResponse {
   url: string;
   expires_in_seconds: number;
 }
+
+// Task status constants
+export type TaskStatus = 'Pending' | 'InProgress' | 'Fetched' | 'Parsed' | 'Completed' | 'Failed' | 'Skipped';
+
+export const TASK_STATUSES: TaskStatus[] = [
+  'Pending',
+  'InProgress',
+  'Fetched',
+  'Parsed',
+  'Completed',
+  'Failed',
+  'Skipped'
+];

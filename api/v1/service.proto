@@ -45,6 +45,13 @@ service CrawlerService {
     };
   }
 
+  // Get aggregated task analytics for a job
+  rpc GetTaskAnalytics(GetTaskAnalyticsRequest) returns (GetTaskAnalyticsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/jobs/{job_id}/analytics"
+    };
+  }
+
   // Get a presigned URL for downloading a task file (HTML page or JSON result)
   rpc GetTaskFileURL(GetTaskFileURLRequest) returns (GetTaskFileURLResponse) {
     option (google.api.http) = {
