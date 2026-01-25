@@ -13,6 +13,14 @@ export interface CrawlJob {
   export_status?: string;
 }
 
+// JobType determines whether a crawl job runs once or on a schedule
+export type JobType = 'ONCE' | 'SCHEDULED';
+
+export const JOB_TYPES: { value: JobType; label: string; description: string }[] = [
+  { value: 'ONCE', label: 'One-time', description: 'Run exactly once' },
+  { value: 'SCHEDULED', label: 'Scheduled', description: 'Run on a recurring schedule' }
+];
+
 export interface CrawlJobConfig {
   id?: string;
   name: string;
@@ -23,6 +31,8 @@ export interface CrawlJobConfig {
   retries?: RetryPolicy;
   auth?: AuthOptions;
   schedule?: ScheduleOptions;
+  // Determines if this is a one-time job or a scheduled recurring job
+  job_type?: JobType;
   // If true, crawler follows robots.txt rules; if false, robots.txt is ignored
   respect_robots_txt?: boolean;
 }

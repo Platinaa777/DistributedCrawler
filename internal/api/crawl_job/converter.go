@@ -147,6 +147,18 @@ func ToProtoExtractionSpec(spec models.ExtractionSpec) *crawlergrpc.ExtractionSp
 	}
 }
 
+// ToProtoJobType converts domain JobType to protobuf
+func ToProtoJobType(jobType models.JobType) crawlergrpc.JobType {
+	switch jobType {
+	case models.JobTypeScheduled:
+		return crawlergrpc.JobType_JOB_TYPE_SCHEDULED
+	case models.JobTypeOnce:
+		return crawlergrpc.JobType_JOB_TYPE_ONCE
+	default:
+		return crawlergrpc.JobType_JOB_TYPE_ONCE
+	}
+}
+
 // ToProtoCrawlJobConfig converts domain CrawlJobConfig to protobuf
 func ToProtoCrawlJobConfig(config *models.CrawlJobConfig) *crawlergrpc.CrawlJobConfig {
 	if config == nil {
@@ -168,6 +180,7 @@ func ToProtoCrawlJobConfig(config *models.CrawlJobConfig) *crawlergrpc.CrawlJobC
 		Retries:          ToProtoRetryPolicy(config.Retries),
 		Auth:             ToProtoAuthOptions(config.Auth),
 		Schedule:         ToProtoScheduleOptions(config.Schedule),
+		JobType:          ToProtoJobType(config.JobType),
 		RespectRobotsTxt: config.RespectRobotsTxt,
 	}
 }
@@ -429,6 +442,18 @@ func FromProtoExtractionSpec(proto *crawlergrpc.ExtractionSpec) models.Extractio
 	}
 }
 
+// FromProtoJobType converts protobuf JobType to domain
+func FromProtoJobType(jobType crawlergrpc.JobType) models.JobType {
+	switch jobType {
+	case crawlergrpc.JobType_JOB_TYPE_SCHEDULED:
+		return models.JobTypeScheduled
+	case crawlergrpc.JobType_JOB_TYPE_ONCE:
+		return models.JobTypeOnce
+	default:
+		return models.JobTypeOnce
+	}
+}
+
 // FromProtoCrawlJobConfig converts protobuf CrawlJobConfig to domain
 func FromProtoCrawlJobConfig(proto *crawlergrpc.CrawlJobConfig) models.CrawlJobConfig {
 	if proto == nil {
@@ -450,6 +475,7 @@ func FromProtoCrawlJobConfig(proto *crawlergrpc.CrawlJobConfig) models.CrawlJobC
 		Retries:          FromProtoRetryPolicy(proto.Retries),
 		Auth:             FromProtoAuthOptions(proto.Auth),
 		Schedule:         FromProtoScheduleOptions(proto.Schedule),
+		JobType:          FromProtoJobType(proto.JobType),
 		RespectRobotsTxt: proto.RespectRobotsTxt,
 	}
 }

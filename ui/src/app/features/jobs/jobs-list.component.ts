@@ -83,6 +83,7 @@ import { JobFiltersComponent } from './components/job-filters.component';
             <tr>
               <th style="width: 3rem"></th>
               <th>Name</th>
+              <th>Type</th>
               <th>Status</th>
               <th>Created At</th>
               <th style="width: 8rem"></th>
@@ -101,6 +102,12 @@ import { JobFiltersComponent } from './components/job-filters.component';
               </td>
               <td>{{ job.job_config?.name || 'Unnamed Job' }}</td>
               <td>
+                <p-tag
+                  [value]="job.job_config?.job_type === 'SCHEDULED' ? 'Scheduled' : 'One-time'"
+                  [severity]="job.job_config?.job_type === 'SCHEDULED' ? 'info' : 'secondary'"
+                  styleClass="text-xs" />
+              </td>
+              <td>
                 <p-tag [value]="job.status" [severity]="getStatusSeverity(job.status)" />
               </td>
               <td>{{ job.created_at | date:'short' }}</td>
@@ -116,7 +123,7 @@ import { JobFiltersComponent } from './components/job-filters.component';
           </ng-template>
           <ng-template #expandedrow let-job>
             <tr>
-              <td [attr.colspan]="5">
+              <td [attr.colspan]="6">
                 <div class="detail-wrapper">
                   <div class="detail-header">
                     <div class="detail-title">Job Config (auth hidden)</div>
@@ -140,7 +147,7 @@ import { JobFiltersComponent } from './components/job-filters.component';
           </ng-template>
           <ng-template #emptymessage>
             <tr>
-              <td colspan="5" class="text-center p-8 text-gray-500 dark:text-gray-400">
+              <td colspan="6" class="text-center p-8 text-gray-500 dark:text-gray-400">
                 <i class="pi pi-briefcase text-6xl block mb-4"></i>
                 <p>No jobs found.</p>
               </td>

@@ -92,6 +92,13 @@ func SaveCrawlJobConfigToSnapshot(config models.CrawlJobConfig) (*snapshots.Craw
 	}
 	snapshot.Schedule = scheduleMap
 
+	// Set JobType (default to ONCE if empty)
+	jobType := string(config.JobType)
+	if jobType == "" {
+		jobType = string(models.JobTypeOnce)
+	}
+	snapshot.JobType = jobType
+
 	// Set RespectRobotsTxt
 	snapshot.RespectRobotsTxt = config.RespectRobotsTxt
 
@@ -170,6 +177,13 @@ func RestoreCrawlJobConfigFromSnapshot(snapshot snapshots.CrawlJobConfigSnapshot
 	}
 	if err := json.Unmarshal(scheduleJSON, &config.Schedule); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal Schedule: %w", err)
+	}
+
+	// Restore JobType (default to ONCE if empty)
+	if snapshot.JobType != "" {
+		config.JobType = models.JobType(snapshot.JobType)
+	} else {
+		config.JobType = models.JobTypeOnce
 	}
 
 	// Restore RespectRobotsTxt

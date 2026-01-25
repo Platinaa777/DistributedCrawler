@@ -16,6 +16,7 @@ type CrawlJobConfigSnapshot struct {
 	Retries          JSONB      `db:"retries"`
 	Auth             JSONB      `db:"auth"`
 	Schedule         JSONB      `db:"schedule"`
+	JobType          string     `db:"job_type"`
 	RespectRobotsTxt bool       `db:"respect_robots_txt"`
 }
 

@@ -14,7 +14,7 @@ import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
-import { CrawlJobConfig, RetryPolicy, ScheduleOptions } from '../../core/models/crawl-job.model';
+import { CrawlJobConfig, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES } from '../../core/models/crawl-job.model';
 import { FieldSpec, MetricSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
 
 interface SimpleJobFormValue {
@@ -32,6 +32,7 @@ interface SimpleJobFormValue {
     cookie?: string;
   };
   schedule: ScheduleOptions;
+  job_type: JobType;
 }
 
 @Component({
@@ -81,12 +82,14 @@ interface SimpleJobFormValue {
             <p class="text-sm text-gray-500 dark:text-gray-400">Minimal settings to register a crawl job.</p>
           </div>
         </ng-template>
-        <div class="p-4">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-          <input pInputText formControlName="name" placeholder="Example crawl job" class="w-full" />
-          <small *ngIf="jobForm.get('name')?.hasError('required')" class="text-red-500">
-            Name is required
-          </small>
+        <div class="p-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+            <input pInputText formControlName="name" placeholder="Example crawl job" class="w-full" />
+            <small *ngIf="jobForm.get('name')?.hasError('required')" class="text-red-500">
+              Name is required
+            </small>
+          </div>
         </div>
       </p-card>
 
@@ -197,9 +200,22 @@ interface SimpleJobFormValue {
             </div>
           </div>
 
-          <div [formGroup]="scheduleGroup" class="space-y-4">
+          <div class="space-y-4">
             <p class="text-sm font-semibold">Schedule</p>
             <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Job Type</label>
+              <p-select
+                [options]="jobTypeSelectOptions"
+                optionLabel="label"
+                optionValue="value"
+                formControlName="job_type"
+                styleClass="w-full">
+              </p-select>
+              <small class="text-gray-500 dark:text-gray-400">
+                {{ jobForm.get('job_type')?.value === 'SCHEDULED' ? 'Runs on a recurring schedule' : 'Runs exactly once' }}
+              </small>
+            </div>
+            <div [formGroup]="scheduleGroup">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cron</label>
               <input pInputText formControlName="cron" placeholder="0 9 * * 1" class="w-full" />
             </div>
@@ -465,6 +481,7 @@ export class SimpleJobCreateComponent implements OnInit {
   metricOpSelectOptions = this.metricOpOptions.map(option => ({ label: option, value: option }));
   transformOpSelectOptions = this.transformOpOptions.map(option => ({ label: option, value: option }));
   paginationAttributeSelectOptions = ['href', 'src', 'data-url', 'content'].map(option => ({ label: option, value: option }));
+  jobTypeSelectOptions = JOB_TYPES.map(option => ({ label: option.label, value: option.value }));
 
   private readonly sampleConfig: CrawlJobConfig = {
     name: 'Example Crawl Job',
@@ -523,6 +540,7 @@ export class SimpleJobCreateComponent implements OnInit {
   ngOnInit(): void {
     this.jobForm = this.fb.group({
       name: ['', Validators.required],
+      job_type: ['ONCE', Validators.required],
       seeds: this.fb.array([this.createSeedGroup()]),
       allowed_domains: this.fb.array([]),
       deny_url_patterns: this.fb.array([]),
@@ -870,6 +888,7 @@ export class SimpleJobCreateComponent implements OnInit {
 
     return {
       name: raw.name,
+      job_type: raw.job_type,
       seeds: raw.seeds.map(seed => ({ url: seed.url })),
       scopes: {
         max_depth: Number(raw.max_depth),

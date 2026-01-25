@@ -897,6 +897,10 @@
         "respect_robots_txt": {
           "type": "boolean",
           "title": "If true, fetch and follow robots.txt rules; if false, ignore robots.txt"
+        },
+        "job_type": {
+          "$ref": "#/definitions/v1JobType",
+          "title": "Determines if this is a one-time job or a scheduled recurring job"
         }
       },
       "title": "CrawlJobConfig represents crawl job configuration"
@@ -1152,6 +1156,16 @@
         }
       },
       "title": "JobListFilter defines filtering options for listing jobs"
+    },
+    "v1JobType": {
+      "type": "string",
+      "enum": [
+        "JOB_TYPE_UNSPECIFIED",
+        "JOB_TYPE_ONCE",
+        "JOB_TYPE_SCHEDULED"
+      ],
+      "default": "JOB_TYPE_UNSPECIFIED",
+      "description": "JobType determines whether a crawl job runs once or on a schedule.\n\n - JOB_TYPE_ONCE: One-time job that runs exactly once\n - JOB_TYPE_SCHEDULED: Recurring job that runs on a schedule (requires schedule.cron)"
     },
     "v1ListJobsResponse": {
       "type": "object",

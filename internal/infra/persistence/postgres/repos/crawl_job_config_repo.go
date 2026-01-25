@@ -24,6 +24,7 @@ const (
 	configRetriesColumn          = "retries"
 	configAuthColumn             = "auth"
 	configScheduleColumn         = "schedule"
+	configJobTypeColumn          = "job_type"
 	configRespectRobotsTxtColumn = "respect_robots_txt"
 )
 
@@ -53,6 +54,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 			configRetriesColumn,
 			configAuthColumn,
 			configScheduleColumn,
+			configJobTypeColumn,
 			configRespectRobotsTxtColumn,
 		).
 		Values(
@@ -65,6 +67,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 			dbEntity.Retries,
 			dbEntity.Auth,
 			dbEntity.Schedule,
+			dbEntity.JobType,
 			dbEntity.RespectRobotsTxt,
 		).
 		Suffix("RETURNING id")
@@ -99,6 +102,7 @@ func (r *crawlJobConfigRepository) Get(ctx context.Context, id valueobjects.ID) 
 		configRetriesColumn,
 		configAuthColumn,
 		configScheduleColumn,
+		configJobTypeColumn,
 		configRespectRobotsTxtColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
@@ -141,6 +145,7 @@ func (r *crawlJobConfigRepository) Update(ctx context.Context, entity models.Cra
 		Set(configRetriesColumn, dbEntity.Retries).
 		Set(configAuthColumn, dbEntity.Auth).
 		Set(configScheduleColumn, dbEntity.Schedule).
+		Set(configJobTypeColumn, dbEntity.JobType).
 		Set(configRespectRobotsTxtColumn, dbEntity.RespectRobotsTxt).
 		Where(sq.Eq{configIDColumn: dbEntity.ID})
 
@@ -188,6 +193,7 @@ func (r *crawlJobConfigRepository) ListAll(ctx context.Context, limit, offset in
 		configRetriesColumn,
 		configAuthColumn,
 		configScheduleColumn,
+		configJobTypeColumn,
 		configRespectRobotsTxtColumn,
 	).
 		PlaceholderFormat(sq.Dollar).

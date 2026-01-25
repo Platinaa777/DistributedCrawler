@@ -108,6 +108,13 @@ message ExtractionSpec {
   repeated PaginationSpec pagination = 3;
 }
 
+// JobType determines whether a crawl job runs once or on a schedule.
+enum JobType {
+  JOB_TYPE_UNSPECIFIED = 0;
+  JOB_TYPE_ONCE = 1;       // One-time job that runs exactly once
+  JOB_TYPE_SCHEDULED = 2;  // Recurring job that runs on a schedule (requires schedule.cron)
+}
+
 // CrawlJobConfig represents crawl job configuration
 message CrawlJobConfig {
   string id = 1;
@@ -121,6 +128,8 @@ message CrawlJobConfig {
   ScheduleOptions schedule = 9;
   // If true, fetch and follow robots.txt rules; if false, ignore robots.txt
   bool respect_robots_txt = 10 [json_name = "respect_robots_txt"];
+  // Determines if this is a one-time job or a scheduled recurring job
+  JobType job_type = 11 [json_name = "job_type"];
 }
 
 // CrawlJob represents a crawling job
