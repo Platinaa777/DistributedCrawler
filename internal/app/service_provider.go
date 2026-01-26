@@ -37,6 +37,7 @@ import (
 	"distributed-crawler/internal/infra/services/contentstore"
 	"distributed-crawler/internal/infra/services/fetcher"
 	"distributed-crawler/internal/infra/services/sanitizer"
+	"distributed-crawler/internal/telemetry"
 	"distributed-crawler/internal/worker"
 	"distributed-crawler/internal/workerhealth"
 
@@ -50,6 +51,10 @@ type serviceProvider struct {
 	rabbitmqConfig config.RabbitMQConfig
 	minioConfig    config.MinIOConfig
 	authConfig     config.AuthConfig
+	otelConfig     config.OTelConfig
+
+	telemetryProvider *telemetry.TelemetryProvider
+	metrics           *telemetry.Metrics
 
 	dbClient           persistence.Client
 	txManager          persistence.TxManager
@@ -203,6 +208,7 @@ func (s *serviceProvider) CrawlJobService(ctx context.Context) service.CrawlJobS
 			s.CrawlTaskRepository(ctx),
 			s.OutboxRepository(ctx),
 			s.TxManager(ctx),
+			s.Metrics(ctx),
 		)
 	}
 
@@ -395,6 +401,50 @@ func (s *serviceProvider) AuthConfig() config.AuthConfig {
 	return s.authConfig
 }
 
+func (s *serviceProvider) OTelConfig() config.OTelConfig {
+	if s.otelConfig == nil {
+		cfg, err := env.NewOTelConfig()
+		if err != nil {
+			log.Printf("failed to get otel config: %s", err.Error())
+			return nil
+		}
+		s.otelConfig = cfg
+	}
+	return s.otelConfig
+}
+
+func (s *serviceProvider) TelemetryProvider(ctx context.Context) *telemetry.TelemetryProvider {
+	if s.telemetryProvider == nil {
+		cfg := s.OTelConfig()
+		if cfg == nil || !cfg.Enabled() {
+			return nil
+		}
+		tp, err := telemetry.NewTelemetryProvider(ctx, cfg)
+		if err != nil {
+			log.Printf("failed to create telemetry provider: %v", err)
+			return nil
+		}
+		s.telemetryProvider = tp
+	}
+	return s.telemetryProvider
+}
+
+func (s *serviceProvider) Metrics(ctx context.Context) *telemetry.Metrics {
+	if s.metrics == nil {
+		tp := s.TelemetryProvider(ctx)
+		if tp == nil {
+			return nil
+		}
+		m, err := telemetry.NewMetrics(tp.Meter("distributed-crawler"))
+		if err != nil {
+			log.Printf("failed to create metrics: %v", err)
+			return nil
+		}
+		s.metrics = m
+	}
+	return s.metrics
+}
+
 func (s *serviceProvider) UserRepository(ctx context.Context) userrepo.UserRepository {
 	if s.userRepo == nil {
 		s.userRepo = crawljobrepoimpl.NewUserRepository(s.DBClient(ctx))
@@ -529,6 +579,14 @@ func (s *serviceProvider) EnsureDefaultAdmin(ctx context.Context) error {
 }
 
 func (s *serviceProvider) Close() error {
+	// Shutdown telemetry first to flush pending data
+	if s.telemetryProvider != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := s.telemetryProvider.Shutdown(ctx); err != nil {
+			log.Printf("failed to shutdown telemetry: %v", err)
+		}
+	}
 	if s.rmqClient != nil {
 		if err := s.rmqClient.Close(); err != nil {
 			log.Printf("failed to close rabbitmq client: %v", err)

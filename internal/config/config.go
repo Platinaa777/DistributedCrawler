@@ -62,3 +62,14 @@ type AuthConfig interface {
 	DefaultUserEmail() string
 	DefaultUserPassword() string
 }
+
+type OTelConfig interface {
+	Enabled() bool
+	ServiceName() string
+	ServiceVersion() string
+	Environment() string
+	OTLPEndpoint() string
+	OTLPInsecure() bool
+	TraceSampleRate() float64
+	MetricsIntervalSeconds() int
+}

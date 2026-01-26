@@ -7,6 +7,7 @@ import (
 	crawltaskrepo "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	"distributed-crawler/internal/infra/persistence"
+	"distributed-crawler/internal/telemetry"
 )
 
 type crawlJobServ struct {
@@ -15,6 +16,7 @@ type crawlJobServ struct {
 	crawlTaskRepo      crawltaskrepo.CrawlTaskRepository
 	outboxRepo         outbox.OutboxRepository
 	txManager          persistence.TxManager
+	metrics            *telemetry.Metrics
 }
 
 func NewService(
@@ -23,6 +25,7 @@ func NewService(
 	crawlTaskRepo crawltaskrepo.CrawlTaskRepository,
 	outboxRepo outbox.OutboxRepository,
 	txManager persistence.TxManager,
+	metrics *telemetry.Metrics,
 ) service.CrawlJobService {
 	return &crawlJobServ{
 		crawlJobRepo:       crawlJobRepo,
@@ -30,5 +33,6 @@ func NewService(
 		crawlTaskRepo:      crawlTaskRepo,
 		outboxRepo:         outboxRepo,
 		txManager:          txManager,
+		metrics:            metrics,
 	}
 }

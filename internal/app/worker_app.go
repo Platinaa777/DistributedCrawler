@@ -20,10 +20,12 @@ import (
 	"distributed-crawler/internal/infra/persistence/postgres/transaction"
 	"distributed-crawler/internal/infra/services/contentstore"
 	"distributed-crawler/internal/infra/services/fetcher"
+	"distributed-crawler/internal/telemetry"
 	"distributed-crawler/internal/worker"
 	crawlergrpc "distributed-crawler/pkg/v1"
 
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -51,6 +53,9 @@ type WorkerApp struct {
 	rmqConfig   config.RabbitMQConfig
 	redisClient *redis.Client
 	grpcConfig  config.GRPCConfig
+
+	telemetryProvider *telemetry.TelemetryProvider
+	metrics           *telemetry.Metrics
 
 	workerID  string
 	startedAt time.Time
@@ -91,6 +96,14 @@ func NewWorkerApp(ctx context.Context, workerType WorkerType) (*WorkerApp, error
 // Run starts the worker application
 func (a *WorkerApp) Run() error {
 	defer func() {
+		// Shutdown telemetry first to flush pending data
+		if a.telemetryProvider != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := a.telemetryProvider.Shutdown(ctx); err != nil {
+				a.zapLogger.Warn("Failed to shutdown telemetry", zap.Error(err))
+			}
+		}
 		if a.pgClient != nil {
 			a.pgClient.Close()
 		}
@@ -135,6 +148,7 @@ func (a *WorkerApp) initDeps(ctx context.Context) error {
 		a.initConfig,
 		a.initGRPCConfig,
 		a.initLogger,
+		a.initTelemetry,
 		a.initPostgreSQL,
 		a.initRabbitMQ,
 		a.initRedis,
@@ -187,6 +201,39 @@ func (a *WorkerApp) initLogger(_ context.Context) error {
 	}
 
 	a.zapLogger = zapLogger
+	return nil
+}
+
+func (a *WorkerApp) initTelemetry(ctx context.Context) error {
+	otelCfg, err := env.NewOTelConfig()
+	if err != nil {
+		a.zapLogger.Warn("Failed to get OTel config, telemetry disabled", zap.Error(err))
+		return nil
+	}
+
+	if !otelCfg.Enabled() {
+		a.zapLogger.Info("Telemetry is disabled")
+		return nil
+	}
+
+	tp, err := telemetry.NewTelemetryProvider(ctx, otelCfg)
+	if err != nil {
+		a.zapLogger.Warn("Failed to create telemetry provider", zap.Error(err))
+		return nil
+	}
+
+	a.telemetryProvider = tp
+
+	if tp != nil {
+		m, err := telemetry.NewMetrics(tp.Meter("distributed-crawler-worker"))
+		if err != nil {
+			a.zapLogger.Warn("Failed to create metrics", zap.Error(err))
+		} else {
+			a.metrics = m
+		}
+	}
+
+	a.zapLogger.Info("Telemetry initialized successfully")
 	return nil
 }
 
@@ -300,6 +347,12 @@ func (a *WorkerApp) initFetchWorker() error {
 	crawlQueue := a.rmqConfig.GetQueueName(config.CrawlQueueKey)
 	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
 
+	// Get tracer if telemetry is available
+	var tracer trace.Tracer
+	if a.telemetryProvider != nil {
+		tracer = a.telemetryProvider.Tracer("fetch-worker")
+	}
+
 	// Create fetch worker
 	a.fetchWorker = worker.NewFetchWorker(
 		a.rmqClient,
@@ -313,6 +366,9 @@ func (a *WorkerApp) initFetchWorker() error {
 		rateLimiter,
 		robotsTxtService,
 		a.zapLogger,
+		tracer,
+		a.metrics,
+		a.workerID,
 	)
 	a.activeTasksCounter = a.fetchWorker
 
@@ -356,6 +412,12 @@ func (a *WorkerApp) initParserWorker() error {
 	// Get queue name from configuration
 	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
 
+	// Get tracer if telemetry is available
+	var tracer trace.Tracer
+	if a.telemetryProvider != nil {
+		tracer = a.telemetryProvider.Tracer("parser-worker")
+	}
+
 	// Create parser worker
 	a.parserWorker = worker.NewParserWorker(
 		a.rmqClient,
@@ -369,6 +431,9 @@ func (a *WorkerApp) initParserWorker() error {
 		scopeValidator,
 		robotsTxtService,
 		a.zapLogger,
+		tracer,
+		a.metrics,
+		a.workerID,
 	)
 	a.activeTasksCounter = a.parserWorker
 

@@ -22,8 +22,13 @@ import (
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
+	"distributed-crawler/internal/telemetry"
 
 	"github.com/PuerkitoBio/goquery"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -41,6 +46,10 @@ type ParserWorker struct {
 	robotsTxtService services.RobotsTxtService
 	logger           *zap.Logger
 	activeTasks      atomic.Int64
+
+	tracer   trace.Tracer
+	metrics  *telemetry.Metrics
+	workerID string
 }
 
 // NewParserWorker creates a new parser worker
@@ -56,6 +65,9 @@ func NewParserWorker(
 	scopeValidator services.ScopeValidator,
 	robotsTxtService services.RobotsTxtService,
 	logger *zap.Logger,
+	tracer trace.Tracer,
+	metrics *telemetry.Metrics,
+	workerID string,
 ) *ParserWorker {
 	return &ParserWorker{
 		rmqClient:        rmqClient,
@@ -69,6 +81,9 @@ func NewParserWorker(
 		scopeValidator:   scopeValidator,
 		robotsTxtService: robotsTxtService,
 		logger:           logger,
+		tracer:           tracer,
+		metrics:          metrics,
+		workerID:         workerID,
 	}
 }
 
@@ -88,6 +103,8 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 	w.activeTasks.Add(1)
 	defer w.activeTasks.Add(-1)
 
+	startTime := time.Now()
+
 	// Parse message
 	var task rabbitmq.ParsingTaskMessage
 	if err := json.Unmarshal(body, &task); err != nil {
@@ -100,7 +117,22 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		zap.String("job_id", task.JobID),
 	)
 
-	ctx := context.Background()
+	// Extract trace context from message and create span
+	ctx := telemetry.ExtractTraceContext(context.Background(), task.TraceContext)
+
+	var span trace.Span
+	if w.tracer != nil {
+		ctx, span = w.tracer.Start(ctx, "parser_worker_process",
+			trace.WithSpanKind(trace.SpanKindConsumer),
+			trace.WithAttributes(
+				attribute.String("job.id", task.JobID),
+				attribute.String("task.id", task.TaskID),
+				attribute.String("worker.id", w.workerID),
+				attribute.String("worker.type", "parser"),
+			),
+		)
+		defer span.End()
+	}
 
 	// Parse task ID
 	taskID, err := valueobjects.NewCrawlTaskID(task.TaskID)
@@ -263,7 +295,61 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		// Just log the error and continue
 	}
 
+	// Record successful parsing duration metric
+	duration := time.Since(startTime).Seconds()
+	w.recordParserDuration(ctx, "text/html", duration)
+
+	// Record task completion metric
+	w.recordTaskCompleted(ctx)
+
+	// Set span attributes for successful completion
+	if span != nil {
+		span.SetAttributes(
+			attribute.Int("page.size_bytes", len(htmlContent)),
+			attribute.Int("parser.items_extracted", len(result.Fields)),
+		)
+		span.SetStatus(codes.Ok, "")
+	}
+
+	w.logger.Info("Successfully processed parsing task",
+		zap.String("task_id", task.TaskID),
+		zap.String("url", crawlTask.URL),
+		zap.Duration("duration", time.Since(startTime)),
+	)
+
 	return nil
+}
+
+// recordParserDuration records the parser duration metric
+func (w *ParserWorker) recordParserDuration(ctx context.Context, contentType string, duration float64) {
+	if w.metrics == nil || w.metrics.ParserDuration == nil {
+		return
+	}
+	w.metrics.ParserDuration.Record(ctx, duration,
+		metric.WithAttributes(
+			attribute.String("content_type", contentType),
+		),
+	)
+}
+
+// recordTaskCompleted records the task completed metric
+func (w *ParserWorker) recordTaskCompleted(ctx context.Context) {
+	if w.metrics == nil || w.metrics.TasksCompletedTotal == nil {
+		return
+	}
+	w.metrics.TasksCompletedTotal.Add(ctx, 1)
+}
+
+// recordTaskFailed records the task failed metric
+func (w *ParserWorker) recordTaskFailed(ctx context.Context, reason string) {
+	if w.metrics == nil || w.metrics.TasksFailedTotal == nil {
+		return
+	}
+	w.metrics.TasksFailedTotal.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("failure_reason", reason),
+		),
+	)
 }
 
 // extractionResult holds the extracted data and computed metrics

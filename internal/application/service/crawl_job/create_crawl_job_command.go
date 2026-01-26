@@ -98,6 +98,11 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 			return fmt.Errorf("failed to create crawl tasks: %w", err)
 		}
 
+		// Record tasks created metric
+		if s.metrics != nil && s.metrics.TasksCreatedTotal != nil {
+			s.metrics.TasksCreatedTotal.Add(ctx, int64(len(tasks)))
+		}
+
 		return nil
 	})
 

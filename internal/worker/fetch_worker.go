@@ -8,6 +8,7 @@ import (
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
+	"distributed-crawler/internal/telemetry"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -15,6 +16,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -32,6 +37,10 @@ type FetchWorker struct {
 	robotsTxtService services.RobotsTxtService
 	logger           *zap.Logger
 	activeTasks      atomic.Int64
+
+	tracer   trace.Tracer
+	metrics  *telemetry.Metrics
+	workerID string
 }
 
 // NewFetchWorker creates a new fetch worker
@@ -47,6 +56,9 @@ func NewFetchWorker(
 	rateLimiter services.RateLimiter,
 	robotsTxtService services.RobotsTxtService,
 	logger *zap.Logger,
+	tracer trace.Tracer,
+	metrics *telemetry.Metrics,
+	workerID string,
 ) *FetchWorker {
 	return &FetchWorker{
 		rmqClient:        rmqClient,
@@ -60,6 +72,9 @@ func NewFetchWorker(
 		rateLimiter:      rateLimiter,
 		robotsTxtService: robotsTxtService,
 		logger:           logger,
+		tracer:           tracer,
+		metrics:          metrics,
+		workerID:         workerID,
 	}
 }
 
@@ -79,6 +94,8 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	w.activeTasks.Add(1)
 	defer w.activeTasks.Add(-1)
 
+	startTime := time.Now()
+
 	// Parse message
 	var taskMsg rabbitmq.CrawlTaskMessage
 	if err := json.Unmarshal(body, &taskMsg); err != nil {
@@ -92,7 +109,23 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		zap.String("url", taskMsg.URL),
 	)
 
-	ctx := context.Background()
+	// Extract trace context from message and create span
+	ctx := telemetry.ExtractTraceContext(context.Background(), taskMsg.TraceContext)
+
+	var span trace.Span
+	if w.tracer != nil {
+		ctx, span = w.tracer.Start(ctx, "fetch_worker_process",
+			trace.WithSpanKind(trace.SpanKindConsumer),
+			trace.WithAttributes(
+				attribute.String("job.id", taskMsg.JobID),
+				attribute.String("task.id", taskMsg.TaskID),
+				attribute.String("task.url", taskMsg.URL),
+				attribute.String("worker.id", w.workerID),
+				attribute.String("worker.type", "fetch"),
+			),
+		)
+		defer span.End()
+	}
 
 	// Parse task ID
 	taskID, err := valueobjects.NewCrawlTaskID(taskMsg.TaskID)
@@ -253,11 +286,36 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	}
 
 	// Create configured fetcher
-	fetcher := w.fetcherFactory.CreateFetcher(config.Auth, config.Retries)
+	fetcherInst := w.fetcherFactory.CreateFetcher(config.Auth, config.Retries)
+
+	// Start child span for HTTP fetch
+	var fetchSpan trace.Span
+	if w.tracer != nil {
+		ctx, fetchSpan = w.tracer.Start(ctx, "http_fetch",
+			trace.WithAttributes(
+				attribute.String("task.url", task.URL),
+			),
+		)
+	}
 
 	// Fetch the page
-	fetchResult, err := fetcher.Fetch(ctx, task.URL)
+	fetchStart := time.Now()
+	fetchResult, err := fetcherInst.Fetch(ctx, task.URL)
+	fetchDuration := time.Since(fetchStart).Seconds()
+
+	// Extract domain for metrics
+	domain := extractDomain(task.URL)
+
 	if err != nil {
+		if fetchSpan != nil {
+			fetchSpan.RecordError(err)
+			fetchSpan.SetStatus(codes.Error, err.Error())
+			fetchSpan.End()
+		}
+
+		// Record fetch error metric
+		w.recordFetchError(ctx, domain, categorizeError(err))
+
 		w.logger.Error("Failed to fetch page",
 			zap.String("task_id", taskMsg.TaskID),
 			zap.String("url", task.URL),
@@ -274,6 +332,10 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 
 		// Mark task as failed for both permanent errors and exhausted retries
 		if isPermanent || retriesExhausted {
+			if span != nil {
+				span.SetStatus(codes.Error, "fetch failed")
+			}
+
 			task.Status = models.TaskStatusFailed
 			errMsg := fmt.Sprintf("fetch failed: %v", err)
 			task.ErrorMessage = &errMsg
@@ -306,6 +368,19 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		// For transient errors that haven't exhausted retries, return error to trigger requeue/retry
 		return fmt.Errorf("failed to fetch page: %w", err)
 	}
+
+	// End fetch span on success
+	if fetchSpan != nil {
+		fetchSpan.SetAttributes(
+			attribute.Int("http.status_code", fetchResult.StatusCode),
+			attribute.Int("page.size_bytes", len(fetchResult.Body)),
+		)
+		fetchSpan.SetStatus(codes.Ok, "")
+		fetchSpan.End()
+	}
+
+	// Record successful fetch duration metric
+	w.recordFetchDuration(ctx, domain, fetchResult.StatusCode, fetchDuration)
 
 	// Check for duplicate content (deduplication)
 	isDuplicate, err := w.taskRepo.ExistsByJobIDAndHashExcluding(ctx, task.JobID, fetchResult.BodyHash, task.ID)
@@ -367,9 +442,10 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 
 	// Publish to parsing queue only after successful DB save
 	parsingMsg := rabbitmq.ParsingTaskMessage{
-		TaskID:     taskMsg.TaskID,
-		JobID:      taskMsg.JobID,
-		EnqueuedAt: time.Now(),
+		TaskID:       taskMsg.TaskID,
+		JobID:        taskMsg.JobID,
+		EnqueuedAt:   time.Now(),
+		TraceContext: telemetry.InjectTraceContext(ctx),
 	}
 
 	if err := w.rmqClient.Publish(ctx, w.parsingQueue, parsingMsg); err != nil {
@@ -380,13 +456,85 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		return fmt.Errorf("failed to publish to parsing queue: %w", err)
 	}
 
+	// Set span attributes for successful completion
+	if span != nil {
+		span.SetAttributes(
+			attribute.Int("page.size_bytes", len(fetchResult.Body)),
+			attribute.String("http.final_url", fetchResult.FinalURL),
+		)
+		span.SetStatus(codes.Ok, "")
+	}
+
 	w.logger.Info("Successfully processed fetch task",
 		zap.String("task_id", taskMsg.TaskID),
 		zap.String("url", task.URL),
 		zap.String("final_url", fetchResult.FinalURL),
 		zap.String("body_hash", fetchResult.BodyHash),
 		zap.String("minio_key", minioKey),
+		zap.Duration("total_duration", time.Since(startTime)),
 	)
 
 	return nil
+}
+
+// recordFetchDuration records the fetch duration metric
+func (w *FetchWorker) recordFetchDuration(ctx context.Context, domain string, statusCode int, duration float64) {
+	if w.metrics == nil || w.metrics.FetchDuration == nil {
+		return
+	}
+	w.metrics.FetchDuration.Record(ctx, duration,
+		metric.WithAttributes(
+			attribute.String("domain", domain),
+			attribute.Int("status_code", statusCode),
+		),
+	)
+}
+
+// recordFetchError records the fetch error metric
+func (w *FetchWorker) recordFetchError(ctx context.Context, domain, errorType string) {
+	if w.metrics == nil || w.metrics.FetchErrorsTotal == nil {
+		return
+	}
+	w.metrics.FetchErrorsTotal.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("domain", domain),
+			attribute.String("error_type", errorType),
+		),
+	)
+}
+
+// extractDomain extracts the domain from a URL for metric labels
+func extractDomain(rawURL string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return "unknown"
+	}
+	host := parsed.Hostname()
+	if host == "" {
+		return "unknown"
+	}
+	return host
+}
+
+// categorizeError categorizes an error for metric labels
+func categorizeError(err error) string {
+	errStr := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(errStr, "timeout"):
+		return "timeout"
+	case strings.Contains(errStr, "connection refused"):
+		return "connection_refused"
+	case strings.Contains(errStr, "no such host"):
+		return "dns_error"
+	case strings.Contains(errStr, "permanent error"):
+		return "permanent"
+	case strings.Contains(errStr, "403"), strings.Contains(errStr, "forbidden"):
+		return "http_403"
+	case strings.Contains(errStr, "404"), strings.Contains(errStr, "not found"):
+		return "http_404"
+	case strings.Contains(errStr, "5"):
+		return "http_5xx"
+	default:
+		return "other"
+	}
 }

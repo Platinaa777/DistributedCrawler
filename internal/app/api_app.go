@@ -12,6 +12,7 @@ import (
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -91,6 +92,7 @@ func (a *APIApp) initDeps(ctx context.Context) error {
 		a.initConfig,
 		a.initLogger,
 		a.initServiceProvider,
+		a.initTelemetry,
 		a.initDefaultAdmin,
 		a.initGRPCServer,
 		a.initHTTPServer,
@@ -135,6 +137,12 @@ func (a *APIApp) initServiceProvider(_ context.Context) error {
 	return nil
 }
 
+func (a *APIApp) initTelemetry(ctx context.Context) error {
+	// Initialize telemetry provider (will be nil if disabled)
+	_ = a.serviceProvider.TelemetryProvider(ctx)
+	return nil
+}
+
 func (a *APIApp) initDefaultAdmin(ctx context.Context) error {
 	if err := a.serviceProvider.EnsureDefaultAdmin(ctx); err != nil {
 		log.Fatalf("failed to ensure default admin: %v", err)
@@ -145,6 +153,7 @@ func (a *APIApp) initDefaultAdmin(ctx context.Context) error {
 func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.UnaryInterceptor(
 			grpcMiddleware.ChainUnaryServer(
 				interceptor.LogInterceptor,
