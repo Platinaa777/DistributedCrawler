@@ -111,16 +111,13 @@ func NewTelemetryProvider(ctx context.Context, cfg config.OTelConfig) (*Telemetr
 func (tp *TelemetryProvider) createResource(cfg config.OTelConfig) (*resource.Resource, error) {
 	hostname, _ := os.Hostname()
 
-	return resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName(cfg.ServiceName()),
-			semconv.ServiceVersion(cfg.ServiceVersion()),
-			semconv.DeploymentEnvironment(cfg.Environment()),
-			semconv.HostName(hostname),
-		),
-	)
+	return resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName(cfg.ServiceName()),
+		semconv.ServiceVersion(cfg.ServiceVersion()),
+		semconv.DeploymentEnvironment(cfg.Environment()),
+		semconv.HostName(hostname),
+	), nil
 }
 
 // Shutdown gracefully shuts down all telemetry providers

@@ -206,7 +206,14 @@ func (c *client) Consume(ctx context.Context, queueName string, handler func([]b
 		)
 		if err != nil {
 			ch.Close()
-			return fmt.Errorf("failed to declare queue: %w", err)
+			log.Printf("Failed to declare queue %s, retrying in %v: %v", queueName, backoff, err)
+			select {
+			case <-time.After(backoff):
+				backoff = min(backoff*2, maxBackoff)
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
 
 		// Set QoS - process one message at a time
@@ -217,7 +224,14 @@ func (c *client) Consume(ctx context.Context, queueName string, handler func([]b
 		)
 		if err != nil {
 			ch.Close()
-			return fmt.Errorf("failed to set QoS: %w", err)
+			log.Printf("Failed to set QoS for queue %s, retrying in %v: %v", queueName, backoff, err)
+			select {
+			case <-time.After(backoff):
+				backoff = min(backoff*2, maxBackoff)
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
 
 		// Start consuming
@@ -232,7 +246,14 @@ func (c *client) Consume(ctx context.Context, queueName string, handler func([]b
 		)
 		if err != nil {
 			ch.Close()
-			return fmt.Errorf("failed to start consuming: %w", err)
+			log.Printf("Failed to start consuming from queue %s, retrying in %v: %v", queueName, backoff, err)
+			select {
+			case <-time.After(backoff):
+				backoff = min(backoff*2, maxBackoff)
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
 
 		// Listen for channel close notifications
