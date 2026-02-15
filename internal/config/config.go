@@ -23,6 +23,8 @@ type GRPCConfig interface {
 
 type PGConfig interface {
 	DSN() string
+	ShardingEnabled() bool
+	ShardDSNs() []string
 }
 
 type HTTPConfig interface {

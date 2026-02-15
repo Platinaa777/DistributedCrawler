@@ -266,7 +266,12 @@ func (a *WorkerApp) initPostgreSQL(ctx context.Context) error {
 		a.zapLogger.Fatal("Failed to create PG config", zap.Error(err))
 	}
 
-	pgClient, err := pg.New(ctx, pgCfg.DSN())
+	var pgClient persistence.Client
+	if pgCfg.ShardingEnabled() {
+		pgClient, err = pg.NewSharded(ctx, pgCfg.ShardDSNs())
+	} else {
+		pgClient, err = pg.New(ctx, pgCfg.DSN())
+	}
 	if err != nil {
 		a.zapLogger.Fatal("Failed to connect to PostgreSQL", zap.Error(err))
 	}

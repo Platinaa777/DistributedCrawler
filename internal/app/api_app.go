@@ -172,6 +172,7 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 			grpcMiddleware.ChainUnaryServer(
 				interceptor.LogInterceptor,
 				interceptor.ValidateInterceptor,
+				interceptor.ShardKeyInterceptor(a.serviceProvider.PGConfig().ShardingEnabled()),
 				auth.JWTAuthInterceptor(a.serviceProvider.JWTService()),
 				auth.RBACInterceptor(),
 			),

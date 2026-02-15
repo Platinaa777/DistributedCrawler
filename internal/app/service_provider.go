@@ -161,7 +161,14 @@ func (s *serviceProvider) Logger() *zap.Logger {
 
 func (s *serviceProvider) DBClient(ctx context.Context) persistence.Client {
 	if s.dbClient == nil {
-		cl, err := pg.New(ctx, s.PGConfig().DSN())
+		var cl persistence.Client
+		var err error
+
+		if s.PGConfig().ShardingEnabled() {
+			cl, err = pg.NewSharded(ctx, s.PGConfig().ShardDSNs())
+		} else {
+			cl, err = pg.New(ctx, s.PGConfig().DSN())
+		}
 		if err != nil {
 			log.Fatalf("failed to create db client: %v", err)
 		}
