@@ -2,11 +2,9 @@ package fetcher
 
 import (
 	"context"
-	"crypto/sha256"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/services"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"sync"
 	"time"
@@ -176,12 +174,9 @@ func (f *BrowserFetcher) doFetch(ctx context.Context, url string) (*services.Fet
 	}
 
 	body := []byte(html)
-	hash := sha256.Sum256(body)
-	bodyHash := hex.EncodeToString(hash[:])
 
 	return &services.FetchResult{
 		Body:        body,
-		BodyHash:    bodyHash,
 		FinalURL:    finalURL,
 		StatusCode:  statusCode,
 		ContentType: contentType,

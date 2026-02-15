@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -60,12 +62,10 @@ func (c *opensearchCore) With(fields []zapcore.Field) zapcore.Core {
 
 func (c *opensearchCore) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
 	if c.Enabled(entry.Level) {
-		return ce.After(entry, c)
+		return ce.AddCore(entry, c)
 	}
 	return ce
 }
-
-func (c *opensearchCore) OnWrite(_ *zapcore.CheckedEntry, _ []zapcore.Field) {}
 
 func (c *opensearchCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	doc := map[string]any{
@@ -163,15 +163,23 @@ func (c *opensearchCore) sendBulk(docs []map[string]any) {
 		body.WriteByte('\n')
 	}
 
-	req, err := http.NewRequest(http.MethodPost, c.endpoint+"/_bulk", &body)
+	url := c.endpoint + "/_bulk"
+	req, err := http.NewRequest(http.MethodPost, url, &body)
 	if err != nil {
+		log.Printf("[opensearch] failed to create request: %v", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/x-ndjson")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
+		log.Printf("[opensearch] failed to send bulk request to %s: %v", url, err)
 		return
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("[opensearch] bulk request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
 }

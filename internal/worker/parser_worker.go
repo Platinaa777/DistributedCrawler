@@ -170,41 +170,34 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		return fmt.Errorf("failed to load job config: %w", err)
 	}
 
-	// Deduplication check: if we've already processed this content (same body_hash) for this job, skip
-	// We exclude the current task to avoid false positive (task comparing with itself)
-	if crawlTask.BodyHash != nil {
-		exists, err := w.taskRepo.ExistsByJobIDAndHashExcluding(ctx, crawlTask.JobID, *crawlTask.BodyHash, crawlTask.ID)
-		if err != nil {
-			w.logger.Error("Failed to check for duplicate body_hash",
+	// URL deduplication: check if another task with the same URL already exists in this job
+	isDuplicate, err := w.taskRepo.ExistsByJobIDAndURL(ctx, crawlTask.JobID, crawlTask.URL)
+	if err != nil {
+		w.logger.Error("Failed to check for duplicate URL",
+			zap.String("task_id", task.TaskID),
+			zap.String("url", crawlTask.URL),
+			zap.Error(err),
+		)
+		return fmt.Errorf("failed to check for duplicate URL: %w", err)
+	}
+
+	if isDuplicate {
+		w.logger.Info("Skipping task - duplicate URL already exists",
+			zap.String("task_id", task.TaskID),
+			zap.String("job_id", task.JobID),
+			zap.String("url", crawlTask.URL),
+		)
+
+		crawlTask.Status = models.TaskStatusSkipped
+		if err := w.taskRepo.Update(ctx, *crawlTask); err != nil {
+			w.logger.Error("Failed to update task status to Skipped",
 				zap.String("task_id", task.TaskID),
-				zap.String("job_id", task.JobID),
-				zap.String("body_hash", *crawlTask.BodyHash),
 				zap.Error(err),
 			)
-			return fmt.Errorf("failed to check for duplicate: %w", err)
+			return fmt.Errorf("failed to update task status: %w", err)
 		}
 
-		if exists {
-			w.logger.Info("Skipping task - duplicate content already processed",
-				zap.String("task_id", task.TaskID),
-				zap.String("job_id", task.JobID),
-				zap.String("body_hash", *crawlTask.BodyHash),
-				zap.String("url", crawlTask.URL),
-			)
-
-			// Update task status to Skipped
-			crawlTask.Status = models.TaskStatusSkipped
-			if err := w.taskRepo.Update(ctx, *crawlTask); err != nil {
-				w.logger.Error("Failed to update task status to Skipped",
-					zap.String("task_id", task.TaskID),
-					zap.Error(err),
-				)
-				return fmt.Errorf("failed to update task status: %w", err)
-			}
-
-			// Task already processed with same content - skip without error
-			return nil
-		}
+		return nil
 	}
 
 	// Load HTML from MinIO

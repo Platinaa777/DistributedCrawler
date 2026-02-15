@@ -144,6 +144,37 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 
+	// URL deduplication: check if another task with the same URL already exists in this job
+	isDuplicate, err := w.taskRepo.ExistsByJobIDAndURL(ctx, task.JobID, task.URL)
+	if err != nil {
+		w.logger.Error("Failed to check for duplicate URL",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+			zap.Error(err),
+		)
+		return fmt.Errorf("failed to check for duplicate URL: %w", err)
+	}
+
+	if isDuplicate {
+		w.logger.Info("Duplicate URL detected, skipping task",
+			zap.String("task_id", taskMsg.TaskID),
+			zap.String("url", task.URL),
+		)
+
+		task.Status = models.TaskStatusSkipped
+		errMsg := fmt.Sprintf("duplicate URL: %s", task.URL)
+		task.ErrorMessage = &errMsg
+		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
+			w.logger.Error("Failed to update task status to skipped",
+				zap.String("task_id", taskMsg.TaskID),
+				zap.Error(updateErr),
+			)
+			return fmt.Errorf("failed to update task status: %w", updateErr)
+		}
+
+		return nil
+	}
+
 	// Load job config
 	config, err := w.jobConfigRepo.Get(ctx, task.Job.JobConfigID)
 	if err != nil {
@@ -382,40 +413,6 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	// Record successful fetch duration metric
 	w.recordFetchDuration(ctx, domain, fetchResult.StatusCode, fetchDuration)
 
-	// Check for duplicate content (deduplication)
-	isDuplicate, err := w.taskRepo.ExistsByJobIDAndHashExcluding(ctx, task.JobID, fetchResult.BodyHash, task.ID)
-	if err != nil {
-		w.logger.Error("Failed to check for duplicate content",
-			zap.String("task_id", taskMsg.TaskID),
-			zap.String("body_hash", fetchResult.BodyHash),
-			zap.Error(err),
-		)
-		return fmt.Errorf("failed to check for duplicate content: %w", err)
-	}
-
-	if isDuplicate {
-		w.logger.Info("Duplicate content detected, skipping task",
-			zap.String("task_id", taskMsg.TaskID),
-			zap.String("url", task.URL),
-			zap.String("body_hash", fetchResult.BodyHash),
-		)
-
-		// Mark task as skipped due to duplicate content
-		task.Status = models.TaskStatusSkipped
-		errMsg := fmt.Sprintf("duplicate content (body_hash: %s)", fetchResult.BodyHash)
-		task.ErrorMessage = &errMsg
-		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
-			w.logger.Error("Failed to update task status to skipped",
-				zap.String("task_id", taskMsg.TaskID),
-				zap.Error(updateErr),
-			)
-			return fmt.Errorf("failed to update task status: %w", updateErr)
-		}
-
-		// Task processed successfully (marked as skipped)
-		return nil
-	}
-
 	// Generate MinIO object key
 	minioKey := fmt.Sprintf("pages/%s/%s.html", task.JobID.String(), taskID.String())
 
@@ -429,7 +426,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	}
 
 	// Update task with fetch results
-	task.MarkAsParsed(fetchResult.FinalURL, fetchResult.BodyHash, minioKey)
+	task.MarkAsParsed(fetchResult.FinalURL, minioKey)
 
 	// Save task to database
 	if err := w.taskRepo.Update(ctx, *task); err != nil {
@@ -469,7 +466,6 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		zap.String("task_id", taskMsg.TaskID),
 		zap.String("url", task.URL),
 		zap.String("final_url", fetchResult.FinalURL),
-		zap.String("body_hash", fetchResult.BodyHash),
 		zap.String("minio_key", minioKey),
 		zap.Duration("total_duration", time.Since(startTime)),
 	)

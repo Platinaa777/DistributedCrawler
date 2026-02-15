@@ -10,7 +10,6 @@ type Fetcher interface {
 // FetchResult contains the results of a successful page fetch
 type FetchResult struct {
 	Body        []byte
-	BodyHash    string
 	FinalURL    string
 	StatusCode  int
 	ContentType string

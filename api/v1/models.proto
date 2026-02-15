@@ -156,7 +156,7 @@ message CrawlTask {
   string status = 6;
   google.protobuf.Timestamp enqueued_at = 7 [json_name = "enqueued_at"];
   uint64 depth = 8;
-  string body_hash = 9 [json_name = "body_hash"];
+  reserved 9; // was body_hash
   string minio_object_key = 10 [json_name = "minio_object_key"];
   optional string result_object_key = 11 [json_name = "result_object_key"];
   optional string error_message = 12 [json_name = "error_message"];

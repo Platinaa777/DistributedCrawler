@@ -2,10 +2,8 @@ package fetcher
 
 import (
 	"context"
-	"crypto/sha256"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/services"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -156,10 +154,6 @@ func (f *HTTPFetcher) doFetch(ctx context.Context, url string) (*services.FetchR
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	// Calculate SHA-256 hash
-	hash := sha256.Sum256(body)
-	bodyHash := hex.EncodeToString(hash[:])
-
 	// Get content type
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {
@@ -171,7 +165,6 @@ func (f *HTTPFetcher) doFetch(ctx context.Context, url string) (*services.FetchR
 
 	return &services.FetchResult{
 		Body:        body,
-		BodyHash:    bodyHash,
 		FinalURL:    finalURL,
 		StatusCode:  resp.StatusCode,
 		ContentType: contentType,

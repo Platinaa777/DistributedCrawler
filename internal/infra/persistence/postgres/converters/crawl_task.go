@@ -19,14 +19,6 @@ func SaveCrawlTaskToSnapshot(crawlTask models.CrawlTask) *snapshots.CrawlTaskSna
 		MinioObjectKey: crawlTask.MinioObjectKey,
 	}
 
-	// Handle BodyHash
-	if crawlTask.BodyHash != nil {
-		snapshot.BodyHash = sql.NullString{
-			String: *crawlTask.BodyHash,
-			Valid:  true,
-		}
-	}
-
 	// Handle FinalURL
 	if crawlTask.FinalURL != nil {
 		snapshot.FinalURL = sql.NullString{
@@ -94,11 +86,6 @@ func RestoreCrawlTaskFromSnapshot(snapshot snapshots.CrawlTaskSnapshot) (*models
 		MinioObjectKey: snapshot.MinioObjectKey,
 	}
 
-	// Handle BodyHash
-	if snapshot.BodyHash.Valid {
-		task.BodyHash = &snapshot.BodyHash.String
-	}
-
 	// Handle FinalURL
 	if snapshot.FinalURL.Valid {
 		task.FinalURL = &snapshot.FinalURL.String
@@ -154,11 +141,6 @@ func RestoreCrawlTaskWithJobFromSnapshot(snapshot snapshots.CrawlTaskWithJobSnap
 		EnqueuedAt:     snapshot.EnqueuedAt,
 		Depth:          snapshot.Depth,
 		MinioObjectKey: snapshot.MinioObjectKey,
-	}
-
-	// Handle BodyHash
-	if snapshot.BodyHash.Valid {
-		task.BodyHash = &snapshot.BodyHash.String
 	}
 
 	// Handle FinalURL

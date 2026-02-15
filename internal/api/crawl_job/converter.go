@@ -236,10 +236,6 @@ func ToProtoCrawlTask(task *models.CrawlTask) *crawlergrpc.CrawlTask {
 		MinioObjectKey: task.MinioObjectKey,
 	}
 
-	if task.BodyHash != nil {
-		protoTask.BodyHash = *task.BodyHash
-	}
-
 	if task.FinalURL != nil {
 		protoTask.FinalUrl = task.FinalURL
 	}

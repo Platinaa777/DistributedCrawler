@@ -24,7 +24,6 @@ const (
 	taskStatusColumn         = "status"
 	taskEnqueuedAtColumn     = "enqueued_at"
 	taskDepthColumn          = "depth"
-	taskBodyHashColumn       = "body_hash"
 	taskMinioObjectKeyColumn = "minio_object_key"
 
 	// Result persistence columns
@@ -52,13 +51,13 @@ func (c *crawlTaskRepository) Create(ctx context.Context, entity models.CrawlTas
 		PlaceholderFormat(sq.Dollar).
 		Columns(
 			taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
-			taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
+			taskDepthColumn, taskMinioObjectKeyColumn,
 			taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
 			taskErrorMessageColumn,
 		).
 		Values(
 			dbEntity.ID, dbEntity.JobID, dbEntity.URL, dbEntity.FinalURL, dbEntity.Status, dbEntity.EnqueuedAt,
-			dbEntity.Depth, dbEntity.BodyHash, dbEntity.MinioObjectKey,
+			dbEntity.Depth, dbEntity.MinioObjectKey,
 			dbEntity.ResultObjectKey, dbEntity.ResultContentType, dbEntity.ResultSizeBytes, dbEntity.ResultCreatedAt,
 			dbEntity.ErrorMessage,
 		).
@@ -92,7 +91,7 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 		PlaceholderFormat(sq.Dollar).
 		Columns(
 			taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
-			taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
+			taskDepthColumn, taskMinioObjectKeyColumn,
 			taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
 			taskErrorMessageColumn,
 		)
@@ -101,7 +100,7 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 		dbEntity := converters.SaveCrawlTaskToSnapshot(entity)
 		builder = builder.Values(
 			dbEntity.ID, dbEntity.JobID, dbEntity.URL, dbEntity.FinalURL, dbEntity.Status, dbEntity.EnqueuedAt,
-			dbEntity.Depth, dbEntity.BodyHash, dbEntity.MinioObjectKey,
+			dbEntity.Depth, dbEntity.MinioObjectKey,
 			dbEntity.ResultObjectKey, dbEntity.ResultContentType, dbEntity.ResultSizeBytes, dbEntity.ResultCreatedAt,
 			dbEntity.ErrorMessage,
 		)
@@ -123,7 +122,7 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 
 func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTaskID) (*models.CrawlTask, error) {
 	builder := sq.Select(
-		"t.id", "t.job_id", "t.url", "t.final_url", "t.status", "t.enqueued_at", "t.depth", "t.body_hash", "t.minio_object_key",
+		"t.id", "t.job_id", "t.url", "t.final_url", "t.status", "t.enqueued_at", "t.depth", "t.minio_object_key",
 		"t.result_object_key", "t.result_content_type", "t.result_size_bytes", "t.result_created_at", "t.error_message",
 		"j.id", "j.job_config_id", "j.status", "j.created_at", "j.completed_at",
 	).
@@ -154,7 +153,6 @@ func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTask
 		&taskSnapshot.Status,
 		&taskSnapshot.EnqueuedAt,
 		&taskSnapshot.Depth,
-		&taskSnapshot.BodyHash,
 		&taskSnapshot.MinioObjectKey,
 		&taskSnapshot.ResultObjectKey,
 		&taskSnapshot.ResultContentType,
@@ -188,7 +186,6 @@ func (c *crawlTaskRepository) Update(ctx context.Context, entity models.CrawlTas
 		Set(taskFinalURLColumn, dbEntity.FinalURL).
 		Set(taskStatusColumn, dbEntity.Status).
 		Set(taskDepthColumn, dbEntity.Depth).
-		Set(taskBodyHashColumn, dbEntity.BodyHash).
 		Set(taskMinioObjectKeyColumn, dbEntity.MinioObjectKey).
 		Set(taskResultObjectKeyColumn, dbEntity.ResultObjectKey).
 		Set(taskResultContentTypeColumn, dbEntity.ResultContentType).
@@ -214,7 +211,7 @@ func (c *crawlTaskRepository) Update(ctx context.Context, entity models.CrawlTas
 func (c *crawlTaskRepository) ListByJob(ctx context.Context, jobID valueobjects.CrawlJobID) ([]*models.CrawlTask, error) {
 	builder := sq.Select(
 		taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
-		taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
+		taskDepthColumn, taskMinioObjectKeyColumn,
 		taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
 		taskErrorMessageColumn,
 	).
@@ -254,7 +251,7 @@ func (c *crawlTaskRepository) ListByJob(ctx context.Context, jobID valueobjects.
 func (c *crawlTaskRepository) ListByStatus(ctx context.Context, status models.TaskStatus, limit int) ([]*models.CrawlTask, error) {
 	builder := sq.Select(
 		taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
-		taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
+		taskDepthColumn, taskMinioObjectKeyColumn,
 		taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
 		taskErrorMessageColumn,
 	).
@@ -316,16 +313,14 @@ func (c *crawlTaskRepository) SetTaskResult(ctx context.Context, taskID valueobj
 	return err
 }
 
-// ExistsByJobIDAndHashExcluding checks if a task with the given body_hash already exists for the job,
-// excluding the specified task ID (deduplication check)
-func (c *crawlTaskRepository) ExistsByJobIDAndHashExcluding(ctx context.Context, jobID valueobjects.CrawlJobID, bodyHash string, excludeTaskID valueobjects.CrawlTaskID) (bool, error) {
-	builder := sq.Select("COUNT(*)").
+// ExistsByJobIDAndURL checks if a task with the given URL already exists for the job (URL deduplication)
+func (c *crawlTaskRepository) ExistsByJobIDAndURL(ctx context.Context, jobID valueobjects.CrawlJobID, url string) (bool, error) {
+	builder := sq.Select("1").
 		PlaceholderFormat(sq.Dollar).
 		From(taskTableName).
 		Where(sq.And{
 			sq.Eq{taskJobIDColumn: jobID.String()},
-			sq.Eq{taskBodyHashColumn: bodyHash},
-			sq.NotEq{taskIDColumn: excludeTaskID.String()},
+			sq.Eq{taskURLColumn: url},
 		}).
 		Limit(1)
 
@@ -335,17 +330,20 @@ func (c *crawlTaskRepository) ExistsByJobIDAndHashExcluding(ctx context.Context,
 	}
 
 	q := persistence.Query{
-		Name:     "crawl_task_repository.ExistsByJobIDAndHashExcluding",
+		Name:     "crawl_task_repository.ExistsByJobIDAndURL",
 		QueryRaw: query,
 	}
 
-	var count int
-	err = c.client.DB().QueryRowContext(ctx, q, args...).Scan(&count)
+	var exists int
+	err = c.client.DB().QueryRowContext(ctx, q, args...).Scan(&exists)
 	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return false, nil
+		}
 		return false, err
 	}
 
-	return count > 0, nil
+	return true, nil
 }
 
 // ListWithCursor returns tasks with cursor-based pagination and filtering
@@ -364,7 +362,7 @@ func (c *crawlTaskRepository) ListWithCursor(ctx context.Context, query service.
 
 	builder := sq.Select(
 		taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
-		taskDepthColumn, taskBodyHashColumn, taskMinioObjectKeyColumn,
+		taskDepthColumn, taskMinioObjectKeyColumn,
 		taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
 		taskErrorMessageColumn,
 	).
