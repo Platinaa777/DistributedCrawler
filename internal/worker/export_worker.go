@@ -17,6 +17,9 @@ import (
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/persistence"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -29,6 +32,7 @@ type ExportWorker struct {
 	pollInterval time.Duration
 	batchSize    int
 	logger       *zap.Logger
+	tracer       trace.Tracer
 	activeTasks  atomic.Int64
 	accepting    atomic.Bool
 }
@@ -42,6 +46,7 @@ func NewExportWorker(
 	pollInterval time.Duration,
 	batchSize int,
 	logger *zap.Logger,
+	tracer trace.Tracer,
 ) *ExportWorker {
 	worker := &ExportWorker{
 		jobRepo:      jobRepo,
@@ -51,6 +56,7 @@ func NewExportWorker(
 		pollInterval: pollInterval,
 		batchSize:    batchSize,
 		logger:       logger,
+		tracer:       tracer,
 	}
 	worker.accepting.Store(true)
 	return worker
@@ -134,6 +140,18 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 	w.activeTasks.Add(1)
 	defer w.activeTasks.Add(-1)
 
+	if w.tracer != nil {
+		var span trace.Span
+		ctx, span = w.tracer.Start(ctx, "export_job",
+			trace.WithAttributes(
+				attribute.String("job.id", job.ID.String()),
+			),
+		)
+		defer func() {
+			span.End()
+		}()
+	}
+
 	w.logger.Info("Starting export for job", zap.String("job_id", job.ID.String()))
 
 	// Load all tasks for the job
@@ -179,6 +197,17 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 	job.MarkAsExported(jsonKey, csvKey, exportedAt)
 	if err := w.jobRepo.Update(ctx, *job); err != nil {
 		return fmt.Errorf("failed to mark export as completed: %w", err)
+	}
+
+	// Set span success status
+	if span := trace.SpanFromContext(ctx); span.IsRecording() {
+		span.SetAttributes(
+			attribute.Int("export.task_count", len(tasks)),
+			attribute.Int("export.result_count", len(results)),
+			attribute.String("export.json_key", jsonKey),
+			attribute.String("export.csv_key", csvKey),
+		)
+		span.SetStatus(codes.Ok, "")
 	}
 
 	w.logger.Info("Export completed successfully",

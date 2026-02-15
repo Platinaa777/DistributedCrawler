@@ -4,15 +4,19 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"go.uber.org/zap/zapcore"
+
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
 	"distributed-crawler/internal/infra/cache"
+	"distributed-crawler/internal/infra/logger"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
@@ -200,6 +204,21 @@ func (a *WorkerApp) initLogger(_ context.Context) error {
 		log.Fatalf("failed to create logger: %v", err)
 	}
 
+	osCfg, osErr := env.NewOpenSearchConfig()
+	if osErr == nil && osCfg.Enabled() {
+		osCore := logger.NewOpenSearchCore(
+			zapcore.DebugLevel,
+			osCfg.Endpoint(),
+			osCfg.Index(),
+			osCfg.BatchSize(),
+			osCfg.FlushInterval(),
+		)
+		tee := zapcore.NewTee(zapLogger.Core(), osCore)
+		zapLogger = zapLogger.WithOptions(zap.WrapCore(func(zapcore.Core) zapcore.Core {
+			return tee
+		}))
+	}
+
 	a.zapLogger = zapLogger
 	return nil
 }
@@ -216,6 +235,10 @@ func (a *WorkerApp) initTelemetry(ctx context.Context) error {
 		return nil
 	}
 
+	// Override service name with worker-type suffix for unique identification
+	serviceName := fmt.Sprintf("distributed-crawler-worker-%s", a.workerType)
+	otelCfg = env.WithServiceName(otelCfg, serviceName)
+
 	tp, err := telemetry.NewTelemetryProvider(ctx, otelCfg)
 	if err != nil {
 		a.zapLogger.Warn("Failed to create telemetry provider", zap.Error(err))
@@ -225,7 +248,7 @@ func (a *WorkerApp) initTelemetry(ctx context.Context) error {
 	a.telemetryProvider = tp
 
 	if tp != nil {
-		m, err := telemetry.NewMetrics(tp.Meter("distributed-crawler-worker"))
+		m, err := telemetry.NewMetrics(tp.Meter(serviceName))
 		if err != nil {
 			a.zapLogger.Warn("Failed to create metrics", zap.Error(err))
 		} else {
@@ -233,7 +256,7 @@ func (a *WorkerApp) initTelemetry(ctx context.Context) error {
 		}
 	}
 
-	a.zapLogger.Info("Telemetry initialized successfully")
+	a.zapLogger.Info("Telemetry initialized successfully", zap.String("serviceName", serviceName))
 	return nil
 }
 
@@ -464,6 +487,12 @@ func (a *WorkerApp) initExportWorker() error {
 	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
 	txManager := transaction.NewTransactorManager(a.pgClient.DB())
 
+	// Get tracer if telemetry is available
+	var tracer trace.Tracer
+	if a.telemetryProvider != nil {
+		tracer = a.telemetryProvider.Tracer("export-worker")
+	}
+
 	// Create export worker with poll interval and batch size
 	pollInterval := 30 * time.Second // Poll every 30 seconds
 	batchSize := 10                  // Process up to 10 jobs per batch
@@ -476,6 +505,7 @@ func (a *WorkerApp) initExportWorker() error {
 		pollInterval,
 		batchSize,
 		a.zapLogger,
+		tracer,
 	)
 	a.activeTasksCounter = a.exportWorker
 

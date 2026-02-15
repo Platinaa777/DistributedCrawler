@@ -7,10 +7,13 @@ import (
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	"distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
+	"distributed-crawler/internal/telemetry"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -30,6 +33,7 @@ type OutboxPublisher struct {
 	pollInterval time.Duration
 	batchSize    int
 	logger       *zap.Logger
+	tracer       trace.Tracer
 	stopChan     chan struct{}
 }
 
@@ -40,6 +44,7 @@ func NewOutboxPublisher(
 	rmqClient rabbitmq.Client,
 	queueName string,
 	logger *zap.Logger,
+	tracer trace.Tracer,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
 		outboxRepo:   outboxRepo,
@@ -49,6 +54,7 @@ func NewOutboxPublisher(
 		pollInterval: DefaultOutboxPollInterval,
 		batchSize:    DefaultOutboxBatchSize,
 		logger:       logger,
+		tracer:       tracer,
 		stopChan:     make(chan struct{}),
 	}
 }
@@ -143,12 +149,31 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 		return fmt.Errorf("failed to unmarshal event payload: %w", err)
 	}
 
+	// Start a span for trace context propagation to downstream workers
+	var traceCtx map[string]string
+	if w.tracer != nil {
+		var span trace.Span
+		ctx, span = w.tracer.Start(ctx, "outbox_publish_task",
+			trace.WithSpanKind(trace.SpanKindProducer),
+			trace.WithAttributes(
+				attribute.String("task.id", event.TaskID),
+				attribute.String("job.id", event.JobID),
+				attribute.String("task.url", event.URL),
+				attribute.String("messaging.destination", w.queueName),
+			),
+		)
+		defer span.End()
+
+		traceCtx = telemetry.InjectTraceContext(ctx)
+	}
+
 	// Create message for RabbitMQ (use the same structure as before)
 	message := rabbitmq.CrawlTaskMessage{
-		TaskID:     event.TaskID,
-		JobID:      event.JobID,
-		URL:        event.URL,
-		EnqueuedAt: event.EnqueuedAt,
+		TaskID:       event.TaskID,
+		JobID:        event.JobID,
+		URL:          event.URL,
+		EnqueuedAt:   event.EnqueuedAt,
+		TraceContext: traceCtx,
 	}
 
 	// Publish to RabbitMQ

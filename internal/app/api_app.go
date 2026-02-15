@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
+	"go.uber.org/zap/zapcore"
+
 	"distributed-crawler/internal/auth"
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
@@ -127,6 +129,18 @@ func (a *APIApp) initLogger(_ context.Context) error {
 	err = logger.InitWithConfig(loggerConfig.Level(), loggerConfig.Env())
 	if err != nil {
 		log.Fatalf("failed to init logger: %v", err)
+	}
+
+	osCfg, err := env.NewOpenSearchConfig()
+	if err == nil && osCfg.Enabled() {
+		logger.AddOpenSearchCore(
+			zapcore.DebugLevel,
+			osCfg.Endpoint(),
+			osCfg.Index(),
+			osCfg.BatchSize(),
+			osCfg.FlushInterval(),
+		)
+		logger.Info("OpenSearch log exporter enabled")
 	}
 
 	return nil

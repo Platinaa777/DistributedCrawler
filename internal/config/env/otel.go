@@ -82,6 +82,25 @@ func (c *otelConfig) MetricsIntervalSeconds() int {
 	return c.metricsIntervalSeconds
 }
 
+// WithServiceName returns a new OTelConfig that overrides the service name.
+func WithServiceName(base config.OTelConfig, name string) config.OTelConfig {
+	return &otelConfigOverride{base: base, serviceName: name}
+}
+
+type otelConfigOverride struct {
+	base        config.OTelConfig
+	serviceName string
+}
+
+func (c *otelConfigOverride) Enabled() bool                { return c.base.Enabled() }
+func (c *otelConfigOverride) ServiceName() string          { return c.serviceName }
+func (c *otelConfigOverride) ServiceVersion() string       { return c.base.ServiceVersion() }
+func (c *otelConfigOverride) Environment() string          { return c.base.Environment() }
+func (c *otelConfigOverride) OTLPEndpoint() string         { return c.base.OTLPEndpoint() }
+func (c *otelConfigOverride) OTLPInsecure() bool           { return c.base.OTLPInsecure() }
+func (c *otelConfigOverride) TraceSampleRate() float64     { return c.base.TraceSampleRate() }
+func (c *otelConfigOverride) MetricsIntervalSeconds() int  { return c.base.MetricsIntervalSeconds() }
+
 func getEnvString(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value

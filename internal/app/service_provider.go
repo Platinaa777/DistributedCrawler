@@ -41,6 +41,7 @@ import (
 	"distributed-crawler/internal/worker"
 	"distributed-crawler/internal/workerhealth"
 
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -269,12 +270,19 @@ func (s *serviceProvider) RabbitMQClient() rabbitmq.Client {
 
 func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPublisher {
 	if s.outboxPublisher == nil {
+		var tracer trace.Tracer
+		tp := s.TelemetryProvider(ctx)
+		if tp != nil {
+			tracer = tp.Tracer("outbox-publisher")
+		}
+
 		s.outboxPublisher = worker.NewOutboxPublisher(
 			s.OutboxRepository(ctx),
 			s.TxManager(ctx),
 			s.RabbitMQClient(),
 			s.RabbitMQConfig().GetQueueName(config.CrawlQueueKey),
 			s.Logger(),
+			tracer,
 		)
 	}
 

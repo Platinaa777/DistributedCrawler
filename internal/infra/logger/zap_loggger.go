@@ -8,6 +8,7 @@ import (
 )
 
 var globalLogger *zap.Logger
+var opensearchCoreInstance *opensearchCore
 
 func Init(core zapcore.Core, options ...zap.Option) {
 	globalLogger = zap.New(core, options...)
@@ -54,8 +55,28 @@ func InitWithConfig(level, env string) error {
 	return nil
 }
 
+// AddOpenSearchCore adds an OpenSearch core to the global logger via Tee.
+// Must be called after InitWithConfig.
+func AddOpenSearchCore(level zapcore.Level, endpoint, index string, batchSize, flushIntervalSec int) {
+	if globalLogger == nil {
+		return
+	}
+
+	osCore := NewOpenSearchCore(level, endpoint, index, batchSize, flushIntervalSec).(*opensearchCore)
+	opensearchCoreInstance = osCore
+
+	existing := globalLogger.Core()
+	tee := zapcore.NewTee(existing, osCore)
+	globalLogger = globalLogger.WithOptions(zap.WrapCore(func(zapcore.Core) zapcore.Core {
+		return tee
+	}))
+}
+
 // Sync синхронизирует буферы логгера
 func Sync() error {
+	if opensearchCoreInstance != nil {
+		opensearchCoreInstance.Stop()
+	}
 	if globalLogger != nil {
 		return globalLogger.Sync()
 	}

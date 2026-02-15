@@ -63,6 +63,14 @@ type AuthConfig interface {
 	DefaultUserPassword() string
 }
 
+type OpenSearchConfig interface {
+	Enabled() bool
+	Endpoint() string
+	Index() string
+	FlushInterval() int
+	BatchSize() int
+}
+
 type OTelConfig interface {
 	Enabled() bool
 	ServiceName() string
