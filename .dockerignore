@@ -1,0 +1,29 @@
+# Frontend
+ui/
+
+# Build artifacts
+bin/
+
+# Git
+.git/
+
+# Documentation
+docs/
+grafana/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker
+docker/
+
+# Deploy scripts
+deploy/
+
+# Env files
+.env
+.worker.env
