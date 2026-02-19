@@ -901,9 +901,24 @@
         "job_type": {
           "$ref": "#/definitions/v1JobType",
           "title": "Determines if this is a one-time job or a scheduled recurring job"
+        },
+        "crawl_mode": {
+          "$ref": "#/definitions/v1CrawlMode",
+          "title": "Controls link-following behavior: pagination_only, links_only, or pagination_and_links (default)"
         }
       },
       "title": "CrawlJobConfig represents crawl job configuration"
+    },
+    "v1CrawlMode": {
+      "type": "string",
+      "enum": [
+        "CRAWL_MODE_UNSPECIFIED",
+        "CRAWL_MODE_PAGINATION_AND_LINKS",
+        "CRAWL_MODE_PAGINATION_ONLY",
+        "CRAWL_MODE_LINKS_ONLY"
+      ],
+      "default": "CRAWL_MODE_UNSPECIFIED",
+      "description": "CrawlMode controls which link-following strategy the crawler uses.\n\n - CRAWL_MODE_UNSPECIFIED: Defaults to pagination_and_links\n - CRAWL_MODE_PAGINATION_AND_LINKS: Follow both pagination and regular links (default)\n - CRAWL_MODE_PAGINATION_ONLY: Follow only pagination links\n - CRAWL_MODE_LINKS_ONLY: Follow only regular \u003ca href\u003e links"
     },
     "v1CrawlTask": {
       "type": "object",
@@ -933,9 +948,6 @@
         "depth": {
           "type": "string",
           "format": "uint64"
-        },
-        "body_hash": {
-          "type": "string"
         },
         "minio_object_key": {
           "type": "string"
@@ -1002,19 +1014,16 @@
             "$ref": "#/definitions/v1FieldSpec"
           }
         },
-        "metrics": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1MetricSpec"
-          }
-        },
         "pagination": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1PaginationSpec"
           }
+        },
+        "items": {
+          "$ref": "#/definitions/v1ItemsSpec",
+          "title": "Structured per-item extraction"
         }
       },
       "title": "ExtractionSpec defines extraction configuration"
@@ -1133,6 +1142,24 @@
           "$ref": "#/definitions/v1CrawlTask"
         }
       }
+    },
+    "v1ItemsSpec": {
+      "type": "object",
+      "properties": {
+        "container_selector": {
+          "type": "string",
+          "title": "CSS selector for item containers"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FieldSpec"
+          },
+          "title": "Fields extracted per container"
+        }
+      },
+      "description": "ItemsSpec defines structured per-item extraction using a container CSS selector.\r\nEach matched container element becomes a scoped DOM root for field extraction,\r\nproducing a list of structured objects instead of parallel arrays."
     },
     "v1JobListFilter": {
       "type": "object",
@@ -1268,22 +1295,6 @@
     "v1LogoutResponse": {
       "type": "object",
       "title": "Empty response"
-    },
-    "v1MetricSpec": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "op": {
-          "type": "string",
-          "title": "\"len\" | \"count\" | \"word_count\" | \"field_present\" | \"status_is_error\" | \"count_external_links\""
-        },
-        "input": {
-          "type": "string"
-        }
-      },
-      "title": "MetricSpec defines a metric to compute"
     },
     "v1PaginationSpec": {
       "type": "object",

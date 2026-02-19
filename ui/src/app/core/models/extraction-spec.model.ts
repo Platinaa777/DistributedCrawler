@@ -1,6 +1,12 @@
 export interface ExtractionSpec {
   fields: FieldSpec[];
   pagination?: PaginationSpec[];
+  items?: ItemsSpec;
+}
+
+export interface ItemsSpec {
+  container_selector: string;
+  fields: FieldSpec[];
 }
 
 export interface PaginationSpec {

@@ -31,6 +31,15 @@ const (
 type ExtractionSpec struct {
 	Fields     []FieldSpec
 	Pagination []PaginationSpec
+	Items      *ItemsSpec `json:"items,omitempty"`
+}
+
+// ItemsSpec defines structured per-item extraction using a container selector.
+// When set, each element matching ContainerSelector becomes a scoped DOM root
+// from which Fields are extracted, producing a list of structured objects.
+type ItemsSpec struct {
+	ContainerSelector string      `json:"container_selector"`
+	Fields            []FieldSpec `json:"fields"`
 }
 
 // PaginationSpec defines a pagination selector for extracting next-page URLs.

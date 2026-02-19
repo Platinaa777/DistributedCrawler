@@ -238,24 +238,34 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		return nil
 	}
 
+	// Determine effective crawl mode (default to pagination_and_links when unset)
+	crawlMode := jobConfig.CrawlMode
+	if crawlMode == "" {
+		crawlMode = models.CrawlModePaginationAndLinks
+	}
+
 	// Extract and enqueue pagination links (user-defined selectors only)
-	if err := w.extractAndEnqueuePaginationLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
-		w.logger.Error("Failed to extract and enqueue pagination links",
-			zap.String("task_id", task.TaskID),
-			zap.Error(err),
-		)
-		// Don't fail the entire task if pagination extraction fails
-		// Just log the error and continue
+	// Skipped when crawl_mode is links_only
+	if crawlMode != models.CrawlModeLinksOnly {
+		if err := w.extractAndEnqueuePaginationLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
+			w.logger.Error("Failed to extract and enqueue pagination links",
+				zap.String("task_id", task.TaskID),
+				zap.Error(err),
+			)
+			// Don't fail the entire task if pagination extraction fails
+		}
 	}
 
 	// Discover and enqueue new links for crawling (automatic link discovery)
-	if err := w.discoverAndEnqueueLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
-		w.logger.Error("Failed to discover and enqueue links",
-			zap.String("task_id", task.TaskID),
-			zap.Error(err),
-		)
-		// Don't fail the entire task if link discovery fails
-		// Just log the error and continue
+	// Skipped when crawl_mode is pagination_only
+	if crawlMode != models.CrawlModePaginationOnly {
+		if err := w.discoverAndEnqueueLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
+			w.logger.Error("Failed to discover and enqueue links",
+				zap.String("task_id", task.TaskID),
+				zap.Error(err),
+			)
+			// Don't fail the entire task if link discovery fails
+		}
 	}
 
 	// Record successful parsing duration metric
@@ -269,7 +279,8 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 	if span != nil {
 		span.SetAttributes(
 			attribute.Int("page.size_bytes", len(htmlContent)),
-			attribute.Int("parser.items_extracted", len(result.Fields)),
+			attribute.Int("parser.fields_extracted", len(result.Fields)),
+			attribute.Int("parser.items_extracted", len(result.Items)),
 		)
 		span.SetStatus(codes.Ok, "")
 	}
@@ -317,7 +328,8 @@ func (w *ParserWorker) recordTaskFailed(ctx context.Context, reason string) {
 
 // extractionResult holds the extracted data
 type extractionResult struct {
-	Fields map[string]any `json:"fields"`
+	Fields map[string]any   `json:"fields,omitempty"`
+	Items  []map[string]any `json:"items,omitempty"`
 }
 
 // extractData performs DSL-based extraction on HTML content
@@ -341,21 +353,31 @@ func (w *ParserWorker) extractData(
 		baseURL, _ = url.Parse(task.URL)
 	}
 
-	// Extract fields
-	fields := make(map[string]any)
-	for _, fieldSpec := range spec.Fields {
-		value, err := w.extractField(fieldSpec, doc, baseURL)
-		if err != nil && fieldSpec.Required {
-			w.logger.Warn("Failed to extract required field",
-				zap.String("field", fieldSpec.Name),
-				zap.Error(err),
-			)
+	// Extract page-level fields
+	var fields map[string]any
+	if len(spec.Fields) > 0 {
+		fields = make(map[string]any)
+		for _, fieldSpec := range spec.Fields {
+			value, err := w.extractField(fieldSpec, doc, baseURL)
+			if err != nil && fieldSpec.Required {
+				w.logger.Warn("Failed to extract required field",
+					zap.String("field", fieldSpec.Name),
+					zap.Error(err),
+				)
+			}
+			fields[fieldSpec.Name] = value
 		}
-		fields[fieldSpec.Name] = value
+	}
+
+	// Extract structured items if ItemsSpec is defined
+	var items []map[string]any
+	if spec.Items != nil {
+		items = w.extractItems(spec.Items, doc, baseURL)
 	}
 
 	return &extractionResult{
 		Fields: fields,
+		Items:  items,
 	}, nil
 }
 
@@ -389,6 +411,115 @@ func (w *ParserWorker) extractField(
 	}
 
 	return finalValue, nil
+}
+
+// extractItems extracts a list of structured objects from the page using ItemsSpec.
+// Each element matching ContainerSelector is scoped as an isolated DOM subtree,
+// and Fields are extracted relative to that container.
+func (w *ParserWorker) extractItems(
+	spec *models.ItemsSpec,
+	doc *goquery.Document,
+	baseURL *url.URL,
+) []map[string]any {
+	items := make([]map[string]any, 0)
+
+	if spec.ContainerSelector == "" {
+		w.logger.Warn("ItemsSpec has empty container_selector, skipping items extraction")
+		return items
+	}
+
+	containers := doc.Find(spec.ContainerSelector)
+	if containers.Length() == 0 {
+		w.logger.Debug("No containers found for items extraction",
+			zap.String("selector", spec.ContainerSelector),
+		)
+		return items
+	}
+
+	containers.Each(func(i int, container *goquery.Selection) {
+		item := make(map[string]any)
+
+		for _, fieldSpec := range spec.Fields {
+			value, err := w.extractFieldFromSelection(fieldSpec, container, baseURL)
+			if err != nil {
+				if fieldSpec.Required {
+					w.logger.Warn("Failed to extract required item field",
+						zap.String("field", fieldSpec.Name),
+						zap.Int("item_index", i),
+						zap.Error(err),
+					)
+				}
+				// Continue processing other fields and items
+				continue
+			}
+			item[fieldSpec.Name] = value
+		}
+
+		items = append(items, item)
+	})
+
+	return items
+}
+
+// extractFieldFromSelection extracts a single field from a goquery.Selection (scoped DOM subtree).
+// This is used for per-item field extraction where selectors are relative to a container element.
+func (w *ParserWorker) extractFieldFromSelection(
+	spec models.FieldSpec,
+	sel *goquery.Selection,
+	baseURL *url.URL,
+) (any, error) {
+	rawValue, err := w.extractWithCSSFromSelection(spec.Extractor, sel, baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if rawValue == nil || rawValue == "" {
+		return nil, nil
+	}
+
+	transformedValue := rawValue
+	for _, transform := range spec.Transforms {
+		transformedValue = w.applyTransform(transform, transformedValue)
+	}
+
+	return w.convertToType(transformedValue, spec.Type)
+}
+
+// extractWithCSSFromSelection extracts data using CSS selectors relative to a goquery.Selection.
+// This mirrors extractWithCSS but scoped to a subtree instead of the full document.
+func (w *ParserWorker) extractWithCSSFromSelection(
+	spec models.ExtractorSpec,
+	sel *goquery.Selection,
+	baseURL *url.URL,
+) (any, error) {
+	selection := sel.Find(spec.Selector)
+	if selection.Length() == 0 {
+		return nil, fmt.Errorf("no elements found for selector: %s", spec.Selector)
+	}
+
+	if spec.Multiple {
+		var results []string
+		selection.Each(func(i int, s *goquery.Selection) {
+			value := w.extractElementValue(s, spec.Attribute, baseURL)
+			if value != "" {
+				results = append(results, value)
+			}
+		})
+
+		if spec.Index != nil {
+			idx := *spec.Index
+			if idx < 0 {
+				idx = len(results) + idx
+			}
+			if idx >= 0 && idx < len(results) {
+				return results[idx], nil
+			}
+		}
+
+		return results, nil
+	}
+
+	return w.extractElementValue(selection.First(), spec.Attribute, baseURL), nil
 }
 
 // applyExtractor extracts raw value from HTML using CSS selectors
@@ -652,7 +783,12 @@ func (w *ParserWorker) persistResults(ctx context.Context, taskID, url string, r
 	output := map[string]any{
 		"task_id": taskID,
 		"url":     url,
-		"fields":  result.Fields,
+	}
+	if len(result.Fields) > 0 {
+		output["fields"] = result.Fields
+	}
+	if len(result.Items) > 0 {
+		output["items"] = result.Items
 	}
 
 	// Marshal to JSON

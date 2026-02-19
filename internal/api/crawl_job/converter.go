@@ -104,6 +104,23 @@ func ToProtoFieldSpec(field models.FieldSpec) *crawlergrpc.FieldSpec {
 	}
 }
 
+// ToProtoItemsSpec converts domain ItemsSpec to protobuf
+func ToProtoItemsSpec(spec *models.ItemsSpec) *crawlergrpc.ItemsSpec {
+	if spec == nil {
+		return nil
+	}
+
+	fields := make([]*crawlergrpc.FieldSpec, len(spec.Fields))
+	for i, f := range spec.Fields {
+		fields[i] = ToProtoFieldSpec(f)
+	}
+
+	return &crawlergrpc.ItemsSpec{
+		ContainerSelector: spec.ContainerSelector,
+		Fields:            fields,
+	}
+}
+
 // ToProtoPaginationSpec converts domain PaginationSpec to protobuf
 func ToProtoPaginationSpec(spec models.PaginationSpec) *crawlergrpc.PaginationSpec {
 	return &crawlergrpc.PaginationSpec{
@@ -129,6 +146,21 @@ func ToProtoExtractionSpec(spec models.ExtractionSpec) *crawlergrpc.ExtractionSp
 	return &crawlergrpc.ExtractionSpec{
 		Fields:     fields,
 		Pagination: pagination,
+		Items:      ToProtoItemsSpec(spec.Items),
+	}
+}
+
+// ToProtoCrawlMode converts domain CrawlMode to protobuf
+func ToProtoCrawlMode(mode models.CrawlMode) crawlergrpc.CrawlMode {
+	switch mode {
+	case models.CrawlModePaginationAndLinks:
+		return crawlergrpc.CrawlMode_CRAWL_MODE_PAGINATION_AND_LINKS
+	case models.CrawlModePaginationOnly:
+		return crawlergrpc.CrawlMode_CRAWL_MODE_PAGINATION_ONLY
+	case models.CrawlModeLinksOnly:
+		return crawlergrpc.CrawlMode_CRAWL_MODE_LINKS_ONLY
+	default:
+		return crawlergrpc.CrawlMode_CRAWL_MODE_UNSPECIFIED
 	}
 }
 
@@ -167,6 +199,7 @@ func ToProtoCrawlJobConfig(config *models.CrawlJobConfig) *crawlergrpc.CrawlJobC
 		Schedule:         ToProtoScheduleOptions(config.Schedule),
 		JobType:          ToProtoJobType(config.JobType),
 		RespectRobotsTxt: config.RespectRobotsTxt,
+		CrawlMode:        ToProtoCrawlMode(config.CrawlMode),
 	}
 }
 
@@ -368,6 +401,23 @@ func FromProtoFieldSpec(proto *crawlergrpc.FieldSpec) models.FieldSpec {
 	}
 }
 
+// FromProtoItemsSpec converts protobuf ItemsSpec to domain
+func FromProtoItemsSpec(proto *crawlergrpc.ItemsSpec) *models.ItemsSpec {
+	if proto == nil {
+		return nil
+	}
+
+	fields := make([]models.FieldSpec, len(proto.Fields))
+	for i, f := range proto.Fields {
+		fields[i] = FromProtoFieldSpec(f)
+	}
+
+	return &models.ItemsSpec{
+		ContainerSelector: proto.ContainerSelector,
+		Fields:            fields,
+	}
+}
+
 // FromProtoPaginationSpec converts protobuf PaginationSpec to domain
 func FromProtoPaginationSpec(proto *crawlergrpc.PaginationSpec) models.PaginationSpec {
 	if proto == nil {
@@ -401,6 +451,21 @@ func FromProtoExtractionSpec(proto *crawlergrpc.ExtractionSpec) models.Extractio
 	return models.ExtractionSpec{
 		Fields:     fields,
 		Pagination: pagination,
+		Items:      FromProtoItemsSpec(proto.Items),
+	}
+}
+
+// FromProtoCrawlMode converts protobuf CrawlMode to domain
+func FromProtoCrawlMode(mode crawlergrpc.CrawlMode) models.CrawlMode {
+	switch mode {
+	case crawlergrpc.CrawlMode_CRAWL_MODE_PAGINATION_AND_LINKS:
+		return models.CrawlModePaginationAndLinks
+	case crawlergrpc.CrawlMode_CRAWL_MODE_PAGINATION_ONLY:
+		return models.CrawlModePaginationOnly
+	case crawlergrpc.CrawlMode_CRAWL_MODE_LINKS_ONLY:
+		return models.CrawlModeLinksOnly
+	default:
+		return "" // empty → default (pagination_and_links) applied at runtime
 	}
 }
 
@@ -439,5 +504,6 @@ func FromProtoCrawlJobConfig(proto *crawlergrpc.CrawlJobConfig) models.CrawlJobC
 		Schedule:         FromProtoScheduleOptions(proto.Schedule),
 		JobType:          FromProtoJobType(proto.JobType),
 		RespectRobotsTxt: proto.RespectRobotsTxt,
+		CrawlMode:        FromProtoCrawlMode(proto.CrawlMode),
 	}
 }

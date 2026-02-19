@@ -102,6 +102,9 @@ func SaveCrawlJobConfigToSnapshot(config models.CrawlJobConfig) (*snapshots.Craw
 	// Set RespectRobotsTxt
 	snapshot.RespectRobotsTxt = config.RespectRobotsTxt
 
+	// Set CrawlMode (default to empty string if not set; runtime treats as pagination_and_links)
+	snapshot.CrawlMode = string(config.CrawlMode)
+
 	return snapshot, nil
 }
 
@@ -188,6 +191,9 @@ func RestoreCrawlJobConfigFromSnapshot(snapshot snapshots.CrawlJobConfigSnapshot
 
 	// Restore RespectRobotsTxt
 	config.RespectRobotsTxt = snapshot.RespectRobotsTxt
+
+	// Restore CrawlMode
+	config.CrawlMode = models.CrawlMode(snapshot.CrawlMode)
 
 	return config, nil
 }

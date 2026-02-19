@@ -4,6 +4,21 @@ import (
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 )
 
+// CrawlMode controls which link-following strategy the crawler uses.
+type CrawlMode string
+
+const (
+	// CrawlModePaginationAndLinks follows both pagination links and regular <a href> links.
+	// This is the default behavior when crawl_mode is not set.
+	CrawlModePaginationAndLinks CrawlMode = "pagination_and_links"
+	// CrawlModePaginationOnly follows only pagination links defined in ExtractionSpec.Pagination.
+	// Regular <a href> link discovery is disabled.
+	CrawlModePaginationOnly CrawlMode = "pagination_only"
+	// CrawlModeLinksOnly follows only regular <a href> links within scope.
+	// Pagination logic is completely ignored.
+	CrawlModeLinksOnly CrawlMode = "links_only"
+)
+
 // JobType represents whether a crawl job is one-time or scheduled.
 type JobType string
 
@@ -33,4 +48,9 @@ type CrawlJobConfig struct {
 	// If true, robots.txt rules are fetched and applied to allow/deny URL patterns.
 	// If false, robots.txt is ignored and all URLs within scope are crawled.
 	RespectRobotsTxt bool
+
+	// CrawlMode controls link-following behavior.
+	// Use CrawlModePaginationOnly, CrawlModeLinksOnly, or CrawlModePaginationAndLinks.
+	// Defaults to CrawlModePaginationAndLinks when empty.
+	CrawlMode CrawlMode
 }

@@ -25,6 +25,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// CrawlMode controls which link-following strategy the crawler uses.
+type CrawlMode int32
+
+const (
+	CrawlMode_CRAWL_MODE_UNSPECIFIED          CrawlMode = 0 // Defaults to pagination_and_links
+	CrawlMode_CRAWL_MODE_PAGINATION_AND_LINKS CrawlMode = 1 // Follow both pagination and regular links (default)
+	CrawlMode_CRAWL_MODE_PAGINATION_ONLY      CrawlMode = 2 // Follow only pagination links
+	CrawlMode_CRAWL_MODE_LINKS_ONLY           CrawlMode = 3 // Follow only regular <a href> links
+)
+
+// Enum value maps for CrawlMode.
+var (
+	CrawlMode_name = map[int32]string{
+		0: "CRAWL_MODE_UNSPECIFIED",
+		1: "CRAWL_MODE_PAGINATION_AND_LINKS",
+		2: "CRAWL_MODE_PAGINATION_ONLY",
+		3: "CRAWL_MODE_LINKS_ONLY",
+	}
+	CrawlMode_value = map[string]int32{
+		"CRAWL_MODE_UNSPECIFIED":          0,
+		"CRAWL_MODE_PAGINATION_AND_LINKS": 1,
+		"CRAWL_MODE_PAGINATION_ONLY":      2,
+		"CRAWL_MODE_LINKS_ONLY":           3,
+	}
+)
+
+func (x CrawlMode) Enum() *CrawlMode {
+	p := new(CrawlMode)
+	*p = x
+	return p
+}
+
+func (x CrawlMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CrawlMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_v1_models_proto_enumTypes[0].Descriptor()
+}
+
+func (CrawlMode) Type() protoreflect.EnumType {
+	return &file_v1_models_proto_enumTypes[0]
+}
+
+func (x CrawlMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CrawlMode.Descriptor instead.
+func (CrawlMode) EnumDescriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{0}
+}
+
 // JobType determines whether a crawl job runs once or on a schedule.
 type JobType int32
 
@@ -59,11 +112,11 @@ func (x JobType) String() string {
 }
 
 func (JobType) Descriptor() protoreflect.EnumDescriptor {
-	return file_v1_models_proto_enumTypes[0].Descriptor()
+	return file_v1_models_proto_enumTypes[1].Descriptor()
 }
 
 func (JobType) Type() protoreflect.EnumType {
-	return &file_v1_models_proto_enumTypes[0]
+	return &file_v1_models_proto_enumTypes[1]
 }
 
 func (x JobType) Number() protoreflect.EnumNumber {
@@ -72,7 +125,7 @@ func (x JobType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use JobType.Descriptor instead.
 func (JobType) EnumDescriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{0}
+	return file_v1_models_proto_rawDescGZIP(), []int{1}
 }
 
 // Role represents user authorization role.
@@ -112,11 +165,11 @@ func (x Role) String() string {
 }
 
 func (Role) Descriptor() protoreflect.EnumDescriptor {
-	return file_v1_models_proto_enumTypes[1].Descriptor()
+	return file_v1_models_proto_enumTypes[2].Descriptor()
 }
 
 func (Role) Type() protoreflect.EnumType {
-	return &file_v1_models_proto_enumTypes[1]
+	return &file_v1_models_proto_enumTypes[2]
 }
 
 func (x Role) Number() protoreflect.EnumNumber {
@@ -125,7 +178,7 @@ func (x Role) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Role.Descriptor instead.
 func (Role) EnumDescriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{1}
+	return file_v1_models_proto_rawDescGZIP(), []int{2}
 }
 
 // WorkerStatus represents the current state of a worker.
@@ -168,11 +221,11 @@ func (x WorkerStatus) String() string {
 }
 
 func (WorkerStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_v1_models_proto_enumTypes[2].Descriptor()
+	return file_v1_models_proto_enumTypes[3].Descriptor()
 }
 
 func (WorkerStatus) Type() protoreflect.EnumType {
-	return &file_v1_models_proto_enumTypes[2]
+	return &file_v1_models_proto_enumTypes[3]
 }
 
 func (x WorkerStatus) Number() protoreflect.EnumNumber {
@@ -181,7 +234,7 @@ func (x WorkerStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WorkerStatus.Descriptor instead.
 func (WorkerStatus) EnumDescriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{2}
+	return file_v1_models_proto_rawDescGZIP(), []int{3}
 }
 
 // WorkerCommandType defines commands from Coordinator to worker.
@@ -218,11 +271,11 @@ func (x WorkerCommandType) String() string {
 }
 
 func (WorkerCommandType) Descriptor() protoreflect.EnumDescriptor {
-	return file_v1_models_proto_enumTypes[3].Descriptor()
+	return file_v1_models_proto_enumTypes[4].Descriptor()
 }
 
 func (WorkerCommandType) Type() protoreflect.EnumType {
-	return &file_v1_models_proto_enumTypes[3]
+	return &file_v1_models_proto_enumTypes[4]
 }
 
 func (x WorkerCommandType) Number() protoreflect.EnumNumber {
@@ -231,7 +284,7 @@ func (x WorkerCommandType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use WorkerCommandType.Descriptor instead.
 func (WorkerCommandType) EnumDescriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{3}
+	return file_v1_models_proto_rawDescGZIP(), []int{4}
 }
 
 // AuthOptions contains authentication options for crawling
@@ -759,67 +812,6 @@ func (x *FieldSpec) GetTransforms() []*TransformSpec {
 	return nil
 }
 
-// MetricSpec defines a metric to compute
-type MetricSpec struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Op            string                 `protobuf:"bytes,2,opt,name=op,proto3" json:"op,omitempty"` // "len" | "count" | "word_count" | "field_present" | "status_is_error" | "count_external_links"
-	Input         string                 `protobuf:"bytes,3,opt,name=input,proto3" json:"input,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MetricSpec) Reset() {
-	*x = MetricSpec{}
-	mi := &file_v1_models_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MetricSpec) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MetricSpec) ProtoMessage() {}
-
-func (x *MetricSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MetricSpec.ProtoReflect.Descriptor instead.
-func (*MetricSpec) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *MetricSpec) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *MetricSpec) GetOp() string {
-	if x != nil {
-		return x.Op
-	}
-	return ""
-}
-
-func (x *MetricSpec) GetInput() string {
-	if x != nil {
-		return x.Input
-	}
-	return ""
-}
-
 // PaginationSpec defines a pagination selector for extracting next-page URLs
 type PaginationSpec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -833,7 +825,7 @@ type PaginationSpec struct {
 
 func (x *PaginationSpec) Reset() {
 	*x = PaginationSpec{}
-	mi := &file_v1_models_proto_msgTypes[10]
+	mi := &file_v1_models_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -845,7 +837,7 @@ func (x *PaginationSpec) String() string {
 func (*PaginationSpec) ProtoMessage() {}
 
 func (x *PaginationSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[10]
+	mi := &file_v1_models_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -858,7 +850,7 @@ func (x *PaginationSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PaginationSpec.ProtoReflect.Descriptor instead.
 func (*PaginationSpec) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{10}
+	return file_v1_models_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PaginationSpec) GetName() string {
@@ -889,12 +881,67 @@ func (x *PaginationSpec) GetMultiple() bool {
 	return false
 }
 
+// ItemsSpec defines structured per-item extraction using a container CSS selector.
+// Each matched container element becomes a scoped DOM root for field extraction,
+// producing a list of structured objects instead of parallel arrays.
+type ItemsSpec struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ContainerSelector string                 `protobuf:"bytes,1,opt,name=container_selector,proto3" json:"container_selector,omitempty"` // CSS selector for item containers
+	Fields            []*FieldSpec           `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty"`                         // Fields extracted per container
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ItemsSpec) Reset() {
+	*x = ItemsSpec{}
+	mi := &file_v1_models_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ItemsSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemsSpec) ProtoMessage() {}
+
+func (x *ItemsSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ItemsSpec.ProtoReflect.Descriptor instead.
+func (*ItemsSpec) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ItemsSpec) GetContainerSelector() string {
+	if x != nil {
+		return x.ContainerSelector
+	}
+	return ""
+}
+
+func (x *ItemsSpec) GetFields() []*FieldSpec {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
 // ExtractionSpec defines extraction configuration
 type ExtractionSpec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Fields        []*FieldSpec           `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
-	Metrics       []*MetricSpec          `protobuf:"bytes,2,rep,name=metrics,proto3" json:"metrics,omitempty"`
 	Pagination    []*PaginationSpec      `protobuf:"bytes,3,rep,name=pagination,proto3" json:"pagination,omitempty"`
+	Items         *ItemsSpec             `protobuf:"bytes,4,opt,name=items,proto3,oneof" json:"items,omitempty"` // Structured per-item extraction
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -936,16 +983,16 @@ func (x *ExtractionSpec) GetFields() []*FieldSpec {
 	return nil
 }
 
-func (x *ExtractionSpec) GetMetrics() []*MetricSpec {
+func (x *ExtractionSpec) GetPagination() []*PaginationSpec {
 	if x != nil {
-		return x.Metrics
+		return x.Pagination
 	}
 	return nil
 }
 
-func (x *ExtractionSpec) GetPagination() []*PaginationSpec {
+func (x *ExtractionSpec) GetItems() *ItemsSpec {
 	if x != nil {
-		return x.Pagination
+		return x.Items
 	}
 	return nil
 }
@@ -965,7 +1012,9 @@ type CrawlJobConfig struct {
 	// If true, fetch and follow robots.txt rules; if false, ignore robots.txt
 	RespectRobotsTxt bool `protobuf:"varint,10,opt,name=respect_robots_txt,proto3" json:"respect_robots_txt,omitempty"`
 	// Determines if this is a one-time job or a scheduled recurring job
-	JobType       JobType `protobuf:"varint,11,opt,name=job_type,proto3,enum=crawler.v1.JobType" json:"job_type,omitempty"`
+	JobType JobType `protobuf:"varint,11,opt,name=job_type,proto3,enum=crawler.v1.JobType" json:"job_type,omitempty"`
+	// Controls link-following behavior: pagination_only, links_only, or pagination_and_links (default)
+	CrawlMode     CrawlMode `protobuf:"varint,12,opt,name=crawl_mode,proto3,enum=crawler.v1.CrawlMode" json:"crawl_mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1075,6 +1124,13 @@ func (x *CrawlJobConfig) GetJobType() JobType {
 		return x.JobType
 	}
 	return JobType_JOB_TYPE_UNSPECIFIED
+}
+
+func (x *CrawlJobConfig) GetCrawlMode() CrawlMode {
+	if x != nil {
+		return x.CrawlMode
+	}
+	return CrawlMode_CRAWL_MODE_UNSPECIFIED
 }
 
 // CrawlJob represents a crawling job
@@ -1205,7 +1261,6 @@ type CrawlTask struct {
 	Status          string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
 	EnqueuedAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=enqueued_at,proto3" json:"enqueued_at,omitempty"`
 	Depth           uint64                 `protobuf:"varint,8,opt,name=depth,proto3" json:"depth,omitempty"`
-	BodyHash        string                 `protobuf:"bytes,9,opt,name=body_hash,proto3" json:"body_hash,omitempty"`
 	MinioObjectKey  string                 `protobuf:"bytes,10,opt,name=minio_object_key,proto3" json:"minio_object_key,omitempty"`
 	ResultObjectKey *string                `protobuf:"bytes,11,opt,name=result_object_key,proto3,oneof" json:"result_object_key,omitempty"`
 	ErrorMessage    *string                `protobuf:"bytes,12,opt,name=error_message,proto3,oneof" json:"error_message,omitempty"`
@@ -1297,13 +1352,6 @@ func (x *CrawlTask) GetDepth() uint64 {
 		return x.Depth
 	}
 	return 0
-}
-
-func (x *CrawlTask) GetBodyHash() string {
-	if x != nil {
-		return x.BodyHash
-	}
-	return ""
 }
 
 func (x *CrawlTask) GetMinioObjectKey() string {
@@ -3927,23 +3975,22 @@ const file_v1_models_proto_rawDesc = "" +
 	"\textractor\x18\x04 \x01(\v2\x19.crawler.v1.ExtractorSpecR\textractor\x129\n" +
 	"\n" +
 	"transforms\x18\x05 \x03(\v2\x19.crawler.v1.TransformSpecR\n" +
-	"transforms\"F\n" +
-	"\n" +
-	"MetricSpec\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
-	"\x02op\x18\x02 \x01(\tR\x02op\x12\x14\n" +
-	"\x05input\x18\x03 \x01(\tR\x05input\"z\n" +
+	"transforms\"z\n" +
 	"\x0ePaginationSpec\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\bselector\x18\x02 \x01(\tR\bselector\x12\x1c\n" +
 	"\tattribute\x18\x03 \x01(\tR\tattribute\x12\x1a\n" +
-	"\bmultiple\x18\x04 \x01(\bR\bmultiple\"\xad\x01\n" +
+	"\bmultiple\x18\x04 \x01(\bR\bmultiple\"j\n" +
+	"\tItemsSpec\x12.\n" +
+	"\x12container_selector\x18\x01 \x01(\tR\x12container_selector\x12-\n" +
+	"\x06fields\x18\x02 \x03(\v2\x15.crawler.v1.FieldSpecR\x06fields\"\xbd\x01\n" +
 	"\x0eExtractionSpec\x12-\n" +
-	"\x06fields\x18\x01 \x03(\v2\x15.crawler.v1.FieldSpecR\x06fields\x120\n" +
-	"\ametrics\x18\x02 \x03(\v2\x16.crawler.v1.MetricSpecR\ametrics\x12:\n" +
+	"\x06fields\x18\x01 \x03(\v2\x15.crawler.v1.FieldSpecR\x06fields\x12:\n" +
 	"\n" +
 	"pagination\x18\x03 \x03(\v2\x1a.crawler.v1.PaginationSpecR\n" +
-	"pagination\"\x89\x04\n" +
+	"pagination\x120\n" +
+	"\x05items\x18\x04 \x01(\v2\x15.crawler.v1.ItemsSpecH\x00R\x05items\x88\x01\x01B\b\n" +
+	"\x06_itemsJ\x04\b\x02\x10\x03\"\xc0\x04\n" +
 	"\x0eCrawlJobConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12D\n" +
@@ -3958,7 +4005,10 @@ const file_v1_models_proto_rawDesc = "" +
 	"\bschedule\x18\t \x01(\v2\x1b.crawler.v1.ScheduleOptionsR\bschedule\x12.\n" +
 	"\x12respect_robots_txt\x18\n" +
 	" \x01(\bR\x12respect_robots_txt\x12/\n" +
-	"\bjob_type\x18\v \x01(\x0e2\x13.crawler.v1.JobTypeR\bjob_type\"\xb6\x04\n" +
+	"\bjob_type\x18\v \x01(\x0e2\x13.crawler.v1.JobTypeR\bjob_type\x125\n" +
+	"\n" +
+	"crawl_mode\x18\f \x01(\x0e2\x15.crawler.v1.CrawlModeR\n" +
+	"crawl_mode\"\xb6\x04\n" +
 	"\bCrawlJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
 	"\rjob_config_id\x18\x02 \x01(\tR\rjob_config_id\x12?\n" +
@@ -3979,7 +4029,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"\r_completed_atB\x12\n" +
 	"\x10_export_json_keyB\x11\n" +
 	"\x0f_export_csv_keyB\x0e\n" +
-	"\f_exported_at\"\xe7\x03\n" +
+	"\f_exported_at\"\xcf\x03\n" +
 	"\tCrawlTask\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x06job_id\x12+\n" +
@@ -3988,8 +4038,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"\tfinal_url\x18\x05 \x01(\tH\x01R\tfinal_url\x88\x01\x01\x12\x16\n" +
 	"\x06status\x18\x06 \x01(\tR\x06status\x12<\n" +
 	"\venqueued_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\venqueued_at\x12\x14\n" +
-	"\x05depth\x18\b \x01(\x04R\x05depth\x12\x1c\n" +
-	"\tbody_hash\x18\t \x01(\tR\tbody_hash\x12*\n" +
+	"\x05depth\x18\b \x01(\x04R\x05depth\x12*\n" +
 	"\x10minio_object_key\x18\n" +
 	" \x01(\tR\x10minio_object_key\x121\n" +
 	"\x11result_object_key\x18\v \x01(\tH\x02R\x11result_object_key\x88\x01\x01\x12)\n" +
@@ -3998,7 +4047,8 @@ const file_v1_models_proto_rawDesc = "" +
 	"\n" +
 	"_final_urlB\x14\n" +
 	"\x12_result_object_keyB\x10\n" +
-	"\x0e_error_message\"\xff\x01\n" +
+	"\x0e_error_messageJ\x04\b\t\x10\n" +
+	"\"\xff\x01\n" +
 	"\rJobListFilter\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tH\x00R\x04name\x88\x01\x01\x12\x1b\n" +
 	"\x06status\x18\x02 \x01(\tH\x01R\x06status\x88\x01\x01\x12C\n" +
@@ -4193,7 +4243,12 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\"Q\n" +
 	"\x17ForceKillWorkerResponse\x12\x1c\n" +
 	"\tdelivered\x18\x01 \x01(\bR\tdelivered\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage*N\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*\x87\x01\n" +
+	"\tCrawlMode\x12\x1a\n" +
+	"\x16CRAWL_MODE_UNSPECIFIED\x10\x00\x12#\n" +
+	"\x1fCRAWL_MODE_PAGINATION_AND_LINKS\x10\x01\x12\x1e\n" +
+	"\x1aCRAWL_MODE_PAGINATION_ONLY\x10\x02\x12\x19\n" +
+	"\x15CRAWL_MODE_LINKS_ONLY\x10\x03*N\n" +
 	"\aJobType\x12\x18\n" +
 	"\x14JOB_TYPE_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rJOB_TYPE_ONCE\x10\x01\x12\x16\n" +
@@ -4231,136 +4286,139 @@ func file_v1_models_proto_rawDescGZIP() []byte {
 	return file_v1_models_proto_rawDescData
 }
 
-var file_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 64)
 var file_v1_models_proto_goTypes = []any{
-	(JobType)(0),                        // 0: crawler.v1.JobType
-	(Role)(0),                           // 1: crawler.v1.Role
-	(WorkerStatus)(0),                   // 2: crawler.v1.WorkerStatus
-	(WorkerCommandType)(0),              // 3: crawler.v1.WorkerCommandType
-	(*AuthOptions)(nil),                 // 4: crawler.v1.AuthOptions
-	(*RateLimitPolicy)(nil),             // 5: crawler.v1.RateLimitPolicy
-	(*RetryPolicy)(nil),                 // 6: crawler.v1.RetryPolicy
-	(*ScheduleOptions)(nil),             // 7: crawler.v1.ScheduleOptions
-	(*ScopeRules)(nil),                  // 8: crawler.v1.ScopeRules
-	(*Seed)(nil),                        // 9: crawler.v1.Seed
-	(*ExtractorSpec)(nil),               // 10: crawler.v1.ExtractorSpec
-	(*TransformSpec)(nil),               // 11: crawler.v1.TransformSpec
-	(*FieldSpec)(nil),                   // 12: crawler.v1.FieldSpec
-	(*MetricSpec)(nil),                  // 13: crawler.v1.MetricSpec
+	(CrawlMode)(0),                      // 0: crawler.v1.CrawlMode
+	(JobType)(0),                        // 1: crawler.v1.JobType
+	(Role)(0),                           // 2: crawler.v1.Role
+	(WorkerStatus)(0),                   // 3: crawler.v1.WorkerStatus
+	(WorkerCommandType)(0),              // 4: crawler.v1.WorkerCommandType
+	(*AuthOptions)(nil),                 // 5: crawler.v1.AuthOptions
+	(*RateLimitPolicy)(nil),             // 6: crawler.v1.RateLimitPolicy
+	(*RetryPolicy)(nil),                 // 7: crawler.v1.RetryPolicy
+	(*ScheduleOptions)(nil),             // 8: crawler.v1.ScheduleOptions
+	(*ScopeRules)(nil),                  // 9: crawler.v1.ScopeRules
+	(*Seed)(nil),                        // 10: crawler.v1.Seed
+	(*ExtractorSpec)(nil),               // 11: crawler.v1.ExtractorSpec
+	(*TransformSpec)(nil),               // 12: crawler.v1.TransformSpec
+	(*FieldSpec)(nil),                   // 13: crawler.v1.FieldSpec
 	(*PaginationSpec)(nil),              // 14: crawler.v1.PaginationSpec
-	(*ExtractionSpec)(nil),              // 15: crawler.v1.ExtractionSpec
-	(*CrawlJobConfig)(nil),              // 16: crawler.v1.CrawlJobConfig
-	(*CrawlJob)(nil),                    // 17: crawler.v1.CrawlJob
-	(*CrawlTask)(nil),                   // 18: crawler.v1.CrawlTask
-	(*JobListFilter)(nil),               // 19: crawler.v1.JobListFilter
-	(*ListJobsRequest)(nil),             // 20: crawler.v1.ListJobsRequest
-	(*ListJobsResponse)(nil),            // 21: crawler.v1.ListJobsResponse
-	(*CreateJobRequest)(nil),            // 22: crawler.v1.CreateJobRequest
-	(*CreateJobResponse)(nil),           // 23: crawler.v1.CreateJobResponse
-	(*GetJobRequest)(nil),               // 24: crawler.v1.GetJobRequest
-	(*GetJobResponse)(nil),              // 25: crawler.v1.GetJobResponse
-	(*CreateTaskRequest)(nil),           // 26: crawler.v1.CreateTaskRequest
-	(*GetTaskRequest)(nil),              // 27: crawler.v1.GetTaskRequest
-	(*GetTaskResponse)(nil),             // 28: crawler.v1.GetTaskResponse
-	(*TaskListFilter)(nil),              // 29: crawler.v1.TaskListFilter
-	(*ListTasksByJobRequest)(nil),       // 30: crawler.v1.ListTasksByJobRequest
-	(*ListTasksByJobResponse)(nil),      // 31: crawler.v1.ListTasksByJobResponse
-	(*TaskAnalytics)(nil),               // 32: crawler.v1.TaskAnalytics
-	(*GetTaskAnalyticsRequest)(nil),     // 33: crawler.v1.GetTaskAnalyticsRequest
-	(*GetTaskAnalyticsResponse)(nil),    // 34: crawler.v1.GetTaskAnalyticsResponse
-	(*GetJobExportFileURLRequest)(nil),  // 35: crawler.v1.GetJobExportFileURLRequest
-	(*GetJobExportFileURLResponse)(nil), // 36: crawler.v1.GetJobExportFileURLResponse
-	(*GetTaskFileURLRequest)(nil),       // 37: crawler.v1.GetTaskFileURLRequest
-	(*GetTaskFileURLResponse)(nil),      // 38: crawler.v1.GetTaskFileURLResponse
-	(*Preview)(nil),                     // 39: crawler.v1.Preview
-	(*CreatePreviewRequest)(nil),        // 40: crawler.v1.CreatePreviewRequest
-	(*CreatePreviewResponse)(nil),       // 41: crawler.v1.CreatePreviewResponse
-	(*GetPreviewRequest)(nil),           // 42: crawler.v1.GetPreviewRequest
-	(*GetPreviewResponse)(nil),          // 43: crawler.v1.GetPreviewResponse
-	(*RegisterRequest)(nil),             // 44: crawler.v1.RegisterRequest
-	(*RegisterResponse)(nil),            // 45: crawler.v1.RegisterResponse
-	(*LoginRequest)(nil),                // 46: crawler.v1.LoginRequest
-	(*LoginResponse)(nil),               // 47: crawler.v1.LoginResponse
-	(*RefreshRequest)(nil),              // 48: crawler.v1.RefreshRequest
-	(*RefreshResponse)(nil),             // 49: crawler.v1.RefreshResponse
-	(*LogoutRequest)(nil),               // 50: crawler.v1.LogoutRequest
-	(*LogoutResponse)(nil),              // 51: crawler.v1.LogoutResponse
-	(*User)(nil),                        // 52: crawler.v1.User
-	(*ListUsersRequest)(nil),            // 53: crawler.v1.ListUsersRequest
-	(*ListUsersResponse)(nil),           // 54: crawler.v1.ListUsersResponse
-	(*UpdateUserRoleRequest)(nil),       // 55: crawler.v1.UpdateUserRoleRequest
-	(*UpdateUserRoleResponse)(nil),      // 56: crawler.v1.UpdateUserRoleResponse
-	(*WorkerHeartbeat)(nil),             // 57: crawler.v1.WorkerHeartbeat
-	(*WorkerInfo)(nil),                  // 58: crawler.v1.WorkerInfo
-	(*ListWorkersRequest)(nil),          // 59: crawler.v1.ListWorkersRequest
-	(*ListWorkersResponse)(nil),         // 60: crawler.v1.ListWorkersResponse
-	(*WorkerCommand)(nil),               // 61: crawler.v1.WorkerCommand
-	(*DrainWorkerRequest)(nil),          // 62: crawler.v1.DrainWorkerRequest
-	(*DrainWorkerResponse)(nil),         // 63: crawler.v1.DrainWorkerResponse
-	(*ForceKillWorkerRequest)(nil),      // 64: crawler.v1.ForceKillWorkerRequest
-	(*ForceKillWorkerResponse)(nil),     // 65: crawler.v1.ForceKillWorkerResponse
-	nil,                                 // 66: crawler.v1.TaskAnalytics.StatusCountsEntry
-	nil,                                 // 67: crawler.v1.TaskAnalytics.DepthCountsEntry
-	(*timestamppb.Timestamp)(nil),       // 68: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),         // 69: google.protobuf.Duration
+	(*ItemsSpec)(nil),                   // 15: crawler.v1.ItemsSpec
+	(*ExtractionSpec)(nil),              // 16: crawler.v1.ExtractionSpec
+	(*CrawlJobConfig)(nil),              // 17: crawler.v1.CrawlJobConfig
+	(*CrawlJob)(nil),                    // 18: crawler.v1.CrawlJob
+	(*CrawlTask)(nil),                   // 19: crawler.v1.CrawlTask
+	(*JobListFilter)(nil),               // 20: crawler.v1.JobListFilter
+	(*ListJobsRequest)(nil),             // 21: crawler.v1.ListJobsRequest
+	(*ListJobsResponse)(nil),            // 22: crawler.v1.ListJobsResponse
+	(*CreateJobRequest)(nil),            // 23: crawler.v1.CreateJobRequest
+	(*CreateJobResponse)(nil),           // 24: crawler.v1.CreateJobResponse
+	(*GetJobRequest)(nil),               // 25: crawler.v1.GetJobRequest
+	(*GetJobResponse)(nil),              // 26: crawler.v1.GetJobResponse
+	(*CreateTaskRequest)(nil),           // 27: crawler.v1.CreateTaskRequest
+	(*GetTaskRequest)(nil),              // 28: crawler.v1.GetTaskRequest
+	(*GetTaskResponse)(nil),             // 29: crawler.v1.GetTaskResponse
+	(*TaskListFilter)(nil),              // 30: crawler.v1.TaskListFilter
+	(*ListTasksByJobRequest)(nil),       // 31: crawler.v1.ListTasksByJobRequest
+	(*ListTasksByJobResponse)(nil),      // 32: crawler.v1.ListTasksByJobResponse
+	(*TaskAnalytics)(nil),               // 33: crawler.v1.TaskAnalytics
+	(*GetTaskAnalyticsRequest)(nil),     // 34: crawler.v1.GetTaskAnalyticsRequest
+	(*GetTaskAnalyticsResponse)(nil),    // 35: crawler.v1.GetTaskAnalyticsResponse
+	(*GetJobExportFileURLRequest)(nil),  // 36: crawler.v1.GetJobExportFileURLRequest
+	(*GetJobExportFileURLResponse)(nil), // 37: crawler.v1.GetJobExportFileURLResponse
+	(*GetTaskFileURLRequest)(nil),       // 38: crawler.v1.GetTaskFileURLRequest
+	(*GetTaskFileURLResponse)(nil),      // 39: crawler.v1.GetTaskFileURLResponse
+	(*Preview)(nil),                     // 40: crawler.v1.Preview
+	(*CreatePreviewRequest)(nil),        // 41: crawler.v1.CreatePreviewRequest
+	(*CreatePreviewResponse)(nil),       // 42: crawler.v1.CreatePreviewResponse
+	(*GetPreviewRequest)(nil),           // 43: crawler.v1.GetPreviewRequest
+	(*GetPreviewResponse)(nil),          // 44: crawler.v1.GetPreviewResponse
+	(*RegisterRequest)(nil),             // 45: crawler.v1.RegisterRequest
+	(*RegisterResponse)(nil),            // 46: crawler.v1.RegisterResponse
+	(*LoginRequest)(nil),                // 47: crawler.v1.LoginRequest
+	(*LoginResponse)(nil),               // 48: crawler.v1.LoginResponse
+	(*RefreshRequest)(nil),              // 49: crawler.v1.RefreshRequest
+	(*RefreshResponse)(nil),             // 50: crawler.v1.RefreshResponse
+	(*LogoutRequest)(nil),               // 51: crawler.v1.LogoutRequest
+	(*LogoutResponse)(nil),              // 52: crawler.v1.LogoutResponse
+	(*User)(nil),                        // 53: crawler.v1.User
+	(*ListUsersRequest)(nil),            // 54: crawler.v1.ListUsersRequest
+	(*ListUsersResponse)(nil),           // 55: crawler.v1.ListUsersResponse
+	(*UpdateUserRoleRequest)(nil),       // 56: crawler.v1.UpdateUserRoleRequest
+	(*UpdateUserRoleResponse)(nil),      // 57: crawler.v1.UpdateUserRoleResponse
+	(*WorkerHeartbeat)(nil),             // 58: crawler.v1.WorkerHeartbeat
+	(*WorkerInfo)(nil),                  // 59: crawler.v1.WorkerInfo
+	(*ListWorkersRequest)(nil),          // 60: crawler.v1.ListWorkersRequest
+	(*ListWorkersResponse)(nil),         // 61: crawler.v1.ListWorkersResponse
+	(*WorkerCommand)(nil),               // 62: crawler.v1.WorkerCommand
+	(*DrainWorkerRequest)(nil),          // 63: crawler.v1.DrainWorkerRequest
+	(*DrainWorkerResponse)(nil),         // 64: crawler.v1.DrainWorkerResponse
+	(*ForceKillWorkerRequest)(nil),      // 65: crawler.v1.ForceKillWorkerRequest
+	(*ForceKillWorkerResponse)(nil),     // 66: crawler.v1.ForceKillWorkerResponse
+	nil,                                 // 67: crawler.v1.TaskAnalytics.StatusCountsEntry
+	nil,                                 // 68: crawler.v1.TaskAnalytics.DepthCountsEntry
+	(*timestamppb.Timestamp)(nil),       // 69: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),         // 70: google.protobuf.Duration
 }
 var file_v1_models_proto_depIdxs = []int32{
-	10, // 0: crawler.v1.FieldSpec.extractor:type_name -> crawler.v1.ExtractorSpec
-	11, // 1: crawler.v1.FieldSpec.transforms:type_name -> crawler.v1.TransformSpec
-	12, // 2: crawler.v1.ExtractionSpec.fields:type_name -> crawler.v1.FieldSpec
-	13, // 3: crawler.v1.ExtractionSpec.metrics:type_name -> crawler.v1.MetricSpec
+	11, // 0: crawler.v1.FieldSpec.extractor:type_name -> crawler.v1.ExtractorSpec
+	12, // 1: crawler.v1.FieldSpec.transforms:type_name -> crawler.v1.TransformSpec
+	13, // 2: crawler.v1.ItemsSpec.fields:type_name -> crawler.v1.FieldSpec
+	13, // 3: crawler.v1.ExtractionSpec.fields:type_name -> crawler.v1.FieldSpec
 	14, // 4: crawler.v1.ExtractionSpec.pagination:type_name -> crawler.v1.PaginationSpec
-	15, // 5: crawler.v1.CrawlJobConfig.extraction_spec:type_name -> crawler.v1.ExtractionSpec
-	8,  // 6: crawler.v1.CrawlJobConfig.scopes:type_name -> crawler.v1.ScopeRules
-	9,  // 7: crawler.v1.CrawlJobConfig.seeds:type_name -> crawler.v1.Seed
-	5,  // 8: crawler.v1.CrawlJobConfig.rate_limit:type_name -> crawler.v1.RateLimitPolicy
-	6,  // 9: crawler.v1.CrawlJobConfig.retries:type_name -> crawler.v1.RetryPolicy
-	4,  // 10: crawler.v1.CrawlJobConfig.auth:type_name -> crawler.v1.AuthOptions
-	7,  // 11: crawler.v1.CrawlJobConfig.schedule:type_name -> crawler.v1.ScheduleOptions
-	0,  // 12: crawler.v1.CrawlJobConfig.job_type:type_name -> crawler.v1.JobType
-	16, // 13: crawler.v1.CrawlJob.job_config:type_name -> crawler.v1.CrawlJobConfig
-	68, // 14: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
-	68, // 15: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
-	68, // 16: crawler.v1.CrawlJob.exported_at:type_name -> google.protobuf.Timestamp
-	17, // 17: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
-	68, // 18: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
-	68, // 19: crawler.v1.JobListFilter.created_from:type_name -> google.protobuf.Timestamp
-	68, // 20: crawler.v1.JobListFilter.created_to:type_name -> google.protobuf.Timestamp
-	19, // 21: crawler.v1.ListJobsRequest.filter:type_name -> crawler.v1.JobListFilter
-	17, // 22: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
-	16, // 23: crawler.v1.CreateJobRequest.config:type_name -> crawler.v1.CrawlJobConfig
-	17, // 24: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
-	18, // 25: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	68, // 26: crawler.v1.TaskListFilter.enqueued_from:type_name -> google.protobuf.Timestamp
-	68, // 27: crawler.v1.TaskListFilter.enqueued_to:type_name -> google.protobuf.Timestamp
-	29, // 28: crawler.v1.ListTasksByJobRequest.filter:type_name -> crawler.v1.TaskListFilter
-	18, // 29: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
-	66, // 30: crawler.v1.TaskAnalytics.status_counts:type_name -> crawler.v1.TaskAnalytics.StatusCountsEntry
-	67, // 31: crawler.v1.TaskAnalytics.depth_counts:type_name -> crawler.v1.TaskAnalytics.DepthCountsEntry
-	32, // 32: crawler.v1.GetTaskAnalyticsResponse.analytics:type_name -> crawler.v1.TaskAnalytics
-	68, // 33: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
-	68, // 34: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
-	39, // 35: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
-	1,  // 36: crawler.v1.User.role:type_name -> crawler.v1.Role
-	68, // 37: crawler.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	68, // 38: crawler.v1.User.updated_at:type_name -> google.protobuf.Timestamp
-	52, // 39: crawler.v1.ListUsersResponse.users:type_name -> crawler.v1.User
-	1,  // 40: crawler.v1.UpdateUserRoleRequest.role:type_name -> crawler.v1.Role
-	68, // 41: crawler.v1.WorkerHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
-	2,  // 42: crawler.v1.WorkerHeartbeat.status:type_name -> crawler.v1.WorkerStatus
-	68, // 43: crawler.v1.WorkerHeartbeat.started_at:type_name -> google.protobuf.Timestamp
-	2,  // 44: crawler.v1.WorkerInfo.status:type_name -> crawler.v1.WorkerStatus
-	68, // 45: crawler.v1.WorkerInfo.last_heartbeat_at:type_name -> google.protobuf.Timestamp
-	69, // 46: crawler.v1.WorkerInfo.uptime:type_name -> google.protobuf.Duration
-	58, // 47: crawler.v1.ListWorkersResponse.workers:type_name -> crawler.v1.WorkerInfo
-	3,  // 48: crawler.v1.WorkerCommand.type:type_name -> crawler.v1.WorkerCommandType
-	68, // 49: crawler.v1.WorkerCommand.issued_at:type_name -> google.protobuf.Timestamp
-	50, // [50:50] is the sub-list for method output_type
-	50, // [50:50] is the sub-list for method input_type
-	50, // [50:50] is the sub-list for extension type_name
-	50, // [50:50] is the sub-list for extension extendee
-	0,  // [0:50] is the sub-list for field type_name
+	15, // 5: crawler.v1.ExtractionSpec.items:type_name -> crawler.v1.ItemsSpec
+	16, // 6: crawler.v1.CrawlJobConfig.extraction_spec:type_name -> crawler.v1.ExtractionSpec
+	9,  // 7: crawler.v1.CrawlJobConfig.scopes:type_name -> crawler.v1.ScopeRules
+	10, // 8: crawler.v1.CrawlJobConfig.seeds:type_name -> crawler.v1.Seed
+	6,  // 9: crawler.v1.CrawlJobConfig.rate_limit:type_name -> crawler.v1.RateLimitPolicy
+	7,  // 10: crawler.v1.CrawlJobConfig.retries:type_name -> crawler.v1.RetryPolicy
+	5,  // 11: crawler.v1.CrawlJobConfig.auth:type_name -> crawler.v1.AuthOptions
+	8,  // 12: crawler.v1.CrawlJobConfig.schedule:type_name -> crawler.v1.ScheduleOptions
+	1,  // 13: crawler.v1.CrawlJobConfig.job_type:type_name -> crawler.v1.JobType
+	0,  // 14: crawler.v1.CrawlJobConfig.crawl_mode:type_name -> crawler.v1.CrawlMode
+	17, // 15: crawler.v1.CrawlJob.job_config:type_name -> crawler.v1.CrawlJobConfig
+	69, // 16: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
+	69, // 17: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
+	69, // 18: crawler.v1.CrawlJob.exported_at:type_name -> google.protobuf.Timestamp
+	18, // 19: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
+	69, // 20: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
+	69, // 21: crawler.v1.JobListFilter.created_from:type_name -> google.protobuf.Timestamp
+	69, // 22: crawler.v1.JobListFilter.created_to:type_name -> google.protobuf.Timestamp
+	20, // 23: crawler.v1.ListJobsRequest.filter:type_name -> crawler.v1.JobListFilter
+	18, // 24: crawler.v1.ListJobsResponse.jobs:type_name -> crawler.v1.CrawlJob
+	17, // 25: crawler.v1.CreateJobRequest.config:type_name -> crawler.v1.CrawlJobConfig
+	18, // 26: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
+	19, // 27: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
+	69, // 28: crawler.v1.TaskListFilter.enqueued_from:type_name -> google.protobuf.Timestamp
+	69, // 29: crawler.v1.TaskListFilter.enqueued_to:type_name -> google.protobuf.Timestamp
+	30, // 30: crawler.v1.ListTasksByJobRequest.filter:type_name -> crawler.v1.TaskListFilter
+	19, // 31: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
+	67, // 32: crawler.v1.TaskAnalytics.status_counts:type_name -> crawler.v1.TaskAnalytics.StatusCountsEntry
+	68, // 33: crawler.v1.TaskAnalytics.depth_counts:type_name -> crawler.v1.TaskAnalytics.DepthCountsEntry
+	33, // 34: crawler.v1.GetTaskAnalyticsResponse.analytics:type_name -> crawler.v1.TaskAnalytics
+	69, // 35: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
+	69, // 36: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
+	40, // 37: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
+	2,  // 38: crawler.v1.User.role:type_name -> crawler.v1.Role
+	69, // 39: crawler.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	69, // 40: crawler.v1.User.updated_at:type_name -> google.protobuf.Timestamp
+	53, // 41: crawler.v1.ListUsersResponse.users:type_name -> crawler.v1.User
+	2,  // 42: crawler.v1.UpdateUserRoleRequest.role:type_name -> crawler.v1.Role
+	69, // 43: crawler.v1.WorkerHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
+	3,  // 44: crawler.v1.WorkerHeartbeat.status:type_name -> crawler.v1.WorkerStatus
+	69, // 45: crawler.v1.WorkerHeartbeat.started_at:type_name -> google.protobuf.Timestamp
+	3,  // 46: crawler.v1.WorkerInfo.status:type_name -> crawler.v1.WorkerStatus
+	69, // 47: crawler.v1.WorkerInfo.last_heartbeat_at:type_name -> google.protobuf.Timestamp
+	70, // 48: crawler.v1.WorkerInfo.uptime:type_name -> google.protobuf.Duration
+	59, // 49: crawler.v1.ListWorkersResponse.workers:type_name -> crawler.v1.WorkerInfo
+	4,  // 50: crawler.v1.WorkerCommand.type:type_name -> crawler.v1.WorkerCommandType
+	69, // 51: crawler.v1.WorkerCommand.issued_at:type_name -> google.protobuf.Timestamp
+	52, // [52:52] is the sub-list for method output_type
+	52, // [52:52] is the sub-list for method input_type
+	52, // [52:52] is the sub-list for extension type_name
+	52, // [52:52] is the sub-list for extension extendee
+	0,  // [0:52] is the sub-list for field type_name
 }
 
 func init() { file_v1_models_proto_init() }
@@ -4369,6 +4427,7 @@ func file_v1_models_proto_init() {
 		return
 	}
 	file_v1_models_proto_msgTypes[6].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[11].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[13].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[14].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[15].OneofWrappers = []any{}
@@ -4381,7 +4440,7 @@ func file_v1_models_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_models_proto_rawDesc), len(file_v1_models_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   64,
 			NumExtensions: 0,
 			NumServices:   0,

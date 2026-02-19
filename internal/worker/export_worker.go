@@ -221,11 +221,12 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 
 // TaskResult represents a single task's extraction result
 type TaskResult struct {
-	TaskID string         `json:"task_id"`
-	URL    string         `json:"url"`
-	Status string         `json:"status"`
-	Fields map[string]any `json:"fields,omitempty"`
-	Error  string         `json:"error,omitempty"`
+	TaskID string           `json:"task_id"`
+	URL    string           `json:"url"`
+	Status string           `json:"status"`
+	Fields map[string]any   `json:"fields,omitempty"`
+	Items  []map[string]any `json:"items,omitempty"`
+	Error  string           `json:"error,omitempty"`
 }
 
 // loadTaskResults loads result JSON files from S3 for all tasks
@@ -263,6 +264,8 @@ func (w *ExportWorker) loadTaskResults(ctx context.Context, tasks []*models.Craw
 					if fields, ok := taskOutput["fields"].(map[string]any); ok {
 						result.Fields = fields
 					}
+					// Extract structured items from the output
+					result.Items = parseResultItems(taskOutput["items"])
 				}
 			}
 		} else if task.Status == models.TaskStatusFailed {
@@ -320,8 +323,9 @@ func (w *ExportWorker) generateCSVReport(ctx context.Context, jobID valueobjects
 		return objectKey, nil
 	}
 
-	// Compute union of all field names
+	// Compute union of all page-level and item-level field names
 	fieldNames := w.collectFieldNames(results)
+	itemFieldNames := w.collectItemFieldNames(results)
 
 	// Build CSV in memory
 	var buf strings.Builder
@@ -330,6 +334,10 @@ func (w *ExportWorker) generateCSVReport(ctx context.Context, jobID valueobjects
 	// Write header
 	header := []string{"task_id", "url", "status"}
 	header = append(header, fieldNames...)
+	header = append(header, "item_index")
+	for _, itemFieldName := range itemFieldNames {
+		header = append(header, "item."+itemFieldName)
+	}
 	header = append(header, "error")
 	if err := csvWriter.Write(header); err != nil {
 		return "", fmt.Errorf("failed to write CSV header: %w", err)
@@ -337,26 +345,53 @@ func (w *ExportWorker) generateCSVReport(ctx context.Context, jobID valueobjects
 
 	// Write rows
 	for _, result := range results {
-		row := []string{
+		baseRow := []string{
 			result.TaskID,
 			result.URL,
 			result.Status,
 		}
 
-		// Add field values (in order of fieldNames)
+		// Add page-level field values (in order of fieldNames)
 		for _, fieldName := range fieldNames {
 			if result.Fields != nil {
 				if val, ok := result.Fields[fieldName]; ok {
-					row = append(row, fmt.Sprintf("%v", val))
+					baseRow = append(baseRow, toCSVValue(val))
 				} else {
-					row = append(row, "")
+					baseRow = append(baseRow, "")
 				}
 			} else {
-				row = append(row, "")
+				baseRow = append(baseRow, "")
 			}
 		}
 
-		// Add error column
+		// Write one row per item when items are present.
+		if len(result.Items) > 0 {
+			for idx, item := range result.Items {
+				row := append([]string{}, baseRow...)
+				row = append(row, fmt.Sprintf("%d", idx))
+
+				for _, itemFieldName := range itemFieldNames {
+					if val, ok := item[itemFieldName]; ok {
+						row = append(row, toCSVValue(val))
+					} else {
+						row = append(row, "")
+					}
+				}
+
+				row = append(row, result.Error)
+				if err := csvWriter.Write(row); err != nil {
+					return "", fmt.Errorf("failed to write CSV row: %w", err)
+				}
+			}
+			continue
+		}
+
+		// Backward-compatible row for tasks without structured items.
+		row := append([]string{}, baseRow...)
+		row = append(row, "") // item_index
+		for range itemFieldNames {
+			row = append(row, "")
+		}
 		row = append(row, result.Error)
 
 		if err := csvWriter.Write(row); err != nil {
@@ -384,6 +419,7 @@ func (w *ExportWorker) generateCSVReport(ctx context.Context, jobID valueobjects
 		zap.String("object_key", objectKey),
 		zap.Int("size_bytes", len(csvData)),
 		zap.Int("field_count", len(fieldNames)),
+		zap.Int("item_field_count", len(itemFieldNames)),
 	)
 
 	return objectKey, nil
@@ -409,6 +445,69 @@ func (w *ExportWorker) collectFieldNames(results []TaskResult) []string {
 	sort.Strings(fieldNames)
 
 	return fieldNames
+}
+
+// collectItemFieldNames computes the union of all item field names across results.
+func (w *ExportWorker) collectItemFieldNames(results []TaskResult) []string {
+	fieldSet := make(map[string]bool)
+
+	for _, result := range results {
+		for _, item := range result.Items {
+			for fieldName := range item {
+				fieldSet[fieldName] = true
+			}
+		}
+	}
+
+	fieldNames := make([]string, 0, len(fieldSet))
+	for fieldName := range fieldSet {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+
+	return fieldNames
+}
+
+// parseResultItems normalizes the parser output "items" field into []map[string]any.
+func parseResultItems(raw any) []map[string]any {
+	switch typed := raw.(type) {
+	case nil:
+		return nil
+	case []map[string]any:
+		return typed
+	case []any:
+		items := make([]map[string]any, 0, len(typed))
+		for _, elem := range typed {
+			if item, ok := elem.(map[string]any); ok {
+				items = append(items, item)
+			}
+		}
+		return items
+	default:
+		return nil
+	}
+}
+
+func toCSVValue(val any) string {
+	if val == nil {
+		return ""
+	}
+
+	switch v := val.(type) {
+	case string:
+		return v
+	case bool:
+		if v {
+			return "true"
+		}
+		return "false"
+	}
+
+	encoded, err := json.Marshal(val)
+	if err == nil {
+		return string(encoded)
+	}
+	return fmt.Sprintf("%v", val)
 }
 
 // failExport marks the export as failed with an error message

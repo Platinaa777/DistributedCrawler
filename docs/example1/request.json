@@ -1,7 +1,8 @@
 {
   "config": {
     "name": "Books to Scrape - All Products",
-    "job_type": "ONCE",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_ONLY",
     "seeds": [
       {
         "url": "https://books.toscrape.com/"
@@ -32,45 +33,85 @@
     "extraction_spec": {
       "fields": [
         {
-          "name": "item_names",
-          "label": "Book Titles",
-          "type": "json",
+          "name": "page_title",
+          "type": "string",
           "required": false,
           "extractor": {
-            "selector": "article.product_pod h3 a",
-            "attribute": "title",
-            "multiple": true
-          },
-          "transforms": []
-        },
-        {
-          "name": "item_prices",
-          "label": "Book Prices",
-          "type": "json",
-          "required": false,
-          "extractor": {
-            "selector": "article.product_pod p.price_color",
+            "selector": "div.page-header h1",
             "attribute": "text",
-            "multiple": true
+            "multiple": false
           },
           "transforms": [
-            { "op": "trim", "arg": null }
+            { "op": "trim" },
+            { "op": "collapse_ws" }
           ]
-        },
-        {
-          "name": "item_availability",
-          "label": "In Stock Status",
-          "type": "json",
-          "required": false,
-          "extractor": {
-            "selector": "article.product_pod p.availability",
-            "attribute": "text",
-            "multiple": true
+        }
+      ],
+      "items": {
+        "container_selector": "article.product_pod",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "h3 a",
+              "attribute": "title",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
           },
-          "transforms": [
-            { "op": "trim", "arg": null },
-            { "op": "collapse_ws", "arg": null }
-          ]
+          {
+            "name": "price",
+            "type": "float",
+            "required": true,
+            "extractor": {
+              "selector": "p.price_color",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "parse_price" }
+            ]
+          },
+          {
+            "name": "availability",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": "p.instock.availability",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "h3 a",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "ul.pager li.next a",
+          "attribute": "href",
+          "multiple": false
         }
       ]
     }

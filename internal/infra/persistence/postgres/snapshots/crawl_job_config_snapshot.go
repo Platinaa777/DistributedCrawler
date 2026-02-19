@@ -18,6 +18,7 @@ type CrawlJobConfigSnapshot struct {
 	Schedule         JSONB      `db:"schedule"`
 	JobType          string     `db:"job_type"`
 	RespectRobotsTxt bool       `db:"respect_robots_txt"`
+	CrawlMode        string     `db:"crawl_mode"`
 }
 
 // JSONB is a type for PostgreSQL JSONB columns (for JSON objects)

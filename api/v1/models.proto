@@ -94,11 +94,28 @@ message PaginationSpec {
   bool multiple = 4;    // Extract all matching elements (true) or just first (false)
 }
 
+// ItemsSpec defines structured per-item extraction using a container CSS selector.
+// Each matched container element becomes a scoped DOM root for field extraction,
+// producing a list of structured objects instead of parallel arrays.
+message ItemsSpec {
+  string container_selector = 1 [json_name = "container_selector"]; // CSS selector for item containers
+  repeated FieldSpec fields = 2;                                      // Fields extracted per container
+}
+
 // ExtractionSpec defines extraction configuration
 message ExtractionSpec {
   repeated FieldSpec fields = 1;
   reserved 2; // was MetricSpec metrics
   repeated PaginationSpec pagination = 3;
+  optional ItemsSpec items = 4; // Structured per-item extraction
+}
+
+// CrawlMode controls which link-following strategy the crawler uses.
+enum CrawlMode {
+  CRAWL_MODE_UNSPECIFIED = 0;         // Defaults to pagination_and_links
+  CRAWL_MODE_PAGINATION_AND_LINKS = 1; // Follow both pagination and regular links (default)
+  CRAWL_MODE_PAGINATION_ONLY = 2;     // Follow only pagination links
+  CRAWL_MODE_LINKS_ONLY = 3;          // Follow only regular <a href> links
 }
 
 // JobType determines whether a crawl job runs once or on a schedule.
@@ -123,6 +140,8 @@ message CrawlJobConfig {
   bool respect_robots_txt = 10 [json_name = "respect_robots_txt"];
   // Determines if this is a one-time job or a scheduled recurring job
   JobType job_type = 11 [json_name = "job_type"];
+  // Controls link-following behavior: pagination_only, links_only, or pagination_and_links (default)
+  CrawlMode crawl_mode = 12 [json_name = "crawl_mode"];
 }
 
 // CrawlJob represents a crawling job

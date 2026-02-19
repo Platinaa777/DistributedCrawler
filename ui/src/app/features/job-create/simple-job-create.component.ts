@@ -1,7 +1,7 @@
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { PanelModule } from 'primeng/panel';
@@ -15,7 +15,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
 import { CrawlJobConfig, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES } from '../../core/models/crawl-job.model';
-import { FieldSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
+import { FieldSpec, ItemsSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
 
 interface SimpleJobFormValue {
   name: string;
@@ -33,6 +33,8 @@ interface SimpleJobFormValue {
   };
   schedule: ScheduleOptions;
   job_type: JobType;
+  items_enabled: boolean;
+  items_container_selector: string;
 }
 
 @Component({
@@ -40,6 +42,7 @@ interface SimpleJobFormValue {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     CardModule,
     PanelModule,
@@ -66,6 +69,14 @@ interface SimpleJobFormValue {
         </div>
         <div class="flex items-center gap-2">
           <p-button
+            [outlined]="true"
+            severity="secondary"
+            type="button"
+            (onClick)="toggleImportPanel()">
+            <i class="pi pi-file-import mr-2"></i>
+            {{ showImportPanel ? 'Close Import' : 'Import JSON' }}
+          </p-button>
+          <p-button
             type="button"
             (onClick)="submit()"
             [disabled]="creating || !canSubmit()">
@@ -74,6 +85,37 @@ interface SimpleJobFormValue {
           </p-button>
         </div>
       </div>
+
+      <p-card *ngIf="showImportPanel" styleClass="mb-6">
+        <ng-template pTemplate="header">
+          <div class="p-4 pb-0">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Import from JSON</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Paste a job config JSON to fill all fields automatically.</p>
+          </div>
+        </ng-template>
+        <div class="p-4 space-y-3">
+          <textarea
+            [(ngModel)]="importJsonText"
+            [ngModelOptions]="{standalone: true}"
+            placeholder='{ "config": { "name": "...", "seeds": [...], ... } }'
+            rows="10"
+            class="w-full font-mono text-xs p-3 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 resize-y"
+          ></textarea>
+          <div *ngIf="importError" class="text-red-600 text-sm flex items-center gap-2">
+            <i class="pi pi-times-circle"></i>
+            {{ importError }}
+          </div>
+          <div class="flex justify-end gap-2">
+            <p-button [outlined]="true" severity="secondary" type="button" (onClick)="toggleImportPanel()">
+              Cancel
+            </p-button>
+            <p-button type="button" (onClick)="importFromJson()" [disabled]="!importJsonText.trim()">
+              <i class="pi pi-check mr-2"></i>
+              Apply
+            </p-button>
+          </div>
+        </div>
+      </p-card>
 
       <p-card styleClass="mb-6">
         <ng-template pTemplate="header">
@@ -349,6 +391,132 @@ interface SimpleJobFormValue {
 
           <p-divider></p-divider>
 
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold">Items Extraction</p>
+              <div class="flex items-center gap-2">
+                <p-checkbox formControlName="items_enabled" [binary]="true" inputId="items-enabled"></p-checkbox>
+                <label for="items-enabled" class="text-sm text-gray-700 dark:text-gray-300">Enable</label>
+              </div>
+            </div>
+
+            <div *ngIf="jobForm.get('items_enabled')?.value" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Container Selector</label>
+                <input pInputText formControlName="items_container_selector" placeholder="article.product_pod" class="w-full" />
+                <small class="text-xs text-gray-500 dark:text-gray-400">Each matched element becomes one item object.</small>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-semibold">Item Fields</p>
+                <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addItemField()">
+                  <i class="pi pi-plus mr-2"></i>
+                  Add Item Field
+                </p-button>
+              </div>
+
+              <div formArrayName="items_fields" class="space-y-6">
+                <div
+                  *ngFor="let field of itemFields.controls; let i = index"
+                  [formGroupName]="i"
+                  class="border border-gray-200 dark:border-gray-700 rounded p-4 space-y-3"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="font-semibold">Item Field #{{ i + 1 }}</div>
+                    <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeItemField(i)">
+                      <i class="pi pi-trash"></i>
+                    </p-button>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-3">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                      <input pInputText formControlName="name" class="w-full" />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                      <p-select [options]="fieldTypeSelectOptions" optionLabel="label" optionValue="value" formControlName="type" styleClass="w-full"></p-select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Attribute</label>
+                      <p-select [options]="attributeSelectOptions" optionLabel="label" optionValue="value" formControlName="attribute" styleClass="w-full"></p-select>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-3 items-center">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selector</label>
+                      <input pInputText formControlName="selector" class="w-full" />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Index</label>
+                      <p-inputNumber
+                        formControlName="index"
+                        [disabled]="!field.get('multiple')?.value"
+                        styleClass="w-full">
+                      </p-inputNumber>
+                      <small class="text-xs text-gray-500 dark:text-gray-400">Works only with Multiple: true</small>
+                    </div>
+                    <div class="flex items-center gap-2 mt-6">
+                      <p-checkbox
+                        formControlName="multiple"
+                        [binary]="true"
+                        inputId="item-multiple-{{ i }}"
+                        (onChange)="handleItemMultipleToggle(i)">
+                      </p-checkbox>
+                      <label for="item-multiple-{{ i }}" class="text-sm text-gray-700 dark:text-gray-300">Multiple</label>
+                    </div>
+                    <div class="flex items-center gap-2 mt-6">
+                      <p-checkbox formControlName="required" [binary]="true" inputId="item-required-{{ i }}"></p-checkbox>
+                      <label for="item-required-{{ i }}" class="text-sm text-gray-700 dark:text-gray-300">Required</label>
+                    </div>
+                  </div>
+
+                  <div formArrayName="transforms" class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-semibold">Transforms</p>
+                      <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addItemTransform(i)">
+                        <i class="pi pi-plus mr-2"></i>
+                        Add Transform
+                      </p-button>
+                    </div>
+                    <div
+                      *ngFor="let transform of getItemTransforms(i).controls; let tIdx = index"
+                      [formGroupName]="tIdx"
+                      class="grid grid-cols-1 md:grid-cols-2 gap-2 items-center"
+                    >
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Op</label>
+                        <p-select [options]="transformOpSelectOptions" optionLabel="label" optionValue="value" formControlName="op" styleClass="w-full"></p-select>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <div class="flex-1">
+                          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Arg</label>
+                          <input pInputText formControlName="arg" class="w-full" />
+                        </div>
+                        <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeItemTransform(i, tIdx)">
+                          <i class="pi pi-trash"></i>
+                        </p-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="itemFields.length === 0" class="text-gray-500 dark:text-gray-400 text-sm">
+                Add at least one item field to extract structured arrays.
+              </div>
+            </div>
+          </div>
+
+          <p-divider></p-divider>
+
           <div>
             <div class="flex items-center justify-between mb-2">
               <p class="text-sm font-semibold">Pagination</p>
@@ -423,6 +591,9 @@ export class SimpleJobCreateComponent implements OnInit {
   creating = false;
   error?: string;
   previewJson = '';
+  showImportPanel = false;
+  importJsonText = '';
+  importError?: string;
   readonly fieldTypeOptions: FieldSpec['type'][] = ['string', 'int', 'float', 'bool', 'url', 'json'];
   readonly attributeOptions = ['text', 'html', 'href', 'src', 'content'];
   readonly transformOpOptions: TransformSpec['op'][] = [
@@ -517,6 +688,9 @@ export class SimpleJobCreateComponent implements OnInit {
         cron: ['']
       }),
       extraction_fields: this.fb.array([]),
+      items_enabled: [false],
+      items_container_selector: [''],
+      items_fields: this.fb.array([]),
       pagination: this.fb.array([])
     });
 
@@ -545,6 +719,10 @@ export class SimpleJobCreateComponent implements OnInit {
     return this.jobForm.get('pagination') as FormArray;
   }
 
+  get itemFields(): FormArray {
+    return this.jobForm.get('items_fields') as FormArray;
+  }
+
   get retriesGroup(): FormGroup {
     return this.jobForm.get('retries') as FormGroup;
   }
@@ -559,6 +737,72 @@ export class SimpleJobCreateComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/jobs']);
+  }
+
+  toggleImportPanel(): void {
+    this.showImportPanel = !this.showImportPanel;
+    if (!this.showImportPanel) {
+      this.importJsonText = '';
+      this.importError = undefined;
+    }
+  }
+
+  importFromJson(): void {
+    this.importError = undefined;
+    let parsed: any;
+    try {
+      parsed = JSON.parse(this.importJsonText);
+    } catch (e) {
+      this.importError = 'Invalid JSON: ' + (e as Error).message;
+      return;
+    }
+
+    const config = parsed.config ?? parsed;
+
+    try {
+      this.jobForm.patchValue({
+        name: config.name ?? '',
+        job_type: config.job_type ?? 'ONCE',
+        max_depth: config.scopes?.max_depth ?? 0,
+        rps: config.rate_limit?.rps ?? 1,
+        retries: config.retries ?? {},
+        auth: config.auth ?? {},
+        schedule: config.schedule ?? {},
+        items_enabled: !!config.extraction_spec?.items,
+        items_container_selector: config.extraction_spec?.items?.container_selector ?? ''
+      });
+
+      if (config.seeds?.length > 0) {
+        this.resetArray(this.seeds, config.seeds.map((s: any) => this.createSeedGroup(s.url ?? '')));
+      }
+
+      const domains: string[] = config.scopes?.allowed_domains ?? [];
+      this.resetArray(this.allowedDomains, domains.map(d => this.fb.control(d)));
+
+      const patterns: string[] = config.scopes?.deny_url_patterns ?? [];
+      this.resetArray(this.denyPatterns, patterns.map(p => this.fb.control(p)));
+
+      const fields: any[] = config.extraction_spec?.fields ?? [];
+      this.resetArray(this.extractionFields, fields.map(f => this.createExtractionFieldGroup(f as Partial<FieldSpec>)));
+
+      const itemFields: any[] = config.extraction_spec?.items?.fields ?? [];
+      this.resetArray(this.itemFields, itemFields.map(f => this.createExtractionFieldGroup(f as Partial<FieldSpec>)));
+
+      const paginationItems: any[] = config.extraction_spec?.pagination ?? [];
+      this.resetArray(this.pagination, paginationItems.map(p => this.createPaginationGroup(p)));
+
+      this.updatePreview();
+      this.showImportPanel = false;
+      this.importJsonText = '';
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Imported',
+        detail: 'Configuration loaded from JSON',
+        life: 3000
+      });
+    } catch (e) {
+      this.importError = 'Failed to apply config: ' + (e as Error).message;
+    }
   }
 
   addSeed(url = ''): void {
@@ -627,8 +871,42 @@ export class SimpleJobCreateComponent implements OnInit {
     return (this.extractionFields.at(fieldIndex) as FormGroup).get('transforms') as FormArray;
   }
 
+  addItemField(field?: Partial<FieldSpec>): void {
+    this.itemFields.push(this.createExtractionFieldGroup(field));
+    this.updatePreview();
+  }
+
+  removeItemField(index: number): void {
+    this.itemFields.removeAt(index);
+    this.updatePreview();
+  }
+
+  addItemTransform(fieldIndex: number, transform?: TransformSpec): void {
+    this.getItemTransforms(fieldIndex).push(this.createTransformGroup(transform));
+    this.updatePreview();
+  }
+
+  removeItemTransform(fieldIndex: number, transformIndex: number): void {
+    this.getItemTransforms(fieldIndex).removeAt(transformIndex);
+    this.updatePreview();
+  }
+
+  getItemTransforms(fieldIndex: number): FormArray {
+    return (this.itemFields.at(fieldIndex) as FormGroup).get('transforms') as FormArray;
+  }
+
   handleMultipleToggle(fieldIndex: number): void {
     const fieldGroup = this.extractionFields.at(fieldIndex) as FormGroup;
+    const multipleCtrl = fieldGroup.get('multiple');
+    const indexCtrl = fieldGroup.get('index');
+
+    if (!multipleCtrl?.value) {
+      indexCtrl?.setValue(null);
+    }
+  }
+
+  handleItemMultipleToggle(fieldIndex: number): void {
+    const fieldGroup = this.itemFields.at(fieldIndex) as FormGroup;
     const multipleCtrl = fieldGroup.get('multiple');
     const indexCtrl = fieldGroup.get('index');
 
@@ -656,6 +934,11 @@ export class SimpleJobCreateComponent implements OnInit {
       this.extractionFields,
       s.extraction_spec.fields.map(f => this.createExtractionFieldGroup(f as Partial<FieldSpec>))
     );
+    this.jobForm.patchValue({
+      items_enabled: false,
+      items_container_selector: ''
+    });
+    this.resetArray(this.itemFields, []);
 
     this.updatePreview();
   }
@@ -695,7 +978,12 @@ export class SimpleJobCreateComponent implements OnInit {
   }
 
   canSubmit(): boolean {
-    return this.jobForm.valid && this.extractionFields.length > 0;
+    const hasPageFields = this.extractionFields.length > 0;
+    const itemsEnabled = !!this.jobForm.get('items_enabled')?.value;
+    const itemsSelector = (this.jobForm.get('items_container_selector')?.value || '').trim();
+    const hasValidItems = itemsEnabled && itemsSelector.length > 0 && this.itemFields.length > 0;
+
+    return this.jobForm.valid && (hasPageFields || hasValidItems);
   }
 
   private createSeedGroup(url = ''): FormGroup {
@@ -744,8 +1032,52 @@ export class SimpleJobCreateComponent implements OnInit {
 
   private buildConfig(): CrawlJobConfig {
     const raw: SimpleJobFormValue = this.jobForm.getRawValue();
+    const extractionFields = this.buildFieldSpecs(this.extractionFields);
+    const itemFields = this.buildFieldSpecs(this.itemFields);
 
-    const extractionFields: FieldSpec[] = this.extractionFields.controls.map(ctrl => {
+    const paginationSpecs: PaginationSpec[] = this.pagination.controls.map(ctrl => {
+      const value = ctrl.value;
+      return {
+        name: value.name || undefined,
+        selector: value.selector,
+        attribute: value.attribute || 'href',
+        multiple: !!value.multiple
+      };
+    }).filter(p => p.selector);
+
+    const hasItems = !!raw.items_enabled && raw.items_container_selector?.trim() && itemFields.length > 0;
+    const itemsSpec: ItemsSpec | undefined = hasItems
+      ? {
+          container_selector: raw.items_container_selector.trim(),
+          fields: itemFields
+        }
+      : undefined;
+
+    return {
+      name: raw.name,
+      job_type: raw.job_type,
+      seeds: raw.seeds.map(seed => ({ url: seed.url })),
+      scopes: {
+        max_depth: Number(raw.max_depth),
+        allowed_domains: raw.allowed_domains.filter(d => d && d.trim() !== ''),
+        deny_url_patterns: raw.deny_url_patterns.filter(p => p && p.trim() !== '')
+      },
+      rate_limit: {
+        rps: Number(raw.rps)
+      },
+      retries: raw.retries,
+      auth: raw.auth,
+      schedule: raw.schedule,
+      extraction_spec: {
+        fields: extractionFields,
+        items: itemsSpec,
+        pagination: paginationSpecs.length > 0 ? paginationSpecs : undefined
+      }
+    };
+  }
+
+  private buildFieldSpecs(fieldArray: FormArray): FieldSpec[] {
+    return fieldArray.controls.map(ctrl => {
       const value = ctrl.value;
       const isMultiple = !!value.multiple;
       const extractor: any = {
@@ -769,37 +1101,6 @@ export class SimpleJobCreateComponent implements OnInit {
         transforms: value.transforms.filter((t: TransformSpec) => t?.op)
       };
     });
-
-    const paginationSpecs: PaginationSpec[] = this.pagination.controls.map(ctrl => {
-      const value = ctrl.value;
-      return {
-        name: value.name || undefined,
-        selector: value.selector,
-        attribute: value.attribute || 'href',
-        multiple: !!value.multiple
-      };
-    }).filter(p => p.selector);
-
-    return {
-      name: raw.name,
-      job_type: raw.job_type,
-      seeds: raw.seeds.map(seed => ({ url: seed.url })),
-      scopes: {
-        max_depth: Number(raw.max_depth),
-        allowed_domains: raw.allowed_domains.filter(d => d && d.trim() !== ''),
-        deny_url_patterns: raw.deny_url_patterns.filter(p => p && p.trim() !== '')
-      },
-      rate_limit: {
-        rps: Number(raw.rps)
-      },
-      retries: raw.retries,
-      auth: raw.auth,
-      schedule: raw.schedule,
-      extraction_spec: {
-        fields: extractionFields,
-        pagination: paginationSpecs.length > 0 ? paginationSpecs : undefined
-      }
-    };
   }
 
   private updatePreview(): void {

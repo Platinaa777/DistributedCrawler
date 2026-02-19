@@ -8,7 +8,6 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20250724212937-08a3db8b4327
 	github.com/chromedp/chromedp v0.14.2
 	github.com/envoyproxy/protoc-gen-validate v1.3.0
-	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gojuno/minimock/v3 v3.4.7
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
@@ -78,7 +77,7 @@ require (
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.3
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgtype v1.14.0 // indirect
 	github.com/jackc/pgx/v4 v4.18.3
@@ -88,7 +87,6 @@ require (
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/georgysavva/scany v1.2.3
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/net v0.47.0 // indirect

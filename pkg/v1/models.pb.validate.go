@@ -1034,111 +1034,6 @@ var _ interface {
 	ErrorName() string
 } = FieldSpecValidationError{}
 
-// Validate checks the field values on MetricSpec with the rules defined in the
-// proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *MetricSpec) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on MetricSpec with the rules defined in
-// the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in MetricSpecMultiError, or
-// nil if none found.
-func (m *MetricSpec) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *MetricSpec) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	// no validation rules for Name
-
-	// no validation rules for Op
-
-	// no validation rules for Input
-
-	if len(errors) > 0 {
-		return MetricSpecMultiError(errors)
-	}
-
-	return nil
-}
-
-// MetricSpecMultiError is an error wrapping multiple validation errors
-// returned by MetricSpec.ValidateAll() if the designated constraints aren't met.
-type MetricSpecMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m MetricSpecMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m MetricSpecMultiError) AllErrors() []error { return m }
-
-// MetricSpecValidationError is the validation error returned by
-// MetricSpec.Validate if the designated constraints aren't met.
-type MetricSpecValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e MetricSpecValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e MetricSpecValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e MetricSpecValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e MetricSpecValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e MetricSpecValidationError) ErrorName() string { return "MetricSpecValidationError" }
-
-// Error satisfies the builtin error interface
-func (e MetricSpecValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sMetricSpec.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = MetricSpecValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = MetricSpecValidationError{}
-
 // Validate checks the field values on PaginationSpec with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -1247,6 +1142,141 @@ var _ interface {
 	ErrorName() string
 } = PaginationSpecValidationError{}
 
+// Validate checks the field values on ItemsSpec with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ItemsSpec) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ItemsSpec with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ItemsSpecMultiError, or nil
+// if none found.
+func (m *ItemsSpec) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ItemsSpec) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ContainerSelector
+
+	for idx, item := range m.GetFields() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ItemsSpecValidationError{
+						field:  fmt.Sprintf("Fields[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ItemsSpecValidationError{
+						field:  fmt.Sprintf("Fields[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ItemsSpecValidationError{
+					field:  fmt.Sprintf("Fields[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ItemsSpecMultiError(errors)
+	}
+
+	return nil
+}
+
+// ItemsSpecMultiError is an error wrapping multiple validation errors returned
+// by ItemsSpec.ValidateAll() if the designated constraints aren't met.
+type ItemsSpecMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ItemsSpecMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ItemsSpecMultiError) AllErrors() []error { return m }
+
+// ItemsSpecValidationError is the validation error returned by
+// ItemsSpec.Validate if the designated constraints aren't met.
+type ItemsSpecValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ItemsSpecValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ItemsSpecValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ItemsSpecValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ItemsSpecValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ItemsSpecValidationError) ErrorName() string { return "ItemsSpecValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ItemsSpecValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sItemsSpec.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ItemsSpecValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ItemsSpecValidationError{}
+
 // Validate checks the field values on ExtractionSpec with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -1303,40 +1333,6 @@ func (m *ExtractionSpec) validate(all bool) error {
 
 	}
 
-	for idx, item := range m.GetMetrics() {
-		_, _ = idx, item
-
-		if all {
-			switch v := interface{}(item).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, ExtractionSpecValidationError{
-						field:  fmt.Sprintf("Metrics[%v]", idx),
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, ExtractionSpecValidationError{
-						field:  fmt.Sprintf("Metrics[%v]", idx),
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return ExtractionSpecValidationError{
-					field:  fmt.Sprintf("Metrics[%v]", idx),
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	}
-
 	for idx, item := range m.GetPagination() {
 		_, _ = idx, item
 
@@ -1363,6 +1359,39 @@ func (m *ExtractionSpec) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return ExtractionSpecValidationError{
 					field:  fmt.Sprintf("Pagination[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Items != nil {
+
+		if all {
+			switch v := interface{}(m.GetItems()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ExtractionSpecValidationError{
+						field:  "Items",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ExtractionSpecValidationError{
+						field:  "Items",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetItems()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ExtractionSpecValidationError{
+					field:  "Items",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -1686,6 +1715,8 @@ func (m *CrawlJobConfig) validate(all bool) error {
 	// no validation rules for RespectRobotsTxt
 
 	// no validation rules for JobType
+
+	// no validation rules for CrawlMode
 
 	if len(errors) > 0 {
 		return CrawlJobConfigMultiError(errors)
@@ -2068,8 +2099,6 @@ func (m *CrawlTask) validate(all bool) error {
 	}
 
 	// no validation rules for Depth
-
-	// no validation rules for BodyHash
 
 	// no validation rules for MinioObjectKey
 
