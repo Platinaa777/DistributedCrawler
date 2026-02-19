@@ -321,6 +321,7 @@ func (c *crawlTaskRepository) ExistsByJobIDAndURL(ctx context.Context, jobID val
 		Where(sq.And{
 			sq.Eq{taskJobIDColumn: jobID.String()},
 			sq.Eq{taskURLColumn: url},
+			sq.NotEq{taskStatusColumn: models.TaskStatusInProgress.String() },
 		}).
 		Limit(1)
 
@@ -337,7 +338,7 @@ func (c *crawlTaskRepository) ExistsByJobIDAndURL(ctx context.Context, jobID val
 	var exists int
 	err = c.client.DB().QueryRowContext(ctx, q, args...).Scan(&exists)
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
+		if err.Error() == "no rows in result set" {
 			return false, nil
 		}
 		return false, err

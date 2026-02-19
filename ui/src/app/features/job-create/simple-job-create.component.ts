@@ -56,7 +56,7 @@ interface SimpleJobFormValue {
     <p-toast position="top-right" />
 
     <form class="container mx-auto p-6 space-y-8" [formGroup]="jobForm">
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div class="flex items-center gap-2">
           <p-button [text]="true" (onClick)="goBack()" type="button">
             <i class="pi pi-arrow-left mr-2"></i>

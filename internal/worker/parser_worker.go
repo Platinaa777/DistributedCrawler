@@ -170,36 +170,6 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		return fmt.Errorf("failed to load job config: %w", err)
 	}
 
-	// URL deduplication: check if another task with the same URL already exists in this job
-	isDuplicate, err := w.taskRepo.ExistsByJobIDAndURL(ctx, crawlTask.JobID, crawlTask.URL)
-	if err != nil {
-		w.logger.Error("Failed to check for duplicate URL",
-			zap.String("task_id", task.TaskID),
-			zap.String("url", crawlTask.URL),
-			zap.Error(err),
-		)
-		return fmt.Errorf("failed to check for duplicate URL: %w", err)
-	}
-
-	if isDuplicate {
-		w.logger.Info("Skipping task - duplicate URL already exists",
-			zap.String("task_id", task.TaskID),
-			zap.String("job_id", task.JobID),
-			zap.String("url", crawlTask.URL),
-		)
-
-		crawlTask.Status = models.TaskStatusSkipped
-		if err := w.taskRepo.Update(ctx, *crawlTask); err != nil {
-			w.logger.Error("Failed to update task status to Skipped",
-				zap.String("task_id", task.TaskID),
-				zap.Error(err),
-			)
-			return fmt.Errorf("failed to update task status: %w", err)
-		}
-
-		return nil
-	}
-
 	// Load HTML from MinIO
 	htmlContent, err := w.contentStore.Get(ctx, crawlTask.MinioObjectKey)
 	if err != nil {

@@ -399,6 +399,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   depthChartData: ChartData<'doughnut', number[], string> | null = null;
   depthChartOptions: ChartOptions<'doughnut'> | null = null;
   private analyticsPollingSub: Subscription | null = null;
+  private tasksPollingSub: Subscription | null = null;
 
   // Pagination state
   taskCursor: string | null = null;
@@ -430,6 +431,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopAnalyticsPolling();
+    this.stopTasksPolling();
   }
 
   loadJobDetails(id: string): void {
@@ -449,6 +451,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
         this.analytics = response.analytics.analytics;
         this.buildChartsFromAnalytics();
         this.loading = false;
+        this.startTasksPolling();
       },
       error: (err) => {
         this.error = `Failed to load job details: ${err.message}`;
@@ -526,6 +529,38 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   private stopAnalyticsPolling(): void {
     this.analyticsPollingSub?.unsubscribe();
     this.analyticsPollingSub = null;
+  }
+
+  private startTasksPolling(): void {
+    this.stopTasksPolling();
+    const isInProgress = this.job?.status?.toLowerCase().replace(/_/g, '') === 'inprogress';
+    if (!this.job || !isInProgress) return;
+
+    const id = this.job.id;
+    this.tasksPollingSub = interval(5000)
+      .pipe(
+        switchMap(() => this.crawlerApi.listTasksByJob(id, {
+          limit: this.pageSize,
+          filter: this.currentFilter
+        }).pipe(
+          catchError((err) => {
+            console.error(`Failed to poll tasks: ${err.message}`);
+            return of({ tasks: this.tasks, next_cursor: this.taskCursor, has_more: this.hasMoreTasks });
+          })
+        ))
+      )
+      .subscribe({
+        next: (response) => {
+          this.tasks = response.tasks;
+          this.taskCursor = response.next_cursor || null;
+          this.hasMoreTasks = response.has_more;
+        }
+      });
+  }
+
+  private stopTasksPolling(): void {
+    this.tasksPollingSub?.unsubscribe();
+    this.tasksPollingSub = null;
   }
 
   goBack(): void {
