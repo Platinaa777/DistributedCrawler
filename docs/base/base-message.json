@@ -1,0 +1,36 @@
+{
+  "config": {
+    "name": "",
+    "job_type": "ONCE",
+    "seeds": [
+      {
+        "url": ""
+      }
+    ],
+    "scopes": {
+      "max_depth": 0,
+      "allowed_domains": [],
+      "deny_url_patterns": []
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 500,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": []
+    }
+  }
+}

@@ -15,7 +15,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
 import { CrawlJobConfig, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES } from '../../core/models/crawl-job.model';
-import { FieldSpec, MetricSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
+import { FieldSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
 
 interface SimpleJobFormValue {
   name: string;
@@ -348,41 +348,6 @@ interface SimpleJobFormValue {
           </div>
 
           <p-divider></p-divider>
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-sm font-semibold">Metrics</p>
-              <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addMetric()">
-                <i class="pi pi-plus mr-2"></i>
-                Add Metric
-              </p-button>
-            </div>
-            <div formArrayName="metrics" class="space-y-4">
-              <div
-                *ngFor="let metric of metrics.controls; let m = index"
-                [formGroupName]="m"
-                class="border border-gray-200 dark:border-gray-700 rounded p-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-start"
-              >
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-                  <input pInputText formControlName="name" class="w-full" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Op</label>
-                  <p-select [options]="metricOpSelectOptions" optionLabel="label" optionValue="value" formControlName="op" styleClass="w-full"></p-select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Input</label>
-                  <p-select [options]="fieldNameSelectOptions" optionLabel="label" optionValue="value" formControlName="input" styleClass="w-full"></p-select>
-                  <small *ngIf="fieldNameOptions.length === 0" class="text-xs text-gray-500 dark:text-gray-400">Add a field first</small>
-                </div>
-                <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeMetric(m)">
-                  <i class="pi pi-trash"></i>
-                </p-button>
-              </div>
-            </div>
-          </div>
-
-          <p-divider></p-divider>
 
           <div>
             <div class="flex items-center justify-between mb-2">
@@ -460,7 +425,6 @@ export class SimpleJobCreateComponent implements OnInit {
   previewJson = '';
   readonly fieldTypeOptions: FieldSpec['type'][] = ['string', 'int', 'float', 'bool', 'url', 'json'];
   readonly attributeOptions = ['text', 'html', 'href', 'src', 'content'];
-  readonly metricOpOptions: MetricSpec['op'][] = ['len', 'count', 'word_count', 'field_present', 'status_is_error', 'count_external_links'];
   readonly transformOpOptions: TransformSpec['op'][] = [
     'trim',
     'lower',
@@ -478,7 +442,6 @@ export class SimpleJobCreateComponent implements OnInit {
 
   fieldTypeSelectOptions = this.fieldTypeOptions.map(option => ({ label: option, value: option }));
   attributeSelectOptions = this.attributeOptions.map(option => ({ label: option, value: option }));
-  metricOpSelectOptions = this.metricOpOptions.map(option => ({ label: option, value: option }));
   transformOpSelectOptions = this.transformOpOptions.map(option => ({ label: option, value: option }));
   paginationAttributeSelectOptions = ['href', 'src', 'data-url', 'content'].map(option => ({ label: option, value: option }));
   jobTypeSelectOptions = JOB_TYPES.map(option => ({ label: option.label, value: option.value }));
@@ -520,13 +483,6 @@ export class SimpleJobCreateComponent implements OnInit {
           transforms: []
         }
       ],
-      metrics: [
-        {
-          name: 'questions_count',
-          op: 'count',
-          input: 'questions_h3'
-        }
-      ]
     }
   };
 
@@ -561,15 +517,10 @@ export class SimpleJobCreateComponent implements OnInit {
         cron: ['']
       }),
       extraction_fields: this.fb.array([]),
-      metrics: this.fb.array([]),
       pagination: this.fb.array([])
     });
 
     this.jobForm.valueChanges.subscribe(() => this.updatePreview());
-
-    this.extractionFields.valueChanges.subscribe(() => {
-      this.syncMetricInputs();
-    });
 
     this.updatePreview();
   }
@@ -590,10 +541,6 @@ export class SimpleJobCreateComponent implements OnInit {
     return this.jobForm.get('extraction_fields') as FormArray;
   }
 
-  get metrics(): FormArray {
-    return this.jobForm.get('metrics') as FormArray;
-  }
-
   get pagination(): FormArray {
     return this.jobForm.get('pagination') as FormArray;
   }
@@ -608,16 +555,6 @@ export class SimpleJobCreateComponent implements OnInit {
 
   get authGroup(): FormGroup {
     return this.jobForm.get('auth') as FormGroup;
-  }
-
-  get fieldNameOptions(): string[] {
-    return this.extractionFields.controls
-      .map(ctrl => (ctrl.get('name')?.value || '').toString())
-      .filter(name => name.trim() !== '');
-  }
-
-  get fieldNameSelectOptions(): { label: string; value: string }[] {
-    return this.fieldNameOptions.map(option => ({ label: option, value: option }));
   }
 
   goBack(): void {
@@ -676,16 +613,6 @@ export class SimpleJobCreateComponent implements OnInit {
     this.updatePreview();
   }
 
-  addMetric(metric?: Partial<MetricSpec>): void {
-    this.metrics.push(this.createMetricGroup(metric));
-    this.updatePreview();
-  }
-
-  removeMetric(index: number): void {
-    this.metrics.removeAt(index);
-    this.updatePreview();
-  }
-
   addPagination(pagination?: Partial<PaginationSpec>): void {
     this.pagination.push(this.createPaginationGroup(pagination));
     this.updatePreview();
@@ -728,11 +655,6 @@ export class SimpleJobCreateComponent implements OnInit {
     this.resetArray(
       this.extractionFields,
       s.extraction_spec.fields.map(f => this.createExtractionFieldGroup(f as Partial<FieldSpec>))
-    );
-
-    this.resetArray(
-      this.metrics,
-      s.extraction_spec.metrics.map(m => this.createMetricGroup(m as Partial<MetricSpec>))
     );
 
     this.updatePreview();
@@ -804,14 +726,6 @@ export class SimpleJobCreateComponent implements OnInit {
     });
   }
 
-  private createMetricGroup(metric?: Partial<MetricSpec>): FormGroup {
-    return this.fb.group({
-      name: [metric?.name || '', Validators.required],
-      op: [(metric?.op as MetricSpec['op']) || 'count', Validators.required],
-      input: [metric?.input || '', Validators.required]
-    });
-  }
-
   private createPaginationGroup(pagination?: Partial<PaginationSpec>): FormGroup {
     return this.fb.group({
       name: [pagination?.name || ''],
@@ -826,17 +740,6 @@ export class SimpleJobCreateComponent implements OnInit {
       target.removeAt(0);
     }
     items.forEach(item => target.push(item));
-  }
-
-  private syncMetricInputs(): void {
-    const options = new Set(this.fieldNameOptions);
-    this.metrics.controls.forEach(ctrl => {
-      const inputCtrl = ctrl.get('input');
-      const current = (inputCtrl?.value || '').toString();
-      if (current && !options.has(current)) {
-        inputCtrl?.setValue('');
-      }
-    });
   }
 
   private buildConfig(): CrawlJobConfig {
@@ -867,15 +770,6 @@ export class SimpleJobCreateComponent implements OnInit {
       };
     });
 
-    const metrics: MetricSpec[] = this.metrics.controls.map(ctrl => {
-      const value = ctrl.value;
-      return {
-        name: value.name,
-        op: value.op,
-        input: value.input
-      };
-    });
-
     const paginationSpecs: PaginationSpec[] = this.pagination.controls.map(ctrl => {
       const value = ctrl.value;
       return {
@@ -903,7 +797,6 @@ export class SimpleJobCreateComponent implements OnInit {
       schedule: raw.schedule,
       extraction_spec: {
         fields: extractionFields,
-        metrics,
         pagination: paginationSpecs.length > 0 ? paginationSpecs : undefined
       }
     };

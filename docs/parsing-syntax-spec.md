@@ -8,9 +8,8 @@
 4. [CSS-селекторы: полный справочник](#4-css-селекторы-полный-справочник)
 5. [Transforms: преобразования данных](#5-transforms-преобразования-данных)
 6. [ValueType: типы данных](#6-valuetype-типы-данных)
-7. [Metrics: вычисляемые метрики](#7-metrics-вычисляемые-метрики)
-8. [Полные примеры конфигураций](#8-полные-примеры-конфигураций)
-9. [Best Practices и рекомендации](#9-best-practices-и-рекомендации)
+7. [Полные примеры конфигураций](#7-полные-примеры-конфигураций)
+8. [Best Practices и рекомендации](#8-best-practices-и-рекомендации)
 
 ---
 
@@ -19,29 +18,26 @@
 `ExtractionSpec` — это конфигурация для извлечения структурированных данных из HTML-страниц. Спецификация определяет:
 
 - **Fields** — какие данные извлекать со страницы (заголовки, цены, ссылки и т.д.)
-- **Metrics** — какие метрики вычислять на основе извлеченных данных (количество слов, наличие полей и т.д.)
 
 ### Структура ExtractionSpec
 
 ```go
 type ExtractionSpec struct {
     Fields  []FieldSpec   // Список полей для извлечения
-    Metrics []MetricSpec  // Список метрик для вычисления
 }
 ```
 
 ### Жизненный цикл обработки
 
 ```
-HTML → Parse (goquery) → Extract Fields → Apply Transforms → Type Conversion → Compute Metrics → Result JSON
+HTML → Parse (goquery) → Extract Fields → Apply Transforms → Type Conversion → Result JSON
 ```
 
 1. **Парсинг HTML** — HTML преобразуется в DOM-дерево через goquery
 2. **Извлечение полей** — для каждого `FieldSpec` применяется CSS-селектор и извлекается значение
 3. **Применение трансформаций** — последовательно применяются операции из `Transforms`
 4. **Конвертация типов** — значение приводится к указанному `ValueType`
-5. **Вычисление метрик** — на основе извлеченных полей вычисляются метрики
-6. **Результат** — структура `{ fields: {...}, metrics: {...} }` сохраняется в JSON
+5. **Результат** — структура `{ fields: {...} }` сохраняется в JSON
 
 ---
 
@@ -1037,255 +1033,7 @@ CSS-селекторы используются для поиска элемен
 
 ---
 
-## 7. Metrics: вычисляемые метрики
-
-Метрики вычисляются **после** извлечения всех полей. Они используют данные из `fields` или анализируют DOM/текст страницы.
-
-### 7.1 Структура MetricSpec
-
-```go
-type MetricSpec struct {
-    Name  string // Имя метрики в выходном JSON
-    Op    string // Операция: len, count, word_count, field_present, count_external_links
-    Input string // Имя поля или "body_text" (для некоторых операций)
-}
-```
-
-### 7.2 Список всех метрик
-
-| Операция | Input | Возвращает | Описание |
-|----------|-------|------------|----------|
-| `len` | Имя поля | `int` | Длина строки в символах |
-| `count` | Имя поля | `int` | Количество непустых элементов в массиве |
-| `word_count` | Имя поля или `"body_text"` | `int` | Количество слов |
-| `field_present` | Имя поля | `bool` | `true`, если поле не `nil` и не пустая строка |
-| `count_external_links` | Не используется | `int` | Количество внешних ссылок (`http://` или `https://`) |
-
-### 7.3 Детальное описание метрик
-
-#### `len`
-
-Возвращает длину строки в символах.
-
-**Input:** Имя поля (должно быть `string`)
-
-**Пример:**
-
-```json
-{
-  "fields": [
-    {
-      "name": "title",
-      "extractor": { "selector": "h1", "attribute": "text" }
-    }
-  ],
-  "metrics": [
-    {
-      "name": "title_length",
-      "op": "len",
-      "input": "title"
-    }
-  ]
-}
-```
-
-**Если `title = "Hello World"`:**
-```json
-{
-  "fields": { "title": "Hello World" },
-  "metrics": { "title_length": 11 }
-}
-```
-
-**Если поле не является строкой или не существует:** Возвращается `0`.
-
----
-
-#### `count`
-
-Возвращает количество **непустых** элементов в массиве.
-
-**Input:** Имя поля (должно быть `[]string` или `[]any`)
-
-**Пример:**
-
-```json
-{
-  "fields": [
-    {
-      "name": "tags",
-      "extractor": {
-        "selector": "ul.tags li",
-        "attribute": "text",
-        "multiple": true
-      }
-    }
-  ],
-  "metrics": [
-    {
-      "name": "tags_count",
-      "op": "count",
-      "input": "tags"
-    }
-  ]
-}
-```
-
-**Если `tags = ["Python", "Go", "", "JavaScript"]`:**
-```json
-{
-  "fields": { "tags": ["Python", "Go", "", "JavaScript"] },
-  "metrics": { "tags_count": 3 }
-}
-```
-
-**Пустые строки не считаются.**
-
-**Если поле не является массивом или не существует:** Возвращается `0`.
-
----
-
-#### `word_count`
-
-Возвращает количество слов (разделенных пробелами).
-
-**Input:**
-- Имя поля (для подсчета слов в конкретном поле)
-- `"body_text"` (для подсчета слов на всей странице)
-
-**Пример 1: Подсчет слов в поле**
-
-```json
-{
-  "fields": [
-    {
-      "name": "description",
-      "extractor": { "selector": "p.desc", "attribute": "text" }
-    }
-  ],
-  "metrics": [
-    {
-      "name": "desc_words",
-      "op": "word_count",
-      "input": "description"
-    }
-  ]
-}
-```
-
-**Если `description = "This is a test description"`:**
-```json
-{
-  "metrics": { "desc_words": 5 }
-}
-```
-
-**Пример 2: Подсчет слов на всей странице**
-
-```json
-{
-  "metrics": [
-    {
-      "name": "page_words",
-      "op": "word_count",
-      "input": "body_text"
-    }
-  ]
-}
-```
-
-**Алгоритм:** Использует `strings.Fields(text)`, который разделяет по любым пробельным символам.
-
----
-
-#### `field_present`
-
-Проверяет, что поле существует и не является `nil` или пустой строкой.
-
-**Input:** Имя поля
-
-**Возвращает:** `bool`
-
-**Пример:**
-
-```json
-{
-  "fields": [
-    {
-      "name": "author",
-      "required": false,
-      "extractor": { "selector": "span.author", "attribute": "text" }
-    }
-  ],
-  "metrics": [
-    {
-      "name": "has_author",
-      "op": "field_present",
-      "input": "author"
-    }
-  ]
-}
-```
-
-**Если `author = "John Doe"`:**
-```json
-{
-  "fields": { "author": "John Doe" },
-  "metrics": { "has_author": true }
-}
-```
-
-**Если `author = ""`или `null`:**
-```json
-{
-  "fields": { "author": null },
-  "metrics": { "has_author": false }
-}
-```
-
-**Полезно для:** Проверки наличия опциональных полей.
-
----
-
-#### `count_external_links`
-
-Подсчитывает количество внешних ссылок на странице (начинающихся с `http://` или `https://`).
-
-**Input:** Не используется (анализирует весь DOM)
-
-**Алгоритм:** Находит все `<a href="...">` и проверяет, начинается ли `href` с `http://` или `https://`.
-
-**Пример:**
-
-```json
-{
-  "metrics": [
-    {
-      "name": "external_links",
-      "op": "count_external_links",
-      "input": ""
-    }
-  ]
-}
-```
-
-**HTML:**
-```html
-<a href="https://example.com">External</a>
-<a href="/page">Internal</a>
-<a href="http://another.com">External</a>
-```
-
-**Результат:**
-```json
-{
-  "metrics": { "external_links": 2 }
-}
-```
-
----
-
-## 8. Полные примеры конфигураций
+## 7. Полные примеры конфигураций
 
 ### Пример 1: Простое извлечение заголовка и описания
 
@@ -1333,8 +1081,7 @@ type MetricSpec struct {
         },
         "transforms": []
       }
-    ],
-    "metrics": []
+    ]
   }
 }
 ```
@@ -1345,8 +1092,7 @@ type MetricSpec struct {
   "fields": {
     "og_title": "Product Page",
     "og_description": "Best product ever"
-  },
-  "metrics": {}
+  }
 }
 ```
 
@@ -1380,8 +1126,7 @@ type MetricSpec struct {
           { "op": "parse_price" }
         ]
       }
-    ],
-    "metrics": []
+    ]
   }
 }
 ```
@@ -1391,8 +1136,7 @@ type MetricSpec struct {
 {
   "fields": {
     "product_price": 19.99
-  },
-  "metrics": {}
+  }
 }
 ```
 
@@ -1432,13 +1176,6 @@ type MetricSpec struct {
           { "op": "limit", "arg": 3 }
         ]
       }
-    ],
-    "metrics": [
-      {
-        "name": "tags_count",
-        "op": "count",
-        "input": "tags"
-      }
     ]
   }
 }
@@ -1449,9 +1186,6 @@ type MetricSpec struct {
 {
   "fields": {
     "tags": ["Python", "Go", "JavaScript"]
-  },
-  "metrics": {
-    "tags_count": 3
   }
 }
 ```
@@ -1490,8 +1224,7 @@ type MetricSpec struct {
           { "op": "trim" }
         ]
       }
-    ],
-    "metrics": []
+    ]
   }
 }
 ```
@@ -1501,8 +1234,7 @@ type MetricSpec struct {
 {
   "fields": {
     "current_page": "Product"
-  },
-  "metrics": {}
+  }
 }
 ```
 
@@ -1537,8 +1269,7 @@ type MetricSpec struct {
           { "op": "upper", "arg": "" }
         ]
       }
-    ],
-    "metrics": []
+    ]
   }
 }
 ```
@@ -1559,8 +1290,7 @@ type MetricSpec struct {
 {
   "fields": {
     "og_url": "HTTPS://EXAMPLE.COM/PAGE"
-  },
-  "metrics": {}
+  }
 }
 ```
 
@@ -1596,13 +1326,6 @@ type MetricSpec struct {
         },
         "transforms": []
       }
-    ],
-    "metrics": [
-      {
-        "name": "external_links_count",
-        "op": "count",
-        "input": "external_links"
-      }
     ]
   }
 }
@@ -1616,16 +1339,13 @@ type MetricSpec struct {
       "https://example.com",
       "http://another.com"
     ]
-  },
-  "metrics": {
-    "external_links_count": 2
   }
 }
 ```
 
 ---
 
-### Пример 7: Проверка наличия автора и подсчет слов в описании
+### Пример 7: Извлечение автора и описания
 
 **HTML:**
 ```html
@@ -1669,18 +1389,6 @@ type MetricSpec struct {
           { "op": "collapse_ws" }
         ]
       }
-    ],
-    "metrics": [
-      {
-        "name": "has_author",
-        "op": "field_present",
-        "input": "author"
-      },
-      {
-        "name": "description_words",
-        "op": "word_count",
-        "input": "description"
-      }
     ]
   }
 }
@@ -1692,58 +1400,13 @@ type MetricSpec struct {
   "fields": {
     "author": "John Doe",
     "description": "This is a long description with many words for testing purposes."
-  },
-  "metrics": {
-    "has_author": true,
-    "description_words": 12
   }
 }
 ```
 
 ---
 
-### Пример 8: Подсчет слов на всей странице
-
-**HTML:**
-```html
-<body>
-  <h1>Title</h1>
-  <p>Paragraph 1 with some text.</p>
-  <p>Paragraph 2 with more text.</p>
-</body>
-```
-
-**Конфигурация:**
-```json
-{
-  "extraction_spec": {
-    "fields": [],
-    "metrics": [
-      {
-        "name": "total_words",
-        "op": "word_count",
-        "input": "body_text"
-      }
-    ]
-  }
-}
-```
-
-**Результат:**
-```json
-{
-  "fields": {},
-  "metrics": {
-    "total_words": 11
-  }
-}
-```
-
-**Примечание:** `body_text` — это специальное значение для `input`, которое извлекает весь текст из `<body>`.
-
----
-
-### Пример 9: Извлечение изображений и подсчет внешних ссылок
+### Пример 8: Извлечение изображений
 
 **HTML:**
 ```html
@@ -1772,13 +1435,6 @@ type MetricSpec struct {
         },
         "transforms": []
       }
-    ],
-    "metrics": [
-      {
-        "name": "external_links_count",
-        "op": "count_external_links",
-        "input": ""
-      }
     ]
   }
 }
@@ -1792,9 +1448,6 @@ type MetricSpec struct {
       "https://example.com/local/image1.jpg",
       "https://cdn.example.com/image2.jpg"
     ]
-  },
-  "metrics": {
-    "external_links_count": 1
   }
 }
 ```
@@ -1803,7 +1456,7 @@ type MetricSpec struct {
 
 ---
 
-### Пример 10: Извлечение HTML-контента и очистка
+### Пример 9: Извлечение HTML-контента и очистка
 
 **HTML:**
 ```html
@@ -1845,8 +1498,7 @@ type MetricSpec struct {
           { "op": "collapse_ws" }
         ]
       }
-    ],
-    "metrics": []
+    ]
   }
 }
 ```
@@ -1857,14 +1509,13 @@ type MetricSpec struct {
   "fields": {
     "content_html": "<p>First <b>paragraph</b></p>\n  <p>Second paragraph</p>",
     "content_text": "First paragraph Second paragraph"
-  },
-  "metrics": {}
+  }
 }
 ```
 
 ---
 
-### Пример 11: Извлечение чисел из текста (рейтинг)
+### Пример 10: Извлечение чисел из текста (рейтинг)
 
 **HTML:**
 ```html
@@ -1890,8 +1541,7 @@ type MetricSpec struct {
           { "op": "parse_price" }
         ]
       }
-    ],
-    "metrics": []
+    ]
   }
 }
 ```
@@ -1901,8 +1551,7 @@ type MetricSpec struct {
 {
   "fields": {
     "rating": 4.5
-  },
-  "metrics": {}
+  }
 }
 ```
 
@@ -1910,7 +1559,7 @@ type MetricSpec struct {
 
 ---
 
-### Пример 12: Комплексная конфигурация для e-commerce
+### Пример 11: Комплексная конфигурация для e-commerce
 
 **HTML:**
 ```html
@@ -2035,28 +1684,6 @@ type MetricSpec struct {
           { "op": "parse_int" }
         ]
       }
-    ],
-    "metrics": [
-      {
-        "name": "has_description",
-        "op": "field_present",
-        "input": "description"
-      },
-      {
-        "name": "features_count",
-        "op": "count",
-        "input": "features"
-      },
-      {
-        "name": "description_words",
-        "op": "word_count",
-        "input": "description"
-      },
-      {
-        "name": "external_links",
-        "op": "count_external_links",
-        "input": ""
-      }
     ]
   }
 }
@@ -2073,21 +1700,15 @@ type MetricSpec struct {
     "description": "High quality product with many features.",
     "features": ["Feature 1", "Feature 2", "Feature 3"],
     "stock_count": 15
-  },
-  "metrics": {
-    "has_description": true,
-    "features_count": 3,
-    "description_words": 7,
-    "external_links": 1
   }
 }
 ```
 
 ---
 
-## 9. Best Practices и рекомендации
+## 8. Best Practices и рекомендации
 
-### 9.1 Проектирование устойчивых селекторов
+### 8.1 Проектирование устойчивых селекторов
 
 **✅ Хорошо:**
 - Используйте семантические CSS-классы и ID: `"h1.product-title"`, `"#main-content"`
@@ -2099,19 +1720,18 @@ type MetricSpec struct {
 - Слишком общие селекторы: `"div"` (может вернуть не те элементы)
 - Сложные цепочки без смысловой привязки: `"body > div > div > div > p"`
 
-### 9.2 Обработка отсутствующих данных
+### 8.2 Обработка отсутствующих данных
 
 - Используйте `required: false` для опциональных полей
-- Используйте метрику `field_present` для проверки наличия данных
 - Не полагайтесь на порядок элементов — используйте `multiple: true` + `index` с осторожностью
 
-### 9.3 Оптимизация производительности
+### 8.3 Оптимизация производительности
 
 - Избегайте дублирования селекторов (не извлекайте одно и то же поле дважды)
 - Используйте `multiple: false`, если вам нужен только первый элемент
 - Применяйте `limit` к массивам, если вам не нужны все элементы
 
-### 9.4 Отладка проблем с извлечением
+### 8.4 Отладка проблем с извлечением
 
 **Если поле возвращает `null`:**
 1. Проверьте, что CSS-селектор находит элементы (используйте DevTools браузера)
@@ -2128,7 +1748,7 @@ type MetricSpec struct {
 2. Используйте `type: "string"` для отладки (чтобы увидеть сырое значение)
 3. Добавьте трансформации для очистки (`trim`, `collapse_ws`)
 
-### 9.5 Работа с динамическим контентом
+### 8.5 Работа с динамическим контентом
 
 **Ограничение:** Парсер работает только с исходным HTML (SSR). JavaScript-рендеринг (SPA, CSR) не поддерживается.
 
@@ -2136,7 +1756,7 @@ type MetricSpec struct {
 - Для SPA используйте headless-браузер (Puppeteer, Playwright) для рендеринга страницы перед парсингом
 - Ищите API-эндпоинты, которые возвращают JSON (часто доступны в Network вкладке DevTools)
 
-### 9.6 Тестирование конфигураций
+### 8.6 Тестирование конфигураций
 
 **Рекомендации:**
 1. Начните с простых селекторов и постепенно добавляйте сложность
@@ -2144,7 +1764,7 @@ type MetricSpec struct {
 3. Используйте preview API (`/api/v1/previews`) для быстрой проверки конфигураций
 4. Проверяйте edge cases: пустые страницы, страницы с отсутствующими элементами
 
-### 9.7 Документирование конфигураций
+### 8.7 Документирование конфигураций
 
 - Используйте поле `label` для описания назначения поля
 - Добавляйте комментарии в JSON (если поддерживается) или ведите отдельную документацию

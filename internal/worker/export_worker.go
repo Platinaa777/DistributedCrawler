@@ -221,12 +221,11 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 
 // TaskResult represents a single task's extraction result
 type TaskResult struct {
-	TaskID  string         `json:"task_id"`
-	URL     string         `json:"url"`
-	Status  string         `json:"status"`
-	Fields  map[string]any `json:"fields,omitempty"`
-	Metrics map[string]any `json:"metrics,omitempty"`
-	Error   string         `json:"error,omitempty"`
+	TaskID string         `json:"task_id"`
+	URL    string         `json:"url"`
+	Status string         `json:"status"`
+	Fields map[string]any `json:"fields,omitempty"`
+	Error  string         `json:"error,omitempty"`
 }
 
 // loadTaskResults loads result JSON files from S3 for all tasks
@@ -260,12 +259,9 @@ func (w *ExportWorker) loadTaskResults(ctx context.Context, tasks []*models.Craw
 					)
 					result.Error = fmt.Sprintf("failed to parse JSON: %v", err)
 				} else {
-					// Extract fields and metrics from the output
+					// Extract fields from the output
 					if fields, ok := taskOutput["fields"].(map[string]any); ok {
 						result.Fields = fields
-					}
-					if metrics, ok := taskOutput["metrics"].(map[string]any); ok {
-						result.Metrics = metrics
 					}
 				}
 			}

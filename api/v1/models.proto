@@ -86,13 +86,6 @@ message FieldSpec {
   repeated TransformSpec transforms = 5;
 }
 
-// MetricSpec defines a metric to compute
-message MetricSpec {
-  string name = 1;
-  string op = 2; // "len" | "count" | "word_count" | "field_present" | "status_is_error" | "count_external_links"
-  string input = 3;
-}
-
 // PaginationSpec defines a pagination selector for extracting next-page URLs
 message PaginationSpec {
   string name = 1;      // Optional name for the pagination source (e.g., "next_page", "load_more")
@@ -104,7 +97,7 @@ message PaginationSpec {
 // ExtractionSpec defines extraction configuration
 message ExtractionSpec {
   repeated FieldSpec fields = 1;
-  repeated MetricSpec metrics = 2;
+  reserved 2; // was MetricSpec metrics
   repeated PaginationSpec pagination = 3;
 }
 

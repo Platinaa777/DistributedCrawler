@@ -123,22 +123,6 @@ import { CrawlJobConfig } from '../../../../core/models/crawl-job.model';
             </div>
           </div>
 
-          <p-divider *ngIf="jobConfig.extraction_spec.metrics.length > 0" />
-
-          <div *ngIf="jobConfig.extraction_spec.metrics.length > 0">
-            <p class="text-xs text-gray-600 font-semibold mb-2">Metrics ({{ jobConfig.extraction_spec.metrics.length }})</p>
-            <div class="space-y-2">
-              <div
-                *ngFor="let metric of jobConfig.extraction_spec.metrics"
-                class="p-2 bg-gray-50 rounded border border-gray-200">
-                <div class="flex items-center gap-2">
-                  <p-tag [value]="metric.name" severity="secondary" styleClass="text-xs" />
-                  <p-tag [value]="metric.op" severity="help" styleClass="text-xs" />
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Input: <strong>{{ metric.input }}</strong></p>
-              </div>
-            </div>
-          </div>
         </div>
       </p-card>
 

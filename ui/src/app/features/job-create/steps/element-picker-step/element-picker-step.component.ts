@@ -8,8 +8,7 @@ import { PreviewIframeComponent } from '../../components/preview-iframe/preview-
 import { JobCreateStateService } from '../../services/job-create-state.service';
 import { SelectorGeneratorService } from '../../../../core/services/selector-generator.service';
 import { FieldBuilderComponent } from '../../components/field-builder/field-builder.component';
-import { MetricBuilderComponent } from '../../components/metric-builder/metric-builder.component';
-import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.model';
+import { FieldSpec } from '../../../../core/models/extraction-spec.model';
 import { Subscription } from 'rxjs';
 
 interface PickerElementData {
@@ -30,7 +29,6 @@ interface PickerElementData {
     InputSwitchModule,
     PreviewIframeComponent,
     FieldBuilderComponent,
-    MetricBuilderComponent
   ],
   template: `
     <div class="space-y-4 h-full">
@@ -171,42 +169,6 @@ interface PickerElementData {
           </div>
         </p-card>
 
-        <p-card class="fill-card">
-          <ng-template pTemplate="header">
-            <div class="p-4 pb-0 flex items-center justify-between gap-3">
-              <div>
-                <h3 class="text-base font-semibold">Metrics ({{ metrics.length }})</h3>
-                <p class="text-sm text-gray-500">Define metrics to calculate from extracted data.</p>
-              </div>
-              <p-button
-                [rounded]="true"
-                severity="secondary"
-                (onClick)="addMetric()">
-                <i class="pi pi-plus"></i>
-              </p-button>
-            </div>
-          </ng-template>
-          <div class="p-4 card-content-scroll space-y-3">
-            <div class="flex-1 overflow-y-auto space-y-3 pr-1">
-              <div
-                *ngIf="metrics.length === 0"
-                class="text-center py-10 bg-gray-50 rounded border border-dashed border-gray-200"
-              >
-                <i class="pi pi-chart-line text-gray-400 text-4xl mb-2"></i>
-                <p class="text-gray-500">No metrics defined yet</p>
-                <p class="text-gray-400 text-sm mt-1">Add a metric to track data quality</p>
-              </div>
-
-              <app-metric-builder
-                *ngFor="let metric of metrics; let i = index; trackBy: trackByMetric"
-                [metric]="metric"
-                [availableFields]="availableFieldNames"
-                (metricChange)="updateMetric(i, $event)"
-                (remove)="removeMetric(i)"
-              ></app-metric-builder>
-            </div>
-          </div>
-        </p-card>
       </div>
     </div>
   `,
@@ -279,7 +241,6 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   hoveredElement: PickerElementData | null = null;
   highlightBox: { left: number; top: number; width: number; height: number } | null = null;
   fields: FieldSpec[] = [];
-  metrics: MetricSpec[] = [];
   trialResult: string | null = null;
   trialExpanded = true;
   availableFieldNames: string[] = [];
@@ -300,7 +261,6 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
     this.stateSubscription = this.stateService.getState().subscribe(state => {
       this.previewHtml = state.previewHtml;
       this.fields = [...state.extractionSpec.fields];
-      this.metrics = [...state.extractionSpec.metrics];
       this.availableFieldNames = this.fields
         .map(field => field.name)
         .filter((name): name is string => !!name);
@@ -309,7 +269,6 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
         hasPreviewHtml: !!this.previewHtml,
         previewHtmlLength: this.previewHtml?.length || 0,
         fieldsCount: this.fields.length,
-        metricsCount: this.metrics.length
       });
     });
   }
@@ -491,31 +450,8 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
     this.stateService.removeField(index);
   }
 
-  addMetric(): void {
-    const newMetric: MetricSpec = {
-      name: `metric_${this.metrics.length + 1}`,
-      op: 'count',
-      input: ''
-    };
-
-    this.stateService.addMetric(newMetric);
-  }
-
-  updateMetric(index: number, metric: MetricSpec): void {
-    this.stateService.updateMetric(index, metric);
-  }
-
-  removeMetric(index: number): void {
-    this.stateService.removeMetric(index);
-  }
-
   runTrial(): void {
-    const payload = {
-      fields: this.fields,
-      metrics: this.metrics
-    };
-
-    console.log('Trial run payload:', payload);
+    console.log('Trial run payload:', { fields: this.fields });
 
     const sampleFields = this.fields.map(field => ({
       name: field.name,
@@ -524,19 +460,10 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
       value: '(mocked)'
     }));
 
-    const metricsPayload = this.metrics.map(metric => ({
-      name: metric.name,
-      op: metric.op,
-      input: metric.input,
-      arg: (metric as any).arg ?? ''
-    }));
-
     this.trialResult = JSON.stringify({
       status: 'ok',
       fields_count: this.fields.length,
-      metrics_count: this.metrics.length,
-      sample: sampleFields,
-      metrics: metricsPayload
+      sample: sampleFields
     }, null, 2);
 
     this.trialExpanded = true;
@@ -570,11 +497,6 @@ export class ElementPickerStepComponent implements OnInit, OnDestroy {
   trackByField(index: number, field: FieldSpec): string {
     // Use stable index so typing into the form doesn't recreate the component
     return `field-${index}`;
-  }
-
-  trackByMetric(index: number, metric: MetricSpec): string {
-    // Use stable index to avoid input disruptions when the name changes
-    return `metric-${index}`;
   }
 
   toggleTrialVisibility(): void {

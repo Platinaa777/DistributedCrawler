@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CrawlJobConfig, Seed, ScopeRules, RateLimitPolicy } from '../../../core/models/crawl-job.model';
-import { ExtractionSpec, FieldSpec, MetricSpec } from '../../../core/models/extraction-spec.model';
+import { ExtractionSpec, FieldSpec } from '../../../core/models/extraction-spec.model';
 
 export interface JobCreateState {
   // Step A - Preview
@@ -24,8 +24,7 @@ const initialState: JobCreateState = {
   previewId: null,
   previewHtml: null,
   extractionSpec: {
-    fields: [],
-    metrics: []
+    fields: []
   },
   jobName: '',
   seeds: [],
@@ -103,42 +102,6 @@ export class JobCreateStateService {
       extractionSpec: {
         ...current.extractionSpec,
         fields: current.extractionSpec.fields.filter((_, i) => i !== index)
-      }
-    });
-  }
-
-  addMetric(metric: MetricSpec): void {
-    const current = this.state$.value;
-    this.state$.next({
-      ...current,
-      extractionSpec: {
-        ...current.extractionSpec,
-        metrics: [...current.extractionSpec.metrics, metric]
-      }
-    });
-  }
-
-  updateMetric(index: number, metric: MetricSpec): void {
-    const current = this.state$.value;
-    const metrics = [...current.extractionSpec.metrics];
-    metrics[index] = metric;
-
-    this.state$.next({
-      ...current,
-      extractionSpec: {
-        ...current.extractionSpec,
-        metrics
-      }
-    });
-  }
-
-  removeMetric(index: number): void {
-    const current = this.state$.value;
-    this.state$.next({
-      ...current,
-      extractionSpec: {
-        ...current.extractionSpec,
-        metrics: current.extractionSpec.metrics.filter((_, i) => i !== index)
       }
     });
   }

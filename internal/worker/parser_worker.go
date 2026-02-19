@@ -315,10 +315,9 @@ func (w *ParserWorker) recordTaskFailed(ctx context.Context, reason string) {
 	)
 }
 
-// extractionResult holds the extracted data and computed metrics
+// extractionResult holds the extracted data
 type extractionResult struct {
-	Fields  map[string]any `json:"fields"`
-	Metrics map[string]any `json:"metrics"`
+	Fields map[string]any `json:"fields"`
 }
 
 // extractData performs DSL-based extraction on HTML content
@@ -342,13 +341,10 @@ func (w *ParserWorker) extractData(
 		baseURL, _ = url.Parse(task.URL)
 	}
 
-	// Extract plain text for text-based selectors
-	bodyText := doc.Find("body").Text()
-
 	// Extract fields
 	fields := make(map[string]any)
 	for _, fieldSpec := range spec.Fields {
-		value, err := w.extractField(fieldSpec, doc, bodyText, baseURL)
+		value, err := w.extractField(fieldSpec, doc, baseURL)
 		if err != nil && fieldSpec.Required {
 			w.logger.Warn("Failed to extract required field",
 				zap.String("field", fieldSpec.Name),
@@ -358,16 +354,8 @@ func (w *ParserWorker) extractData(
 		fields[fieldSpec.Name] = value
 	}
 
-	// Compute metrics
-	metrics := make(map[string]any)
-	for _, metricSpec := range spec.Metrics {
-		value := w.computeMetric(metricSpec, fields, doc, bodyText)
-		metrics[metricSpec.Name] = value
-	}
-
 	return &extractionResult{
-		Fields:  fields,
-		Metrics: metrics,
+		Fields: fields,
 	}, nil
 }
 
@@ -375,11 +363,10 @@ func (w *ParserWorker) extractData(
 func (w *ParserWorker) extractField(
 	spec models.FieldSpec,
 	doc *goquery.Document,
-	bodyText string,
 	baseURL *url.URL,
 ) (any, error) {
 	// Extract raw value using extractor
-	rawValue, err := w.applyExtractor(spec.Extractor, doc, bodyText, baseURL)
+	rawValue, err := w.applyExtractor(spec.Extractor, doc, baseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +395,6 @@ func (w *ParserWorker) extractField(
 func (w *ParserWorker) applyExtractor(
 	spec models.ExtractorSpec,
 	doc *goquery.Document,
-	bodyText string,
 	baseURL *url.URL,
 ) (any, error) {
 	// Always extract from HTML using CSS selectors
@@ -660,93 +646,13 @@ func (w *ParserWorker) convertToType(value any, valueType models.ValueType) (any
 	return value, nil
 }
 
-// computeMetric computes a single metric value
-func (w *ParserWorker) computeMetric(
-	spec models.MetricSpec,
-	fields map[string]any,
-	doc *goquery.Document,
-	bodyText string,
-) any {
-	switch spec.Op {
-	case models.MetricLen:
-		if value, ok := fields[spec.Input]; ok {
-			if str, ok := value.(string); ok {
-				return len(str)
-			}
-		}
-		return 0
-
-	case models.MetricCount:
-		value, ok := fields[spec.Input]
-		if !ok || value == nil {
-			return 0
-		}
-
-		countNonEmpty := func(ss []string) int {
-			n := 0
-			for _, s := range ss {
-				if strings.TrimSpace(s) != "" {
-					n++
-				}
-			}
-			return n
-		}
-
-		switch v := value.(type) {
-		case []string:
-			return countNonEmpty(v)
-		case []any:
-			tmp := make([]string, 0, len(v))
-			for _, it := range v {
-				s := strings.TrimSpace(fmt.Sprintf("%v", it))
-				if s != "" {
-					tmp = append(tmp, s)
-				}
-			}
-			return len(tmp)
-		default:
-			return 0
-		}
-
-	case models.MetricWordCount:
-		var text string
-		if spec.Input == "body_text" {
-			text = bodyText
-		} else if value, ok := fields[spec.Input]; ok {
-			text = fmt.Sprintf("%v", value)
-		}
-		words := strings.Fields(text)
-		return len(words)
-
-	case models.MetricFieldPresent:
-		if value, ok := fields[spec.Input]; ok {
-			return value != nil && value != ""
-		}
-		return false
-
-	case models.MetricCountExternalLinks:
-		count := 0
-		doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
-			if href, exists := s.Attr("href"); exists {
-				if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") {
-					count++
-				}
-			}
-		})
-		return count
-	}
-
-	return nil
-}
-
 // persistResults uploads extraction results to S3 and updates DB (Part A - result persistence)
 func (w *ParserWorker) persistResults(ctx context.Context, taskID, url string, result *extractionResult) error {
-	// Prepare output structure (same as before)
+	// Prepare output structure
 	output := map[string]any{
 		"task_id": taskID,
 		"url":     url,
 		"fields":  result.Fields,
-		"metrics": result.Metrics,
 	}
 
 	// Marshal to JSON

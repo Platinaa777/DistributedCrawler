@@ -28,20 +28,8 @@ const (
 	OpSHA256       TransformOp = "sha256"
 )
 
-type MetricOp string
-
-const (
-	MetricLen                MetricOp = "len"
-	MetricCount              MetricOp = "count"
-	MetricWordCount          MetricOp = "word_count"
-	MetricFieldPresent       MetricOp = "field_present"
-	MetricStatusIsError      MetricOp = "status_is_error"
-	MetricCountExternalLinks MetricOp = "count_external_links"
-)
-
 type ExtractionSpec struct {
 	Fields     []FieldSpec
-	Metrics    []MetricSpec
 	Pagination []PaginationSpec
 }
 
@@ -74,8 +62,3 @@ type TransformSpec struct {
 	Arg any         // free-form (string/number/object)
 }
 
-type MetricSpec struct {
-	Name  string   `json:"name"`            // e.g. "title_len"
-	Op    MetricOp `json:"op"`              // e.g. "len", "count", "status_is_error"
-	Input string   `json:"input,omitempty"` // field name or special value like "body_text"
-}

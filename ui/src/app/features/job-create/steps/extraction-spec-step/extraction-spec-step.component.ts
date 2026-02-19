@@ -4,9 +4,8 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 import { FieldBuilderComponent } from '../../components/field-builder/field-builder.component';
-import { MetricBuilderComponent } from '../../components/metric-builder/metric-builder.component';
 import { JobCreateStateService } from '../../services/job-create-state.service';
-import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.model';
+import { FieldSpec } from '../../../../core/models/extraction-spec.model';
 
 @Component({
   selector: 'app-extraction-spec-step',
@@ -16,8 +15,7 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
     CardModule,
     ButtonModule,
     TabViewModule,
-    FieldBuilderComponent,
-    MetricBuilderComponent
+    FieldBuilderComponent
   ],
   template: `
     <div class="space-y-4">
@@ -25,7 +23,7 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
         <ng-template pTemplate="header">
           <div class="p-4 pb-0">
             <h2 class="text-xl font-semibold">Step 3: Build Extraction Spec</h2>
-            <p class="text-sm text-gray-500">Define fields and metrics to extract from pages.</p>
+            <p class="text-sm text-gray-500">Define fields to extract from pages.</p>
           </div>
         </ng-template>
       </p-card>
@@ -56,30 +54,6 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
           </div>
         </p-tabPanel>
 
-        <p-tabPanel header="Metrics ({{ metrics.length }})">
-          <div class="p-4 space-y-4">
-            <div class="flex items-center justify-between mb-4">
-              <p class="text-sm text-gray-600">Define metrics to calculate from extracted data.</p>
-              <p-button (onClick)="addMetric()">
-                <i class="pi pi-plus mr-2"></i>
-                Add Metric
-              </p-button>
-            </div>
-
-            <div *ngIf="metrics.length === 0" class="text-center py-12 bg-gray-50 rounded">
-              <i class="pi pi-chart-line text-gray-400 text-4xl mb-2"></i>
-              <p class="text-gray-500">No metrics defined yet</p>
-              <p class="text-gray-400 text-sm mt-1">Add a metric to track data quality</p>
-            </div>
-
-            <app-metric-builder
-              *ngFor="let metric of metrics; let i = index"
-              [metric]="metric"
-              (metricChange)="updateMetric(i, $event)"
-              (remove)="removeMetric(i)"
-            ></app-metric-builder>
-          </div>
-        </p-tabPanel>
       </p-tabView>
 
       <p-card>
@@ -110,7 +84,6 @@ import { FieldSpec, MetricSpec } from '../../../../core/models/extraction-spec.m
 })
 export class ExtractionSpecStepComponent implements OnInit {
   fields: FieldSpec[] = [];
-  metrics: MetricSpec[] = [];
   trialResult: string | null = null;
 
   constructor(private stateService: JobCreateStateService) {}
@@ -119,7 +92,6 @@ export class ExtractionSpecStepComponent implements OnInit {
     // Load from state
     const state = this.stateService.getCurrentState();
     this.fields = [...state.extractionSpec.fields];
-    this.metrics = [...state.extractionSpec.metrics];
   }
 
   addField(): void {
@@ -151,41 +123,12 @@ export class ExtractionSpecStepComponent implements OnInit {
     this.stateService.removeField(index);
   }
 
-  addMetric(): void {
-    const newMetric: MetricSpec = {
-      name: `metric_${this.metrics.length + 1}`,
-      op: 'count',
-      input: ''
-    };
-
-    this.metrics.push(newMetric);
-    this.stateService.addMetric(newMetric);
-  }
-
-  updateMetric(index: number, metric: MetricSpec): void {
-    this.metrics[index] = metric;
-    // Note: State service doesn't have updateMetric, we'll need to remove and re-add
-    this.stateService.removeMetric(index);
-    this.stateService.addMetric(metric);
-  }
-
-  removeMetric(index: number): void {
-    this.metrics.splice(index, 1);
-    this.stateService.removeMetric(index);
-  }
-
   runTrial(): void {
-    const payload = {
-      fields: this.fields,
-      metrics: this.metrics
-    };
-
-    console.log('Trial run payload:', payload);
+    console.log('Trial run payload:', { fields: this.fields });
 
     this.trialResult = JSON.stringify({
       status: 'ok',
       fields_count: this.fields.length,
-      metrics_count: this.metrics.length,
       sample: this.fields.slice(0, 2).map(field => ({
         name: field.name,
         selector: field.extractor.selector,

@@ -104,15 +104,6 @@ func ToProtoFieldSpec(field models.FieldSpec) *crawlergrpc.FieldSpec {
 	}
 }
 
-// ToProtoMetricSpec converts domain MetricSpec to protobuf
-func ToProtoMetricSpec(metric models.MetricSpec) *crawlergrpc.MetricSpec {
-	return &crawlergrpc.MetricSpec{
-		Name:  metric.Name,
-		Op:    string(metric.Op),
-		Input: metric.Input,
-	}
-}
-
 // ToProtoPaginationSpec converts domain PaginationSpec to protobuf
 func ToProtoPaginationSpec(spec models.PaginationSpec) *crawlergrpc.PaginationSpec {
 	return &crawlergrpc.PaginationSpec{
@@ -130,11 +121,6 @@ func ToProtoExtractionSpec(spec models.ExtractionSpec) *crawlergrpc.ExtractionSp
 		fields[i] = ToProtoFieldSpec(f)
 	}
 
-	metrics := make([]*crawlergrpc.MetricSpec, len(spec.Metrics))
-	for i, m := range spec.Metrics {
-		metrics[i] = ToProtoMetricSpec(m)
-	}
-
 	pagination := make([]*crawlergrpc.PaginationSpec, len(spec.Pagination))
 	for i, p := range spec.Pagination {
 		pagination[i] = ToProtoPaginationSpec(p)
@@ -142,7 +128,6 @@ func ToProtoExtractionSpec(spec models.ExtractionSpec) *crawlergrpc.ExtractionSp
 
 	return &crawlergrpc.ExtractionSpec{
 		Fields:     fields,
-		Metrics:    metrics,
 		Pagination: pagination,
 	}
 }
@@ -383,19 +368,6 @@ func FromProtoFieldSpec(proto *crawlergrpc.FieldSpec) models.FieldSpec {
 	}
 }
 
-// FromProtoMetricSpec converts protobuf MetricSpec to domain
-func FromProtoMetricSpec(proto *crawlergrpc.MetricSpec) models.MetricSpec {
-	if proto == nil {
-		return models.MetricSpec{}
-	}
-
-	return models.MetricSpec{
-		Name:  proto.Name,
-		Op:    models.MetricOp(proto.Op),
-		Input: proto.Input,
-	}
-}
-
 // FromProtoPaginationSpec converts protobuf PaginationSpec to domain
 func FromProtoPaginationSpec(proto *crawlergrpc.PaginationSpec) models.PaginationSpec {
 	if proto == nil {
@@ -421,11 +393,6 @@ func FromProtoExtractionSpec(proto *crawlergrpc.ExtractionSpec) models.Extractio
 		fields[i] = FromProtoFieldSpec(f)
 	}
 
-	metrics := make([]models.MetricSpec, len(proto.Metrics))
-	for i, m := range proto.Metrics {
-		metrics[i] = FromProtoMetricSpec(m)
-	}
-
 	pagination := make([]models.PaginationSpec, len(proto.Pagination))
 	for i, p := range proto.Pagination {
 		pagination[i] = FromProtoPaginationSpec(p)
@@ -433,7 +400,6 @@ func FromProtoExtractionSpec(proto *crawlergrpc.ExtractionSpec) models.Extractio
 
 	return models.ExtractionSpec{
 		Fields:     fields,
-		Metrics:    metrics,
 		Pagination: pagination,
 	}
 }

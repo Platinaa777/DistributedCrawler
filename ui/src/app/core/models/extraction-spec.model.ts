@@ -1,6 +1,5 @@
 export interface ExtractionSpec {
   fields: FieldSpec[];
-  metrics: MetricSpec[];
   pagination?: PaginationSpec[];
 }
 
@@ -29,13 +28,6 @@ export interface ExtractorSpec {
   source?: string;
   selector_type?: string;
   default_value?: string;
-}
-
-export interface MetricSpec {
-  name: string;
-  op: 'len' | 'count' | 'word_count' | 'field_present' | 'status_is_error' | 'count_external_links';
-  input: string;
-  arg?: string;
 }
 
 export interface TransformSpec {

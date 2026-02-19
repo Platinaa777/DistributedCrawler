@@ -1,0 +1,78 @@
+{
+  "config": {
+    "name": "Books to Scrape - All Products",
+    "job_type": "ONCE",
+    "seeds": [
+      {
+        "url": "https://books.toscrape.com/"
+      }
+    ],
+    "scopes": {
+      "max_depth": 5,
+      "allowed_domains": ["books.toscrape.com"],
+      "deny_url_patterns": []
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 500,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "item_names",
+          "label": "Book Titles",
+          "type": "json",
+          "required": false,
+          "extractor": {
+            "selector": "article.product_pod h3 a",
+            "attribute": "title",
+            "multiple": true
+          },
+          "transforms": []
+        },
+        {
+          "name": "item_prices",
+          "label": "Book Prices",
+          "type": "json",
+          "required": false,
+          "extractor": {
+            "selector": "article.product_pod p.price_color",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim", "arg": null }
+          ]
+        },
+        {
+          "name": "item_availability",
+          "label": "In Stock Status",
+          "type": "json",
+          "required": false,
+          "extractor": {
+            "selector": "article.product_pod p.availability",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim", "arg": null },
+            { "op": "collapse_ws", "arg": null }
+          ]
+        }
+      ]
+    }
+  }
+}
