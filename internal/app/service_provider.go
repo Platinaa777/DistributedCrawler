@@ -306,6 +306,7 @@ func (s *serviceProvider) ScheduleWorker(ctx context.Context) *worker.ScheduleWo
 			s.OutboxRepository(ctx),
 			s.TxManager(ctx),
 			s.Logger(),
+			s.Metrics(ctx),
 		)
 	}
 	return s.scheduleWorker

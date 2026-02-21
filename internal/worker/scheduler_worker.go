@@ -16,6 +16,7 @@ import (
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/persistence"
+	"distributed-crawler/internal/telemetry"
 
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
@@ -36,6 +37,7 @@ type ScheduleWorker struct {
 	pollInterval  time.Duration
 	batchSize     int
 	logger        *zap.Logger
+	metrics       *telemetry.Metrics
 	activeTasks   atomic.Int64
 	accepting     atomic.Bool
 }
@@ -48,6 +50,7 @@ func NewScheduleWorker(
 	outboxRepo outbox.OutboxRepository,
 	txManager persistence.TxManager,
 	logger *zap.Logger,
+	metrics *telemetry.Metrics,
 ) *ScheduleWorker {
 	worker := &ScheduleWorker{
 		jobRepo:       jobRepo,
@@ -58,6 +61,7 @@ func NewScheduleWorker(
 		pollInterval:  DefaultSchedulePollInterval,
 		batchSize:     DefaultScheduleBatchSize,
 		logger:        logger,
+		metrics:       metrics,
 	}
 	worker.accepting.Store(true)
 	return worker
@@ -253,6 +257,10 @@ func (w *ScheduleWorker) createScheduledJob(
 
 		if err := w.outboxRepo.BulkCreate(ctxTX, outboxEvents); err != nil {
 			return fmt.Errorf("failed to create scheduled outbox events: %w", err)
+		}
+
+		if w.metrics != nil && w.metrics.TasksCreatedTotal != nil {
+			w.metrics.TasksCreatedTotal.Add(ctxTX, int64(len(tasks)))
 		}
 
 		w.logger.Info("Scheduled new crawl job",

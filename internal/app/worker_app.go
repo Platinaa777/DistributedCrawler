@@ -531,6 +531,7 @@ func (a *WorkerApp) initScheduleWorker() error {
 		outboxRepo,
 		txManager,
 		a.zapLogger,
+		a.metrics,
 	)
 	a.activeTasksCounter = a.scheduleWorker
 
