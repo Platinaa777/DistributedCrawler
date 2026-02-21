@@ -1,0 +1,241 @@
+{
+  "config": {
+    "name": "BigGeek - MacBook Pro 14",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_AND_LINKS",
+    "seeds": [
+      {
+        "url": "https://biggeek.ru/catalog/macbook-pro-14?sort=price&f253=25996-26002"
+      }
+    ],
+    "scopes": {
+      "max_depth": 1,
+      "allowed_domains": ["biggeek.ru"],
+      "deny_url_patterns": [
+        "/cart",
+        "/login",
+        "/o-kompanii",
+        "/dostavka",
+        "/warranty",
+        "/trade-in",
+        "/contacts",
+        "/find-us",
+        "/oplata",
+        "/dlya-smi",
+        "/postoyannym-klientam",
+        "/s/",
+        "/catalog/apple-iphone",
+        "/catalog/apple-ipad",
+        "/catalog/apple-watch",
+        "/catalog/apple-airpods",
+        "/catalog/kompyutery-apple",
+        "/catalog/multimedia-apple",
+        "/catalog/aksessuary-apple",
+        "/catalog/noutbuki-apple",
+        "/catalog/xiaomi",
+        "/catalog/samsung",
+        "/catalog/dyson",
+        "/catalog/gadgeti",
+        "/catalog/smartfony",
+        "/catalog/chasy",
+        "/catalog/aksessuary",
+        "/catalog/akusitcheskie"
+      ]
+    },
+    "rate_limit": {
+      "rps": 5
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 500,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "h1.produt-section__title",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "price",
+          "type": "float",
+          "required": true,
+          "extractor": {
+            "selector": "div.prod-info-price span.total-prod-price",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "parse_price" }
+          ]
+        },
+        {
+          "name": "original_price",
+          "type": "float",
+          "required": false,
+          "extractor": {
+            "selector": "div.prod-info-price__top span.old-price",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "parse_price" }
+          ]
+        },
+        {
+          "name": "sku",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "span.vendor-code",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "images",
+          "type": "url",
+          "required": false,
+          "extractor": {
+            "selector": "div.sl-prewiew-thumbs__item-img img",
+            "attribute": "src",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "normalize_url" }
+          ]
+        },
+        {
+          "name": "characteristic_labels",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div.tabs-content__txt-row div.descr",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "characteristic_values",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div.tabs-content__txt-row div.value",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        }
+      ],
+      "items": {
+        "container_selector": "div.catalog-card",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "a.catalog-card__title",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "price",
+            "type": "float",
+            "required": true,
+            "extractor": {
+              "selector": "b.cart-modal-count",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "parse_price" }
+            ]
+          },
+          {
+            "name": "original_price",
+            "type": "float",
+            "required": false,
+            "extractor": {
+              "selector": "a.catalog-card__price span.old-price",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "parse_price" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "a.catalog-card__title",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          },
+          {
+            "name": "thumbnail",
+            "type": "url",
+            "required": false,
+            "extractor": {
+              "selector": "a.catalog-card__img img",
+              "attribute": "src",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "a.prod-pagination__item-next",
+          "attribute": "href",
+          "multiple": false
+        }
+      ]
+    }
+  }
+}
