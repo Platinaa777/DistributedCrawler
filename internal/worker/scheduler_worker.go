@@ -247,7 +247,7 @@ func (w *ScheduleWorker) createScheduledJob(
 			})
 		}
 
-		if err := w.taskRepo.BulkCreate(ctxTX, tasks); err != nil {
+		if _, err := w.taskRepo.BulkCreate(ctxTX, tasks); err != nil {
 			return fmt.Errorf("failed to create scheduled crawl tasks: %w", err)
 		}
 

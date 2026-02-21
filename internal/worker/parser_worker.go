@@ -284,20 +284,39 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 	allEvents := append(paginationEvents, discoveryEvents...)
 
 	if err := w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
-		if err := w.taskRepo.SetTaskResult(ctx, taskID, objectKey, "application/json", sizeBytes); err != nil {
-			return fmt.Errorf("failed to update task result in DB: %w", err)
-		}
-		crawlTask.MarkAsParsed()
+		crawlTask.MarkAsParsed(objectKey, "application/json", sizeBytes, time.Now())
+		
 		if err := w.taskRepo.Update(ctx, *crawlTask); err != nil {
 			return fmt.Errorf("failed to update task status to parsed: %w", err)
 		}
+
+		eventsToCreate := allEvents
 		if len(allTasks) > 0 {
-			if err := w.taskRepo.BulkCreate(ctx, allTasks); err != nil {
+			insertedIDs, err := w.taskRepo.BulkCreate(ctx, allTasks)
+			if err != nil {
 				return fmt.Errorf("failed to bulk create new tasks: %w", err)
 			}
+			// BulkCreate uses ON CONFLICT DO NOTHING: some tasks may have been skipped because
+			// the (job_id, url) pair already exists. Only create outbox events for tasks that
+			// were actually inserted — otherwise the fetch worker would receive a message for a
+			// task_id that is not in the database.
+			if len(insertedIDs) < len(allTasks) {
+				insertedSet := make(map[string]bool, len(insertedIDs))
+				for _, id := range insertedIDs {
+					insertedSet[id.String()] = true
+				}
+				filtered := make([]models.OutboxEvent, 0, len(insertedIDs))
+				for _, e := range eventsToCreate {
+					if insertedSet[e.AggregateID] {
+						filtered = append(filtered, e)
+					}
+				}
+				eventsToCreate = filtered
+			}
 		}
-		if len(allEvents) > 0 {
-			if err := w.outboxRepo.BulkCreate(ctx, allEvents); err != nil {
+
+		if len(eventsToCreate) > 0 {
+			if err := w.outboxRepo.BulkCreate(ctx, eventsToCreate); err != nil {
 				return fmt.Errorf("failed to bulk create outbox events: %w", err)
 			}
 		}

@@ -23,7 +23,7 @@
       ]
     },
     "rate_limit": {
-      "rps": 1
+      "rps": 100
     },
     "retries": {
       "max_attempts": 3,

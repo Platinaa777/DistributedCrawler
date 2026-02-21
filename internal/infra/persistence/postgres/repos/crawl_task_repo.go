@@ -82,9 +82,9 @@ func (c *crawlTaskRepository) Create(ctx context.Context, entity models.CrawlTas
 	return valueobjects.NewCrawlTaskID(id)
 }
 
-func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.CrawlTask) error {
+func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.CrawlTask) ([]valueobjects.CrawlTaskID, error) {
 	if len(entities) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	builder := sq.Insert(taskTableName).
@@ -106,11 +106,12 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 		)
 	}
 
+	// RETURNING id lets us know which rows were actually inserted vs skipped by the conflict clause.
 	query, args, err := builder.
-		Suffix("ON CONFLICT (job_id, url) DO NOTHING").
+		Suffix("ON CONFLICT (job_id, url) DO NOTHING RETURNING id").
 		ToSql()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	q := persistence.Query{
@@ -118,8 +119,26 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 		QueryRaw: query,
 	}
 
-	_, err = c.client.DB().ExecContext(ctx, q, args...)
-	return err
+	rows, err := c.client.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	inserted := make([]valueobjects.CrawlTaskID, 0, len(entities))
+	for rows.Next() {
+		var idStr string
+		if err := rows.Scan(&idStr); err != nil {
+			return nil, err
+		}
+		id, err := valueobjects.NewCrawlTaskID(idStr)
+		if err != nil {
+			return nil, err
+		}
+		inserted = append(inserted, id)
+	}
+
+	return inserted, rows.Err()
 }
 
 func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTaskID) (*models.CrawlTask, error) {

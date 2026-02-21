@@ -36,6 +36,9 @@ func (task *CrawlTask) MarkAsFetched(finalUrl, minioKey string) {
 	task.Status = TaskStatusFetched
 }
 
-func (task *CrawlTask) MarkAsParsed() {
+func (task *CrawlTask) MarkAsParsed(objectKey string, contentType string, sizeBytes int64, time time.Time) {
 	task.Status = TaskStatusParsed
+	task.ResultObjectKey = &objectKey
+	task.ResultContentType = &contentType
+	task.ResultSizeBytes = &sizeBytes
 }

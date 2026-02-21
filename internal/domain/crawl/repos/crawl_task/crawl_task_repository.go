@@ -10,7 +10,9 @@ import (
 
 type CrawlTaskRepository interface {
 	Create(ctx context.Context, entity models.CrawlTask) (valueobjects.CrawlTaskID, error)
-	BulkCreate(ctx context.Context, entities []models.CrawlTask) error
+	// BulkCreate inserts multiple tasks atomically, ignoring duplicates (same job_id + url).
+	// Returns the IDs of rows that were actually inserted (conflicts are silently skipped).
+	BulkCreate(ctx context.Context, entities []models.CrawlTask) ([]valueobjects.CrawlTaskID, error)
 	Get(ctx context.Context, id valueobjects.CrawlTaskID) (*models.CrawlTask, error)
 	Update(ctx context.Context, entity models.CrawlTask) error
 	ListByJob(ctx context.Context, jobID valueobjects.CrawlJobID) ([]*models.CrawlTask, error)

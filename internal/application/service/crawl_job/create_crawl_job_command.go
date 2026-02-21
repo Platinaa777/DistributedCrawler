@@ -94,7 +94,7 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 			}
 		}
 
-		if err := s.crawlTaskRepo.BulkCreate(ctx, tasks); err != nil {
+		if _, err := s.crawlTaskRepo.BulkCreate(ctx, tasks); err != nil {
 			return fmt.Errorf("failed to create crawl tasks: %w", err)
 		}
 
