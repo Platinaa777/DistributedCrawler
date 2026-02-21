@@ -4,7 +4,8 @@ type TaskStatus string
 
 const (
 	TaskStatusInProgress TaskStatus = "InProgress"
-	TaskStatusParsed     TaskStatus = "Parsed"
+	TaskStatusFetched    TaskStatus = "Fetched"   // Page fetched and stored in MinIO
+	TaskStatusParsed     TaskStatus = "Parsed"    // Page parsed and data extracted
 	TaskStatusCompleted  TaskStatus = "Completed"
 	TaskStatusFailed     TaskStatus = "Failed"
 	TaskStatusSkipped    TaskStatus = "Skipped" // Skipped due to deduplication
@@ -16,7 +17,7 @@ func (s TaskStatus) String() string {
 
 func (s TaskStatus) IsValid() bool {
 	switch s {
-	case TaskStatusInProgress, TaskStatusCompleted, TaskStatusFailed, TaskStatusParsed, TaskStatusSkipped:
+	case TaskStatusInProgress, TaskStatusFetched, TaskStatusCompleted, TaskStatusFailed, TaskStatusParsed, TaskStatusSkipped:
 		return true
 	}
 	return false
@@ -25,6 +26,7 @@ func (s TaskStatus) IsValid() bool {
 func AllTaskStatuses() []TaskStatus {
 	return []TaskStatus{
 		TaskStatusInProgress,
+		TaskStatusFetched,
 		TaskStatusParsed,
 		TaskStatusCompleted,
 		TaskStatusFailed,

@@ -29,9 +29,13 @@ type CrawlTask struct {
 	ErrorMessage *string
 }
 
-func (task *CrawlTask) MarkAsParsed(finalUrl, minioKey string) {
+func (task *CrawlTask) MarkAsFetched(finalUrl, minioKey string) {
 	task.MinioObjectKey = minioKey
 	task.FinalURL = &finalUrl
 
+	task.Status = TaskStatusFetched
+}
+
+func (task *CrawlTask) MarkAsParsed() {
 	task.Status = TaskStatusParsed
 }

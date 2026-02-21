@@ -1,0 +1,787 @@
+{
+  "exported_at": "2026-02-21T11:02:38Z",
+  "job_id": "bedca97c-1594-4cca-a9c2-23c6ce98d0eb",
+  "results": [
+    {
+      "task_id": "5fb007a9-8eaf-4930-8d36-aef2885a3b1e",
+      "url": "https://books.toscrape.com/catalogue/page-2.html",
+      "status": "Parsed",
+      "fields": {
+        "page_title": "All products"
+      },
+      "items": [
+        {
+          "availability": "In stock",
+          "name": "In Her Wake",
+          "price": 12.84,
+          "url": "https://books.toscrape.com/catalogue/in-her-wake_980/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "How Music Works",
+          "price": 37.32,
+          "url": "https://books.toscrape.com/catalogue/how-music-works_979/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Foolproof Preserving: A Guide to Small Batch Jams, Jellies, Pickles, Condiments, and More: A Foolproof Guide to Making Small Batch Jams, Jellies, Pickles, Condiments, and More",
+          "price": 30.52,
+          "url": "https://books.toscrape.com/catalogue/foolproof-preserving-a-guide-to-small-batch-jams-jellies-pickles-condiments-and-more-a-foolproof-guide-to-making-small-batch-jams-jellies-pickles-condiments-and-more_978/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Chase Me (Paris Nights #2)",
+          "price": 25.27,
+          "url": "https://books.toscrape.com/catalogue/chase-me-paris-nights-2_977/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Black Dust",
+          "price": 34.53,
+          "url": "https://books.toscrape.com/catalogue/black-dust_976/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Birdsong: A Story in Pictures",
+          "price": 54.64,
+          "url": "https://books.toscrape.com/catalogue/birdsong-a-story-in-pictures_975/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "America's Cradle of Quarterbacks: Western Pennsylvania's Football Factory from Johnny Unitas to Joe Montana",
+          "price": 22.5,
+          "url": "https://books.toscrape.com/catalogue/americas-cradle-of-quarterbacks-western-pennsylvanias-football-factory-from-johnny-unitas-to-joe-montana_974/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Aladdin and His Wonderful Lamp",
+          "price": 53.13,
+          "url": "https://books.toscrape.com/catalogue/aladdin-and-his-wonderful-lamp_973/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Worlds Elsewhere: Journeys Around Shakespeare’s Globe",
+          "price": 40.3,
+          "url": "https://books.toscrape.com/catalogue/worlds-elsewhere-journeys-around-shakespeares-globe_972/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Wall and Piece",
+          "price": 44.18,
+          "url": "https://books.toscrape.com/catalogue/wall-and-piece_971/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Four Agreements: A Practical Guide to Personal Freedom",
+          "price": 17.66,
+          "url": "https://books.toscrape.com/catalogue/the-four-agreements-a-practical-guide-to-personal-freedom_970/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Five Love Languages: How to Express Heartfelt Commitment to Your Mate",
+          "price": 31.05,
+          "url": "https://books.toscrape.com/catalogue/the-five-love-languages-how-to-express-heartfelt-commitment-to-your-mate_969/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Elephant Tree",
+          "price": 23.82,
+          "url": "https://books.toscrape.com/catalogue/the-elephant-tree_968/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Bear and the Piano",
+          "price": 36.89,
+          "url": "https://books.toscrape.com/catalogue/the-bear-and-the-piano_967/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Sophie's World",
+          "price": 15.94,
+          "url": "https://books.toscrape.com/catalogue/sophies-world_966/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Penny Maybe",
+          "price": 33.29,
+          "url": "https://books.toscrape.com/catalogue/penny-maybe_965/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Maude (1883-1993):She Grew Up with the country",
+          "price": 18.02,
+          "url": "https://books.toscrape.com/catalogue/maude-1883-1993she-grew-up-with-the-country_964/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "In a Dark, Dark Wood",
+          "price": 19.63,
+          "url": "https://books.toscrape.com/catalogue/in-a-dark-dark-wood_963/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Behind Closed Doors",
+          "price": 52.22,
+          "url": "https://books.toscrape.com/catalogue/behind-closed-doors_962/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "You can't bury them all: Poems",
+          "price": 33.63,
+          "url": "https://books.toscrape.com/catalogue/you-cant-bury-them-all-poems_961/index.html"
+        }
+      ]
+    },
+    {
+      "task_id": "7679a0cd-31c1-42cf-9333-3bdd77c60295",
+      "url": "https://books.toscrape.com/catalogue/page-3.html",
+      "status": "Parsed",
+      "fields": {
+        "page_title": "All products"
+      },
+      "items": [
+        {
+          "availability": "In stock",
+          "name": "Slow States of Collapse: Poems",
+          "price": 57.31,
+          "url": "https://books.toscrape.com/catalogue/slow-states-of-collapse-poems_960/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Reasons to Stay Alive",
+          "price": 26.41,
+          "url": "https://books.toscrape.com/catalogue/reasons-to-stay-alive_959/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Private Paris (Private #10)",
+          "price": 47.61,
+          "url": "https://books.toscrape.com/catalogue/private-paris-private-10_958/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "#HigherSelfie: Wake Up Your Life. Free Your Soul. Find Your Tribe.",
+          "price": 23.11,
+          "url": "https://books.toscrape.com/catalogue/higherselfie-wake-up-your-life-free-your-soul-find-your-tribe_957/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Without Borders (Wanderlove #1)",
+          "price": 45.07,
+          "url": "https://books.toscrape.com/catalogue/without-borders-wanderlove-1_956/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "When We Collided",
+          "price": 31.77,
+          "url": "https://books.toscrape.com/catalogue/when-we-collided_955/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "We Love You, Charlie Freeman",
+          "price": 50.27,
+          "url": "https://books.toscrape.com/catalogue/we-love-you-charlie-freeman_954/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Untitled Collection: Sabbath Poems 2014",
+          "price": 14.27,
+          "url": "https://books.toscrape.com/catalogue/untitled-collection-sabbath-poems-2014_953/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Unseen City: The Majesty of Pigeons, the Discreet Charm of Snails \u0026 Other Wonders of the Urban Wilderness",
+          "price": 44.18,
+          "url": "https://books.toscrape.com/catalogue/unseen-city-the-majesty-of-pigeons-the-discreet-charm-of-snails-other-wonders-of-the-urban-wilderness_952/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Unicorn Tracks",
+          "price": 18.78,
+          "url": "https://books.toscrape.com/catalogue/unicorn-tracks_951/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Unbound: How Eight Technologies Made Us Human, Transformed Society, and Brought Our World to the Brink",
+          "price": 25.52,
+          "url": "https://books.toscrape.com/catalogue/unbound-how-eight-technologies-made-us-human-transformed-society-and-brought-our-world-to-the-brink_950/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Tsubasa: WoRLD CHRoNiCLE 2 (Tsubasa WoRLD CHRoNiCLE #2)",
+          "price": 16.28,
+          "url": "https://books.toscrape.com/catalogue/tsubasa-world-chronicle-2-tsubasa-world-chronicle-2_949/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Throwing Rocks at the Google Bus: How Growth Became the Enemy of Prosperity",
+          "price": 31.12,
+          "url": "https://books.toscrape.com/catalogue/throwing-rocks-at-the-google-bus-how-growth-became-the-enemy-of-prosperity_948/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "This One Summer",
+          "price": 19.49,
+          "url": "https://books.toscrape.com/catalogue/this-one-summer_947/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Thirst",
+          "price": 17.27,
+          "url": "https://books.toscrape.com/catalogue/thirst_946/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Torch Is Passed: A Harding Family Story",
+          "price": 19.09,
+          "url": "https://books.toscrape.com/catalogue/the-torch-is-passed-a-harding-family-story_945/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Secret of Dreadwillow Carse",
+          "price": 56.13,
+          "url": "https://books.toscrape.com/catalogue/the-secret-of-dreadwillow-carse_944/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Pioneer Woman Cooks: Dinnertime: Comfort Classics, Freezer Food, 16-Minute Meals, and Other Delicious Ways to Solve Supper!",
+          "price": 56.41,
+          "url": "https://books.toscrape.com/catalogue/the-pioneer-woman-cooks-dinnertime-comfort-classics-freezer-food-16-minute-meals-and-other-delicious-ways-to-solve-supper_943/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Past Never Ends",
+          "price": 56.5,
+          "url": "https://books.toscrape.com/catalogue/the-past-never-ends_942/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Natural History of Us (The Fine Art of Pretending #2)",
+          "price": 45.22,
+          "url": "https://books.toscrape.com/catalogue/the-natural-history-of-us-the-fine-art-of-pretending-2_941/index.html"
+        }
+      ]
+    },
+    {
+      "task_id": "7b451f78-f814-41dd-bccb-8d497385ace5",
+      "url": "https://books.toscrape.com/catalogue/page-4.html",
+      "status": "Parsed",
+      "fields": {
+        "page_title": "All products"
+      },
+      "items": [
+        {
+          "availability": "In stock",
+          "name": "The Nameless City (The Nameless City #1)",
+          "price": 38.16,
+          "url": "https://books.toscrape.com/catalogue/the-nameless-city-the-nameless-city-1_940/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Murder That Never Was (Forensic Instincts #5)",
+          "price": 54.11,
+          "url": "https://books.toscrape.com/catalogue/the-murder-that-never-was-forensic-instincts-5_939/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Most Perfect Thing: Inside (and Outside) a Bird's Egg",
+          "price": 42.96,
+          "url": "https://books.toscrape.com/catalogue/the-most-perfect-thing-inside-and-outside-a-birds-egg_938/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Mindfulness and Acceptance Workbook for Anxiety: A Guide to Breaking Free from Anxiety, Phobias, and Worry Using Acceptance and Commitment Therapy",
+          "price": 23.89,
+          "url": "https://books.toscrape.com/catalogue/the-mindfulness-and-acceptance-workbook-for-anxiety-a-guide-to-breaking-free-from-anxiety-phobias-and-worry-using-acceptance-and-commitment-therapy_937/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Life-Changing Magic of Tidying Up: The Japanese Art of Decluttering and Organizing",
+          "price": 16.77,
+          "url": "https://books.toscrape.com/catalogue/the-life-changing-magic-of-tidying-up-the-japanese-art-of-decluttering-and-organizing_936/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Inefficiency Assassin: Time Management Tactics for Working Smarter, Not Longer",
+          "price": 20.59,
+          "url": "https://books.toscrape.com/catalogue/the-inefficiency-assassin-time-management-tactics-for-working-smarter-not-longer_935/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Gutsy Girl: Escapades for Your Life of Epic Adventure",
+          "price": 37.13,
+          "url": "https://books.toscrape.com/catalogue/the-gutsy-girl-escapades-for-your-life-of-epic-adventure_934/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Electric Pencil: Drawings from Inside State Hospital No. 3",
+          "price": 56.06,
+          "url": "https://books.toscrape.com/catalogue/the-electric-pencil-drawings-from-inside-state-hospital-no-3_933/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Death of Humanity: and the Case for Life",
+          "price": 58.11,
+          "url": "https://books.toscrape.com/catalogue/the-death-of-humanity-and-the-case-for-life_932/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Bulletproof Diet: Lose up to a Pound a Day, Reclaim Energy and Focus, Upgrade Your Life",
+          "price": 49.05,
+          "url": "https://books.toscrape.com/catalogue/the-bulletproof-diet-lose-up-to-a-pound-a-day-reclaim-energy-and-focus-upgrade-your-life_931/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Art Forger",
+          "price": 40.76,
+          "url": "https://books.toscrape.com/catalogue/the-art-forger_930/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Age of Genius: The Seventeenth Century and the Birth of the Modern Mind",
+          "price": 19.73,
+          "url": "https://books.toscrape.com/catalogue/the-age-of-genius-the-seventeenth-century-and-the-birth-of-the-modern-mind_929/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Activist's Tao Te Ching: Ancient Advice for a Modern Revolution",
+          "price": 32.24,
+          "url": "https://books.toscrape.com/catalogue/the-activists-tao-te-ching-ancient-advice-for-a-modern-revolution_928/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Spark Joy: An Illustrated Master Class on the Art of Organizing and Tidying Up",
+          "price": 41.83,
+          "url": "https://books.toscrape.com/catalogue/spark-joy-an-illustrated-master-class-on-the-art-of-organizing-and-tidying-up_927/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Soul Reader",
+          "price": 39.58,
+          "url": "https://books.toscrape.com/catalogue/soul-reader_926/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Security",
+          "price": 39.25,
+          "url": "https://books.toscrape.com/catalogue/security_925/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Saga, Volume 6 (Saga (Collected Editions) #6)",
+          "price": 25.02,
+          "url": "https://books.toscrape.com/catalogue/saga-volume-6-saga-collected-editions-6_924/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Saga, Volume 5 (Saga (Collected Editions) #5)",
+          "price": 51.04,
+          "url": "https://books.toscrape.com/catalogue/saga-volume-5-saga-collected-editions-5_923/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Reskilling America: Learning to Labor in the Twenty-First Century",
+          "price": 19.83,
+          "url": "https://books.toscrape.com/catalogue/reskilling-america-learning-to-labor-in-the-twenty-first-century_922/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Rat Queens, Vol. 3: Demons (Rat Queens (Collected Editions) #11-15)",
+          "price": 50.4,
+          "url": "https://books.toscrape.com/catalogue/rat-queens-vol-3-demons-rat-queens-collected-editions-11-15_921/index.html"
+        }
+      ]
+    },
+    {
+      "task_id": "293c39f8-8d85-43e1-ae2f-0d1438938a66",
+      "url": "https://books.toscrape.com/catalogue/page-5.html",
+      "status": "Parsed",
+      "fields": {
+        "page_title": "All products"
+      },
+      "items": [
+        {
+          "availability": "In stock",
+          "name": "Princess Jellyfish 2-in-1 Omnibus, Vol. 01 (Princess Jellyfish 2-in-1 Omnibus #1)",
+          "price": 13.61,
+          "url": "https://books.toscrape.com/catalogue/princess-jellyfish-2-in-1-omnibus-vol-01-princess-jellyfish-2-in-1-omnibus-1_920/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Princess Between Worlds (Wide-Awake Princess #5)",
+          "price": 13.34,
+          "url": "https://books.toscrape.com/catalogue/princess-between-worlds-wide-awake-princess-5_919/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Pop Gun War, Volume 1: Gift",
+          "price": 18.97,
+          "url": "https://books.toscrape.com/catalogue/pop-gun-war-volume-1-gift_918/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Political Suicide: Missteps, Peccadilloes, Bad Calls, Backroom Hijinx, Sordid Pasts, Rotten Breaks, and Just Plain Dumb Mistakes in the Annals of American Politics",
+          "price": 36.28,
+          "url": "https://books.toscrape.com/catalogue/political-suicide-missteps-peccadilloes-bad-calls-backroom-hijinx-sordid-pasts-rotten-breaks-and-just-plain-dumb-mistakes-in-the-annals-of-american-politics_917/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Patience",
+          "price": 10.16,
+          "url": "https://books.toscrape.com/catalogue/patience_916/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Outcast, Vol. 1: A Darkness Surrounds Him (Outcast #1)",
+          "price": 15.44,
+          "url": "https://books.toscrape.com/catalogue/outcast-vol-1-a-darkness-surrounds-him-outcast-1_915/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "orange: The Complete Collection 1 (orange: The Complete Collection #1)",
+          "price": 48.41,
+          "url": "https://books.toscrape.com/catalogue/orange-the-complete-collection-1-orange-the-complete-collection-1_914/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Online Marketing for Busy Authors: A Step-By-Step Guide",
+          "price": 46.35,
+          "url": "https://books.toscrape.com/catalogue/online-marketing-for-busy-authors-a-step-by-step-guide_913/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "On a Midnight Clear",
+          "price": 14.07,
+          "url": "https://books.toscrape.com/catalogue/on-a-midnight-clear_912/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Obsidian (Lux #1)",
+          "price": 14.86,
+          "url": "https://books.toscrape.com/catalogue/obsidian-lux-1_911/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "My Paris Kitchen: Recipes and Stories",
+          "price": 33.37,
+          "url": "https://books.toscrape.com/catalogue/my-paris-kitchen-recipes-and-stories_910/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Masks and Shadows",
+          "price": 56.4,
+          "url": "https://books.toscrape.com/catalogue/masks-and-shadows_909/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Mama Tried: Traditional Italian Cooking for the Screwed, Crude, Vegan, and Tattooed",
+          "price": 14.02,
+          "url": "https://books.toscrape.com/catalogue/mama-tried-traditional-italian-cooking-for-the-screwed-crude-vegan-and-tattooed_908/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Lumberjanes, Vol. 2: Friendship to the Max (Lumberjanes #5-8)",
+          "price": 46.91,
+          "url": "https://books.toscrape.com/catalogue/lumberjanes-vol-2-friendship-to-the-max-lumberjanes-5-8_907/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Lumberjanes, Vol. 1: Beware the Kitten Holy (Lumberjanes #1-4)",
+          "price": 45.61,
+          "url": "https://books.toscrape.com/catalogue/lumberjanes-vol-1-beware-the-kitten-holy-lumberjanes-1-4_906/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Lumberjanes Vol. 3: A Terrible Plan (Lumberjanes #9-12)",
+          "price": 19.92,
+          "url": "https://books.toscrape.com/catalogue/lumberjanes-vol-3-a-terrible-plan-lumberjanes-9-12_905/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Layered: Baking, Building, and Styling Spectacular Cakes",
+          "price": 40.11,
+          "url": "https://books.toscrape.com/catalogue/layered-baking-building-and-styling-spectacular-cakes_904/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Judo: Seven Steps to Black Belt (an Introductory Guide for Beginners)",
+          "price": 53.9,
+          "url": "https://books.toscrape.com/catalogue/judo-seven-steps-to-black-belt-an-introductory-guide-for-beginners_903/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Join",
+          "price": 35.67,
+          "url": "https://books.toscrape.com/catalogue/join_902/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "In the Country We Love: My Family Divided",
+          "price": 22,
+          "url": "https://books.toscrape.com/catalogue/in-the-country-we-love-my-family-divided_901/index.html"
+        }
+      ]
+    },
+    {
+      "task_id": "5b9d10bd-4c14-4dec-a4ef-ab09342d9669",
+      "url": "https://books.toscrape.com/catalogue/page-6.html",
+      "status": "Parsed",
+      "fields": {
+        "page_title": "All products"
+      },
+      "items": [
+        {
+          "availability": "In stock",
+          "name": "Immunity: How Elie Metchnikoff Changed the Course of Modern Medicine",
+          "price": 57.36,
+          "url": "https://books.toscrape.com/catalogue/immunity-how-elie-metchnikoff-changed-the-course-of-modern-medicine_900/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "I Hate Fairyland, Vol. 1: Madly Ever After (I Hate Fairyland (Compilations) #1-5)",
+          "price": 29.17,
+          "url": "https://books.toscrape.com/catalogue/i-hate-fairyland-vol-1-madly-ever-after-i-hate-fairyland-compilations-1-5_899/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "I am a Hero Omnibus Volume 1",
+          "price": 54.63,
+          "url": "https://books.toscrape.com/catalogue/i-am-a-hero-omnibus-volume-1_898/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "How to Be Miserable: 40 Strategies You Already Use",
+          "price": 46.03,
+          "url": "https://books.toscrape.com/catalogue/how-to-be-miserable-40-strategies-you-already-use_897/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Her Backup Boyfriend (The Sorensen Family #1)",
+          "price": 33.97,
+          "url": "https://books.toscrape.com/catalogue/her-backup-boyfriend-the-sorensen-family-1_896/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Giant Days, Vol. 2 (Giant Days #5-8)",
+          "price": 22.11,
+          "url": "https://books.toscrape.com/catalogue/giant-days-vol-2-giant-days-5-8_895/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Forever and Forever: The Courtship of Henry Longfellow and Fanny Appleton",
+          "price": 29.69,
+          "url": "https://books.toscrape.com/catalogue/forever-and-forever-the-courtship-of-henry-longfellow-and-fanny-appleton_894/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "First and First (Five Boroughs #3)",
+          "price": 15.97,
+          "url": "https://books.toscrape.com/catalogue/first-and-first-five-boroughs-3_893/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Fifty Shades Darker (Fifty Shades #2)",
+          "price": 21.96,
+          "url": "https://books.toscrape.com/catalogue/fifty-shades-darker-fifty-shades-2_892/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Everydata: The Misinformation Hidden in the Little Data You Consume Every Day",
+          "price": 54.35,
+          "url": "https://books.toscrape.com/catalogue/everydata-the-misinformation-hidden-in-the-little-data-you-consume-every-day_891/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Don't Be a Jerk: And Other Practical Advice from Dogen, Japan's Greatest Zen Master",
+          "price": 37.97,
+          "url": "https://books.toscrape.com/catalogue/dont-be-a-jerk-and-other-practical-advice-from-dogen-japans-greatest-zen-master_890/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Danganronpa Volume 1",
+          "price": 51.99,
+          "url": "https://books.toscrape.com/catalogue/danganronpa-volume-1_889/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Crown of Midnight (Throne of Glass #2)",
+          "price": 43.29,
+          "url": "https://books.toscrape.com/catalogue/crown-of-midnight-throne-of-glass-2_888/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Codename Baboushka, Volume 1: The Conclave of Death",
+          "price": 36.72,
+          "url": "https://books.toscrape.com/catalogue/codename-baboushka-volume-1-the-conclave-of-death_887/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Camp Midnight",
+          "price": 17.08,
+          "url": "https://books.toscrape.com/catalogue/camp-midnight_886/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Call the Nurse: True Stories of a Country Nurse on a Scottish Isle",
+          "price": 29.14,
+          "url": "https://books.toscrape.com/catalogue/call-the-nurse-true-stories-of-a-country-nurse-on-a-scottish-isle_885/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Burning",
+          "price": 28.81,
+          "url": "https://books.toscrape.com/catalogue/burning_884/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Bossypants",
+          "price": 49.46,
+          "url": "https://books.toscrape.com/catalogue/bossypants_883/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Bitch Planet, Vol. 1: Extraordinary Machine (Bitch Planet (Collected Editions))",
+          "price": 37.92,
+          "url": "https://books.toscrape.com/catalogue/bitch-planet-vol-1-extraordinary-machine-bitch-planet-collected-editions_882/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Avatar: The Last Airbender: Smoke and Shadow, Part 3 (Smoke and Shadow #3)",
+          "price": 28.09,
+          "url": "https://books.toscrape.com/catalogue/avatar-the-last-airbender-smoke-and-shadow-part-3-smoke-and-shadow-3_881/index.html"
+        }
+      ]
+    },
+    {
+      "task_id": "70ae12fe-cef8-4abf-adac-b1aa293b1acb",
+      "url": "https://books.toscrape.com/",
+      "status": "Parsed",
+      "fields": {
+        "page_title": "All products"
+      },
+      "items": [
+        {
+          "availability": "In stock",
+          "name": "A Light in the Attic",
+          "price": 51.77,
+          "url": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Tipping the Velvet",
+          "price": 53.74,
+          "url": "https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Soumission",
+          "price": 50.1,
+          "url": "https://books.toscrape.com/catalogue/soumission_998/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Sharp Objects",
+          "price": 47.82,
+          "url": "https://books.toscrape.com/catalogue/sharp-objects_997/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Sapiens: A Brief History of Humankind",
+          "price": 54.23,
+          "url": "https://books.toscrape.com/catalogue/sapiens-a-brief-history-of-humankind_996/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Requiem Red",
+          "price": 22.65,
+          "url": "https://books.toscrape.com/catalogue/the-requiem-red_995/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Dirty Little Secrets of Getting Your Dream Job",
+          "price": 33.34,
+          "url": "https://books.toscrape.com/catalogue/the-dirty-little-secrets-of-getting-your-dream-job_994/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Coming Woman: A Novel Based on the Life of the Infamous Feminist, Victoria Woodhull",
+          "price": 17.93,
+          "url": "https://books.toscrape.com/catalogue/the-coming-woman-a-novel-based-on-the-life-of-the-infamous-feminist-victoria-woodhull_993/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Boys in the Boat: Nine Americans and Their Epic Quest for Gold at the 1936 Berlin Olympics",
+          "price": 22.6,
+          "url": "https://books.toscrape.com/catalogue/the-boys-in-the-boat-nine-americans-and-their-epic-quest-for-gold-at-the-1936-berlin-olympics_992/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "The Black Maria",
+          "price": 52.15,
+          "url": "https://books.toscrape.com/catalogue/the-black-maria_991/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Starving Hearts (Triangular Trade Trilogy, #1)",
+          "price": 13.99,
+          "url": "https://books.toscrape.com/catalogue/starving-hearts-triangular-trade-trilogy-1_990/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Shakespeare's Sonnets",
+          "price": 20.66,
+          "url": "https://books.toscrape.com/catalogue/shakespeares-sonnets_989/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Set Me Free",
+          "price": 17.46,
+          "url": "https://books.toscrape.com/catalogue/set-me-free_988/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Scott Pilgrim's Precious Little Life (Scott Pilgrim #1)",
+          "price": 52.29,
+          "url": "https://books.toscrape.com/catalogue/scott-pilgrims-precious-little-life-scott-pilgrim-1_987/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Rip it Up and Start Again",
+          "price": 35.02,
+          "url": "https://books.toscrape.com/catalogue/rip-it-up-and-start-again_986/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Our Band Could Be Your Life: Scenes from the American Indie Underground, 1981-1991",
+          "price": 57.25,
+          "url": "https://books.toscrape.com/catalogue/our-band-could-be-your-life-scenes-from-the-american-indie-underground-1981-1991_985/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Olio",
+          "price": 23.88,
+          "url": "https://books.toscrape.com/catalogue/olio_984/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Mesaerion: The Best Science Fiction Stories 1800-1849",
+          "price": 37.59,
+          "url": "https://books.toscrape.com/catalogue/mesaerion-the-best-science-fiction-stories-1800-1849_983/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "Libertarianism for Beginners",
+          "price": 51.33,
+          "url": "https://books.toscrape.com/catalogue/libertarianism-for-beginners_982/index.html"
+        },
+        {
+          "availability": "In stock",
+          "name": "It's Only the Himalayas",
+          "price": 45.17,
+          "url": "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html"
+        }
+      ]
+    }
+  ],
+  "total_tasks": 6
+}

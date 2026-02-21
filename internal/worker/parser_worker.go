@@ -150,6 +150,14 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		return fmt.Errorf("failed to load crawl task: %w", err)
 	}
 
+	// Idempotency guard: skip if already parsed (e.g. RMQ retry after successful processing)
+	if crawlTask.Status == models.TaskStatusParsed {
+		w.logger.Info("Task already parsed, skipping",
+			zap.String("task_id", task.TaskID),
+		)
+		return nil
+	}
+
 	// Load job from DB
 	crawlJob, err := w.jobRepo.Get(ctx, crawlTask.JobID)
 	if err != nil {
@@ -278,6 +286,10 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 	if err := w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		if err := w.taskRepo.SetTaskResult(ctx, taskID, objectKey, "application/json", sizeBytes); err != nil {
 			return fmt.Errorf("failed to update task result in DB: %w", err)
+		}
+		crawlTask.MarkAsParsed()
+		if err := w.taskRepo.Update(ctx, *crawlTask); err != nil {
+			return fmt.Errorf("failed to update task status to parsed: %w", err)
 		}
 		if len(allTasks) > 0 {
 			if err := w.taskRepo.BulkCreate(ctx, allTasks); err != nil {

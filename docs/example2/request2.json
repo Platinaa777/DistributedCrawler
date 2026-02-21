@@ -1,0 +1,289 @@
+{
+  "config": {
+    "name": "web-scraping.dev - All Products",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_AND_LINKS",
+    "seeds": [
+      {
+        "url": "https://www.web-scraping.dev/products"
+      }
+    ],
+    "scopes": {
+      "max_depth": 10,
+      "allowed_domains": ["www.web-scraping.dev"],
+      "deny_url_patterns": [
+        "/login",
+        "/reviews",
+        "/testimonials",
+        "/file-download",
+        "/cart",
+        "/docs",
+        "/api/",
+        "/assets/"
+      ]
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 500,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "h3.card-title.product-title",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "p.product-description",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "price",
+          "type": "float",
+          "required": true,
+          "extractor": {
+            "selector": "span.product-price",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "parse_price" }
+          ]
+        },
+        {
+          "name": "original_price",
+          "type": "float",
+          "required": false,
+          "extractor": {
+            "selector": "span.product-price-full",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "parse_price" }
+          ]
+        },
+        {
+          "name": "images",
+          "type": "url",
+          "required": false,
+          "extractor": {
+            "selector": "img.product-img",
+            "attribute": "src",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "normalize_url" }
+          ]
+        },
+        {
+          "name": "variants",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "a.variant",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "feature_labels",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "tr.feature td.feature-label",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "feature_values",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "tr.feature td.feature-value",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "pack_versions",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div.table-responsive > table:nth-of-type(2) tbody tr td:nth-child(1)",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "pack_weights",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div.table-responsive > table:nth-of-type(2) tbody tr td:nth-child(2)",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "pack_dimensions",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div.table-responsive > table:nth-of-type(2) tbody tr td:nth-child(3)",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "reviews",
+          "type": "json",
+          "required": true,
+          "extractor": {
+            "selector": "script#reviews-data",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": []
+        }
+      ],
+      "items": {
+        "container_selector": "div.row.product",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "h3 a",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "price",
+            "type": "float",
+            "required": true,
+            "extractor": {
+              "selector": "div.price",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "parse_price" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "h3 a",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          },
+          {
+            "name": "thumbnail",
+            "type": "url",
+            "required": false,
+            "extractor": {
+              "selector": "img.img-thumbnail",
+              "attribute": "src",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          },
+          {
+            "name": "short_description",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": "div.short-description",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "div.paging a:last-child",
+          "attribute": "href",
+          "multiple": false
+        }
+      ]
+    }
+  }
+}

@@ -161,6 +161,10 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 			zap.String("url", task.URL),
 		)
 
+		if models.TaskStatusParsed == task.Status {
+			return nil
+		}
+
 		task.Status = models.TaskStatusSkipped
 		errMsg := fmt.Sprintf("duplicate URL: %s", task.URL)
 		task.ErrorMessage = &errMsg
@@ -426,7 +430,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	}
 
 	// Update task with fetch results
-	task.MarkAsParsed(fetchResult.FinalURL, minioKey)
+	task.MarkAsFetched(fetchResult.FinalURL, minioKey)
 
 	// Save task to database
 	if err := w.taskRepo.Update(ctx, *task); err != nil {
