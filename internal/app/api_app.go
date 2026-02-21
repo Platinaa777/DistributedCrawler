@@ -59,7 +59,7 @@ func (a *APIApp) Run() error {
 	}()
 
 	wg := sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(4)
 
 	go func() {
 		defer wg.Done()
@@ -82,6 +82,11 @@ func (a *APIApp) Run() error {
 	go func() {
 		defer wg.Done()
 		a.runWorker()
+	}()
+
+	go func() {
+		defer wg.Done()
+		a.runScheduleWorker()
 	}()
 
 	wg.Wait()
@@ -288,4 +293,15 @@ func (a *APIApp) runWorker() {
 	worker.Start(a.workerCtx)
 
 	log.Printf("Outbox publisher worker stopped")
+}
+
+func (a *APIApp) runScheduleWorker() {
+	log.Printf("Schedule worker is starting...")
+
+	w := a.serviceProvider.ScheduleWorker(context.Background())
+	if err := w.Start(a.workerCtx); err != nil && err != context.Canceled {
+		log.Printf("Schedule worker stopped with error: %v", err)
+	}
+
+	log.Printf("Schedule worker stopped")
 }

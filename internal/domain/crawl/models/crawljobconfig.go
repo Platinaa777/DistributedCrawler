@@ -24,9 +24,9 @@ type JobType string
 
 const (
 	// JobTypeOnce indicates a one-time crawl job that runs exactly once.
-	JobTypeOnce JobType = "ONCE"
+	JobTypeOnce JobType = "JOB_TYPE_ONCE"
 	// JobTypeScheduled indicates a recurring crawl job that runs on a schedule.
-	JobTypeScheduled JobType = "SCHEDULED"
+	JobTypeScheduled JobType = "JOB_TYPE_SCHEDULED"
 )
 
 type CrawlJobConfig struct {

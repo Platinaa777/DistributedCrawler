@@ -104,7 +104,7 @@ func (w *ScheduleWorker) processSchedules(ctx context.Context) {
 	offset := 0
 
 	for {
-		configs, err := w.jobConfigRepo.ListAll(ctx, w.batchSize, offset)
+		configs, err := w.jobConfigRepo.ListAllScheduled(ctx, w.batchSize, offset)
 		if err != nil {
 			w.logger.Error("Failed to list crawl job configs for scheduling", zap.Error(err))
 			return

@@ -11,5 +11,5 @@ type CrawlJobConfigRepository interface {
 	Get(ctx context.Context, id valueobjects.ID) (*models.CrawlJobConfig, error)
 	Update(ctx context.Context, entity models.CrawlJobConfig) error
 	Delete(ctx context.Context, id valueobjects.ID) error
-	ListAll(ctx context.Context, limit, offset int) ([]*models.CrawlJobConfig, error)
+	ListAllScheduled(ctx context.Context, limit, offset int) ([]*models.CrawlJobConfig, error)
 }

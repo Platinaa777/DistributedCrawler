@@ -39,7 +39,7 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 			JobConfigID:  createdConfigID,
 			JobConfig:    &config,
 			Status:       models.TaskStatusInProgress,
-			CreatedAt:    time.Now(),
+			CreatedAt:    time.Now().UTC(),
 			ExportStatus: models.ExportStatusNotStarted,
 		}
 

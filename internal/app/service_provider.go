@@ -86,6 +86,7 @@ type serviceProvider struct {
 	userServiceImpl    *userapi.UserImplementation
 	workerServiceImpl  *workerapi.WorkerImplementation
 	outboxPublisher    *worker.OutboxPublisher
+	scheduleWorker     *worker.ScheduleWorker
 	workerRegistry     *workerhealth.Registry
 
 	logger *zap.Logger
@@ -294,6 +295,20 @@ func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPub
 	}
 
 	return s.outboxPublisher
+}
+
+func (s *serviceProvider) ScheduleWorker(ctx context.Context) *worker.ScheduleWorker {
+	if s.scheduleWorker == nil {
+		s.scheduleWorker = worker.NewScheduleWorker(
+			s.CrawlJobRepository(ctx),
+			s.CrawlJobConfigRepository(ctx),
+			s.CrawlTaskRepository(ctx),
+			s.OutboxRepository(ctx),
+			s.TxManager(ctx),
+			s.Logger(),
+		)
+	}
+	return s.scheduleWorker
 }
 
 func (s *serviceProvider) MinIOConfig() config.MinIOConfig {

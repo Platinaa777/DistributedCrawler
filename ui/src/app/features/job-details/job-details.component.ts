@@ -70,8 +70,8 @@ import { TaskFiltersComponent } from './components/task-filters.component';
             <div>
               <p class="text-sm text-gray-600 dark:text-gray-400">Job Type</p>
               <p-tag
-                [value]="job?.job_config?.job_type === 'SCHEDULED' ? 'Scheduled' : 'One-time'"
-                [severity]="job?.job_config?.job_type === 'SCHEDULED' ? 'info' : 'secondary'" />
+                [value]="job?.job_config?.job_type === 'JOB_TYPE_SCHEDULED' ? 'Scheduled' : 'One-time'"
+                [severity]="job?.job_config?.job_type === 'JOB_TYPE_SCHEDULED' ? 'info' : 'secondary'" />
             </div>
             <div>
               <p class="text-sm text-gray-600 dark:text-gray-400">Created At</p>

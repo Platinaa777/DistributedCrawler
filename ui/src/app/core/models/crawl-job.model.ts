@@ -14,7 +14,7 @@ export interface CrawlJob {
 }
 
 // JobType determines whether a crawl job runs once or on a schedule
-export type JobType = 'ONCE' | 'SCHEDULED';
+export type JobType = 'JOB_TYPE_ONCE' | 'JOB_TYPE_SCHEDULED';
 
 // CrawlMode controls which link-following strategy the crawler uses
 export type CrawlMode = 'CRAWL_MODE_UNSPECIFIED' | 'CRAWL_MODE_PAGINATION_AND_LINKS' | 'CRAWL_MODE_PAGINATION_ONLY' | 'CRAWL_MODE_LINKS_ONLY';
@@ -26,8 +26,8 @@ export const CRAWL_MODES: { value: CrawlMode; label: string; description: string
 ];
 
 export const JOB_TYPES: { value: JobType; label: string; description: string }[] = [
-  { value: 'ONCE', label: 'One-time', description: 'Run exactly once' },
-  { value: 'SCHEDULED', label: 'Scheduled', description: 'Run on a recurring schedule' }
+  { value: 'JOB_TYPE_ONCE', label: 'One-time', description: 'Run exactly once' },
+  { value: 'JOB_TYPE_SCHEDULED', label: 'Scheduled', description: 'Run on a recurring schedule' }
 ];
 
 export interface CrawlJobConfig {

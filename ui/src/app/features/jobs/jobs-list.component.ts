@@ -103,8 +103,8 @@ import { JobFiltersComponent } from './components/job-filters.component';
               <td>{{ job.job_config?.name || 'Unnamed Job' }}</td>
               <td>
                 <p-tag
-                  [value]="job.job_config?.job_type === 'SCHEDULED' ? 'Scheduled' : 'One-time'"
-                  [severity]="job.job_config?.job_type === 'SCHEDULED' ? 'info' : 'secondary'"
+                  [value]="job.job_config?.job_type === 'JOB_TYPE_SCHEDULED' ? 'Scheduled' : 'One-time'"
+                  [severity]="job.job_config?.job_type === 'JOB_TYPE_SCHEDULED' ? 'info' : 'secondary'"
                   styleClass="text-xs" />
               </td>
               <td>

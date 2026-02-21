@@ -187,7 +187,7 @@ func (r *crawlJobConfigRepository) Delete(ctx context.Context, id valueobjects.I
 	return err
 }
 
-func (r *crawlJobConfigRepository) ListAll(ctx context.Context, limit, offset int) ([]*models.CrawlJobConfig, error) {
+func (r *crawlJobConfigRepository) ListAllScheduled(ctx context.Context, limit, offset int) ([]*models.CrawlJobConfig, error) {
 	builder := sq.Select(
 		configIDColumn,
 		configNameColumn,
@@ -204,6 +204,7 @@ func (r *crawlJobConfigRepository) ListAll(ctx context.Context, limit, offset in
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(configTableName).
+		Where(sq.Eq{configJobTypeColumn: models.JobTypeScheduled}).
 		OrderBy(configNameColumn + " ASC").
 		Limit(uint64(limit)).
 		Offset(uint64(offset))

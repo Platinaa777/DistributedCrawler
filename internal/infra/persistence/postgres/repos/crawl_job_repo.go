@@ -41,7 +41,10 @@ const (
 	aliasConfigRateLimit      = "config_rate_limit"
 	aliasConfigRetries        = "config_retries"
 	aliasConfigAuth           = "config_auth"
-	aliasConfigSchedule       = "config_schedule"
+	aliasConfigSchedule          = "config_schedule"
+	aliasConfigJobType           = "config_job_type"
+	aliasConfigRespectRobotsTxt  = "config_respect_robots_txt"
+	aliasConfigCrawlMode         = "config_crawl_mode"
 )
 
 type crawlJobRepository struct {
@@ -95,6 +98,9 @@ func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
 		"c.schedule as "+aliasConfigSchedule,
+		"c.job_type as "+aliasConfigJobType,
+		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
+		"c.crawl_mode as "+aliasConfigCrawlMode,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -158,6 +164,9 @@ func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus,
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
 		"c.schedule as "+aliasConfigSchedule,
+		"c.job_type as "+aliasConfigJobType,
+		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
+		"c.crawl_mode as "+aliasConfigCrawlMode,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -212,6 +221,9 @@ func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
 		"c.schedule as "+aliasConfigSchedule,
+		"c.job_type as "+aliasConfigJobType,
+		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
+		"c.crawl_mode as "+aliasConfigCrawlMode,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -269,6 +281,9 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
 		"c.schedule as "+aliasConfigSchedule,
+		"c.job_type as "+aliasConfigJobType,
+		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
+		"c.crawl_mode as "+aliasConfigCrawlMode,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -379,6 +394,9 @@ func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID v
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
 		"c.schedule as "+aliasConfigSchedule,
+		"c.job_type as "+aliasConfigJobType,
+		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
+		"c.crawl_mode as "+aliasConfigCrawlMode,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -425,6 +443,9 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
 		"c.schedule as "+aliasConfigSchedule,
+		"c.job_type as "+aliasConfigJobType,
+		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
+		"c.crawl_mode as "+aliasConfigCrawlMode,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -591,6 +612,9 @@ func scanCrawlJobWithConfig(row scanner) (*snapshots.CrawlJobSnapshot, error) {
 		&config.Retries,
 		&config.Auth,
 		&config.Schedule,
+		&config.JobType,
+		&config.RespectRobotsTxt,
+		&config.CrawlMode,
 	)
 	if err != nil {
 		return nil, err

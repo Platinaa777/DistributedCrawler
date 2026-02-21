@@ -255,7 +255,7 @@ interface SimpleJobFormValue {
                 styleClass="w-full">
               </p-select>
               <small class="text-gray-500 dark:text-gray-400">
-                {{ jobForm.get('job_type')?.value === 'SCHEDULED' ? 'Runs on a recurring schedule' : 'Runs exactly once' }}
+                {{ jobForm.get('job_type')?.value === 'JOB_TYPE_SCHEDULED' ? 'Runs on a recurring schedule' : 'Runs exactly once' }}
               </small>
             </div>
             <div>
@@ -680,7 +680,7 @@ export class SimpleJobCreateComponent implements OnInit {
   ngOnInit(): void {
     this.jobForm = this.fb.group({
       name: ['', Validators.required],
-      job_type: ['ONCE', Validators.required],
+      job_type: ['JOB_TYPE_ONCE', Validators.required],
       crawl_mode: ['CRAWL_MODE_PAGINATION_AND_LINKS', Validators.required],
       seeds: this.fb.array([this.createSeedGroup()]),
       allowed_domains: this.fb.array([]),
@@ -781,7 +781,7 @@ export class SimpleJobCreateComponent implements OnInit {
     try {
       this.jobForm.patchValue({
         name: config.name ?? '',
-        job_type: config.job_type ?? 'ONCE',
+        job_type: (config.job_type as JobType) ?? 'JOB_TYPE_ONCE',
         crawl_mode: config.crawl_mode ?? 'CRAWL_MODE_PAGINATION_AND_LINKS',
         max_depth: config.scopes?.max_depth ?? 0,
         rps: config.rate_limit?.rps ?? 1,
