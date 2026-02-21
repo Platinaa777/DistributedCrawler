@@ -106,7 +106,9 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 		)
 	}
 
-	query, args, err := builder.ToSql()
+	query, args, err := builder.
+		Suffix("ON CONFLICT (job_id, url) DO NOTHING").
+		ToSql()
 	if err != nil {
 		return err
 	}

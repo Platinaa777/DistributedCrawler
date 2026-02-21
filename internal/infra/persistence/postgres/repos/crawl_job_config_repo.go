@@ -26,6 +26,7 @@ const (
 	configScheduleColumn         = "schedule"
 	configJobTypeColumn          = "job_type"
 	configRespectRobotsTxtColumn = "respect_robots_txt"
+	configCrawlModeColumn        = "crawl_mode"
 )
 
 type crawlJobConfigRepository struct {
@@ -56,6 +57,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 			configScheduleColumn,
 			configJobTypeColumn,
 			configRespectRobotsTxtColumn,
+			configCrawlModeColumn,
 		).
 		Values(
 			dbEntity.ID,
@@ -69,6 +71,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 			dbEntity.Schedule,
 			dbEntity.JobType,
 			dbEntity.RespectRobotsTxt,
+			dbEntity.CrawlMode,
 		).
 		Suffix("RETURNING id")
 
@@ -104,6 +107,7 @@ func (r *crawlJobConfigRepository) Get(ctx context.Context, id valueobjects.ID) 
 		configScheduleColumn,
 		configJobTypeColumn,
 		configRespectRobotsTxtColumn,
+		configCrawlModeColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(configTableName).
@@ -147,6 +151,7 @@ func (r *crawlJobConfigRepository) Update(ctx context.Context, entity models.Cra
 		Set(configScheduleColumn, dbEntity.Schedule).
 		Set(configJobTypeColumn, dbEntity.JobType).
 		Set(configRespectRobotsTxtColumn, dbEntity.RespectRobotsTxt).
+		Set(configCrawlModeColumn, dbEntity.CrawlMode).
 		Where(sq.Eq{configIDColumn: dbEntity.ID})
 
 	query, args, err := builder.ToSql()
@@ -195,6 +200,7 @@ func (r *crawlJobConfigRepository) ListAll(ctx context.Context, limit, offset in
 		configScheduleColumn,
 		configJobTypeColumn,
 		configRespectRobotsTxtColumn,
+		configCrawlModeColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(configTableName).

@@ -14,7 +14,7 @@ import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
-import { CrawlJobConfig, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES } from '../../core/models/crawl-job.model';
+import { CrawlJobConfig, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES, CrawlMode, CRAWL_MODES } from '../../core/models/crawl-job.model';
 import { FieldSpec, ItemsSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
 
 interface SimpleJobFormValue {
@@ -33,6 +33,7 @@ interface SimpleJobFormValue {
   };
   schedule: ScheduleOptions;
   job_type: JobType;
+  crawl_mode: CrawlMode;
   items_enabled: boolean;
   items_container_selector: string;
 }
@@ -256,6 +257,17 @@ interface SimpleJobFormValue {
               <small class="text-gray-500 dark:text-gray-400">
                 {{ jobForm.get('job_type')?.value === 'SCHEDULED' ? 'Runs on a recurring schedule' : 'Runs exactly once' }}
               </small>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Crawl Mode</label>
+              <p-select
+                [options]="crawlModeSelectOptions"
+                optionLabel="label"
+                optionValue="value"
+                formControlName="crawl_mode"
+                styleClass="w-full">
+              </p-select>
+              <small class="text-gray-500 dark:text-gray-400">{{ crawlModeDescription }}</small>
             </div>
             <div [formGroup]="scheduleGroup">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cron</label>
@@ -616,6 +628,7 @@ export class SimpleJobCreateComponent implements OnInit {
   transformOpSelectOptions = this.transformOpOptions.map(option => ({ label: option, value: option }));
   paginationAttributeSelectOptions = ['href', 'src', 'data-url', 'content'].map(option => ({ label: option, value: option }));
   jobTypeSelectOptions = JOB_TYPES.map(option => ({ label: option.label, value: option.value }));
+  crawlModeSelectOptions = CRAWL_MODES.map(option => ({ label: option.label, value: option.value }));
 
   private readonly sampleConfig: CrawlJobConfig = {
     name: 'Example Crawl Job',
@@ -668,6 +681,7 @@ export class SimpleJobCreateComponent implements OnInit {
     this.jobForm = this.fb.group({
       name: ['', Validators.required],
       job_type: ['ONCE', Validators.required],
+      crawl_mode: ['CRAWL_MODE_PAGINATION_AND_LINKS', Validators.required],
       seeds: this.fb.array([this.createSeedGroup()]),
       allowed_domains: this.fb.array([]),
       deny_url_patterns: this.fb.array([]),
@@ -735,6 +749,11 @@ export class SimpleJobCreateComponent implements OnInit {
     return this.jobForm.get('auth') as FormGroup;
   }
 
+  get crawlModeDescription(): string {
+    const mode = this.jobForm.get('crawl_mode')?.value as CrawlMode;
+    return CRAWL_MODES.find(m => m.value === mode)?.description ?? '';
+  }
+
   goBack(): void {
     this.router.navigate(['/jobs']);
   }
@@ -763,6 +782,7 @@ export class SimpleJobCreateComponent implements OnInit {
       this.jobForm.patchValue({
         name: config.name ?? '',
         job_type: config.job_type ?? 'ONCE',
+        crawl_mode: config.crawl_mode ?? 'CRAWL_MODE_PAGINATION_AND_LINKS',
         max_depth: config.scopes?.max_depth ?? 0,
         rps: config.rate_limit?.rps ?? 1,
         retries: config.retries ?? {},
@@ -1056,6 +1076,7 @@ export class SimpleJobCreateComponent implements OnInit {
     return {
       name: raw.name,
       job_type: raw.job_type,
+      crawl_mode: raw.crawl_mode,
       seeds: raw.seeds.map(seed => ({ url: seed.url })),
       scopes: {
         max_depth: Number(raw.max_depth),

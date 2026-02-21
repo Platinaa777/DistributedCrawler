@@ -210,14 +210,20 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		return nil
 	}
 
-	// Persist results to S3 and DB (Part A - result persistence)
-	if err := w.persistResults(ctx, task.TaskID, crawlTask.URL, result); err != nil {
-		w.logger.Error("Failed to persist results",
+	// Determine effective crawl mode (default to pagination_and_links when unset)
+	crawlMode := jobConfig.CrawlMode
+	if crawlMode == "" {
+		crawlMode = models.CrawlModePaginationAndLinks
+	}
+
+	// Upload extraction result to S3 first (outside transaction — idempotent).
+	objectKey, sizeBytes, err := w.uploadResultToS3(ctx, task.TaskID, crawlTask.URL, result)
+	if err != nil {
+		w.logger.Error("Failed to upload result to S3",
 			zap.String("task_id", task.TaskID),
 			zap.Error(err),
 		)
 
-		// Mark task as failed with error message
 		crawlTask.Status = models.TaskStatusFailed
 		errMsg := fmt.Sprintf("failed to persist results: %v", err)
 		crawlTask.ErrorMessage = &errMsg
@@ -234,38 +240,79 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 			zap.String("url", crawlTask.URL),
 		)
 
-		// Don't return error - task is processed (marked as failed)
 		return nil
 	}
 
-	// Determine effective crawl mode (default to pagination_and_links when unset)
-	crawlMode := jobConfig.CrawlMode
-	if crawlMode == "" {
-		crawlMode = models.CrawlModePaginationAndLinks
-	}
-
-	// Extract and enqueue pagination links (user-defined selectors only)
-	// Skipped when crawl_mode is links_only
+	// Prepare new tasks/events outside any transaction (robots.txt checks involve network I/O).
+	var paginationTasks []models.CrawlTask
+	var paginationEvents []models.OutboxEvent
 	if crawlMode != models.CrawlModeLinksOnly {
-		if err := w.extractAndEnqueuePaginationLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
-			w.logger.Error("Failed to extract and enqueue pagination links",
+		paginationTasks, paginationEvents, err = w.preparePaginationLinks(ctx, crawlTask, htmlContent, jobConfig)
+		if err != nil {
+			w.logger.Error("Failed to prepare pagination links",
 				zap.String("task_id", task.TaskID),
 				zap.Error(err),
 			)
-			// Don't fail the entire task if pagination extraction fails
 		}
 	}
 
-	// Discover and enqueue new links for crawling (automatic link discovery)
-	// Skipped when crawl_mode is pagination_only
+	var discoveryTasks []models.CrawlTask
+	var discoveryEvents []models.OutboxEvent
 	if crawlMode != models.CrawlModePaginationOnly {
-		if err := w.discoverAndEnqueueLinks(ctx, crawlTask, htmlContent, jobConfig); err != nil {
-			w.logger.Error("Failed to discover and enqueue links",
+		discoveryTasks, discoveryEvents, err = w.prepareDiscoveredLinks(ctx, crawlTask, htmlContent, jobConfig)
+		if err != nil {
+			w.logger.Error("Failed to prepare discovered links",
 				zap.String("task_id", task.TaskID),
 				zap.Error(err),
 			)
-			// Don't fail the entire task if link discovery fails
 		}
+	}
+
+	// Atomically: persist result DB reference + all new tasks + outbox events.
+	// A single transaction closes the race window where the export worker could
+	// see result_object_key set on the last task but find no pending outbox events
+	// for newly discovered URLs, causing it to export an incomplete job.
+	allTasks := append(paginationTasks, discoveryTasks...)
+	allEvents := append(paginationEvents, discoveryEvents...)
+
+	if err := w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		if err := w.taskRepo.SetTaskResult(ctx, taskID, objectKey, "application/json", sizeBytes); err != nil {
+			return fmt.Errorf("failed to update task result in DB: %w", err)
+		}
+		if len(allTasks) > 0 {
+			if err := w.taskRepo.BulkCreate(ctx, allTasks); err != nil {
+				return fmt.Errorf("failed to bulk create new tasks: %w", err)
+			}
+		}
+		if len(allEvents) > 0 {
+			if err := w.outboxRepo.BulkCreate(ctx, allEvents); err != nil {
+				return fmt.Errorf("failed to bulk create outbox events: %w", err)
+			}
+		}
+		return nil
+	}); err != nil {
+		w.logger.Error("Failed to persist results and new tasks",
+			zap.String("task_id", task.TaskID),
+			zap.Error(err),
+		)
+
+		crawlTask.Status = models.TaskStatusFailed
+		errMsg := fmt.Sprintf("failed to persist results: %v", err)
+		crawlTask.ErrorMessage = &errMsg
+		if updateErr := w.taskRepo.Update(ctx, *crawlTask); updateErr != nil {
+			w.logger.Error("Failed to update task status to failed",
+				zap.String("task_id", task.TaskID),
+				zap.Error(updateErr),
+			)
+			return fmt.Errorf("failed to update task status: %w", updateErr)
+		}
+
+		w.logger.Info("Task marked as failed due to persist error",
+			zap.String("task_id", task.TaskID),
+			zap.String("url", crawlTask.URL),
+		)
+
+		return nil
 	}
 
 	// Record successful parsing duration metric
@@ -777,8 +824,10 @@ func (w *ParserWorker) convertToType(value any, valueType models.ValueType) (any
 	return value, nil
 }
 
-// persistResults uploads extraction results to S3 and updates DB (Part A - result persistence)
-func (w *ParserWorker) persistResults(ctx context.Context, taskID, url string, result *extractionResult) error {
+// uploadResultToS3 marshals the extraction result as JSON and stores it in S3.
+// It returns the object key and byte size so the caller can later persist the
+// DB reference atomically alongside newly-discovered task records.
+func (w *ParserWorker) uploadResultToS3(ctx context.Context, taskID, url string, result *extractionResult) (string, int64, error) {
 	// Prepare output structure
 	output := map[string]any{
 		"task_id": taskID,
@@ -794,7 +843,7 @@ func (w *ParserWorker) persistResults(ctx context.Context, taskID, url string, r
 	// Marshal to JSON
 	jsonData, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to marshal output: %w", err)
+		return "", 0, fmt.Errorf("failed to marshal output: %w", err)
 	}
 
 	// Determine S3 object key: results/tasks/{task_id}.json
@@ -802,7 +851,7 @@ func (w *ParserWorker) persistResults(ctx context.Context, taskID, url string, r
 
 	// Upload to S3
 	if err := w.contentStore.Store(ctx, objectKey, jsonData, "application/json"); err != nil {
-		return fmt.Errorf("failed to upload result to S3: %w", err)
+		return "", 0, fmt.Errorf("failed to upload result to S3: %w", err)
 	}
 
 	w.logger.Info("Result uploaded to S3",
@@ -811,35 +860,21 @@ func (w *ParserWorker) persistResults(ctx context.Context, taskID, url string, r
 		zap.Int("size_bytes", len(jsonData)),
 	)
 
-	// Update DB with result reference
-	parsedTaskID, err := valueobjects.NewCrawlTaskID(taskID)
-	if err != nil {
-		return fmt.Errorf("invalid task ID: %w", err)
-	}
-
-	if err := w.taskRepo.SetTaskResult(ctx, parsedTaskID, objectKey, "application/json", int64(len(jsonData))); err != nil {
-		return fmt.Errorf("failed to update task result in DB: %w", err)
-	}
-
-	w.logger.Info("Task result reference saved to DB",
-		zap.String("task_id", taskID),
-		zap.String("result_object_key", objectKey),
-	)
-
-	return nil
+	return objectKey, int64(len(jsonData)), nil
 }
 
-// extractAndEnqueuePaginationLinks extracts URLs from pagination elements using user-defined CSS selectors
-// and enqueues them as new crawl tasks. This is independent from automatic link discovery.
-func (w *ParserWorker) extractAndEnqueuePaginationLinks(
+// preparePaginationLinks extracts URLs from pagination elements using user-defined CSS selectors
+// and returns the CrawlTask and OutboxEvent records to be created. The caller is responsible
+// for persisting them — typically in the same transaction as SetTaskResult.
+func (w *ParserWorker) preparePaginationLinks(
 	ctx context.Context,
 	crawlTask *models.CrawlTask,
 	htmlContent []byte,
 	jobConfig *models.CrawlJobConfig,
-) error {
+) ([]models.CrawlTask, []models.OutboxEvent, error) {
 	// Skip if no pagination selectors defined
 	if len(jobConfig.ExtractionSpec.Pagination) == 0 {
-		return nil
+		return nil, nil, nil
 	}
 
 	// Check depth limit - stop if we've reached MaxDepth
@@ -849,13 +884,13 @@ func (w *ParserWorker) extractAndEnqueuePaginationLinks(
 			zap.Uint64("current_depth", crawlTask.Depth),
 			zap.Uint64("max_depth", jobConfig.Scopes.MaxDepth),
 		)
-		return nil
+		return nil, nil, nil
 	}
 
 	// Parse HTML with goquery
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlContent)))
 	if err != nil {
-		return fmt.Errorf("failed to parse HTML for pagination extraction: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse HTML for pagination extraction: %w", err)
 	}
 
 	// Determine base URL for resolving relative links
@@ -866,7 +901,7 @@ func (w *ParserWorker) extractAndEnqueuePaginationLinks(
 		baseURL, err = url.Parse(crawlTask.URL)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to parse base URL: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse base URL: %w", err)
 	}
 
 	// Extract URLs from all pagination selectors and deduplicate
@@ -936,7 +971,7 @@ func (w *ParserWorker) extractAndEnqueuePaginationLinks(
 			zap.String("task_id", crawlTask.ID.String()),
 			zap.Int("pagination_selectors", len(jobConfig.ExtractionSpec.Pagination)),
 		)
-		return nil
+		return nil, nil, nil
 	}
 
 	// Filter URLs by scope rules and prepare tasks/events
@@ -996,7 +1031,7 @@ func (w *ParserWorker) extractAndEnqueuePaginationLinks(
 		// Marshal event to JSON
 		payload, err := json.Marshal(event)
 		if err != nil {
-			return fmt.Errorf("failed to marshal event for pagination task %s: %w", taskID.String(), err)
+			return nil, nil, fmt.Errorf("failed to marshal event for pagination task %s: %w", taskID.String(), err)
 		}
 
 		// Create OutboxEvent
@@ -1017,45 +1052,28 @@ func (w *ParserWorker) extractAndEnqueuePaginationLinks(
 			zap.String("task_id", crawlTask.ID.String()),
 			zap.Int("total_pagination_urls", len(paginationURLs)),
 		)
-		return nil
+		return nil, nil, nil
 	}
 
-	// Persist tasks and outbox events atomically
-	err = w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
-		// Bulk create tasks
-		if err := w.taskRepo.BulkCreate(ctx, tasks); err != nil {
-			return fmt.Errorf("failed to bulk create pagination tasks: %w", err)
-		}
-
-		// Bulk create outbox events
-		if err := w.outboxRepo.BulkCreate(ctx, outboxEvents); err != nil {
-			return fmt.Errorf("failed to bulk create pagination outbox events: %w", err)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to persist pagination links: %w", err)
-	}
-
-	w.logger.Info("Successfully extracted and enqueued pagination links",
+	w.logger.Debug("Prepared pagination links",
 		zap.String("task_id", crawlTask.ID.String()),
 		zap.Int("pagination_urls_found", len(paginationURLs)),
-		zap.Int("pagination_urls_enqueued", len(tasks)),
+		zap.Int("pagination_links_prepared", len(tasks)),
 		zap.Uint64("next_depth", nextDepth),
 	)
 
-	return nil
+	return tasks, outboxEvents, nil
 }
 
-// discoverAndEnqueueLinks extracts links from HTML, filters them, and enqueues new crawl tasks via Outbox
-func (w *ParserWorker) discoverAndEnqueueLinks(
+// prepareDiscoveredLinks extracts links from HTML, filters them, and returns the CrawlTask and
+// OutboxEvent records to be created. The caller is responsible for persisting them — typically
+// in the same transaction as SetTaskResult.
+func (w *ParserWorker) prepareDiscoveredLinks(
 	ctx context.Context,
 	crawlTask *models.CrawlTask,
 	htmlContent []byte,
 	jobConfig *models.CrawlJobConfig,
-) error {
+) ([]models.CrawlTask, []models.OutboxEvent, error) {
 	// Check depth limit - stop if we've reached MaxDepth
 	if crawlTask.Depth >= jobConfig.Scopes.MaxDepth {
 		w.logger.Debug("Max depth reached, skipping link discovery",
@@ -1063,13 +1081,13 @@ func (w *ParserWorker) discoverAndEnqueueLinks(
 			zap.Uint64("current_depth", crawlTask.Depth),
 			zap.Uint64("max_depth", jobConfig.Scopes.MaxDepth),
 		)
-		return nil
+		return nil, nil, nil
 	}
 
 	// Parse HTML with goquery
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlContent)))
 	if err != nil {
-		return fmt.Errorf("failed to parse HTML for link discovery: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse HTML for link discovery: %w", err)
 	}
 
 	// Determine base URL for resolving relative links
@@ -1080,7 +1098,7 @@ func (w *ParserWorker) discoverAndEnqueueLinks(
 		baseURL, err = url.Parse(crawlTask.URL)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to parse base URL: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse base URL: %w", err)
 	}
 
 	// Extract all links and dedupe
@@ -1117,7 +1135,7 @@ func (w *ParserWorker) discoverAndEnqueueLinks(
 		w.logger.Debug("No valid links found on page",
 			zap.String("task_id", crawlTask.ID.String()),
 		)
-		return nil
+		return nil, nil, nil
 	}
 
 	// Filter links by scope rules and prepare tasks/events
@@ -1177,7 +1195,7 @@ func (w *ParserWorker) discoverAndEnqueueLinks(
 		// Marshal event to JSON
 		payload, err := json.Marshal(event)
 		if err != nil {
-			return fmt.Errorf("failed to marshal event for task %s: %w", taskID.String(), err)
+			return nil, nil, fmt.Errorf("failed to marshal event for task %s: %w", taskID.String(), err)
 		}
 
 		// Create OutboxEvent
@@ -1198,34 +1216,15 @@ func (w *ParserWorker) discoverAndEnqueueLinks(
 			zap.String("task_id", crawlTask.ID.String()),
 			zap.Int("total_links", len(linkSet)),
 		)
-		return nil
+		return nil, nil, nil
 	}
 
-	// Persist tasks and outbox events atomically
-	err = w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
-		// Bulk create tasks
-		if err := w.taskRepo.BulkCreate(ctx, tasks); err != nil {
-			return fmt.Errorf("failed to bulk create tasks: %w", err)
-		}
-
-		// Bulk create outbox events
-		if err := w.outboxRepo.BulkCreate(ctx, outboxEvents); err != nil {
-			return fmt.Errorf("failed to bulk create outbox events: %w", err)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to persist discovered links: %w", err)
-	}
-
-	w.logger.Info("Successfully discovered and enqueued new links",
+	w.logger.Debug("Prepared discovered links",
 		zap.String("task_id", crawlTask.ID.String()),
 		zap.Int("links_discovered", len(linkSet)),
-		zap.Int("links_enqueued", len(tasks)),
+		zap.Int("links_prepared", len(tasks)),
 		zap.Uint64("next_depth", nextDepth),
 	)
 
-	return nil
+	return tasks, outboxEvents, nil
 }

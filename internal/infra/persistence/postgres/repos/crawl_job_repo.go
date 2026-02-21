@@ -8,6 +8,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 
 	"distributed-crawler/internal/application/service"
+	"distributed-crawler/internal/domain/crawl/events"
 	"distributed-crawler/internal/domain/crawl/models"
 	crawljob "distributed-crawler/internal/domain/crawl/repos/crawl_job"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
@@ -408,9 +409,14 @@ func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID v
 	return converters.RestoreCrawlJobFromSnapshot(*crawlJob)
 }
 
-// ListEligibleForExport finds jobs that are fully finished and not yet exported (Part B - ExportWorker)
+// ListEligibleForExport finds jobs that are ready for export generation (Part B - ExportWorker)
 func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit int) ([]*models.CrawlJob, error) {
-	// A job is eligible if: all tasks are in a terminal state (Parsed, Completed, Failed, Skipped) AND export_status = 'NOT_STARTED'
+	// A job is eligible if:
+	// 1) all tasks are in a terminal state (Parsed, Completed, Failed, Skipped)
+	// 2) parsed/completed tasks already have result_object_key (parser persisted output)
+	// 3) export is not currently in progress
+	// 4) there are no unprocessed task.enqueued outbox events for this job
+	// 5) export has never been generated OR task results were updated after last export
 	builder := sq.Select(
 		"j."+idColumn, "j."+jobConfigIDColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
@@ -424,13 +430,39 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 		From(tableName + " j").
 		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id").
 		Where(sq.And{
-			sq.NotEq{"j." + exportStatusColumn: models.ExportStatusCompleted.String()},
+			sq.NotEq{"j." + exportStatusColumn: models.ExportStatusInProgress.String()},
 			sq.Expr(
 				"NOT EXISTS (SELECT 1 FROM "+taskTableName+" t WHERE t."+taskJobIDColumn+" = j."+idColumn+" AND t."+taskStatusColumn+" NOT IN (?, ?, ?, ?))",
 				models.TaskStatusParsed.String(),
 				models.TaskStatusCompleted.String(),
 				models.TaskStatusFailed.String(),
 				models.TaskStatusSkipped.String(),
+			),
+			sq.Expr(
+				"NOT EXISTS (SELECT 1 FROM "+taskTableName+" t WHERE t."+taskJobIDColumn+" = j."+idColumn+" AND t."+taskStatusColumn+" IN (?, ?) AND (t."+taskResultObjectKeyColumn+" IS NULL OR t."+taskResultObjectKeyColumn+" = ''))",
+				models.TaskStatusParsed.String(),
+				models.TaskStatusCompleted.String(),
+			),
+			sq.Expr(
+				"NOT EXISTS ("+
+					"SELECT 1 FROM "+outboxTableName+" o "+
+					"JOIN "+taskTableName+" t_out ON t_out."+taskIDColumn+" = o."+outboxAggregateIDColumn+" "+
+					"WHERE t_out."+taskJobIDColumn+" = j."+idColumn+" "+
+					"AND o."+outboxProcessedAtColumn+" IS NULL "+
+					"AND o."+outboxEventTypeColumn+" = ?"+
+					")",
+				string(events.EventTypeTaskEnqueued),
+			),
+			sq.Expr(
+				`(j.`+exportedAtColumn+` IS NULL OR EXISTS (
+					SELECT 1 FROM `+taskTableName+` t
+					WHERE t.`+taskJobIDColumn+` = j.`+idColumn+`
+					AND t.`+taskStatusColumn+` IN (?, ?)
+					AND t.`+taskResultCreatedAtColumn+` IS NOT NULL
+					AND t.`+taskResultCreatedAtColumn+` > j.`+exportedAtColumn+`
+				))`,
+				models.TaskStatusParsed.String(),
+				models.TaskStatusCompleted.String(),
 			),
 		}).
 		OrderBy("j." + completedAtColumn + " ASC").
