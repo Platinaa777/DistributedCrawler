@@ -56,6 +56,7 @@ message ScopeRules {
   uint64 max_depth = 1 [json_name = "max_depth"];
   repeated string allowed_domains = 2 [json_name = "allowed_domains"];
   repeated string deny_url_patterns = 3 [json_name = "deny_url_patterns"];
+  repeated string allowed_url_patterns = 4 [json_name = "allowed_url_patterns"];
 }
 
 // Seed represents a starting URL
@@ -142,6 +143,7 @@ message CrawlJobConfig {
   JobType job_type = 11 [json_name = "job_type"];
   // Controls link-following behavior: pagination_only, links_only, or pagination_and_links (default)
   CrawlMode crawl_mode = 12 [json_name = "crawl_mode"];
+  reserved 13; // was allowed_url_pattern (moved to scopes.allowed_url_patterns)
 }
 
 // CrawlJob represents a crawling job

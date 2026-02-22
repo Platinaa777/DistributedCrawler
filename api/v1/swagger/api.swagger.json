@@ -1464,6 +1464,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "allowed_url_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "title": "ScopeRules defines crawling scope rules"

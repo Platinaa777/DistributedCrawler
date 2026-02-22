@@ -22,6 +22,7 @@ interface SimpleJobFormValue {
   seeds: { url: string }[];
   allowed_domains: string[];
   deny_url_patterns: string[];
+  allowed_url_patterns: string[];
   max_depth: number;
   rps: number;
   retries: RetryPolicy;
@@ -203,6 +204,27 @@ interface SimpleJobFormValue {
                 </p-button>
               </div>
             </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-sm font-semibold">Allowed URL Patterns (wildcard)</p>
+              <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addAllowedUrlPattern()">
+                <i class="pi pi-plus mr-2"></i>
+                Add
+              </p-button>
+            </div>
+            <div formArrayName="allowed_url_patterns" class="space-y-2">
+              <div *ngFor="let pattern of allowedUrlPatterns.controls; let i = index" class="flex items-center gap-2">
+                <input pInputText [formControlName]="i" placeholder="https://example.com/*" class="flex-1" />
+                <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeAllowedUrlPattern(i)">
+                  <i class="pi pi-trash"></i>
+                </p-button>
+              </div>
+            </div>
+            <small class="text-xs text-gray-500 dark:text-gray-400">
+              Optional. Uses * wildcard and filters discovered/pagination URLs in parser worker.
+            </small>
           </div>
 
           <div>
@@ -636,6 +658,7 @@ export class SimpleJobCreateComponent implements OnInit {
     scopes: {
       allowed_domains: ['bool.dev'],
       deny_url_patterns: ['/login', '/register'],
+      allowed_url_patterns: ['https://bool.dev/blog/*'],
       max_depth: 0
     },
     rate_limit: { rps: 1 },
@@ -685,6 +708,7 @@ export class SimpleJobCreateComponent implements OnInit {
       seeds: this.fb.array([this.createSeedGroup()]),
       allowed_domains: this.fb.array([]),
       deny_url_patterns: this.fb.array([]),
+      allowed_url_patterns: this.fb.array([]),
       max_depth: [0, [Validators.required, Validators.min(0)]],
       rps: [1, [Validators.required, Validators.min(0.1)]],
       retries: this.fb.group({
@@ -723,6 +747,10 @@ export class SimpleJobCreateComponent implements OnInit {
 
   get denyPatterns(): FormArray {
     return this.jobForm.get('deny_url_patterns') as FormArray;
+  }
+
+  get allowedUrlPatterns(): FormArray {
+    return this.jobForm.get('allowed_url_patterns') as FormArray;
   }
 
   get extractionFields(): FormArray {
@@ -802,6 +830,9 @@ export class SimpleJobCreateComponent implements OnInit {
       const patterns: string[] = config.scopes?.deny_url_patterns ?? [];
       this.resetArray(this.denyPatterns, patterns.map(p => this.fb.control(p)));
 
+      const allowedUrlPatterns: string[] = config.scopes?.allowed_url_patterns ?? [];
+      this.resetArray(this.allowedUrlPatterns, allowedUrlPatterns.map(p => this.fb.control(p)));
+
       const fields: any[] = config.extraction_spec?.fields ?? [];
       this.resetArray(this.extractionFields, fields.map(f => this.createExtractionFieldGroup(f as Partial<FieldSpec>)));
 
@@ -854,6 +885,16 @@ export class SimpleJobCreateComponent implements OnInit {
 
   removeDenyPattern(index: number): void {
     this.denyPatterns.removeAt(index);
+    this.updatePreview();
+  }
+
+  addAllowedUrlPattern(pattern = ''): void {
+    this.allowedUrlPatterns.push(this.fb.control(pattern));
+    this.updatePreview();
+  }
+
+  removeAllowedUrlPattern(index: number): void {
+    this.allowedUrlPatterns.removeAt(index);
     this.updatePreview();
   }
 
@@ -949,6 +990,7 @@ export class SimpleJobCreateComponent implements OnInit {
     this.resetArray(this.seeds, s.seeds.map(seed => this.createSeedGroup(seed.url)));
     this.resetArray(this.allowedDomains, s.scopes.allowed_domains.map(d => this.fb.control(d)));
     this.resetArray(this.denyPatterns, (s.scopes.deny_url_patterns || []).map(p => this.fb.control(p)));
+    this.resetArray(this.allowedUrlPatterns, (s.scopes.allowed_url_patterns || []).map(p => this.fb.control(p)));
 
     this.resetArray(
       this.extractionFields,
@@ -1081,7 +1123,8 @@ export class SimpleJobCreateComponent implements OnInit {
       scopes: {
         max_depth: Number(raw.max_depth),
         allowed_domains: raw.allowed_domains.filter(d => d && d.trim() !== ''),
-        deny_url_patterns: raw.deny_url_patterns.filter(p => p && p.trim() !== '')
+        deny_url_patterns: raw.deny_url_patterns.filter(p => p && p.trim() !== ''),
+        allowed_url_patterns: raw.allowed_url_patterns.filter(p => p && p.trim() !== '')
       },
       rate_limit: {
         rps: Number(raw.rps)

@@ -85,6 +85,10 @@ import { TaskFiltersComponent } from './components/task-filters.component';
               <p class="text-sm text-gray-600 dark:text-gray-400">Rate Limit (RPS)</p>
               <p class="text-gray-900 dark:text-white">{{ job?.job_config?.rate_limit?.rps || 'N/A' }}</p>
             </div>
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Allowed URL Patterns</p>
+              <p class="text-gray-900 dark:text-white break-all">{{ job?.job_config?.scopes?.allowed_url_patterns?.join(', ') || 'N/A' }}</p>
+            </div>
           </div>
 
           <div class="mt-4" *ngIf="job?.job_config?.seeds">

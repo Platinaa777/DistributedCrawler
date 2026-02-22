@@ -128,6 +128,12 @@ import { JobFiltersComponent } from './components/job-filters.component';
                   <div class="detail-header">
                     <div class="detail-title">Job Config (auth hidden)</div>
                   </div>
+                  <div class="mb-3" *ngIf="job.job_config?.scopes?.allowed_url_patterns?.length">
+                    <p class="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Allowed URL Patterns</p>
+                    <code class="text-xs bg-white dark:bg-gray-700 rounded px-3 py-2 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 inline-block">
+                      {{ job.job_config?.scopes?.allowed_url_patterns?.join(', ') }}
+                    </code>
+                  </div>
                   <div class="pagination-info mb-3" *ngIf="job.job_config?.extraction_spec?.pagination?.length">
                     <p class="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Pagination Selectors</p>
                     <div class="flex flex-wrap gap-2">

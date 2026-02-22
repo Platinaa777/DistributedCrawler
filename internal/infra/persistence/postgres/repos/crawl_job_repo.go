@@ -33,18 +33,18 @@ const (
 	exportStatusColumn  = "export_status"
 
 	// Config table column aliases (for joins)
-	aliasConfigID             = "config_id"
-	aliasConfigName           = "config_name"
-	aliasConfigExtractionSpec = "config_extraction_spec"
-	aliasConfigScopes         = "config_scopes"
-	aliasConfigSeeds          = "config_seeds"
-	aliasConfigRateLimit      = "config_rate_limit"
-	aliasConfigRetries        = "config_retries"
-	aliasConfigAuth           = "config_auth"
-	aliasConfigSchedule          = "config_schedule"
-	aliasConfigJobType           = "config_job_type"
-	aliasConfigRespectRobotsTxt  = "config_respect_robots_txt"
-	aliasConfigCrawlMode         = "config_crawl_mode"
+	aliasConfigID               = "config_id"
+	aliasConfigName             = "config_name"
+	aliasConfigExtractionSpec   = "config_extraction_spec"
+	aliasConfigScopes           = "config_scopes"
+	aliasConfigSeeds            = "config_seeds"
+	aliasConfigRateLimit        = "config_rate_limit"
+	aliasConfigRetries          = "config_retries"
+	aliasConfigAuth             = "config_auth"
+	aliasConfigSchedule         = "config_schedule"
+	aliasConfigJobType          = "config_job_type"
+	aliasConfigRespectRobotsTxt = "config_respect_robots_txt"
+	aliasConfigCrawlMode        = "config_crawl_mode"
 )
 
 type crawlJobRepository struct {

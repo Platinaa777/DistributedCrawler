@@ -52,6 +52,7 @@ export interface ScopeRules {
   max_depth: number;
   allowed_domains: string[];
   deny_url_patterns?: string[];
+  allowed_url_patterns?: string[];
 }
 
 export interface Seed {

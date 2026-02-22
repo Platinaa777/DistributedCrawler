@@ -906,6 +906,11 @@ func (w *ParserWorker) preparePaginationLinks(
 	htmlContent []byte,
 	jobConfig *models.CrawlJobConfig,
 ) ([]models.CrawlTask, []models.OutboxEvent, error) {
+	allowedURLPatterns, err := models.CompileAllowedURLPatterns(jobConfig.Scopes.AllowedURLPatterns)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid scopes.allowed_url_patterns: %w", err)
+	}
+
 	// Skip if no pagination selectors defined
 	if len(jobConfig.ExtractionSpec.Pagination) == 0 {
 		return nil, nil, nil
@@ -1029,6 +1034,22 @@ func (w *ParserWorker) preparePaginationLinks(
 			)
 			continue
 		}
+		if len(allowedURLPatterns) > 0 {
+			matched := false
+			for _, pattern := range allowedURLPatterns {
+				if pattern.MatchString(link) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				w.logger.Debug("Pagination link filtered by allowed_url_patterns",
+					zap.String("url", link),
+					zap.Strings("allowed_url_patterns", jobConfig.Scopes.AllowedURLPatterns),
+				)
+				continue
+			}
+		}
 
 		// Check robots.txt rules
 		allowed, err := w.robotsTxtService.IsAllowed(ctx, link, userAgent)
@@ -1113,6 +1134,11 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 	htmlContent []byte,
 	jobConfig *models.CrawlJobConfig,
 ) ([]models.CrawlTask, []models.OutboxEvent, error) {
+	allowedURLPatterns, err := models.CompileAllowedURLPatterns(jobConfig.Scopes.AllowedURLPatterns)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid scopes.allowed_url_patterns: %w", err)
+	}
+
 	// Check depth limit - stop if we've reached MaxDepth
 	if crawlTask.Depth >= jobConfig.Scopes.MaxDepth {
 		w.logger.Debug("Max depth reached, skipping link discovery",
@@ -1197,6 +1223,22 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 				zap.Error(err),
 			)
 			continue
+		}
+		if len(allowedURLPatterns) > 0 {
+			matched := false
+			for _, pattern := range allowedURLPatterns {
+				if pattern.MatchString(link) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				w.logger.Debug("Link filtered by allowed_url_patterns",
+					zap.String("url", link),
+					zap.Strings("allowed_url_patterns", jobConfig.Scopes.AllowedURLPatterns),
+				)
+				continue
+			}
 		}
 
 		// Check robots.txt rules

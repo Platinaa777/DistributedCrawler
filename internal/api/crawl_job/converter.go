@@ -44,9 +44,10 @@ func ToProtoScheduleOptions(schedule models.ScheduleOptions) *crawlergrpc.Schedu
 // ToProtoScopeRules converts domain ScopeRules to protobuf
 func ToProtoScopeRules(scope models.ScopeRules) *crawlergrpc.ScopeRules {
 	return &crawlergrpc.ScopeRules{
-		MaxDepth:        scope.MaxDepth,
-		AllowedDomains:  scope.AllowedDomains,
-		DenyUrlPatterns: scope.DenyUrlPatterns,
+		MaxDepth:           scope.MaxDepth,
+		AllowedDomains:     scope.AllowedDomains,
+		DenyUrlPatterns:    scope.DenyUrlPatterns,
+		AllowedUrlPatterns: scope.AllowedURLPatterns,
 	}
 }
 
@@ -325,9 +326,10 @@ func FromProtoScopeRules(proto *crawlergrpc.ScopeRules) models.ScopeRules {
 	}
 
 	return models.ScopeRules{
-		MaxDepth:        proto.MaxDepth,
-		AllowedDomains:  proto.AllowedDomains,
-		DenyUrlPatterns: proto.DenyUrlPatterns,
+		MaxDepth:           proto.MaxDepth,
+		AllowedDomains:     proto.AllowedDomains,
+		DenyUrlPatterns:    proto.DenyUrlPatterns,
+		AllowedURLPatterns: proto.AllowedUrlPatterns,
 	}
 }
 

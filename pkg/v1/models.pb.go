@@ -509,12 +509,13 @@ func (x *ScheduleOptions) GetCron() string {
 
 // ScopeRules defines crawling scope rules
 type ScopeRules struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	MaxDepth        uint64                 `protobuf:"varint,1,opt,name=max_depth,proto3" json:"max_depth,omitempty"`
-	AllowedDomains  []string               `protobuf:"bytes,2,rep,name=allowed_domains,proto3" json:"allowed_domains,omitempty"`
-	DenyUrlPatterns []string               `protobuf:"bytes,3,rep,name=deny_url_patterns,proto3" json:"deny_url_patterns,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	MaxDepth           uint64                 `protobuf:"varint,1,opt,name=max_depth,proto3" json:"max_depth,omitempty"`
+	AllowedDomains     []string               `protobuf:"bytes,2,rep,name=allowed_domains,proto3" json:"allowed_domains,omitempty"`
+	DenyUrlPatterns    []string               `protobuf:"bytes,3,rep,name=deny_url_patterns,proto3" json:"deny_url_patterns,omitempty"`
+	AllowedUrlPatterns []string               `protobuf:"bytes,4,rep,name=allowed_url_patterns,proto3" json:"allowed_url_patterns,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ScopeRules) Reset() {
@@ -564,6 +565,13 @@ func (x *ScopeRules) GetAllowedDomains() []string {
 func (x *ScopeRules) GetDenyUrlPatterns() []string {
 	if x != nil {
 		return x.DenyUrlPatterns
+	}
+	return nil
+}
+
+func (x *ScopeRules) GetAllowedUrlPatterns() []string {
+	if x != nil {
+		return x.AllowedUrlPatterns
 	}
 	return nil
 }
@@ -3951,12 +3959,13 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x12backoff_initial_ms\x18\x02 \x01(\x04R\x12backoff_initial_ms\x12.\n" +
 	"\x12backoff_multiplier\x18\x03 \x01(\x01R\x12backoff_multiplier\"%\n" +
 	"\x0fScheduleOptions\x12\x12\n" +
-	"\x04cron\x18\x01 \x01(\tR\x04cron\"\x82\x01\n" +
+	"\x04cron\x18\x01 \x01(\tR\x04cron\"\xb6\x01\n" +
 	"\n" +
 	"ScopeRules\x12\x1c\n" +
 	"\tmax_depth\x18\x01 \x01(\x04R\tmax_depth\x12(\n" +
 	"\x0fallowed_domains\x18\x02 \x03(\tR\x0fallowed_domains\x12,\n" +
-	"\x11deny_url_patterns\x18\x03 \x03(\tR\x11deny_url_patterns\"\x18\n" +
+	"\x11deny_url_patterns\x18\x03 \x03(\tR\x11deny_url_patterns\x122\n" +
+	"\x14allowed_url_patterns\x18\x04 \x03(\tR\x14allowed_url_patterns\"\x18\n" +
 	"\x04Seed\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\"\x8a\x01\n" +
 	"\rExtractorSpec\x12\x1a\n" +
@@ -3990,7 +3999,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"pagination\x18\x03 \x03(\v2\x1a.crawler.v1.PaginationSpecR\n" +
 	"pagination\x120\n" +
 	"\x05items\x18\x04 \x01(\v2\x15.crawler.v1.ItemsSpecH\x00R\x05items\x88\x01\x01B\b\n" +
-	"\x06_itemsJ\x04\b\x02\x10\x03\"\xc0\x04\n" +
+	"\x06_itemsJ\x04\b\x02\x10\x03\"\xc6\x04\n" +
 	"\x0eCrawlJobConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12D\n" +
@@ -4008,7 +4017,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"\bjob_type\x18\v \x01(\x0e2\x13.crawler.v1.JobTypeR\bjob_type\x125\n" +
 	"\n" +
 	"crawl_mode\x18\f \x01(\x0e2\x15.crawler.v1.CrawlModeR\n" +
-	"crawl_mode\"\xb6\x04\n" +
+	"crawl_modeJ\x04\b\r\x10\x0e\"\xb6\x04\n" +
 	"\bCrawlJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
 	"\rjob_config_id\x18\x02 \x01(\tR\rjob_config_id\x12?\n" +

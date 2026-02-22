@@ -9,12 +9,25 @@ import (
 	"distributed-crawler/internal/telemetry"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
 func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.CreateCrawlJobCommand) (valueobjects.CrawlJobID, error) {
 	if len(command.Config.Seeds) == 0 {
 		return valueobjects.CrawlJobID{}, fmt.Errorf("seeds list cannot be empty")
+	}
+	normalizedAllowedPatterns := make([]string, 0, len(command.Config.Scopes.AllowedURLPatterns))
+	for _, pattern := range command.Config.Scopes.AllowedURLPatterns {
+		pattern = strings.TrimSpace(pattern)
+		if pattern == "" {
+			continue
+		}
+		normalizedAllowedPatterns = append(normalizedAllowedPatterns, pattern)
+	}
+	command.Config.Scopes.AllowedURLPatterns = normalizedAllowedPatterns
+	if _, err := models.CompileAllowedURLPatterns(command.Config.Scopes.AllowedURLPatterns); err != nil {
+		return valueobjects.CrawlJobID{}, fmt.Errorf("invalid scopes.allowed_url_patterns: %w", err)
 	}
 
 	var jobID valueobjects.CrawlJobID
