@@ -135,21 +135,21 @@ func (w *ExportWorker) processEligibleJobs(ctx context.Context) {
 	}
 }
 
-// processJob processes export for a single job
+// processJob processes export for a single job.
 func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) error {
 	w.activeTasks.Add(1)
 	defer w.activeTasks.Add(-1)
 
+	// Start span at the top so all operations and error paths are covered.
+	var span trace.Span
 	if w.tracer != nil {
-		var span trace.Span
 		ctx, span = w.tracer.Start(ctx, "export_job",
+			trace.WithSpanKind(trace.SpanKindConsumer),
 			trace.WithAttributes(
 				attribute.String("job.id", job.ID.String()),
 			),
 		)
-		defer func() {
-			span.End()
-		}()
+		defer span.End()
 	}
 
 	w.logger.Info("Starting export for job", zap.String("job_id", job.ID.String()))
@@ -157,6 +157,9 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 	// Load all tasks for the job
 	tasks, err := w.taskRepo.ListByJob(ctx, job.ID)
 	if err != nil {
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
 		w.failExport(ctx, job.ID, fmt.Sprintf("failed to load tasks: %v", err))
 		return fmt.Errorf("failed to load tasks: %w", err)
 	}
@@ -169,6 +172,9 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 	// Load results for completed tasks
 	results, err := w.loadTaskResults(ctx, tasks)
 	if err != nil {
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
 		w.failExport(ctx, job.ID, fmt.Sprintf("failed to load task results: %v", err))
 		return fmt.Errorf("failed to load task results: %w", err)
 	}
@@ -178,9 +184,19 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 		zap.Int("result_count", len(results)),
 	)
 
+	if span != nil {
+		span.SetAttributes(
+			attribute.Int("export.task_count", len(tasks)),
+			attribute.Int("export.result_count", len(results)),
+		)
+	}
+
 	// Generate JSON report
 	jsonKey, err := w.generateJSONReport(ctx, job.ID, results)
 	if err != nil {
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
 		w.failExport(ctx, job.ID, fmt.Sprintf("failed to generate JSON report: %v", err))
 		return fmt.Errorf("failed to generate JSON report: %w", err)
 	}
@@ -188,6 +204,9 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 	// Generate CSV report
 	csvKey, err := w.generateCSVReport(ctx, job.ID, results)
 	if err != nil {
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
 		w.failExport(ctx, job.ID, fmt.Sprintf("failed to generate CSV report: %v", err))
 		return fmt.Errorf("failed to generate CSV report: %w", err)
 	}
@@ -196,14 +215,15 @@ func (w *ExportWorker) processJob(ctx context.Context, job *models.CrawlJob) err
 	exportedAt := time.Now().UTC()
 	job.MarkAsExported(jsonKey, csvKey, exportedAt)
 	if err := w.jobRepo.Update(ctx, *job); err != nil {
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
 		return fmt.Errorf("failed to mark export as completed: %w", err)
 	}
 
 	// Set span success status
-	if span := trace.SpanFromContext(ctx); span.IsRecording() {
+	if span != nil {
 		span.SetAttributes(
-			attribute.Int("export.task_count", len(tasks)),
-			attribute.Int("export.result_count", len(results)),
 			attribute.String("export.json_key", jsonKey),
 			attribute.String("export.csv_key", csvKey),
 		)
@@ -251,7 +271,7 @@ func (w *ExportWorker) loadTaskResults(ctx context.Context, tasks []*models.Craw
 				)
 				result.Error = fmt.Sprintf("failed to load result: %v", err)
 			} else {
-				// Parse JSON to extract fields and metrics
+				// Parse JSON to extract fields, items, and the stored trace context
 				var taskOutput map[string]any
 				if err := json.Unmarshal(jsonData, &taskOutput); err != nil {
 					w.logger.Warn("Failed to parse task result JSON",

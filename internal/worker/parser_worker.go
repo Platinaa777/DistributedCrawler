@@ -285,7 +285,7 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 
 	if err := w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		crawlTask.MarkAsParsed(objectKey, "application/json", sizeBytes, time.Now())
-		
+
 		if err := w.taskRepo.Update(ctx, *crawlTask); err != nil {
 			return fmt.Errorf("failed to update task status to parsed: %w", err)
 		}
@@ -858,11 +858,14 @@ func (w *ParserWorker) convertToType(value any, valueType models.ValueType) (any
 // uploadResultToS3 marshals the extraction result as JSON and stores it in S3.
 // It returns the object key and byte size so the caller can later persist the
 // DB reference atomically alongside newly-discovered task records.
+// The current trace context is embedded in the JSON so the export worker can
+// create span links back to this parser span for e2e trace visibility.
 func (w *ParserWorker) uploadResultToS3(ctx context.Context, taskID, url string, result *extractionResult) (string, int64, error) {
 	// Prepare output structure
 	output := map[string]any{
-		"task_id": taskID,
-		"url":     url,
+		"task_id":       taskID,
+		"url":           url,
+		"trace_context": telemetry.InjectTraceContext(ctx),
 	}
 	if len(result.Fields) > 0 {
 		output["fields"] = result.Fields
@@ -1014,6 +1017,9 @@ func (w *ParserWorker) preparePaginationLinks(
 	// User-agent for robots.txt checking (matches the fetcher's user-agent)
 	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
+	// Capture the current parser span's trace context once for all child events.
+	currentTraceCtx := telemetry.InjectTraceContext(ctx)
+
 	for link := range paginationURLs {
 		// Validate against scope rules
 		if err := w.scopeValidator.Validate(link, nextDepth, jobConfig.Scopes); err != nil {
@@ -1051,13 +1057,15 @@ func (w *ParserWorker) preparePaginationLinks(
 		}
 		tasks = append(tasks, task)
 
-		// Create TaskEnqueuedEvent
+		// Create TaskEnqueuedEvent with the current parser span's trace context
+		// so downstream fetch/parse spans are children of this parser span.
 		event := events.NewTaskEnqueuedEvent(
 			taskID.String(),
 			crawlTask.JobID.String(),
 			link,
 			now,
 		)
+		event.TraceContext = currentTraceCtx
 
 		// Marshal event to JSON
 		payload, err := json.Marshal(event)
@@ -1178,6 +1186,9 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 	// User-agent for robots.txt checking (matches the fetcher's user-agent)
 	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
+	// Capture the current parser span's trace context once for all child events.
+	currentTraceCtx := telemetry.InjectTraceContext(ctx)
+
 	for link := range linkSet {
 		// Validate against scope rules
 		if err := w.scopeValidator.Validate(link, nextDepth, jobConfig.Scopes); err != nil {
@@ -1215,13 +1226,15 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 		}
 		tasks = append(tasks, task)
 
-		// Create TaskEnqueuedEvent
+		// Create TaskEnqueuedEvent with the current parser span's trace context
+		// so downstream fetch/parse spans are children of this parser span.
 		event := events.NewTaskEnqueuedEvent(
 			taskID.String(),
 			crawlTask.JobID.String(),
 			link,
 			now,
 		)
+		event.TraceContext = currentTraceCtx
 
 		// Marshal event to JSON
 		payload, err := json.Marshal(event)

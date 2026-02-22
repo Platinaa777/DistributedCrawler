@@ -6,6 +6,7 @@ import (
 	"distributed-crawler/internal/domain/crawl/events"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
+	"distributed-crawler/internal/telemetry"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -71,6 +72,9 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 				task.URL,
 				task.EnqueuedAt,
 			)
+			// Capture the gRPC request's trace context so the outbox publisher
+			// can continue the same trace when it publishes to RabbitMQ.
+			event.TraceContext = telemetry.InjectTraceContext(ctx)
 
 			// Marshal event to JSON
 			payload, err := json.Marshal(event)

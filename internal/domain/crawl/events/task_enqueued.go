@@ -5,10 +5,11 @@ import "time"
 // TaskEnqueuedEvent is emitted when a crawl task is created and needs to be processed
 type TaskEnqueuedEvent struct {
 	BaseEvent
-	TaskID     string    `json:"task_id"`
-	JobID      string    `json:"job_id"`
-	URL        string    `json:"url"`
-	EnqueuedAt time.Time `json:"enqueued_at"`
+	TaskID       string            `json:"task_id"`
+	JobID        string            `json:"job_id"`
+	URL          string            `json:"url"`
+	EnqueuedAt   time.Time         `json:"enqueued_at"`
+	TraceContext map[string]string `json:"trace_context,omitempty"`
 }
 
 // NewTaskEnqueuedEvent creates a new TaskEnqueuedEvent

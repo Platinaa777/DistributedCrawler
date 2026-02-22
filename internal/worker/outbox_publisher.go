@@ -149,7 +149,15 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 		return fmt.Errorf("failed to unmarshal event payload: %w", err)
 	}
 
-	// Start a span for trace context propagation to downstream workers
+	// Restore the trace context that was captured when the task was originally created
+	// (e.g. the gRPC request span or the parser span that discovered this link).
+	// This makes the outbox publish span a child of that original trace instead of
+	// starting a brand-new, disconnected trace.
+	if len(event.TraceContext) > 0 {
+		ctx = telemetry.ExtractTraceContext(ctx, event.TraceContext)
+	}
+
+	// Start a child span — now correctly linked to the originating trace
 	var traceCtx map[string]string
 	if w.tracer != nil {
 		var span trace.Span

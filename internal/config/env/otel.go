@@ -35,7 +35,7 @@ func NewOTelConfig() (config.OTelConfig, error) {
 	environment := getEnvString(otelEnvironmentEnv, "development")
 	otlpEndpoint := getEnvString(otelExporterEndpointEnv, "localhost:4317")
 	otlpInsecure := getEnvBool(otelExporterInsecureEnv, true)
-	traceSampleRate := getEnvFloat64(otelTraceSampleRateEnv, 0.1)
+	traceSampleRate := getEnvFloat64(otelTraceSampleRateEnv, 1)
 	metricsInterval := getEnvInt(otelMetricsIntervalEnv, 15)
 
 	return &otelConfig{

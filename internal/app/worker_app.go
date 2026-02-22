@@ -499,7 +499,7 @@ func (a *WorkerApp) initExportWorker() error {
 	}
 
 	// Create export worker with poll interval and batch size
-	pollInterval := 30 * time.Second // Poll every 30 seconds
+	pollInterval := 5 * time.Second // Poll every 30 seconds
 	batchSize := 10                  // Process up to 10 jobs per batch
 
 	a.exportWorker = worker.NewExportWorker(
