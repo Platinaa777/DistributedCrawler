@@ -1,0 +1,118 @@
+{{- if .Values.otelcollector.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-otelcollector-config
+  namespace: {{ include "distributed-crawler-infra.namespace" . }}
+  labels:
+    {{- include "distributed-crawler-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otelcollector
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
+
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 400
+
+    exporters:
+      otlp/jaeger:
+        endpoint: "{{ printf "%s-jaeger-all-in-one:4317" .Release.Name }}"
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+      debug:
+        verbosity: basic
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp/jaeger]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheus]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [debug]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-otelcollector
+  namespace: {{ include "distributed-crawler-infra.namespace" . }}
+  labels:
+    {{- include "distributed-crawler-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otelcollector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: otelcollector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: otelcollector
+    spec:
+      containers:
+        - name: otelcollector
+          image: {{ .Values.otelcollector.image.repository }}:{{ .Values.otelcollector.image.tag }}
+          args: ["--config=/etc/otel-collector-config.yaml"]
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+            - name: prometheus
+              containerPort: 8889
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel-collector-config.yaml
+              subPath: config.yaml
+          resources:
+            {{- toYaml .Values.otelcollector.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-otelcollector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-otelcollector
+  namespace: {{ include "distributed-crawler-infra.namespace" . }}
+  labels:
+    {{- include "distributed-crawler-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otelcollector
+spec:
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: otelcollector
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+    - name: prometheus
+      port: 8889
+      targetPort: 8889
+{{- end }}

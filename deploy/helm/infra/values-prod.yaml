@@ -1,0 +1,114 @@
+# =============================================================================
+# Infrastructure – Production overrides
+# =============================================================================
+# Larger storage and resource limits. All observability tools enabled.
+# Passwords MUST be overridden externally:
+#   --set postgresql.auth.password=<secret>
+#   --set rabbitmq.auth.password=<secret>
+#   --set minio.auth.rootPassword=<secret>
+#   --set redis.auth.password=<secret>
+#   --set grafana.auth.adminPassword=<secret>
+# =============================================================================
+
+postgresql:
+  persistence:
+    size: 50Gi
+  resources:
+    limits:
+      cpu: "2"
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+rabbitmq:
+  persistence:
+    size: 20Gi
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+minio:
+  persistence:
+    size: 100Gi
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+redis:
+  persistence:
+    size: 20Gi
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+otelcollector:
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+jaeger:
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+prometheus:
+  persistence:
+    size: 50Gi
+  resources:
+    limits:
+      cpu: "2"
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+grafana:
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+opensearch:
+  javaOpts: "-Xms2g -Xmx2g"
+  persistence:
+    size: 50Gi
+  resources:
+    limits:
+      cpu: "2"
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 2Gi
+
+opensearch-dashboards:
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi

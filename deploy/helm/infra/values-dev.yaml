@@ -1,0 +1,85 @@
+# =============================================================================
+# Infrastructure – Development overrides
+# =============================================================================
+# Minimal resources, small storage. Prometheus/Grafana/OpenSearch disabled
+# to keep resource usage low – use Jaeger UI directly for traces.
+# =============================================================================
+
+postgresql:
+  persistence:
+    size: 1Gi
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+rabbitmq:
+  persistence:
+    size: 1Gi
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+minio:
+  persistence:
+    size: 5Gi
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+redis:
+  persistence:
+    size: 1Gi
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+redisinsight:
+  enabled: false
+
+otelcollector:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+jaeger:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Disable Prometheus/Grafana in dev – use Jaeger UI directly
+prometheus:
+  enabled: false
+
+grafana:
+  enabled: false
+
+# Disable OpenSearch in dev – use structured stdout logs instead
+opensearch:
+  enabled: false
+
+opensearch-dashboards:
+  enabled: false

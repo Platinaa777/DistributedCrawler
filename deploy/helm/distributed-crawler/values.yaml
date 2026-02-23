@@ -256,6 +256,33 @@ config:
     level: info
     env: production
 
+  # Auth / JWT
+  auth:
+    accessTokenTTL: "15m"
+    refreshTokenTTL: "720h"
+    issuer: "distributed-crawler"
+    audience: "api"
+    defaultUserEmail: "admin@example.com"
+
+  # OpenTelemetry
+  otel:
+    enabled: false
+    serviceName: "distributed-crawler"
+    serviceVersion: "1.0.0"
+    environment: "production"
+    exporterEndpoint: "otel-collector:4317"
+    exporterInsecure: true
+    traceSampleRate: 1.0
+    metricsIntervalSeconds: 15
+
+  # OpenSearch log shipping
+  opensearch:
+    enabled: false
+    endpoint: "http://opensearch:9200"
+    index: "app-logs"
+    flushIntervalSeconds: 5
+    batchSize: 100
+
 # =============================================================================
 # Secrets Configuration
 # =============================================================================
@@ -277,6 +304,10 @@ secrets:
 
   redis:
     password: "changeme-redis-password"
+
+  auth:
+    jwtSecret: "changeme-jwt-secret-min-32-chars-long"
+    defaultPassword: "changeme-admin-password"
 
 # =============================================================================
 # Database Migrations Job

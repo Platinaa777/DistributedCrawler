@@ -1,0 +1,26 @@
+apiVersion: v2
+name: distributed-crawler-infra
+description: |
+  Infrastructure chart for the Distributed Crawling System.
+  Deploys all stateful services and observability tools as plain Kubernetes
+  manifests using the same Docker images as docker-compose.yaml.
+  No subchart dependencies – everything is templated locally.
+type: application
+version: 0.2.0
+appVersion: "1.0.0"
+
+keywords:
+  - infrastructure
+  - postgresql
+  - rabbitmq
+  - minio
+  - redis
+  - observability
+  - opentelemetry
+  - jaeger
+  - prometheus
+  - grafana
+  - opensearch
+
+maintainers:
+  - name: distributed-crawler-team

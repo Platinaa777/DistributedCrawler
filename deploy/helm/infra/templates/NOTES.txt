@@ -1,0 +1,75 @@
+========================================================================
+  Distributed Crawler – Infrastructure Release: {{ .Release.Name }}
+  Namespace: {{ .Release.Namespace }}
+========================================================================
+
+{{ if .Values.postgresql.enabled -}}
+PostgreSQL
+  Host : {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local
+  Port : 5432
+  DB   : {{ .Values.postgresql.auth.database }}
+  User : {{ .Values.postgresql.auth.username }}
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-postgresql 5432:5432
+{{ end -}}
+{{ if .Values.rabbitmq.enabled -}}
+RabbitMQ
+  AMQP Host : {{ .Release.Name }}-rabbitmq.{{ .Release.Namespace }}.svc.cluster.local:5672
+  Mgmt UI   : {{ .Release.Name }}-rabbitmq.{{ .Release.Namespace }}.svc.cluster.local:15672
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-rabbitmq 15672:15672
+{{ end -}}
+{{ if .Values.minio.enabled -}}
+MinIO
+  API     : {{ .Release.Name }}-minio.{{ .Release.Namespace }}.svc.cluster.local:9000
+  Console : {{ .Release.Name }}-minio.{{ .Release.Namespace }}.svc.cluster.local:9001
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-minio 9001:9001
+  !! Create the "pages" bucket after first deploy:
+     kubectl exec -n {{ .Release.Namespace }} deploy/{{ .Release.Name }}-minio -- \
+       sh -c 'mc alias set local http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && mc mb local/pages'
+{{ end -}}
+{{ if .Values.redis.enabled -}}
+Redis
+  Host : {{ .Release.Name }}-redis-master.{{ .Release.Namespace }}.svc.cluster.local
+  Port : 6379
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-redis-master 6379:6379
+{{ end -}}
+{{ if .Values.redisinsight.enabled -}}
+RedisInsight (Redis GUI)
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-redisinsight 5540:5540
+  Then open: http://localhost:5540
+{{ end -}}
+{{ if .Values.otelcollector.enabled -}}
+OpenTelemetry Collector
+  OTLP gRPC : {{ .Release.Name }}-otelcollector.{{ .Release.Namespace }}.svc.cluster.local:4317
+  OTLP HTTP : {{ .Release.Name }}-otelcollector.{{ .Release.Namespace }}.svc.cluster.local:4318
+  Prometheus: {{ .Release.Name }}-otelcollector.{{ .Release.Namespace }}.svc.cluster.local:8889
+{{ end -}}
+{{ if .Values.jaeger.enabled -}}
+Jaeger
+  UI port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-jaeger-query 16686:16686
+  Then open: http://localhost:16686
+{{ end -}}
+{{ if .Values.prometheus.enabled -}}
+Prometheus
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-prometheus 9090:9090
+  Then open: http://localhost:9090
+{{ end -}}
+{{ if .Values.grafana.enabled -}}
+Grafana
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-grafana 3000:3000
+  Then open: http://localhost:3000  ({{ .Values.grafana.auth.adminUser }} / <adminPassword>)
+{{ end -}}
+{{ if .Values.opensearch.enabled -}}
+OpenSearch
+  Host : {{ .Release.Name }}-opensearch.{{ .Release.Namespace }}.svc.cluster.local:9200
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-opensearch 9200:9200
+{{ end -}}
+{{ if index .Values "opensearch-dashboards" "enabled" -}}
+OpenSearch Dashboards
+  Port-forward: kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-opensearch-dashboards 5601:5601
+  Then open: http://localhost:5601
+{{ end -}}
+========================================================================
+  To connect the application chart to this infra release, use:
+  deploy/helm/distributed-crawler/values-external-infra.yaml
+  and pass it with -f when deploying the app chart.
+========================================================================

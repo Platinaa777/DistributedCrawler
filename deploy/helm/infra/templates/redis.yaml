@@ -1,0 +1,98 @@
+{{- if .Values.redis.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-redis-pvc
+  namespace: {{ include "distributed-crawler-infra.namespace" . }}
+  labels:
+    {{- include "distributed-crawler-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: {{ .Values.redis.persistence.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Named "redis-master" to match the host expected by the app chart
+  name: {{ .Release.Name }}-redis-master
+  namespace: {{ include "distributed-crawler-infra.namespace" . }}
+  labels:
+    {{- include "distributed-crawler-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}
+          # Mirrors docker-compose command: requirepass, appendonly, save, loglevel
+          command: ["redis-server"]
+          args:
+            - --requirepass
+            - $(REDIS_PASSWORD)
+            - --appendonly
+            - "yes"
+            - --save
+            - "60"
+            - "1"
+            - --loglevel
+            - warning
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-infra-secrets
+                  key: redis-password
+          ports:
+            - name: redis
+              containerPort: 6379
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - -a
+                - $(REDIS_PASSWORD)
+                - ping
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-redis-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # Named "redis-master" to match values-external-infra.yaml: infra-redis-master
+  name: {{ .Release.Name }}-redis-master
+  namespace: {{ include "distributed-crawler-infra.namespace" . }}
+  labels:
+    {{- include "distributed-crawler-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+{{- end }}

@@ -1,0 +1,89 @@
+# =============================================================================
+# App chart overlay – use the separate infra Helm release
+# =============================================================================
+# Apply this file in addition to values-dev.yaml or values-prod.yaml when the
+# infrastructure is managed by the "infra" release (deploy-infra.sh).
+#
+# Usage:
+#   ./deploy-all.sh -f values-external-infra.yaml
+#   or
+#   helm upgrade --install distributed-crawler ./deploy/helm/distributed-crawler \
+#     -f values.yaml \
+#     -f values-dev.yaml \
+#     -f values-external-infra.yaml
+#
+# Adjust the host/endpoint values below if your infra release name or
+# namespace differs from the defaults (RELEASE_NAME=infra, NAMESPACE=crawler).
+# =============================================================================
+
+# ---- Disable all embedded subcharts ---------------------------------------
+postgresql:
+  enabled: false
+
+rabbitmq:
+  enabled: false
+
+minio:
+  enabled: false
+
+redis:
+  enabled: false
+
+# ---- Disable the migrations job (run separately or via infra) -------------
+# Set to true if you still want Helm to run migrations on app upgrades.
+migrations:
+  enabled: true
+
+# ---- Point app config to the external infra services ---------------------
+# Service DNS:  <service-name>.<namespace>.svc.cluster.local
+# If infra and app share the same namespace, the short name is enough.
+config:
+  postgres:
+    host: "infra-postgresql"   # bitnami: <release>-postgresql
+    port: 5432
+    database: crawler
+    user: crawler
+    sslMode: disable
+
+  rabbitmq:
+    host: "infra-rabbitmq"     # bitnami: <release>-rabbitmq
+    port: 5672
+    user: guest
+    crawlQueueName: crawl_queue
+    parsingQueueName: parsing_queue
+    exportQueueName: export_queue
+
+  minio:
+    endpoint: "infra-minio"    # bitnami: <release>-minio
+    port: 9000
+    useSSL: false
+    bucketName: pages
+
+  redis:
+    host: "infra-redis-master" # bitnami: <release>-redis-master
+    port: 6379
+    db: 0
+
+  # Point OTel to the collector running in the infra release
+  otel:
+    enabled: true
+    exporterEndpoint: "infra-otelcollector:4317"
+    exporterInsecure: true
+
+# ---- Secrets must match what the infra chart was deployed with -----------
+# Either copy the values here or reference an existing secret:
+#   secrets:
+#     existingSecret: "infra-secrets"
+secrets:
+  postgres:
+    password: "changeme-postgres-password"   # must match infra postgresql.auth.password
+
+  rabbitmq:
+    password: "changeme-rabbitmq-password"   # must match infra rabbitmq.auth.password
+
+  minio:
+    user: "minioadmin"
+    password: "changeme-minio-password"      # must match infra minio.auth.rootPassword
+
+  redis:
+    password: "changeme-redis-password"      # must match infra redis.auth.password

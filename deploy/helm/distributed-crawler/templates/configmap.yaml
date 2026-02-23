@@ -42,3 +42,27 @@ data:
   # Logging
   LOG_LEVEL: {{ .Values.config.log.level | quote }}
   LOG_ENV: {{ .Values.config.log.env | quote }}
+
+  # Auth / JWT (non-sensitive)
+  ACCESS_TOKEN_TTL: {{ .Values.config.auth.accessTokenTTL | quote }}
+  REFRESH_TOKEN_TTL: {{ .Values.config.auth.refreshTokenTTL | quote }}
+  JWT_ISSUER: {{ .Values.config.auth.issuer | quote }}
+  JWT_AUDIENCE: {{ .Values.config.auth.audience | quote }}
+  DEFAULT_USER_EMAIL: {{ .Values.config.auth.defaultUserEmail | quote }}
+
+  # OpenTelemetry
+  OTEL_ENABLED: {{ .Values.config.otel.enabled | quote }}
+  OTEL_SERVICE_NAME: {{ .Values.config.otel.serviceName | quote }}
+  OTEL_SERVICE_VERSION: {{ .Values.config.otel.serviceVersion | quote }}
+  OTEL_ENVIRONMENT: {{ .Values.config.otel.environment | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otel.exporterEndpoint | quote }}
+  OTEL_EXPORTER_OTLP_INSECURE: {{ .Values.config.otel.exporterInsecure | quote }}
+  OTEL_TRACE_SAMPLE_RATE: {{ .Values.config.otel.traceSampleRate | quote }}
+  OTEL_METRICS_INTERVAL_SECONDS: {{ .Values.config.otel.metricsIntervalSeconds | quote }}
+
+  # OpenSearch log shipping
+  OPENSEARCH_ENABLED: {{ .Values.config.opensearch.enabled | quote }}
+  OPENSEARCH_ENDPOINT: {{ .Values.config.opensearch.endpoint | quote }}
+  OPENSEARCH_INDEX: {{ .Values.config.opensearch.index | quote }}
+  OPENSEARCH_FLUSH_INTERVAL_SECONDS: {{ .Values.config.opensearch.flushIntervalSeconds | quote }}
+  OPENSEARCH_BATCH_SIZE: {{ .Values.config.opensearch.batchSize | quote }}
