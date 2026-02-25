@@ -1,0 +1,40 @@
+// memory_broker.proto — contract for the in-memory gRPC broker.
+// This file is for documentation only; the Go implementation in
+// internal/infra/messaging/memory/broker/ is hand-written.
+syntax = "proto3";
+
+package crawler.v1;
+
+option go_package = "distributed-crawler/pkg/api/crawlergrpc";
+
+// MemoryBrokerService is a lightweight message broker backed entirely by
+// in-memory Go channels. It is a drop-in replacement for RabbitMQ/Kafka
+// in development and test environments. All messages are lost on restart.
+service MemoryBrokerService {
+  // Push delivers a message payload to the named queue.
+  rpc Push(MemoryPushRequest) returns (MemoryPushResponse);
+
+  // Subscribe opens a server-side stream that delivers messages from the
+  // named queue. The stream runs until the client disconnects or the server
+  // shuts down. Messages are delivered at-most-once.
+  rpc Subscribe(MemorySubscribeRequest) returns (stream MemoryBrokerMessage);
+}
+
+// MemoryPushRequest carries a message destined for a named queue.
+message MemoryPushRequest {
+  string queue   = 1;
+  bytes  payload = 2;
+}
+
+// MemoryPushResponse is returned after a successful Push.
+message MemoryPushResponse {}
+
+// MemorySubscribeRequest asks the broker to stream messages from a queue.
+message MemorySubscribeRequest {
+  string queue = 1;
+}
+
+// MemoryBrokerMessage is a single message streamed from broker to subscriber.
+message MemoryBrokerMessage {
+  bytes payload = 1;
+}

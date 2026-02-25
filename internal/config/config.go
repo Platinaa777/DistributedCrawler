@@ -89,3 +89,11 @@ type OTelConfig interface {
 	TraceSampleRate() float64
 	MetricsIntervalSeconds() int
 }
+
+// MemoryBrokerConfig holds connection settings for the remote gRPC memory broker.
+type MemoryBrokerConfig interface {
+	// Address returns the host:port of the memory_broker gRPC server.
+	Address() string
+	// QueueCapacity is the per-queue channel buffer size reported by the server.
+	QueueCapacity() int
+}

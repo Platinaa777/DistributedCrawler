@@ -19,6 +19,7 @@ import (
 	"distributed-crawler/internal/infra/logger"
 	"distributed-crawler/internal/infra/messaging"
 	kafkaclient "distributed-crawler/internal/infra/messaging/kafka"
+	memorybroker "distributed-crawler/internal/infra/messaging/memory/broker"
 	rabbitmqclient "distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
@@ -292,34 +293,44 @@ func (a *WorkerApp) initPostgreSQL(ctx context.Context) error {
 func (a *WorkerApp) initMessaging(_ context.Context) error {
 	a.brokerType = env.GetBrokerType()
 
-	if a.brokerType == env.BrokerKafka {
+	switch a.brokerType {
+	case env.BrokerKafka:
 		kafkaCfg, err := env.NewKafkaConfig()
 		if err != nil {
 			a.zapLogger.Fatal("Failed to create Kafka config", zap.Error(err))
 		}
-
 		client, err := kafkaclient.NewClient(kafkaCfg.Brokers(), kafkaCfg.ConsumerGroup())
 		if err != nil {
 			a.zapLogger.Fatal("Failed to create Kafka client", zap.Error(err))
 		}
-
 		a.kafkaConfig = kafkaCfg
 		a.msgClient = client
 		a.zapLogger.Info("Messaging: using Kafka broker",
 			zap.Strings("brokers", kafkaCfg.Brokers()),
 			zap.String("consumer_group", kafkaCfg.ConsumerGroup()),
 		)
-	} else {
+
+	case env.BrokerGRPCMemory:
+		mbCfg, err := env.NewMemoryBrokerConfig()
+		if err != nil {
+			a.zapLogger.Fatal("Failed to create memory broker config", zap.Error(err))
+		}
+		client, err := memorybroker.NewGRPCClient(mbCfg.Address())
+		if err != nil {
+			a.zapLogger.Fatal("Failed to connect to gRPC memory broker", zap.Error(err))
+		}
+		a.msgClient = client
+		a.zapLogger.Info("Messaging: using gRPC memory broker", zap.String("addr", mbCfg.Address()))
+
+	default:
 		rmqCfg, err := env.NewRabbitMQConfig()
 		if err != nil {
 			a.zapLogger.Fatal("Failed to create RabbitMQ config", zap.Error(err))
 		}
-
 		client, err := rabbitmqclient.NewClient(rmqCfg.URL())
 		if err != nil {
 			a.zapLogger.Fatal("Failed to create RabbitMQ client", zap.Error(err))
 		}
-
 		a.rmqConfig = rmqCfg
 		a.msgClient = client
 		a.zapLogger.Info("Messaging: using RabbitMQ broker")
@@ -402,8 +413,14 @@ func (a *WorkerApp) initFetchWorker() error {
 	fetcherFactory := fetcher.NewHTTPFetcherFactory()
 	scopeValidator := fetcher.NewDomainScopeValidator()
 
-	// Initialize rate limiter with 5 minute TTL
-	rateLimiter := cache.NewRedisRateLimiter(a.redisClient, 5*time.Minute)
+	// Initialize rate limiter with 5 minute TTL.
+	// "inmemory" stores buckets locally per worker process.
+	var rateLimiterType = env.GetLimiterType()
+	var rateLimiter = cache.NewRedisRateLimiter(a.redisClient, 5*time.Minute)
+	if rateLimiterType == env.LimiterInMemory {
+		rateLimiter = cache.NewInMemoryRateLimiter(5 * time.Minute)
+	}
+	a.zapLogger.Info("Rate limiting: using provider", zap.String("provider", rateLimiterType))
 
 	// Initialize robots.txt service with 24 hour cache TTL
 	robotsTxtService := cache.NewCachedRobotsTxtService(a.redisClient, 24*time.Hour, a.zapLogger)
@@ -537,7 +554,7 @@ func (a *WorkerApp) initExportWorker() error {
 
 	// Create export worker with poll interval and batch size
 	pollInterval := 5 * time.Second // Poll every 30 seconds
-	batchSize := 10                  // Process up to 10 jobs per batch
+	batchSize := 10                 // Process up to 10 jobs per batch
 
 	a.exportWorker = worker.NewExportWorker(
 		jobRepo,

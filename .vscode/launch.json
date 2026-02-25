@@ -64,6 +64,14 @@
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/export_worker/main.go",
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug in-memory queue",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/memory_broker/main.go",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

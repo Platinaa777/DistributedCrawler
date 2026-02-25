@@ -31,6 +31,7 @@ import (
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/infra/messaging"
 	kafkaclient "distributed-crawler/internal/infra/messaging/kafka"
+	memorybroker "distributed-crawler/internal/infra/messaging/memory/broker"
 	rabbitmqclient "distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
@@ -282,18 +283,30 @@ func (s *serviceProvider) CrawlerServiceImpl(ctx context.Context) *crawljob.Craw
 
 func (s *serviceProvider) MessagingClient() messaging.Client {
 	if s.msgClient == nil {
-		brokerType := env.GetBrokerType()
 		var client messaging.Client
 		var err error
 
-		if brokerType == env.BrokerKafka {
+		switch env.GetBrokerType() {
+		case env.BrokerKafka:
 			kafkaCfg := s.KafkaConfig()
 			client, err = kafkaclient.NewClient(kafkaCfg.Brokers(), kafkaCfg.ConsumerGroup())
 			if err != nil {
 				log.Fatalf("failed to create kafka client: %v", err)
 			}
 			log.Printf("messaging: using Kafka broker (brokers=%v, group=%s)", kafkaCfg.Brokers(), kafkaCfg.ConsumerGroup())
-		} else {
+
+		case env.BrokerGRPCMemory:
+			mbCfg, cfgErr := env.NewMemoryBrokerConfig()
+			if cfgErr != nil {
+				log.Fatalf("failed to get memory broker config: %v", cfgErr)
+			}
+			client, err = memorybroker.NewGRPCClient(mbCfg.Address())
+			if err != nil {
+				log.Fatalf("failed to connect to gRPC memory broker: %v", err)
+			}
+			log.Printf("messaging: using gRPC memory broker at %s", mbCfg.Address())
+
+		default:
 			client, err = rabbitmqclient.NewClient(s.RabbitMQConfig().URL())
 			if err != nil {
 				log.Fatalf("failed to create rabbitmq client: %v", err)
@@ -308,10 +321,14 @@ func (s *serviceProvider) MessagingClient() messaging.Client {
 }
 
 func (s *serviceProvider) getQueueName(key string) string {
-	if env.GetBrokerType() == env.BrokerKafka {
+	switch env.GetBrokerType() {
+	case env.BrokerKafka:
 		return s.KafkaConfig().GetTopicName(key)
+	case env.BrokerGRPCMemory:
+		return key // memory broker uses the key directly
+	default:
+		return s.RabbitMQConfig().GetQueueName(key)
 	}
-	return s.RabbitMQConfig().GetQueueName(key)
 }
 
 func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPublisher {
