@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CHART_DIR="${SCRIPT_DIR}/../helm/distributed-crawler"
+CHART_DIR="${SCRIPT_DIR}/../../helm/distributed-crawler"
 RELEASE_NAME="${RELEASE_NAME:-distributed-crawler}"
 NAMESPACE="${NAMESPACE:-crawler}"
 VALUES_ENV="${VALUES_ENV:-dev}"

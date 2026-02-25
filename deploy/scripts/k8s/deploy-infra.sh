@@ -18,7 +18,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CHART_DIR="${SCRIPT_DIR}/../helm/infra"
+CHART_DIR="${SCRIPT_DIR}/../../helm/infra"
 RELEASE_NAME="${RELEASE_NAME:-infra}"
 NAMESPACE="${NAMESPACE:-crawler}"
 VALUES_ENV="${VALUES_ENV:-dev}"

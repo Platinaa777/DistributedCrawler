@@ -11,7 +11,7 @@ set -euo pipefail
 #   ./deploy-component.sh infra          # only postgresql, rabbitmq, minio, redis
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CHART_DIR="$(cd "${SCRIPT_DIR}/../helm/distributed-crawler" && pwd)"
+CHART_DIR="$(cd "${SCRIPT_DIR}/../../helm/distributed-crawler" && pwd)"
 NAMESPACE="${NAMESPACE:-crawler}"
 VALUES_ENV="${VALUES_ENV:-dev}"
 
@@ -63,9 +63,6 @@ case "${COMPONENT}" in
     exit 1
     ;;
 esac
-
-echo "${CHART_DIR}"
-echo "${SCRIPT_DIR}"
 
 echo "==> Deploying component: ${COMPONENT} as release ${RELEASE_NAME}"
 

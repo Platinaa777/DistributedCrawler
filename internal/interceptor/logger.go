@@ -20,7 +20,7 @@ func LogInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, ha
 		)
 	}
 
-	logger.Info("request", 
+	logger.Info("incoming request to the server is completed", 
 		zap.String("method", info.FullMethod), 
 		zap.Duration("duration", 
 		time.Since(now)),
