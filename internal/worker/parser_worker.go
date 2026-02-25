@@ -20,7 +20,7 @@ import (
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
-	"distributed-crawler/internal/infra/messaging/rabbitmq"
+	"distributed-crawler/internal/infra/messaging"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/telemetry"
 
@@ -34,7 +34,7 @@ import (
 
 // ParserWorker consumes parsing tasks, loads HTML from MinIO, parses using DSL, and prints results
 type ParserWorker struct {
-	rmqClient        rabbitmq.Client
+	msgClient        messaging.Client
 	parsingQueue     string
 	contentStore     services.ContentStore
 	taskRepo         crawltask.CrawlTaskRepository
@@ -54,7 +54,7 @@ type ParserWorker struct {
 
 // NewParserWorker creates a new parser worker
 func NewParserWorker(
-	rmqClient rabbitmq.Client,
+	msgClient messaging.Client,
 	parsingQueue string,
 	contentStore services.ContentStore,
 	taskRepo crawltask.CrawlTaskRepository,
@@ -70,7 +70,7 @@ func NewParserWorker(
 	workerID string,
 ) *ParserWorker {
 	return &ParserWorker{
-		rmqClient:        rmqClient,
+		msgClient:        msgClient,
 		parsingQueue:     parsingQueue,
 		contentStore:     contentStore,
 		taskRepo:         taskRepo,
@@ -90,7 +90,7 @@ func NewParserWorker(
 // Start starts consuming messages from parsing_queue
 func (w *ParserWorker) Start(ctx context.Context) error {
 	w.logger.Info("Starting parser worker", zap.String("queue", w.parsingQueue))
-	return w.rmqClient.Consume(ctx, w.parsingQueue, w.handleMessage)
+	return w.msgClient.Consume(ctx, w.parsingQueue, w.handleMessage)
 }
 
 // ActiveTasks returns the number of tasks currently being processed.
@@ -106,7 +106,7 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 	startTime := time.Now()
 
 	// Parse message
-	var task rabbitmq.ParsingTaskMessage
+	var task messaging.ParsingTaskMessage
 	if err := json.Unmarshal(body, &task); err != nil {
 		w.logger.Error("Failed to unmarshal parsing task", zap.Error(err))
 		return fmt.Errorf("failed to unmarshal task: %w", err)

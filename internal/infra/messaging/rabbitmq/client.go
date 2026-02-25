@@ -3,38 +3,15 @@ package rabbitmq
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"sync"
 	"time"
 
+	"distributed-crawler/internal/infra/messaging"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
-
-// NonRetryableError wraps an error that should not cause the message to be requeued.
-// The message will be Nack'd without requeue (discarded / sent to DLQ).
-type NonRetryableError struct {
-	Err error
-}
-
-func (e *NonRetryableError) Error() string { return e.Err.Error() }
-func (e *NonRetryableError) Unwrap() error { return e.Err }
-
-// NewNonRetryableError wraps err so that Consume discards the message instead of requeuing.
-func NewNonRetryableError(err error) error { return &NonRetryableError{Err: err} }
-
-// isNonRetryable reports whether err (or any in its chain) is a NonRetryableError.
-func isNonRetryable(err error) bool {
-	var nre *NonRetryableError
-	return errors.As(err, &nre)
-}
-
-type Client interface {
-	Publish(ctx context.Context, queueName string, message interface{}) error
-	Consume(ctx context.Context, queueName string, handler func([]byte) error) error
-	Close() error
-}
 
 type client struct {
 	url  string
@@ -42,7 +19,8 @@ type client struct {
 	mu   sync.Mutex
 }
 
-func NewClient(url string) (Client, error) {
+// NewClient creates a new RabbitMQ messaging client.
+func NewClient(url string) (messaging.Client, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
@@ -298,25 +276,23 @@ func (c *client) Consume(ctx context.Context, queueName string, handler func([]b
 						return
 					}
 
-					// Process message
 					if err := handler(msg.Body); err != nil {
-						// Reject and requeue on error
-						msg.Nack(false, true)
+						if messaging.IsNonRetryable(err) {
+							msg.Nack(false, false) // discard, no requeue
+						} else {
+							msg.Nack(false, true) // requeue
+						}
 					} else {
-						// Acknowledge on success
 						msg.Ack(false)
 					}
 				}
 			}
 		}()
 
-		// If we got here, the channel was closed - log and reconnect
 		log.Printf("RabbitMQ channel closed for queue %s, reconnecting...", queueName)
 
-		// Add a small delay before reconnecting
 		select {
 		case <-time.After(time.Second):
-			// Continue to reconnect
 		case <-ctx.Done():
 			return ctx.Err()
 		}

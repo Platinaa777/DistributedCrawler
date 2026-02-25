@@ -17,7 +17,9 @@ import (
 	"distributed-crawler/internal/config/env"
 	"distributed-crawler/internal/infra/cache"
 	"distributed-crawler/internal/infra/logger"
-	"distributed-crawler/internal/infra/messaging/rabbitmq"
+	"distributed-crawler/internal/infra/messaging"
+	kafkaclient "distributed-crawler/internal/infra/messaging/kafka"
+	rabbitmqclient "distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	"distributed-crawler/internal/infra/persistence/postgres/repos"
@@ -53,8 +55,10 @@ type WorkerApp struct {
 	workerType  WorkerType
 	zapLogger   *zap.Logger
 	pgClient    persistence.Client
-	rmqClient   rabbitmq.Client
+	msgClient   messaging.Client
 	rmqConfig   config.RabbitMQConfig
+	kafkaConfig config.KafkaConfig
+	brokerType  string
 	redisClient *redis.Client
 	grpcConfig  config.GRPCConfig
 
@@ -111,8 +115,8 @@ func (a *WorkerApp) Run() error {
 		if a.pgClient != nil {
 			a.pgClient.Close()
 		}
-		if a.rmqClient != nil {
-			a.rmqClient.Close()
+		if a.msgClient != nil {
+			a.msgClient.Close()
 		}
 		if a.redisClient != nil {
 			a.redisClient.Close()
@@ -154,7 +158,7 @@ func (a *WorkerApp) initDeps(ctx context.Context) error {
 		a.initLogger,
 		a.initTelemetry,
 		a.initPostgreSQL,
-		a.initRabbitMQ,
+		a.initMessaging,
 		a.initRedis,
 		a.initWorker,
 	}
@@ -285,20 +289,53 @@ func (a *WorkerApp) initPostgreSQL(ctx context.Context) error {
 	return nil
 }
 
-func (a *WorkerApp) initRabbitMQ(_ context.Context) error {
-	rmqCfg, err := env.NewRabbitMQConfig()
-	if err != nil {
-		a.zapLogger.Fatal("Failed to create RabbitMQ config", zap.Error(err))
+func (a *WorkerApp) initMessaging(_ context.Context) error {
+	a.brokerType = env.GetBrokerType()
+
+	if a.brokerType == env.BrokerKafka {
+		kafkaCfg, err := env.NewKafkaConfig()
+		if err != nil {
+			a.zapLogger.Fatal("Failed to create Kafka config", zap.Error(err))
+		}
+
+		client, err := kafkaclient.NewClient(kafkaCfg.Brokers(), kafkaCfg.ConsumerGroup())
+		if err != nil {
+			a.zapLogger.Fatal("Failed to create Kafka client", zap.Error(err))
+		}
+
+		a.kafkaConfig = kafkaCfg
+		a.msgClient = client
+		a.zapLogger.Info("Messaging: using Kafka broker",
+			zap.Strings("brokers", kafkaCfg.Brokers()),
+			zap.String("consumer_group", kafkaCfg.ConsumerGroup()),
+		)
+	} else {
+		rmqCfg, err := env.NewRabbitMQConfig()
+		if err != nil {
+			a.zapLogger.Fatal("Failed to create RabbitMQ config", zap.Error(err))
+		}
+
+		client, err := rabbitmqclient.NewClient(rmqCfg.URL())
+		if err != nil {
+			a.zapLogger.Fatal("Failed to create RabbitMQ client", zap.Error(err))
+		}
+
+		a.rmqConfig = rmqCfg
+		a.msgClient = client
+		a.zapLogger.Info("Messaging: using RabbitMQ broker")
 	}
 
-	rmqClient, err := rabbitmq.NewClient(rmqCfg.URL())
-	if err != nil {
-		a.zapLogger.Fatal("Failed to create RabbitMQ client", zap.Error(err))
-	}
-
-	a.rmqClient = rmqClient
-	a.rmqConfig = rmqCfg
 	return nil
+}
+
+func (a *WorkerApp) getQueueName(key string) string {
+	if a.brokerType == env.BrokerKafka && a.kafkaConfig != nil {
+		return a.kafkaConfig.GetTopicName(key)
+	}
+	if a.rmqConfig != nil {
+		return a.rmqConfig.GetQueueName(key)
+	}
+	return key
 }
 
 func (a *WorkerApp) initRedis(_ context.Context) error {
@@ -371,9 +408,9 @@ func (a *WorkerApp) initFetchWorker() error {
 	// Initialize robots.txt service with 24 hour cache TTL
 	robotsTxtService := cache.NewCachedRobotsTxtService(a.redisClient, 24*time.Hour, a.zapLogger)
 
-	// Get queue names from configuration
-	crawlQueue := a.rmqConfig.GetQueueName(config.CrawlQueueKey)
-	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
+	// Get queue/topic names from configuration
+	crawlQueue := a.getQueueName(config.CrawlQueueKey)
+	parsingQueue := a.getQueueName(config.ParsingQueueKey)
 
 	// Get tracer if telemetry is available
 	var tracer trace.Tracer
@@ -383,7 +420,7 @@ func (a *WorkerApp) initFetchWorker() error {
 
 	// Create fetch worker
 	a.fetchWorker = worker.NewFetchWorker(
-		a.rmqClient,
+		a.msgClient,
 		crawlQueue,   // Consume from crawl_queue
 		parsingQueue, // Publish to parsing_queue
 		contentStore,
@@ -437,8 +474,8 @@ func (a *WorkerApp) initParserWorker() error {
 	// Initialize robots.txt service with 24 hour cache TTL
 	robotsTxtService := cache.NewCachedRobotsTxtService(a.redisClient, 24*time.Hour, a.zapLogger)
 
-	// Get queue name from configuration
-	parsingQueue := a.rmqConfig.GetQueueName(config.ParsingQueueKey)
+	// Get queue/topic name from configuration
+	parsingQueue := a.getQueueName(config.ParsingQueueKey)
 
 	// Get tracer if telemetry is available
 	var tracer trace.Tracer
@@ -448,7 +485,7 @@ func (a *WorkerApp) initParserWorker() error {
 
 	// Create parser worker
 	a.parserWorker = worker.NewParserWorker(
-		a.rmqClient,
+		a.msgClient,
 		parsingQueue, // Consume from parsing_queue
 		contentStore,
 		taskRepo,

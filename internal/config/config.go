@@ -41,6 +41,12 @@ type RabbitMQConfig interface {
 	GetQueueName(key string) string
 }
 
+type KafkaConfig interface {
+	Brokers() []string
+	ConsumerGroup() string
+	GetTopicName(key string) string
+}
+
 type MinIOConfig interface {
 	Endpoint() string
 	AccessKeyID() string

@@ -7,7 +7,7 @@ import (
 	crawltask "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
-	"distributed-crawler/internal/infra/messaging/rabbitmq"
+	"distributed-crawler/internal/infra/messaging"
 	"distributed-crawler/internal/telemetry"
 	"encoding/json"
 	"fmt"
@@ -25,7 +25,7 @@ import (
 
 // FetchWorker consumes crawl tasks, fetches pages, stores in MinIO, and publishes to parsing queue
 type FetchWorker struct {
-	rmqClient        rabbitmq.Client
+	msgClient        messaging.Client
 	crawlQueue       string
 	parsingQueue     string
 	contentStore     services.ContentStore
@@ -45,7 +45,7 @@ type FetchWorker struct {
 
 // NewFetchWorker creates a new fetch worker
 func NewFetchWorker(
-	rmqClient rabbitmq.Client,
+	msgClient messaging.Client,
 	crawlQueue string,
 	parsingQueue string,
 	contentStore services.ContentStore,
@@ -61,7 +61,7 @@ func NewFetchWorker(
 	workerID string,
 ) *FetchWorker {
 	return &FetchWorker{
-		rmqClient:        rmqClient,
+		msgClient:        msgClient,
 		crawlQueue:       crawlQueue,
 		parsingQueue:     parsingQueue,
 		contentStore:     contentStore,
@@ -81,7 +81,7 @@ func NewFetchWorker(
 // Start starts consuming messages from crawl_queue
 func (w *FetchWorker) Start(ctx context.Context) error {
 	w.logger.Info("Starting fetch worker", zap.String("queue", w.crawlQueue))
-	return w.rmqClient.Consume(ctx, w.crawlQueue, w.handleMessage)
+	return w.msgClient.Consume(ctx, w.crawlQueue, w.handleMessage)
 }
 
 // ActiveTasks returns the number of tasks currently being processed.
@@ -97,7 +97,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	startTime := time.Now()
 
 	// Parse message
-	var taskMsg rabbitmq.CrawlTaskMessage
+	var taskMsg messaging.CrawlTaskMessage
 	if err := json.Unmarshal(body, &taskMsg); err != nil {
 		w.logger.Error("Failed to unmarshal task message", zap.Error(err))
 		return fmt.Errorf("failed to unmarshal task: %w", err)
@@ -442,14 +442,14 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	}
 
 	// Publish to parsing queue only after successful DB save
-	parsingMsg := rabbitmq.ParsingTaskMessage{
+	parsingMsg := messaging.ParsingTaskMessage{
 		TaskID:       taskMsg.TaskID,
 		JobID:        taskMsg.JobID,
 		EnqueuedAt:   time.Now(),
 		TraceContext: telemetry.InjectTraceContext(ctx),
 	}
 
-	if err := w.rmqClient.Publish(ctx, w.parsingQueue, parsingMsg); err != nil {
+	if err := w.msgClient.Publish(ctx, w.parsingQueue, parsingMsg); err != nil {
 		w.logger.Error("Failed to publish to parsing queue",
 			zap.String("task_id", taskMsg.TaskID),
 			zap.Error(err),

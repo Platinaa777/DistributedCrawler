@@ -29,7 +29,9 @@ import (
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	previewrepo "distributed-crawler/internal/domain/crawl/repos/preview"
 	"distributed-crawler/internal/domain/crawl/services"
-	"distributed-crawler/internal/infra/messaging/rabbitmq"
+	"distributed-crawler/internal/infra/messaging"
+	kafkaclient "distributed-crawler/internal/infra/messaging/kafka"
+	rabbitmqclient "distributed-crawler/internal/infra/messaging/rabbitmq"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	crawljobrepoimpl "distributed-crawler/internal/infra/persistence/postgres/repos"
@@ -50,6 +52,7 @@ type serviceProvider struct {
 	grpcConfig     config.GRPCConfig
 	httpConfig     config.HTTPConfig
 	rabbitmqConfig config.RabbitMQConfig
+	kafkaConfig    config.KafkaConfig
 	minioConfig    config.MinIOConfig
 	authConfig     config.AuthConfig
 	otelConfig     config.OTelConfig
@@ -66,7 +69,7 @@ type serviceProvider struct {
 	previewRepo        previewrepo.PreviewRepository
 	userRepo           userrepo.UserRepository
 	refreshTokenRepo   refreshtokenrepo.RefreshTokenRepository
-	rmqClient          rabbitmq.Client
+	msgClient          messaging.Client
 
 	fetcher               services.Fetcher
 	previewFetcherFactory services.FetcherFactory
@@ -146,6 +149,19 @@ func (s *serviceProvider) RabbitMQConfig() config.RabbitMQConfig {
 	}
 
 	return s.rabbitmqConfig
+}
+
+func (s *serviceProvider) KafkaConfig() config.KafkaConfig {
+	if s.kafkaConfig == nil {
+		cfg, err := env.NewKafkaConfig()
+		if err != nil {
+			log.Fatalf("failed to get kafka config: %s", err.Error())
+		}
+
+		s.kafkaConfig = cfg
+	}
+
+	return s.kafkaConfig
 }
 
 func (s *serviceProvider) Logger() *zap.Logger {
@@ -264,16 +280,38 @@ func (s *serviceProvider) CrawlerServiceImpl(ctx context.Context) *crawljob.Craw
 	return s.crawlerServiceImpl
 }
 
-func (s *serviceProvider) RabbitMQClient() rabbitmq.Client {
-	if s.rmqClient == nil {
-		client, err := rabbitmq.NewClient(s.RabbitMQConfig().URL())
-		if err != nil {
-			log.Fatalf("failed to create rabbitmq client: %v", err)
+func (s *serviceProvider) MessagingClient() messaging.Client {
+	if s.msgClient == nil {
+		brokerType := env.GetBrokerType()
+		var client messaging.Client
+		var err error
+
+		if brokerType == env.BrokerKafka {
+			kafkaCfg := s.KafkaConfig()
+			client, err = kafkaclient.NewClient(kafkaCfg.Brokers(), kafkaCfg.ConsumerGroup())
+			if err != nil {
+				log.Fatalf("failed to create kafka client: %v", err)
+			}
+			log.Printf("messaging: using Kafka broker (brokers=%v, group=%s)", kafkaCfg.Brokers(), kafkaCfg.ConsumerGroup())
+		} else {
+			client, err = rabbitmqclient.NewClient(s.RabbitMQConfig().URL())
+			if err != nil {
+				log.Fatalf("failed to create rabbitmq client: %v", err)
+			}
+			log.Printf("messaging: using RabbitMQ broker")
 		}
-		s.rmqClient = client
+
+		s.msgClient = client
 	}
 
-	return s.rmqClient
+	return s.msgClient
+}
+
+func (s *serviceProvider) getQueueName(key string) string {
+	if env.GetBrokerType() == env.BrokerKafka {
+		return s.KafkaConfig().GetTopicName(key)
+	}
+	return s.RabbitMQConfig().GetQueueName(key)
 }
 
 func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPublisher {
@@ -287,8 +325,8 @@ func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPub
 		s.outboxPublisher = worker.NewOutboxPublisher(
 			s.OutboxRepository(ctx),
 			s.TxManager(ctx),
-			s.RabbitMQClient(),
-			s.RabbitMQConfig().GetQueueName(config.CrawlQueueKey),
+			s.MessagingClient(),
+			s.getQueueName(config.CrawlQueueKey),
 			s.Logger(),
 			tracer,
 		)
@@ -618,9 +656,9 @@ func (s *serviceProvider) Close() error {
 			log.Printf("failed to shutdown telemetry: %v", err)
 		}
 	}
-	if s.rmqClient != nil {
-		if err := s.rmqClient.Close(); err != nil {
-			log.Printf("failed to close rabbitmq client: %v", err)
+	if s.msgClient != nil {
+		if err := s.msgClient.Close(); err != nil {
+			log.Printf("failed to close messaging client: %v", err)
 		}
 	}
 	if s.dbClient != nil {

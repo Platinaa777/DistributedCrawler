@@ -5,7 +5,7 @@ import (
 	"distributed-crawler/internal/domain/crawl/events"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
-	"distributed-crawler/internal/infra/messaging/rabbitmq"
+	"distributed-crawler/internal/infra/messaging"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/telemetry"
 	"encoding/json"
@@ -24,11 +24,11 @@ const (
 	DefaultOutboxBatchSize = 100
 )
 
-// OutboxPublisher is a worker that polls outbox events and publishes them to RabbitMQ
+// OutboxPublisher is a worker that polls outbox events and publishes them to the message broker
 type OutboxPublisher struct {
 	outboxRepo   outbox.OutboxRepository
 	txManager    persistence.TxManager
-	rmqClient    rabbitmq.Client
+	msgClient    messaging.Client
 	queueName    string
 	pollInterval time.Duration
 	batchSize    int
@@ -41,7 +41,7 @@ type OutboxPublisher struct {
 func NewOutboxPublisher(
 	outboxRepo outbox.OutboxRepository,
 	txManager persistence.TxManager,
-	rmqClient rabbitmq.Client,
+	msgClient messaging.Client,
 	queueName string,
 	logger *zap.Logger,
 	tracer trace.Tracer,
@@ -49,7 +49,7 @@ func NewOutboxPublisher(
 	return &OutboxPublisher{
 		outboxRepo:   outboxRepo,
 		txManager:    txManager,
-		rmqClient:    rmqClient,
+		msgClient:    msgClient,
 		queueName:    queueName,
 		pollInterval: DefaultOutboxPollInterval,
 		batchSize:    DefaultOutboxBatchSize,
@@ -141,7 +141,7 @@ func (w *OutboxPublisher) processEvent(ctx context.Context, event *models.Outbox
 	}
 }
 
-// publishTaskEnqueuedEvent publishes a TaskEnqueuedEvent to RabbitMQ
+// publishTaskEnqueuedEvent publishes a TaskEnqueuedEvent to the message broker
 func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEvent *models.OutboxEvent) error {
 	// Unmarshal payload
 	var event events.TaskEnqueuedEvent
@@ -176,7 +176,7 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 	}
 
 	// Create message for RabbitMQ (use the same structure as before)
-	message := rabbitmq.CrawlTaskMessage{
+	message := messaging.CrawlTaskMessage{
 		TaskID:       event.TaskID,
 		JobID:        event.JobID,
 		URL:          event.URL,
@@ -184,12 +184,12 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 		TraceContext: traceCtx,
 	}
 
-	// Publish to RabbitMQ
-	if err := w.rmqClient.Publish(ctx, w.queueName, message); err != nil {
-		return fmt.Errorf("failed to publish task to RabbitMQ: %w", err)
+	// Publish to message broker
+	if err := w.msgClient.Publish(ctx, w.queueName, message); err != nil {
+		return fmt.Errorf("failed to publish task to message broker: %w", err)
 	}
 
-	w.logger.Debug("Published task to RabbitMQ",
+	w.logger.Debug("Published task to message broker",
 		zap.String("task_id", event.TaskID),
 		zap.String("url", event.URL),
 	)

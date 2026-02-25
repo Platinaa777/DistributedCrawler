@@ -14,10 +14,17 @@ func LogInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, ha
 
 	res, err := handler(ctx, req)
 	if err != nil {
-		logger.Error(err.Error(), zap.String("method", info.FullMethod), zap.Any("request", req))
+		logger.Error(
+			err.Error(), 
+			zap.String("method", info.FullMethod),
+		)
 	}
 
-	logger.Info("request", zap.String("method", info.FullMethod), zap.Any("res", res), zap.Duration("duration", time.Since(now)))
+	logger.Info("request", 
+		zap.String("method", info.FullMethod), 
+		zap.Duration("duration", 
+		time.Since(now)),
+	)
 
 	return res, err
 }
