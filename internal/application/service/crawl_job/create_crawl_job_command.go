@@ -65,7 +65,7 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 
 		// Create crawl tasks and outbox events
 		tasks := make([]models.CrawlTask, 0, len(config.Seeds))
-		now := time.Now()
+		now := time.Now().UTC()
 
 		for _, seed := range config.Seeds {
 			task := models.CrawlTask{
@@ -103,7 +103,7 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 				Payload:     payload,
 				OccurredAt:  event.OccurredAt,
 				ProcessedAt: nil,
-				CreatedAt:   time.Now(),
+				CreatedAt:   time.Now().UTC(),
 			}
 
 			if err := s.outboxRepo.Create(ctx, outboxEvent); err != nil {
