@@ -1718,6 +1718,40 @@ func (m *CrawlJobConfig) validate(all bool) error {
 
 	// no validation rules for CrawlMode
 
+	for idx, item := range m.GetQueueEndpointAssignments() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CrawlJobConfigValidationError{
+						field:  fmt.Sprintf("QueueEndpointAssignments[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CrawlJobConfigValidationError{
+						field:  fmt.Sprintf("QueueEndpointAssignments[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CrawlJobConfigValidationError{
+					field:  fmt.Sprintf("QueueEndpointAssignments[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return CrawlJobConfigMultiError(errors)
 	}
@@ -2450,6 +2484,10 @@ func (m *ListJobsRequest) validate(all bool) error {
 			}
 		}
 	}
+
+	// no validation rules for SortField
+
+	// no validation rules for SortOrder
 
 	if m.Cursor != nil {
 		// no validation rules for Cursor
@@ -3737,6 +3775,10 @@ func (m *ListTasksByJobRequest) validate(all bool) error {
 			}
 		}
 	}
+
+	// no validation rules for SortField
+
+	// no validation rules for SortOrder
 
 	if m.Cursor != nil {
 		// no validation rules for Cursor
@@ -7001,6 +7043,1813 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UpdateUserRoleResponseValidationError{}
+
+// Validate checks the field values on QueueEndpoint with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *QueueEndpoint) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on QueueEndpoint with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in QueueEndpointMultiError, or
+// nil if none found.
+func (m *QueueEndpoint) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *QueueEndpoint) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for DisplayName
+
+	// no validation rules for BrokerType
+
+	// no validation rules for Stage
+
+	// no validation rules for Host
+
+	// no validation rules for QueueName
+
+	// no validation rules for SecretKey
+
+	// no validation rules for CreatedAt
+
+	// no validation rules for UpdatedAt
+
+	if len(errors) > 0 {
+		return QueueEndpointMultiError(errors)
+	}
+
+	return nil
+}
+
+// QueueEndpointMultiError is an error wrapping multiple validation errors
+// returned by QueueEndpoint.ValidateAll() if the designated constraints
+// aren't met.
+type QueueEndpointMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m QueueEndpointMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m QueueEndpointMultiError) AllErrors() []error { return m }
+
+// QueueEndpointValidationError is the validation error returned by
+// QueueEndpoint.Validate if the designated constraints aren't met.
+type QueueEndpointValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e QueueEndpointValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e QueueEndpointValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e QueueEndpointValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e QueueEndpointValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e QueueEndpointValidationError) ErrorName() string { return "QueueEndpointValidationError" }
+
+// Error satisfies the builtin error interface
+func (e QueueEndpointValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sQueueEndpoint.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = QueueEndpointValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = QueueEndpointValidationError{}
+
+// Validate checks the field values on QueueEndpointAssignment with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *QueueEndpointAssignment) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on QueueEndpointAssignment with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// QueueEndpointAssignmentMultiError, or nil if none found.
+func (m *QueueEndpointAssignment) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *QueueEndpointAssignment) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for EndpointId
+
+	// no validation rules for Weight
+
+	if len(errors) > 0 {
+		return QueueEndpointAssignmentMultiError(errors)
+	}
+
+	return nil
+}
+
+// QueueEndpointAssignmentMultiError is an error wrapping multiple validation
+// errors returned by QueueEndpointAssignment.ValidateAll() if the designated
+// constraints aren't met.
+type QueueEndpointAssignmentMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m QueueEndpointAssignmentMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m QueueEndpointAssignmentMultiError) AllErrors() []error { return m }
+
+// QueueEndpointAssignmentValidationError is the validation error returned by
+// QueueEndpointAssignment.Validate if the designated constraints aren't met.
+type QueueEndpointAssignmentValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e QueueEndpointAssignmentValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e QueueEndpointAssignmentValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e QueueEndpointAssignmentValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e QueueEndpointAssignmentValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e QueueEndpointAssignmentValidationError) ErrorName() string {
+	return "QueueEndpointAssignmentValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e QueueEndpointAssignmentValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sQueueEndpointAssignment.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = QueueEndpointAssignmentValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = QueueEndpointAssignmentValidationError{}
+
+// Validate checks the field values on QueueRoutingRule with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *QueueRoutingRule) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on QueueRoutingRule with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// QueueRoutingRuleMultiError, or nil if none found.
+func (m *QueueRoutingRule) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *QueueRoutingRule) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for Stage
+
+	// no validation rules for Scope
+
+	if len(errors) > 0 {
+		return QueueRoutingRuleMultiError(errors)
+	}
+
+	return nil
+}
+
+// QueueRoutingRuleMultiError is an error wrapping multiple validation errors
+// returned by QueueRoutingRule.ValidateAll() if the designated constraints
+// aren't met.
+type QueueRoutingRuleMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m QueueRoutingRuleMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m QueueRoutingRuleMultiError) AllErrors() []error { return m }
+
+// QueueRoutingRuleValidationError is the validation error returned by
+// QueueRoutingRule.Validate if the designated constraints aren't met.
+type QueueRoutingRuleValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e QueueRoutingRuleValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e QueueRoutingRuleValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e QueueRoutingRuleValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e QueueRoutingRuleValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e QueueRoutingRuleValidationError) ErrorName() string { return "QueueRoutingRuleValidationError" }
+
+// Error satisfies the builtin error interface
+func (e QueueRoutingRuleValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sQueueRoutingRule.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = QueueRoutingRuleValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = QueueRoutingRuleValidationError{}
+
+// Validate checks the field values on ListQueueEndpointsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListQueueEndpointsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListQueueEndpointsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListQueueEndpointsRequestMultiError, or nil if none found.
+func (m *ListQueueEndpointsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListQueueEndpointsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ListQueueEndpointsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListQueueEndpointsRequestMultiError is an error wrapping multiple validation
+// errors returned by ListQueueEndpointsRequest.ValidateAll() if the
+// designated constraints aren't met.
+type ListQueueEndpointsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListQueueEndpointsRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListQueueEndpointsRequestMultiError) AllErrors() []error { return m }
+
+// ListQueueEndpointsRequestValidationError is the validation error returned by
+// ListQueueEndpointsRequest.Validate if the designated constraints aren't met.
+type ListQueueEndpointsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListQueueEndpointsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListQueueEndpointsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListQueueEndpointsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListQueueEndpointsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListQueueEndpointsRequestValidationError) ErrorName() string {
+	return "ListQueueEndpointsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListQueueEndpointsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListQueueEndpointsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListQueueEndpointsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListQueueEndpointsRequestValidationError{}
+
+// Validate checks the field values on ListQueueEndpointsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListQueueEndpointsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListQueueEndpointsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListQueueEndpointsResponseMultiError, or nil if none found.
+func (m *ListQueueEndpointsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListQueueEndpointsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetEndpoints() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListQueueEndpointsResponseValidationError{
+						field:  fmt.Sprintf("Endpoints[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListQueueEndpointsResponseValidationError{
+						field:  fmt.Sprintf("Endpoints[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListQueueEndpointsResponseValidationError{
+					field:  fmt.Sprintf("Endpoints[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ListQueueEndpointsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListQueueEndpointsResponseMultiError is an error wrapping multiple
+// validation errors returned by ListQueueEndpointsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type ListQueueEndpointsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListQueueEndpointsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListQueueEndpointsResponseMultiError) AllErrors() []error { return m }
+
+// ListQueueEndpointsResponseValidationError is the validation error returned
+// by ListQueueEndpointsResponse.Validate if the designated constraints aren't met.
+type ListQueueEndpointsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListQueueEndpointsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListQueueEndpointsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListQueueEndpointsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListQueueEndpointsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListQueueEndpointsResponseValidationError) ErrorName() string {
+	return "ListQueueEndpointsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListQueueEndpointsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListQueueEndpointsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListQueueEndpointsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListQueueEndpointsResponseValidationError{}
+
+// Validate checks the field values on CreateQueueEndpointRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateQueueEndpointRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateQueueEndpointRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateQueueEndpointRequestMultiError, or nil if none found.
+func (m *CreateQueueEndpointRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateQueueEndpointRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEndpoint()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateQueueEndpointRequestValidationError{
+					field:  "Endpoint",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateQueueEndpointRequestValidationError{
+					field:  "Endpoint",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEndpoint()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateQueueEndpointRequestValidationError{
+				field:  "Endpoint",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateQueueEndpointRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateQueueEndpointRequestMultiError is an error wrapping multiple
+// validation errors returned by CreateQueueEndpointRequest.ValidateAll() if
+// the designated constraints aren't met.
+type CreateQueueEndpointRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateQueueEndpointRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateQueueEndpointRequestMultiError) AllErrors() []error { return m }
+
+// CreateQueueEndpointRequestValidationError is the validation error returned
+// by CreateQueueEndpointRequest.Validate if the designated constraints aren't met.
+type CreateQueueEndpointRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateQueueEndpointRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateQueueEndpointRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateQueueEndpointRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateQueueEndpointRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateQueueEndpointRequestValidationError) ErrorName() string {
+	return "CreateQueueEndpointRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateQueueEndpointRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateQueueEndpointRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateQueueEndpointRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateQueueEndpointRequestValidationError{}
+
+// Validate checks the field values on CreateQueueEndpointResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateQueueEndpointResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateQueueEndpointResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateQueueEndpointResponseMultiError, or nil if none found.
+func (m *CreateQueueEndpointResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateQueueEndpointResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEndpoint()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateQueueEndpointResponseValidationError{
+					field:  "Endpoint",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateQueueEndpointResponseValidationError{
+					field:  "Endpoint",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEndpoint()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateQueueEndpointResponseValidationError{
+				field:  "Endpoint",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateQueueEndpointResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateQueueEndpointResponseMultiError is an error wrapping multiple
+// validation errors returned by CreateQueueEndpointResponse.ValidateAll() if
+// the designated constraints aren't met.
+type CreateQueueEndpointResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateQueueEndpointResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateQueueEndpointResponseMultiError) AllErrors() []error { return m }
+
+// CreateQueueEndpointResponseValidationError is the validation error returned
+// by CreateQueueEndpointResponse.Validate if the designated constraints
+// aren't met.
+type CreateQueueEndpointResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateQueueEndpointResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateQueueEndpointResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateQueueEndpointResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateQueueEndpointResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateQueueEndpointResponseValidationError) ErrorName() string {
+	return "CreateQueueEndpointResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateQueueEndpointResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateQueueEndpointResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateQueueEndpointResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateQueueEndpointResponseValidationError{}
+
+// Validate checks the field values on UpdateQueueEndpointRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateQueueEndpointRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateQueueEndpointRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateQueueEndpointRequestMultiError, or nil if none found.
+func (m *UpdateQueueEndpointRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateQueueEndpointRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEndpoint()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateQueueEndpointRequestValidationError{
+					field:  "Endpoint",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateQueueEndpointRequestValidationError{
+					field:  "Endpoint",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEndpoint()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateQueueEndpointRequestValidationError{
+				field:  "Endpoint",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpdateQueueEndpointRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateQueueEndpointRequestMultiError is an error wrapping multiple
+// validation errors returned by UpdateQueueEndpointRequest.ValidateAll() if
+// the designated constraints aren't met.
+type UpdateQueueEndpointRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateQueueEndpointRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateQueueEndpointRequestMultiError) AllErrors() []error { return m }
+
+// UpdateQueueEndpointRequestValidationError is the validation error returned
+// by UpdateQueueEndpointRequest.Validate if the designated constraints aren't met.
+type UpdateQueueEndpointRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateQueueEndpointRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateQueueEndpointRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateQueueEndpointRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateQueueEndpointRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateQueueEndpointRequestValidationError) ErrorName() string {
+	return "UpdateQueueEndpointRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateQueueEndpointRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateQueueEndpointRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateQueueEndpointRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateQueueEndpointRequestValidationError{}
+
+// Validate checks the field values on UpdateQueueEndpointResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateQueueEndpointResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateQueueEndpointResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateQueueEndpointResponseMultiError, or nil if none found.
+func (m *UpdateQueueEndpointResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateQueueEndpointResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEndpoint()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateQueueEndpointResponseValidationError{
+					field:  "Endpoint",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateQueueEndpointResponseValidationError{
+					field:  "Endpoint",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEndpoint()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateQueueEndpointResponseValidationError{
+				field:  "Endpoint",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpdateQueueEndpointResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateQueueEndpointResponseMultiError is an error wrapping multiple
+// validation errors returned by UpdateQueueEndpointResponse.ValidateAll() if
+// the designated constraints aren't met.
+type UpdateQueueEndpointResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateQueueEndpointResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateQueueEndpointResponseMultiError) AllErrors() []error { return m }
+
+// UpdateQueueEndpointResponseValidationError is the validation error returned
+// by UpdateQueueEndpointResponse.Validate if the designated constraints
+// aren't met.
+type UpdateQueueEndpointResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateQueueEndpointResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateQueueEndpointResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateQueueEndpointResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateQueueEndpointResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateQueueEndpointResponseValidationError) ErrorName() string {
+	return "UpdateQueueEndpointResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateQueueEndpointResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateQueueEndpointResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateQueueEndpointResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateQueueEndpointResponseValidationError{}
+
+// Validate checks the field values on DeleteQueueEndpointRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteQueueEndpointRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteQueueEndpointRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteQueueEndpointRequestMultiError, or nil if none found.
+func (m *DeleteQueueEndpointRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteQueueEndpointRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	if len(errors) > 0 {
+		return DeleteQueueEndpointRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteQueueEndpointRequestMultiError is an error wrapping multiple
+// validation errors returned by DeleteQueueEndpointRequest.ValidateAll() if
+// the designated constraints aren't met.
+type DeleteQueueEndpointRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteQueueEndpointRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteQueueEndpointRequestMultiError) AllErrors() []error { return m }
+
+// DeleteQueueEndpointRequestValidationError is the validation error returned
+// by DeleteQueueEndpointRequest.Validate if the designated constraints aren't met.
+type DeleteQueueEndpointRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteQueueEndpointRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteQueueEndpointRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteQueueEndpointRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteQueueEndpointRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteQueueEndpointRequestValidationError) ErrorName() string {
+	return "DeleteQueueEndpointRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteQueueEndpointRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteQueueEndpointRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteQueueEndpointRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteQueueEndpointRequestValidationError{}
+
+// Validate checks the field values on DeleteQueueEndpointResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteQueueEndpointResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteQueueEndpointResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteQueueEndpointResponseMultiError, or nil if none found.
+func (m *DeleteQueueEndpointResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteQueueEndpointResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return DeleteQueueEndpointResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteQueueEndpointResponseMultiError is an error wrapping multiple
+// validation errors returned by DeleteQueueEndpointResponse.ValidateAll() if
+// the designated constraints aren't met.
+type DeleteQueueEndpointResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteQueueEndpointResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteQueueEndpointResponseMultiError) AllErrors() []error { return m }
+
+// DeleteQueueEndpointResponseValidationError is the validation error returned
+// by DeleteQueueEndpointResponse.Validate if the designated constraints
+// aren't met.
+type DeleteQueueEndpointResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteQueueEndpointResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteQueueEndpointResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteQueueEndpointResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteQueueEndpointResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteQueueEndpointResponseValidationError) ErrorName() string {
+	return "DeleteQueueEndpointResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteQueueEndpointResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteQueueEndpointResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteQueueEndpointResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteQueueEndpointResponseValidationError{}
+
+// Validate checks the field values on ListQueueRoutingRulesRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListQueueRoutingRulesRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListQueueRoutingRulesRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListQueueRoutingRulesRequestMultiError, or nil if none found.
+func (m *ListQueueRoutingRulesRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListQueueRoutingRulesRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Stage
+
+	if len(errors) > 0 {
+		return ListQueueRoutingRulesRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListQueueRoutingRulesRequestMultiError is an error wrapping multiple
+// validation errors returned by ListQueueRoutingRulesRequest.ValidateAll() if
+// the designated constraints aren't met.
+type ListQueueRoutingRulesRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListQueueRoutingRulesRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListQueueRoutingRulesRequestMultiError) AllErrors() []error { return m }
+
+// ListQueueRoutingRulesRequestValidationError is the validation error returned
+// by ListQueueRoutingRulesRequest.Validate if the designated constraints
+// aren't met.
+type ListQueueRoutingRulesRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListQueueRoutingRulesRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListQueueRoutingRulesRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListQueueRoutingRulesRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListQueueRoutingRulesRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListQueueRoutingRulesRequestValidationError) ErrorName() string {
+	return "ListQueueRoutingRulesRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListQueueRoutingRulesRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListQueueRoutingRulesRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListQueueRoutingRulesRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListQueueRoutingRulesRequestValidationError{}
+
+// Validate checks the field values on ListQueueRoutingRulesResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListQueueRoutingRulesResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListQueueRoutingRulesResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// ListQueueRoutingRulesResponseMultiError, or nil if none found.
+func (m *ListQueueRoutingRulesResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListQueueRoutingRulesResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetRules() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListQueueRoutingRulesResponseValidationError{
+						field:  fmt.Sprintf("Rules[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListQueueRoutingRulesResponseValidationError{
+						field:  fmt.Sprintf("Rules[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListQueueRoutingRulesResponseValidationError{
+					field:  fmt.Sprintf("Rules[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ListQueueRoutingRulesResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListQueueRoutingRulesResponseMultiError is an error wrapping multiple
+// validation errors returned by ListQueueRoutingRulesResponse.ValidateAll()
+// if the designated constraints aren't met.
+type ListQueueRoutingRulesResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListQueueRoutingRulesResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListQueueRoutingRulesResponseMultiError) AllErrors() []error { return m }
+
+// ListQueueRoutingRulesResponseValidationError is the validation error
+// returned by ListQueueRoutingRulesResponse.Validate if the designated
+// constraints aren't met.
+type ListQueueRoutingRulesResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListQueueRoutingRulesResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListQueueRoutingRulesResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListQueueRoutingRulesResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListQueueRoutingRulesResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListQueueRoutingRulesResponseValidationError) ErrorName() string {
+	return "ListQueueRoutingRulesResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListQueueRoutingRulesResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListQueueRoutingRulesResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListQueueRoutingRulesResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListQueueRoutingRulesResponseValidationError{}
+
+// Validate checks the field values on UpsertQueueRoutingRulesRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpsertQueueRoutingRulesRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpsertQueueRoutingRulesRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// UpsertQueueRoutingRulesRequestMultiError, or nil if none found.
+func (m *UpsertQueueRoutingRulesRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpsertQueueRoutingRulesRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetRule()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpsertQueueRoutingRulesRequestValidationError{
+					field:  "Rule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpsertQueueRoutingRulesRequestValidationError{
+					field:  "Rule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetRule()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpsertQueueRoutingRulesRequestValidationError{
+				field:  "Rule",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpsertQueueRoutingRulesRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpsertQueueRoutingRulesRequestMultiError is an error wrapping multiple
+// validation errors returned by UpsertQueueRoutingRulesRequest.ValidateAll()
+// if the designated constraints aren't met.
+type UpsertQueueRoutingRulesRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpsertQueueRoutingRulesRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpsertQueueRoutingRulesRequestMultiError) AllErrors() []error { return m }
+
+// UpsertQueueRoutingRulesRequestValidationError is the validation error
+// returned by UpsertQueueRoutingRulesRequest.Validate if the designated
+// constraints aren't met.
+type UpsertQueueRoutingRulesRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpsertQueueRoutingRulesRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpsertQueueRoutingRulesRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpsertQueueRoutingRulesRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpsertQueueRoutingRulesRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpsertQueueRoutingRulesRequestValidationError) ErrorName() string {
+	return "UpsertQueueRoutingRulesRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpsertQueueRoutingRulesRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpsertQueueRoutingRulesRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpsertQueueRoutingRulesRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpsertQueueRoutingRulesRequestValidationError{}
+
+// Validate checks the field values on UpsertQueueRoutingRulesResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpsertQueueRoutingRulesResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpsertQueueRoutingRulesResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// UpsertQueueRoutingRulesResponseMultiError, or nil if none found.
+func (m *UpsertQueueRoutingRulesResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpsertQueueRoutingRulesResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetRule()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpsertQueueRoutingRulesResponseValidationError{
+					field:  "Rule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpsertQueueRoutingRulesResponseValidationError{
+					field:  "Rule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetRule()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpsertQueueRoutingRulesResponseValidationError{
+				field:  "Rule",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpsertQueueRoutingRulesResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpsertQueueRoutingRulesResponseMultiError is an error wrapping multiple
+// validation errors returned by UpsertQueueRoutingRulesResponse.ValidateAll()
+// if the designated constraints aren't met.
+type UpsertQueueRoutingRulesResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpsertQueueRoutingRulesResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpsertQueueRoutingRulesResponseMultiError) AllErrors() []error { return m }
+
+// UpsertQueueRoutingRulesResponseValidationError is the validation error
+// returned by UpsertQueueRoutingRulesResponse.Validate if the designated
+// constraints aren't met.
+type UpsertQueueRoutingRulesResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpsertQueueRoutingRulesResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpsertQueueRoutingRulesResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpsertQueueRoutingRulesResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpsertQueueRoutingRulesResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpsertQueueRoutingRulesResponseValidationError) ErrorName() string {
+	return "UpsertQueueRoutingRulesResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpsertQueueRoutingRulesResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpsertQueueRoutingRulesResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpsertQueueRoutingRulesResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpsertQueueRoutingRulesResponseValidationError{}
 
 // Validate checks the field values on WorkerHeartbeat with the rules defined
 // in the proto definition for this message. If any rules are violated, the

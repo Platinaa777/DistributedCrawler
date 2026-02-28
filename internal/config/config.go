@@ -97,3 +97,14 @@ type MemoryBrokerConfig interface {
 	// QueueCapacity is the per-queue channel buffer size reported by the server.
 	QueueCapacity() int
 }
+
+// WorkerRegionConfig identifies the geographic/logical region for a worker instance.
+type WorkerRegionConfig interface {
+	Region() string
+}
+
+// SecretsFileConfig holds settings for the file-based secrets store.
+type SecretsFileConfig interface {
+	FilePath() string
+	WatchEnabled() bool
+}

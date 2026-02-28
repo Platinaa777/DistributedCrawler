@@ -925,6 +925,302 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	QueueAdminService_ListQueueEndpoints_FullMethodName      = "/crawler.v1.QueueAdminService/ListQueueEndpoints"
+	QueueAdminService_CreateQueueEndpoint_FullMethodName     = "/crawler.v1.QueueAdminService/CreateQueueEndpoint"
+	QueueAdminService_UpdateQueueEndpoint_FullMethodName     = "/crawler.v1.QueueAdminService/UpdateQueueEndpoint"
+	QueueAdminService_DeleteQueueEndpoint_FullMethodName     = "/crawler.v1.QueueAdminService/DeleteQueueEndpoint"
+	QueueAdminService_ListQueueRoutingRules_FullMethodName   = "/crawler.v1.QueueAdminService/ListQueueRoutingRules"
+	QueueAdminService_UpsertQueueRoutingRules_FullMethodName = "/crawler.v1.QueueAdminService/UpsertQueueRoutingRules"
+)
+
+// QueueAdminServiceClient is the client API for QueueAdminService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// QueueAdminService provides CRUD for queue endpoints and routing rules.
+type QueueAdminServiceClient interface {
+	ListQueueEndpoints(ctx context.Context, in *ListQueueEndpointsRequest, opts ...grpc.CallOption) (*ListQueueEndpointsResponse, error)
+	CreateQueueEndpoint(ctx context.Context, in *CreateQueueEndpointRequest, opts ...grpc.CallOption) (*CreateQueueEndpointResponse, error)
+	UpdateQueueEndpoint(ctx context.Context, in *UpdateQueueEndpointRequest, opts ...grpc.CallOption) (*UpdateQueueEndpointResponse, error)
+	DeleteQueueEndpoint(ctx context.Context, in *DeleteQueueEndpointRequest, opts ...grpc.CallOption) (*DeleteQueueEndpointResponse, error)
+	ListQueueRoutingRules(ctx context.Context, in *ListQueueRoutingRulesRequest, opts ...grpc.CallOption) (*ListQueueRoutingRulesResponse, error)
+	UpsertQueueRoutingRules(ctx context.Context, in *UpsertQueueRoutingRulesRequest, opts ...grpc.CallOption) (*UpsertQueueRoutingRulesResponse, error)
+}
+
+type queueAdminServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewQueueAdminServiceClient(cc grpc.ClientConnInterface) QueueAdminServiceClient {
+	return &queueAdminServiceClient{cc}
+}
+
+func (c *queueAdminServiceClient) ListQueueEndpoints(ctx context.Context, in *ListQueueEndpointsRequest, opts ...grpc.CallOption) (*ListQueueEndpointsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListQueueEndpointsResponse)
+	err := c.cc.Invoke(ctx, QueueAdminService_ListQueueEndpoints_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queueAdminServiceClient) CreateQueueEndpoint(ctx context.Context, in *CreateQueueEndpointRequest, opts ...grpc.CallOption) (*CreateQueueEndpointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateQueueEndpointResponse)
+	err := c.cc.Invoke(ctx, QueueAdminService_CreateQueueEndpoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queueAdminServiceClient) UpdateQueueEndpoint(ctx context.Context, in *UpdateQueueEndpointRequest, opts ...grpc.CallOption) (*UpdateQueueEndpointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateQueueEndpointResponse)
+	err := c.cc.Invoke(ctx, QueueAdminService_UpdateQueueEndpoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queueAdminServiceClient) DeleteQueueEndpoint(ctx context.Context, in *DeleteQueueEndpointRequest, opts ...grpc.CallOption) (*DeleteQueueEndpointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteQueueEndpointResponse)
+	err := c.cc.Invoke(ctx, QueueAdminService_DeleteQueueEndpoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queueAdminServiceClient) ListQueueRoutingRules(ctx context.Context, in *ListQueueRoutingRulesRequest, opts ...grpc.CallOption) (*ListQueueRoutingRulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListQueueRoutingRulesResponse)
+	err := c.cc.Invoke(ctx, QueueAdminService_ListQueueRoutingRules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queueAdminServiceClient) UpsertQueueRoutingRules(ctx context.Context, in *UpsertQueueRoutingRulesRequest, opts ...grpc.CallOption) (*UpsertQueueRoutingRulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertQueueRoutingRulesResponse)
+	err := c.cc.Invoke(ctx, QueueAdminService_UpsertQueueRoutingRules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// QueueAdminServiceServer is the server API for QueueAdminService service.
+// All implementations must embed UnimplementedQueueAdminServiceServer
+// for forward compatibility.
+//
+// QueueAdminService provides CRUD for queue endpoints and routing rules.
+type QueueAdminServiceServer interface {
+	ListQueueEndpoints(context.Context, *ListQueueEndpointsRequest) (*ListQueueEndpointsResponse, error)
+	CreateQueueEndpoint(context.Context, *CreateQueueEndpointRequest) (*CreateQueueEndpointResponse, error)
+	UpdateQueueEndpoint(context.Context, *UpdateQueueEndpointRequest) (*UpdateQueueEndpointResponse, error)
+	DeleteQueueEndpoint(context.Context, *DeleteQueueEndpointRequest) (*DeleteQueueEndpointResponse, error)
+	ListQueueRoutingRules(context.Context, *ListQueueRoutingRulesRequest) (*ListQueueRoutingRulesResponse, error)
+	UpsertQueueRoutingRules(context.Context, *UpsertQueueRoutingRulesRequest) (*UpsertQueueRoutingRulesResponse, error)
+	mustEmbedUnimplementedQueueAdminServiceServer()
+}
+
+// UnimplementedQueueAdminServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedQueueAdminServiceServer struct{}
+
+func (UnimplementedQueueAdminServiceServer) ListQueueEndpoints(context.Context, *ListQueueEndpointsRequest) (*ListQueueEndpointsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListQueueEndpoints not implemented")
+}
+func (UnimplementedQueueAdminServiceServer) CreateQueueEndpoint(context.Context, *CreateQueueEndpointRequest) (*CreateQueueEndpointResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateQueueEndpoint not implemented")
+}
+func (UnimplementedQueueAdminServiceServer) UpdateQueueEndpoint(context.Context, *UpdateQueueEndpointRequest) (*UpdateQueueEndpointResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateQueueEndpoint not implemented")
+}
+func (UnimplementedQueueAdminServiceServer) DeleteQueueEndpoint(context.Context, *DeleteQueueEndpointRequest) (*DeleteQueueEndpointResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteQueueEndpoint not implemented")
+}
+func (UnimplementedQueueAdminServiceServer) ListQueueRoutingRules(context.Context, *ListQueueRoutingRulesRequest) (*ListQueueRoutingRulesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListQueueRoutingRules not implemented")
+}
+func (UnimplementedQueueAdminServiceServer) UpsertQueueRoutingRules(context.Context, *UpsertQueueRoutingRulesRequest) (*UpsertQueueRoutingRulesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertQueueRoutingRules not implemented")
+}
+func (UnimplementedQueueAdminServiceServer) mustEmbedUnimplementedQueueAdminServiceServer() {}
+func (UnimplementedQueueAdminServiceServer) testEmbeddedByValue()                           {}
+
+// UnsafeQueueAdminServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to QueueAdminServiceServer will
+// result in compilation errors.
+type UnsafeQueueAdminServiceServer interface {
+	mustEmbedUnimplementedQueueAdminServiceServer()
+}
+
+func RegisterQueueAdminServiceServer(s grpc.ServiceRegistrar, srv QueueAdminServiceServer) {
+	// If the following call panics, it indicates UnimplementedQueueAdminServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&QueueAdminService_ServiceDesc, srv)
+}
+
+func _QueueAdminService_ListQueueEndpoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListQueueEndpointsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueAdminServiceServer).ListQueueEndpoints(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QueueAdminService_ListQueueEndpoints_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueAdminServiceServer).ListQueueEndpoints(ctx, req.(*ListQueueEndpointsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _QueueAdminService_CreateQueueEndpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateQueueEndpointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueAdminServiceServer).CreateQueueEndpoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QueueAdminService_CreateQueueEndpoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueAdminServiceServer).CreateQueueEndpoint(ctx, req.(*CreateQueueEndpointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _QueueAdminService_UpdateQueueEndpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateQueueEndpointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueAdminServiceServer).UpdateQueueEndpoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QueueAdminService_UpdateQueueEndpoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueAdminServiceServer).UpdateQueueEndpoint(ctx, req.(*UpdateQueueEndpointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _QueueAdminService_DeleteQueueEndpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteQueueEndpointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueAdminServiceServer).DeleteQueueEndpoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QueueAdminService_DeleteQueueEndpoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueAdminServiceServer).DeleteQueueEndpoint(ctx, req.(*DeleteQueueEndpointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _QueueAdminService_ListQueueRoutingRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListQueueRoutingRulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueAdminServiceServer).ListQueueRoutingRules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QueueAdminService_ListQueueRoutingRules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueAdminServiceServer).ListQueueRoutingRules(ctx, req.(*ListQueueRoutingRulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _QueueAdminService_UpsertQueueRoutingRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertQueueRoutingRulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueAdminServiceServer).UpsertQueueRoutingRules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QueueAdminService_UpsertQueueRoutingRules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueAdminServiceServer).UpsertQueueRoutingRules(ctx, req.(*UpsertQueueRoutingRulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// QueueAdminService_ServiceDesc is the grpc.ServiceDesc for QueueAdminService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var QueueAdminService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "crawler.v1.QueueAdminService",
+	HandlerType: (*QueueAdminServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListQueueEndpoints",
+			Handler:    _QueueAdminService_ListQueueEndpoints_Handler,
+		},
+		{
+			MethodName: "CreateQueueEndpoint",
+			Handler:    _QueueAdminService_CreateQueueEndpoint_Handler,
+		},
+		{
+			MethodName: "UpdateQueueEndpoint",
+			Handler:    _QueueAdminService_UpdateQueueEndpoint_Handler,
+		},
+		{
+			MethodName: "DeleteQueueEndpoint",
+			Handler:    _QueueAdminService_DeleteQueueEndpoint_Handler,
+		},
+		{
+			MethodName: "ListQueueRoutingRules",
+			Handler:    _QueueAdminService_ListQueueRoutingRules_Handler,
+		},
+		{
+			MethodName: "UpsertQueueRoutingRules",
+			Handler:    _QueueAdminService_UpsertQueueRoutingRules_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1/service.proto",
+}
+
+const (
 	WorkerService_WorkerStream_FullMethodName    = "/crawler.v1.WorkerService/WorkerStream"
 	WorkerService_ListWorkers_FullMethodName     = "/crawler.v1.WorkerService/ListWorkers"
 	WorkerService_DrainWorker_FullMethodName     = "/crawler.v1.WorkerService/DrainWorker"

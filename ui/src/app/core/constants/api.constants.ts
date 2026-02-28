@@ -9,6 +9,8 @@ export const API_ENDPOINTS = {
   PREVIEWS: '/previews',
   WORKERS: '/workers',
   USERS: '/users',
+  QUEUES: '/queues',
+  QUEUE_ROUTING: '/queue-routing',
   AUTH: {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',

@@ -124,6 +124,14 @@ func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID
 		return nil, err
 	}
 
+	if crawlJob.JobConfig != nil {
+		assignments, err := fetchQueueEndpointAssignments(ctx, c.client, crawlJob.JobConfig.ID)
+		if err != nil {
+			return nil, err
+		}
+		crawlJob.JobConfig.QueueEndpointAssignments = assignments
+	}
+
 	return converters.RestoreCrawlJobFromSnapshot(*crawlJob)
 }
 
@@ -192,20 +200,8 @@ func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus,
 	}
 	defer rows.Close()
 
-	jobs := make([]*models.CrawlJob, 0, limit)
-	for rows.Next() {
-		snapshot, err := scanCrawlJobWithConfig(rows)
-		if err != nil {
-			return nil, err
-		}
-		job, err := converters.RestoreCrawlJobFromSnapshot(*snapshot)
-		if err != nil {
-			return nil, err
-		}
-		jobs = append(jobs, job)
-	}
-
-	if err := rows.Err(); err != nil {
+	jobs, err := c.scanJobsWithQueueEndpoints(ctx, rows, limit)
+	if err != nil {
 		return nil, err
 	}
 
@@ -248,20 +244,8 @@ func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]
 	}
 	defer rows.Close()
 
-	jobs := make([]*models.CrawlJob, 0, limit)
-	for rows.Next() {
-		snapshot, err := scanCrawlJobWithConfig(rows)
-		if err != nil {
-			return nil, err
-		}
-		job, err := converters.RestoreCrawlJobFromSnapshot(*snapshot)
-		if err != nil {
-			return nil, err
-		}
-		jobs = append(jobs, job)
-	}
-
-	if err := rows.Err(); err != nil {
+	jobs, err := c.scanJobsWithQueueEndpoints(ctx, rows, limit)
+	if err != nil {
 		return nil, err
 	}
 
@@ -310,23 +294,55 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 		conditions = append(conditions, sq.LtOrEq{"j." + createdAtColumn: *query.Filter.CreatedTo})
 	}
 
+	// Resolve effective sort field and direction
+	sortField := query.SortField
+	if sortField == "" {
+		sortField = service.JobSortByCreatedAt
+	}
+	sortAsc := query.SortAsc
+
 	// Apply cursor condition (seek method)
-	// For DESC ordering: WHERE (created_at, id) < (cursor.created_at, cursor.id)
 	if query.Cursor != nil {
-		cursorCondition := sq.Expr(
-			"(j."+createdAtColumn+", j."+idColumn+") < (?, ?)",
-			query.Cursor.CreatedAt,
-			query.Cursor.ID,
-		)
-		conditions = append(conditions, cursorCondition)
+		op := "<"
+		if sortAsc {
+			op = ">"
+		}
+		switch sortField {
+		case service.JobSortByName:
+			conditions = append(conditions, sq.Expr(
+				"(c.name, j."+idColumn+") "+op+" (?, ?)",
+				query.Cursor.Name, query.Cursor.ID,
+			))
+		case service.JobSortByStatus:
+			conditions = append(conditions, sq.Expr(
+				"(j."+statusColumn+", j."+idColumn+") "+op+" (?, ?)",
+				query.Cursor.Status, query.Cursor.ID,
+			))
+		default: // created_at
+			conditions = append(conditions, sq.Expr(
+				"(j."+createdAtColumn+", j."+idColumn+") "+op+" (?, ?)",
+				query.Cursor.CreatedAt, query.Cursor.ID,
+			))
+		}
 	}
 
 	if len(conditions) > 0 {
 		builder = builder.Where(conditions)
 	}
 
-	// Order by created_at DESC, id DESC for stable ordering
-	builder = builder.OrderBy("j."+createdAtColumn+" DESC", "j."+idColumn+" DESC")
+	// Build ORDER BY from sort field and direction
+	dir := "DESC"
+	if sortAsc {
+		dir = "ASC"
+	}
+	switch sortField {
+	case service.JobSortByName:
+		builder = builder.OrderBy("c.name "+dir, "j."+idColumn+" "+dir)
+	case service.JobSortByStatus:
+		builder = builder.OrderBy("j."+statusColumn+" "+dir, "j."+idColumn+" "+dir)
+	default: // created_at
+		builder = builder.OrderBy("j."+createdAtColumn+" "+dir, "j."+idColumn+" "+dir)
+	}
 	builder = builder.Limit(uint64(fetchLimit))
 
 	sqlQuery, args, err := builder.ToSql()
@@ -345,20 +361,8 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 	}
 	defer rows.Close()
 
-	jobs := make([]*models.CrawlJob, 0, query.Limit)
-	for rows.Next() {
-		snapshot, err := scanCrawlJobWithConfig(rows)
-		if err != nil {
-			return nil, err
-		}
-		job, err := converters.RestoreCrawlJobFromSnapshot(*snapshot)
-		if err != nil {
-			return nil, err
-		}
-		jobs = append(jobs, job)
-	}
-
-	if err := rows.Err(); err != nil {
+	jobs, err := c.scanJobsWithQueueEndpoints(ctx, rows, query.Limit+1)
+	if err != nil {
 		return nil, err
 	}
 
@@ -368,14 +372,21 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 		jobs = jobs[:query.Limit] // Trim extra row
 	}
 
-	// Build next cursor from last item
+	// Build next cursor from last item (include sort info for stable pagination)
 	var nextCursor *service.ListCrawlJobsCursor
 	if hasMore && len(jobs) > 0 {
 		lastJob := jobs[len(jobs)-1]
-		nextCursor = &service.ListCrawlJobsCursor{
+		cursor := &service.ListCrawlJobsCursor{
+			SortField: string(sortField),
+			SortAsc:   sortAsc,
 			CreatedAt: lastJob.CreatedAt,
 			ID:        lastJob.ID.String(),
 		}
+		if lastJob.JobConfig != nil {
+			cursor.Name = lastJob.JobConfig.Name
+		}
+		cursor.Status = string(lastJob.Status)
+		nextCursor = cursor
 	}
 
 	return &service.ListCrawlJobsResult{
@@ -422,6 +433,14 @@ func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID v
 			return nil, nil
 		}
 		return nil, err
+	}
+
+	if crawlJob.JobConfig != nil {
+		assignments, err := fetchQueueEndpointAssignments(ctx, c.client, crawlJob.JobConfig.ID)
+		if err != nil {
+			return nil, err
+		}
+		crawlJob.JobConfig.QueueEndpointAssignments = assignments
 	}
 
 	return converters.RestoreCrawlJobFromSnapshot(*crawlJob)
@@ -506,20 +525,8 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 	}
 	defer rows.Close()
 
-	jobs := make([]*models.CrawlJob, 0, limit)
-	for rows.Next() {
-		snapshot, err := scanCrawlJobWithConfig(rows)
-		if err != nil {
-			return nil, err
-		}
-		job, err := converters.RestoreCrawlJobFromSnapshot(*snapshot)
-		if err != nil {
-			return nil, err
-		}
-		jobs = append(jobs, job)
-	}
-
-	if err := rows.Err(); err != nil {
+	jobs, err := c.scanJobsWithQueueEndpoints(ctx, rows, limit)
+	if err != nil {
 		return nil, err
 	}
 
@@ -626,4 +633,52 @@ func scanCrawlJobWithConfig(row scanner) (*snapshots.CrawlJobSnapshot, error) {
 	}
 
 	return &job, nil
+}
+
+// rowScanner is a rows iterator that also satisfies the scanner interface per-row.
+type rowScanner interface {
+	scanner
+	Next() bool
+	Err() error
+}
+
+// scanJobsWithQueueEndpoints scans all rows, then batch-fetches queue endpoint assignments for embedded configs.
+func (c *crawlJobRepository) scanJobsWithQueueEndpoints(ctx context.Context, rows rowScanner, cap int) ([]*models.CrawlJob, error) {
+	snaps := make([]*snapshots.CrawlJobSnapshot, 0, cap)
+	for rows.Next() {
+		snap, err := scanCrawlJobWithConfig(rows)
+		if err != nil {
+			return nil, err
+		}
+		snaps = append(snaps, snap)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Collect config IDs that have an embedded config.
+	configIDs := make([]string, 0, len(snaps))
+	for _, s := range snaps {
+		if s.JobConfig != nil {
+			configIDs = append(configIDs, s.JobConfig.ID)
+		}
+	}
+
+	assignmentsByConfig, err := fetchQueueEndpointAssignmentsForMany(ctx, c.client, configIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]*models.CrawlJob, 0, len(snaps))
+	for _, snap := range snaps {
+		if snap.JobConfig != nil {
+			snap.JobConfig.QueueEndpointAssignments = assignmentsByConfig[snap.JobConfig.ID]
+		}
+		job, err := converters.RestoreCrawlJobFromSnapshot(*snap)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+	return jobs, nil
 }

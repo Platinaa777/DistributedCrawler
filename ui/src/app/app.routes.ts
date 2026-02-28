@@ -56,6 +56,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/users').then(m => m.UsersListComponent)
   },
   {
+    path: 'queues',
+    canActivate: [authGuard, roleGuard],
+    data: { minRole: 'ADMINISTRATOR' },
+    loadComponent: () => import('./features/queues/queues.component').then(m => m.QueuesComponent)
+  },
+  {
     path: '**',
     redirectTo: '/jobs'
   }

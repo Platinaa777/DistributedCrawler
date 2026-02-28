@@ -12,9 +12,12 @@ import { DividerModule } from 'primeng/divider';
 import { CheckboxModule } from 'primeng/checkbox';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
+import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
-import { CrawlJobConfig, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES, CrawlMode, CRAWL_MODES } from '../../core/models/crawl-job.model';
+import { QueueAdminApiService } from '../../core/services/api/queue-admin-api.service';
+import { CrawlJobConfig, QueueEndpointAssignment, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES, CrawlMode, CRAWL_MODES } from '../../core/models/crawl-job.model';
+import { QueueEndpoint } from '../../core/models/queue.model';
 import { FieldSpec, ItemsSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
 
 interface SimpleJobFormValue {
@@ -54,7 +57,8 @@ interface SimpleJobFormValue {
     DividerModule,
     CheckboxModule,
     SelectModule,
-    ToastModule
+    ToastModule,
+    TagModule
   ],
   providers: [MessageService],
   template: `
@@ -314,6 +318,54 @@ interface SimpleJobFormValue {
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cookie</label>
               <input pInputText formControlName="cookie" class="w-full" />
+            </div>
+          </div>
+        </div>
+      </p-panel>
+
+      <p-panel header="Queue Endpoints" [toggleable]="true" [collapsed]="true" styleClass="mb-6">
+        <div class="p-4 space-y-3">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Assign specific queue endpoints for this job. Leave empty to use the default routing policy.
+            Weight controls relative traffic share across selected endpoints.
+          </p>
+          <div *ngIf="availableEndpoints.length === 0" class="text-sm text-gray-400 italic">
+            No queue endpoints available. Configure them in Queue Admin.
+          </div>
+          <div class="space-y-2">
+            <div *ngFor="let ep of availableEndpoints"
+              class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
+              <p-checkbox
+                [ngModel]="isEndpointSelected(ep.id)"
+                [ngModelOptions]="{standalone: true}"
+                [binary]="true"
+                (ngModelChange)="toggleEndpoint(ep.id)"
+                [inputId]="'ep-' + ep.id">
+              </p-checkbox>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <label [for]="'ep-' + ep.id" class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">{{ ep.display_name }}</label>
+                  <p-tag [value]="ep.stage === 'QUEUE_STAGE_CRAWL' ? 'crawl' : 'parse'"
+                    [severity]="ep.stage === 'QUEUE_STAGE_CRAWL' ? 'info' : 'warn'"
+                    styleClass="text-xs" />
+                  <p-tag [value]="ep.broker_type === 'QUEUE_BROKER_TYPE_RABBITMQ' ? 'RabbitMQ' : 'Kafka'"
+                    severity="secondary"
+                    styleClass="text-xs" />
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                  {{ ep.host }}
+                </p>
+              </div>
+              <div *ngIf="isEndpointSelected(ep.id)" class="flex items-center gap-1 shrink-0">
+                <label class="text-xs text-gray-500 dark:text-gray-400">Weight</label>
+                <input
+                  type="number"
+                  [ngModel]="getEndpointWeight(ep.id)"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="setEndpointWeight(ep.id, +$event)"
+                  min="1" max="100"
+                  class="w-16 text-center text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+              </div>
             </div>
           </div>
         </div>
@@ -652,6 +704,34 @@ export class SimpleJobCreateComponent implements OnInit {
   jobTypeSelectOptions = JOB_TYPES.map(option => ({ label: option.label, value: option.value }));
   crawlModeSelectOptions = CRAWL_MODES.map(option => ({ label: option.label, value: option.value }));
 
+  availableEndpoints: QueueEndpoint[] = [];
+  /** endpoint_id → weight (only selected endpoints are in this map) */
+  endpointSelections = new Map<string, number>();
+
+  isEndpointSelected(id: string): boolean {
+    return this.endpointSelections.has(id);
+  }
+
+  getEndpointWeight(id: string): number {
+    return this.endpointSelections.get(id) ?? 1;
+  }
+
+  toggleEndpoint(id: string): void {
+    if (this.endpointSelections.has(id)) {
+      this.endpointSelections.delete(id);
+    } else {
+      this.endpointSelections.set(id, 1);
+    }
+    this.updatePreview();
+  }
+
+  setEndpointWeight(id: string, weight: number): void {
+    if (this.endpointSelections.has(id)) {
+      this.endpointSelections.set(id, weight > 0 ? weight : 1);
+      this.updatePreview();
+    }
+  }
+
   private readonly sampleConfig: CrawlJobConfig = {
     name: 'Example Crawl Job',
     seeds: [{ url: 'https://bool.dev/blog/detail/voprosy-na-sobesedovanii-dlya-senior-net-developer' }],
@@ -696,6 +776,7 @@ export class SimpleJobCreateComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private crawlerApi: CrawlerApiService,
+    private queueAdminApi: QueueAdminApiService,
     private router: Router,
     private messageService: MessageService
   ) {}
@@ -730,6 +811,13 @@ export class SimpleJobCreateComponent implements OnInit {
       items_container_selector: [''],
       items_fields: this.fb.array([]),
       pagination: this.fb.array([])
+    });
+
+    this.queueAdminApi.listEndpoints().subscribe({
+      next: (res) => {
+        this.availableEndpoints = res.endpoints ?? [];
+      },
+      error: () => { /* non-critical — queue admin may not be configured */ }
     });
 
     this.jobForm.valueChanges.subscribe(() => this.updatePreview());
@@ -819,6 +907,11 @@ export class SimpleJobCreateComponent implements OnInit {
         items_enabled: !!config.extraction_spec?.items,
         items_container_selector: config.extraction_spec?.items?.container_selector ?? ''
       });
+
+      // Load queue endpoint assignments
+      this.endpointSelections.clear();
+      const assignments: QueueEndpointAssignment[] = config.queue_endpoint_assignments ?? [];
+      assignments.forEach(a => this.endpointSelections.set(a.endpoint_id, a.weight > 0 ? a.weight : 1));
 
       if (config.seeds?.length > 0) {
         this.resetArray(this.seeds, config.seeds.map((s: any) => this.createSeedGroup(s.url ?? '')));
@@ -1136,7 +1229,8 @@ export class SimpleJobCreateComponent implements OnInit {
         fields: extractionFields,
         items: itemsSpec,
         pagination: paginationSpecs.length > 0 ? paginationSpecs : undefined
-      }
+      },
+      queue_endpoint_assignments: Array.from(this.endpointSelections.entries()).map(([endpoint_id, weight]) => ({ endpoint_id, weight }))
     };
   }
 

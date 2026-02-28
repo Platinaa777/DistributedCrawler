@@ -104,6 +104,7 @@ func (a *APIApp) initDeps(ctx context.Context) error {
 		a.initGRPCServer,
 		a.initHTTPServer,
 		a.initWorker,
+		a.initSecretsStore, // must come after initWorker (workerCtx is created there)
 	}
 
 	for _, f := range inits {
@@ -191,6 +192,7 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	crawlergrpc.RegisterAuthServiceServer(a.grpcServer, a.serviceProvider.AuthServiceImpl(ctx))
 	crawlergrpc.RegisterUserServiceServer(a.grpcServer, a.serviceProvider.UserServiceImpl(ctx))
 	crawlergrpc.RegisterWorkerServiceServer(a.grpcServer, a.serviceProvider.WorkerServiceImpl(ctx))
+	crawlergrpc.RegisterQueueAdminServiceServer(a.grpcServer, a.serviceProvider.QueueAdminImpl(ctx))
 
 	return nil
 }
@@ -234,6 +236,11 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
+	err = crawlergrpc.RegisterQueueAdminServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
+	if err != nil {
+		return err
+	}
+
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:4200"}, // или []string{"*"} если без credentials
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -252,6 +259,11 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 
 func (a *APIApp) initWorker(ctx context.Context) error {
 	a.workerCtx, a.workerCancel = context.WithCancel(ctx)
+	return nil
+}
+
+func (a *APIApp) initSecretsStore(_ context.Context) error {
+	a.serviceProvider.InitSecretsStore(a.workerCtx)
 	return nil
 }
 

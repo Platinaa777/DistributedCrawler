@@ -29,6 +29,15 @@ type GetCrawlJobQuery struct {
 	ID string
 }
 
+// JobSortField defines which job field to sort by
+type JobSortField string
+
+const (
+	JobSortByCreatedAt JobSortField = "created_at" // default
+	JobSortByName      JobSortField = "name"
+	JobSortByStatus    JobSortField = "status"
+)
+
 // ListCrawlJobsFilter contains filter criteria for listing jobs
 type ListCrawlJobsFilter struct {
 	Name        *string    // Partial match on config name (ILIKE %name%)
@@ -39,15 +48,21 @@ type ListCrawlJobsFilter struct {
 
 // ListCrawlJobsCursor represents decoded pagination cursor
 type ListCrawlJobsCursor struct {
-	CreatedAt time.Time `json:"c"`
+	SortField string    `json:"sf,omitempty"` // sort field at time of pagination
+	SortAsc   bool      `json:"sa"`           // sort direction at time of pagination
+	CreatedAt time.Time `json:"c"`            // always set
+	Name      string    `json:"n,omitempty"`  // set when sorting by name
+	Status    string    `json:"st,omitempty"` // set when sorting by status
 	ID        string    `json:"i"`
 }
 
 // ListCrawlJobsQuery contains pagination and filter parameters
 type ListCrawlJobsQuery struct {
-	Cursor *ListCrawlJobsCursor // nil for first page
-	Limit  int                  // Default: 20, Max: 100
-	Filter ListCrawlJobsFilter
+	Cursor    *ListCrawlJobsCursor // nil for first page
+	Limit     int                  // Default: 20, Max: 100
+	Filter    ListCrawlJobsFilter
+	SortField JobSortField // field to sort by
+	SortAsc   bool         // true = ASC, false = DESC
 }
 
 // ListCrawlJobsResult contains paginated results

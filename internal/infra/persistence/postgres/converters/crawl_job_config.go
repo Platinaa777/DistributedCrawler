@@ -105,6 +105,15 @@ func SaveCrawlJobConfigToSnapshot(config models.CrawlJobConfig) (*snapshots.Craw
 	// Set CrawlMode (default to empty string if not set; runtime treats as pagination_and_links)
 	snapshot.CrawlMode = string(config.CrawlMode)
 
+	// Pass through QueueEndpointAssignments (stored in join table, not a column)
+	snapshot.QueueEndpointAssignments = make([]snapshots.QueueEndpointAssignmentSnap, len(config.QueueEndpointAssignments))
+	for i, a := range config.QueueEndpointAssignments {
+		snapshot.QueueEndpointAssignments[i] = snapshots.QueueEndpointAssignmentSnap{
+			EndpointID: a.EndpointID,
+			Weight:     a.Weight,
+		}
+	}
+
 	return snapshot, nil
 }
 
@@ -194,6 +203,15 @@ func RestoreCrawlJobConfigFromSnapshot(snapshot snapshots.CrawlJobConfigSnapshot
 
 	// Restore CrawlMode
 	config.CrawlMode = models.CrawlMode(snapshot.CrawlMode)
+
+	// Pass through QueueEndpointAssignments (populated by repo from join table)
+	config.QueueEndpointAssignments = make([]models.QueueEndpointAssignment, len(snapshot.QueueEndpointAssignments))
+	for i, a := range snapshot.QueueEndpointAssignments {
+		config.QueueEndpointAssignments[i] = models.QueueEndpointAssignment{
+			EndpointID: a.EndpointID,
+			Weight:     a.Weight,
+		}
+	}
 
 	return config, nil
 }

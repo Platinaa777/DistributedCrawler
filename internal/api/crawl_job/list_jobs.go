@@ -17,13 +17,29 @@ func (i *CrawlJobImplementation) ListJobs(ctx context.Context, req *crawlergrpc.
 		Limit: int(req.Limit),
 	}
 
+	// Map sort field and direction
+	switch req.SortField {
+	case crawlergrpc.JobSortField_JOB_SORT_FIELD_NAME:
+		query.SortField = service.JobSortByName
+		query.SortAsc = req.SortOrder != crawlergrpc.SortOrder_SORT_ORDER_DESC
+	case crawlergrpc.JobSortField_JOB_SORT_FIELD_STATUS:
+		query.SortField = service.JobSortByStatus
+		query.SortAsc = req.SortOrder != crawlergrpc.SortOrder_SORT_ORDER_DESC
+	default: // created_at (default field, default DESC)
+		query.SortField = service.JobSortByCreatedAt
+		query.SortAsc = req.SortOrder == crawlergrpc.SortOrder_SORT_ORDER_ASC
+	}
+
 	// Decode cursor if provided
 	if req.Cursor != nil && *req.Cursor != "" {
 		cursor, err := decodeCursor(*req.Cursor)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid cursor: %v", err)
 		}
+		// Cursor carries its own sort info; use it for consistent pagination
 		query.Cursor = cursor
+		query.SortField = service.JobSortField(cursor.SortField)
+		query.SortAsc = cursor.SortAsc
 	}
 
 	// Map filters

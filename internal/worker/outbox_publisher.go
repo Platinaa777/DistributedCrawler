@@ -5,9 +5,11 @@ import (
 	"distributed-crawler/internal/domain/crawl/events"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
+	queuemodels "distributed-crawler/internal/domain/queue/models"
 	"distributed-crawler/internal/infra/messaging"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/telemetry"
+	"distributed-crawler/internal/worker/routing"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -26,18 +28,20 @@ const (
 
 // OutboxPublisher is a worker that polls outbox events and publishes them to the message broker
 type OutboxPublisher struct {
-	outboxRepo   outbox.OutboxRepository
-	txManager    persistence.TxManager
-	msgClient    messaging.Client
-	queueName    string
-	pollInterval time.Duration
-	batchSize    int
-	logger       *zap.Logger
-	tracer       trace.Tracer
-	stopChan     chan struct{}
+	outboxRepo    outbox.OutboxRepository
+	txManager     persistence.TxManager
+	msgClient     messaging.Client
+	queueName     string // fallback / static queue name
+	routingPolicy routing.QueueRoutingPolicy
+	pollInterval  time.Duration
+	batchSize     int
+	logger        *zap.Logger
+	tracer        trace.Tracer
+	stopChan      chan struct{}
 }
 
-// NewOutboxPublisher creates a new outbox publisher worker
+// NewOutboxPublisher creates a new outbox publisher worker.
+// routingPolicy is optional; when nil, queueName is used directly.
 func NewOutboxPublisher(
 	outboxRepo outbox.OutboxRepository,
 	txManager persistence.TxManager,
@@ -57,6 +61,24 @@ func NewOutboxPublisher(
 		tracer:       tracer,
 		stopChan:     make(chan struct{}),
 	}
+}
+
+// WithRoutingPolicy attaches a weighted routing policy to the publisher.
+func (w *OutboxPublisher) WithRoutingPolicy(policy routing.QueueRoutingPolicy) *OutboxPublisher {
+	w.routingPolicy = policy
+	return w
+}
+
+// resolveQueue returns the queue name for a crawl-stage event, using the routing
+// policy when available, otherwise falling back to the static queueName.
+func (w *OutboxPublisher) resolveQueue(ctx context.Context, jobID string) string {
+	if w.routingPolicy != nil {
+		name, err := w.routingPolicy.SelectQueue(ctx, jobID, queuemodels.StageCrawl)
+		if err == nil && name != "" {
+			return name
+		}
+	}
+	return w.queueName
 }
 
 // Start starts the worker in a goroutine
@@ -157,6 +179,9 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 		ctx = telemetry.ExtractTraceContext(ctx, event.TraceContext)
 	}
 
+	// Resolve target queue via routing policy (or fall back to static queue)
+	targetQueue := w.resolveQueue(ctx, event.JobID)
+
 	// Start a child span — now correctly linked to the originating trace
 	var traceCtx map[string]string
 	if w.tracer != nil {
@@ -167,7 +192,7 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 				attribute.String("task.id", event.TaskID),
 				attribute.String("job.id", event.JobID),
 				attribute.String("task.url", event.URL),
-				attribute.String("messaging.destination", w.queueName),
+				attribute.String("messaging.destination", targetQueue),
 			),
 		)
 		defer span.End()
@@ -185,13 +210,14 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 	}
 
 	// Publish to message broker
-	if err := w.msgClient.Publish(ctx, w.queueName, message); err != nil {
+	if err := w.msgClient.Publish(ctx, targetQueue, message); err != nil {
 		return fmt.Errorf("failed to publish task to message broker: %w", err)
 	}
 
 	w.logger.Debug("Published task to message broker",
 		zap.String("task_id", event.TaskID),
 		zap.String("url", event.URL),
+		zap.String("queue", targetQueue),
 	)
 
 	// Mark event as processed

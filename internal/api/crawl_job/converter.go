@@ -201,6 +201,7 @@ func ToProtoCrawlJobConfig(config *models.CrawlJobConfig) *crawlergrpc.CrawlJobC
 		JobType:          ToProtoJobType(config.JobType),
 		RespectRobotsTxt: config.RespectRobotsTxt,
 		CrawlMode:        ToProtoCrawlMode(config.CrawlMode),
+		QueueEndpointAssignments: toProtoAssignments(config.QueueEndpointAssignments),
 	}
 }
 
@@ -507,5 +508,32 @@ func FromProtoCrawlJobConfig(proto *crawlergrpc.CrawlJobConfig) models.CrawlJobC
 		JobType:          FromProtoJobType(proto.JobType),
 		RespectRobotsTxt: proto.RespectRobotsTxt,
 		CrawlMode:        FromProtoCrawlMode(proto.CrawlMode),
+		QueueEndpointAssignments: fromProtoAssignments(proto.QueueEndpointAssignments),
 	}
+}
+
+func toProtoAssignments(assignments []models.QueueEndpointAssignment) []*crawlergrpc.QueueEndpointAssignment {
+	result := make([]*crawlergrpc.QueueEndpointAssignment, len(assignments))
+	for i, a := range assignments {
+		result[i] = &crawlergrpc.QueueEndpointAssignment{
+			EndpointId: a.EndpointID,
+			Weight:     a.Weight,
+		}
+	}
+	return result
+}
+
+func fromProtoAssignments(proto []*crawlergrpc.QueueEndpointAssignment) []models.QueueEndpointAssignment {
+	result := make([]models.QueueEndpointAssignment, len(proto))
+	for i, a := range proto {
+		w := a.Weight
+		if w <= 0 {
+			w = 1
+		}
+		result[i] = models.QueueEndpointAssignment{
+			EndpointID: a.EndpointId,
+			Weight:     w,
+		}
+	}
+	return result
 }

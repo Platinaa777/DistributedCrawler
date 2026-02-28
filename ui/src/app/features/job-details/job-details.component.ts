@@ -14,8 +14,10 @@ import { DialogModule } from 'primeng/dialog';
 import { catchError, forkJoin, interval, of, Subscription, switchMap } from 'rxjs';
 import 'chart.js/auto';
 import { ChartData, ChartOptions } from 'chart.js';
-import { CrawlerApiService, TaskListFilter, TaskAnalytics } from '../../core/services/api/crawler-api.service';
+import { CrawlerApiService, TaskListFilter, TaskAnalytics, TaskSortParams } from '../../core/services/api/crawler-api.service';
+import { QueueAdminApiService } from '../../core/services/api/queue-admin-api.service';
 import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/models';
+import { QueueEndpoint } from '../../core/models/queue.model';
 import { TaskFiltersComponent } from './components/task-filters.component';
 
 @Component({
@@ -95,6 +97,43 @@ import { TaskFiltersComponent } from './components/task-filters.component';
             <p class="text-sm text-gray-600 dark:text-gray-400">Seed URLs</p>
             <div class="flex flex-wrap gap-2 mt-2">
               <p-tag *ngFor="let seed of job?.job_config?.seeds" [value]="seed.url" severity="secondary" />
+            </div>
+          </div>
+
+          <div class="mt-4" *ngIf="job?.job_config?.queue_endpoint_assignments?.length">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Assigned Queue Endpoints</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              <div *ngFor="let a of job?.job_config?.queue_endpoint_assignments"
+                   class="endpoint-card">
+                <ng-container *ngIf="endpointMap.get(a.endpoint_id) as ep; else unknownEndpoint">
+                  <div class="flex items-start justify-between mb-2">
+                    <span class="font-semibold text-sm text-gray-900 dark:text-white leading-tight">{{ ep.display_name }}</span>
+                    <div class="flex items-center gap-1 ml-2 shrink-0">
+                      <p-tag [value]="'×' + a.weight" severity="warn" styleClass="text-xs" />
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap gap-1 mb-2">
+                    <p-tag
+                      [value]="ep.stage === 'QUEUE_STAGE_CRAWL' ? 'crawl' : 'parse'"
+                      [severity]="ep.stage === 'QUEUE_STAGE_CRAWL' ? 'info' : 'secondary'"
+                      styleClass="text-xs" />
+                    <p-tag [value]="getBrokerLabel(ep.broker_type)" severity="secondary" styleClass="text-xs" />
+                  </div>
+                  <div class="space-y-1">
+                    <p class="endpoint-meta truncate" [pTooltip]="ep.host">
+                      <i class="pi pi-server"></i> {{ ep.host }}
+                    </p>
+                    <p class="endpoint-meta font-mono truncate" [pTooltip]="ep.queue_name">
+                      <i class="pi pi-inbox"></i> {{ ep.queue_name }}
+                    </p>
+                  </div>
+                </ng-container>
+                <ng-template #unknownEndpoint>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 font-medium mb-1">Unknown endpoint</p>
+                  <code class="text-xs text-gray-500 dark:text-gray-400 break-all">{{ a.endpoint_id }}</code>
+                  <span class="ml-2 text-xs text-amber-600 dark:text-amber-400">×{{ a.weight }}</span>
+                </ng-template>
+              </div>
             </div>
           </div>
 
@@ -223,13 +262,17 @@ import { TaskFiltersComponent } from './components/task-filters.component';
 
           <p-table
             [value]="tasks"
+            [lazy]="true"
+            (onLazyLoad)="onTaskLazyLoad($event)"
+            [sortField]="currentTaskSortField"
+            [sortOrder]="currentTaskSortOrder"
             [tableStyle]="{'min-width': '60rem'}">
             <ng-template pTemplate="header">
               <tr>
-                <th>URL</th>
-                <th>Status</th>
-                <th>Depth</th>
-                <th>Enqueued At</th>
+                <th pSortableColumn="url">URL <p-sortIcon field="url" /></th>
+                <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+                <th pSortableColumn="depth">Depth <p-sortIcon field="depth" /></th>
+                <th pSortableColumn="enqueued_at">Enqueued At <p-sortIcon field="enqueued_at" /></th>
                 <th>Body Hash</th>
                 <th>Files</th>
               </tr>
@@ -245,7 +288,7 @@ import { TaskFiltersComponent } from './components/task-filters.component';
                   <p-tag [value]="task.status" [severity]="getStatusSeverity(task.status)" />
                 </td>
                 <td>{{ task.depth }}</td>
-                <td>{{ task.enqueued_at | date:'short' }}</td>
+                <td>{{ task.enqueued_at | date:'medium' }}</td>
                 <td class="font-mono text-xs break-all">
                   {{ task.body_hash ? (task.body_hash | slice:0:8) + '...' : '' }}
                 </td>
@@ -371,6 +414,37 @@ import { TaskFiltersComponent } from './components/task-filters.component';
       width: 100% !important;
       height: 260px !important;
     }
+
+    .endpoint-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px;
+      background: #f9fafb;
+    }
+
+    :host-context(.dark-mode) .endpoint-card {
+      border-color: #374151;
+      background: #1f2937;
+    }
+
+    .endpoint-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: #6b7280;
+      margin: 0;
+    }
+
+    :host-context(.dark-mode) .endpoint-meta {
+      color: #9ca3af;
+    }
+
+    .endpoint-meta .pi {
+      font-size: 10px;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
   `],
   animations: [
     trigger('expandCollapse', [
@@ -412,6 +486,12 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   currentFilter: TaskListFilter = {};
   private readonly pageSize = 20;
 
+  // Sort state (PrimeNG: 1 = ASC, -1 = DESC)
+  currentTaskSortField = 'enqueued_at';
+  currentTaskSortOrder = 1;
+  private currentSort: TaskSortParams = { sort_field: 'TASK_SORT_FIELD_ENQUEUED_AT', sort_order: 'SORT_ORDER_ASC' };
+  private taskTableInitialized = false; // skip first (onLazyLoad) — tasks already loaded by forkJoin
+
   // Server-side analytics
   analytics: TaskAnalytics | null = null;
 
@@ -419,8 +499,11 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   errorDialogVisible = false;
   selectedErrorTask: CrawlTask | null = null;
 
+  endpointMap = new Map<string, QueueEndpoint>();
+
   constructor(
     private crawlerApi: CrawlerApiService,
+    private queueAdminApi: QueueAdminApiService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -431,6 +514,13 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
       this.loadJobDetails(id);
       this.startAnalyticsPolling(id);
     }
+    this.queueAdminApi.listEndpoints().subscribe({
+      next: (res) => {
+        this.endpointMap.clear();
+        (res.endpoints ?? []).forEach(ep => this.endpointMap.set(ep.id, ep));
+      },
+      error: () => { /* non-critical */ }
+    });
   }
 
   ngOnDestroy(): void {
@@ -441,10 +531,11 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   loadJobDetails(id: string): void {
     this.loading = true;
     this.error = null;
+    this.taskTableInitialized = false;
 
     forkJoin({
       job: this.crawlerApi.getJob(id),
-      tasks: this.crawlerApi.listTasksByJob(id, { limit: this.pageSize }),
+      tasks: this.crawlerApi.listTasksByJob(id, { limit: this.pageSize, sort: this.currentSort }),
       analytics: this.crawlerApi.getTaskAnalytics(id)
     }).subscribe({
       next: (response) => {
@@ -471,12 +562,41 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
     this.loadTasks();
   }
 
+  private readonly taskSortFieldMap: Record<string, TaskSortParams['sort_field']> = {
+    'enqueued_at': 'TASK_SORT_FIELD_ENQUEUED_AT',
+    'url': 'TASK_SORT_FIELD_URL',
+    'status': 'TASK_SORT_FIELD_STATUS',
+    'depth': 'TASK_SORT_FIELD_DEPTH',
+  };
+
+  onTaskLazyLoad(event: { sortField?: string | string[] | null; sortOrder?: number | null }): void {
+    // Skip the first firing — tasks are already loaded by the initial forkJoin
+    if (!this.taskTableInitialized) {
+      this.taskTableInitialized = true;
+      return;
+    }
+
+    const field = (event.sortField as string) || 'enqueued_at';
+    const order = event.sortOrder ?? 1;
+
+    this.currentTaskSortField = field;
+    this.currentTaskSortOrder = order;
+    this.currentSort = {
+      sort_field: this.taskSortFieldMap[field] ?? 'TASK_SORT_FIELD_ENQUEUED_AT',
+      sort_order: order === 1 ? 'SORT_ORDER_ASC' : 'SORT_ORDER_DESC',
+    };
+    this.taskCursor = null;
+    this.tasks = [];
+    this.loadTasks();
+  }
+
   loadTasks(): void {
     if (!this.job) return;
 
     this.crawlerApi.listTasksByJob(this.job.id, {
       limit: this.pageSize,
-      filter: this.currentFilter
+      filter: this.currentFilter,
+      sort: this.currentSort
     }).subscribe({
       next: (response) => {
         this.tasks = response.tasks;
@@ -496,7 +616,8 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
     this.crawlerApi.listTasksByJob(this.job.id, {
       cursor: this.taskCursor ?? undefined,
       limit: this.pageSize,
-      filter: this.currentFilter
+      filter: this.currentFilter,
+      sort: this.currentSort
     }).subscribe({
       next: (response) => {
         this.tasks = [...this.tasks, ...response.tasks];
@@ -545,7 +666,8 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
       .pipe(
         switchMap(() => this.crawlerApi.listTasksByJob(id, {
           limit: this.pageSize,
-          filter: this.currentFilter
+          filter: this.currentFilter,
+          sort: this.currentSort
         }).pipe(
           catchError((err) => {
             console.error(`Failed to poll tasks: ${err.message}`);
@@ -592,6 +714,22 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
 
     const { auth, ...safeConfig } = config;
     return safeConfig;
+  }
+
+  getBrokerLabel(brokerType: string): string {
+    switch (brokerType) {
+      case 'QUEUE_BROKER_TYPE_RABBITMQ': return 'RabbitMQ';
+      case 'QUEUE_BROKER_TYPE_KAFKA': return 'Kafka';
+      default: return brokerType;
+    }
+  }
+
+  getEndpointLabel(id: string, weight?: number): string {
+    const ep = this.endpointMap.get(id);
+    const name = ep ? ep.display_name : id;
+    const stage = ep ? (ep.stage === 'QUEUE_STAGE_CRAWL' ? 'crawl' : 'parse') : '';
+    const label = stage ? `${name} (${stage})` : name;
+    return weight && weight !== 1 ? `${label} ×${weight}` : label;
   }
 
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

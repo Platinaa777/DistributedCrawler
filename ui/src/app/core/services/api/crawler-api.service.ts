@@ -12,11 +12,18 @@ export interface JobListFilter {
   created_to?: string;   // ISO 8601 timestamp
 }
 
+// Sort options for listing jobs
+export interface JobSortParams {
+  sort_field?: 'JOB_SORT_FIELD_CREATED_AT' | 'JOB_SORT_FIELD_NAME' | 'JOB_SORT_FIELD_STATUS';
+  sort_order?: 'SORT_ORDER_ASC' | 'SORT_ORDER_DESC';
+}
+
 // Parameters for listing jobs with cursor pagination
 export interface JobListParams {
   cursor?: string;
   limit?: number;
   filter?: JobListFilter;
+  sort?: JobSortParams;
 }
 
 // Response from list jobs API with cursor pagination
@@ -36,11 +43,18 @@ export interface TaskListFilter {
   enqueued_to?: string;   // ISO 8601 timestamp
 }
 
+// Sort options for listing tasks
+export interface TaskSortParams {
+  sort_field?: 'TASK_SORT_FIELD_ENQUEUED_AT' | 'TASK_SORT_FIELD_URL' | 'TASK_SORT_FIELD_STATUS' | 'TASK_SORT_FIELD_DEPTH';
+  sort_order?: 'SORT_ORDER_ASC' | 'SORT_ORDER_DESC';
+}
+
 // Parameters for listing tasks with cursor pagination
 export interface TaskListParams {
   cursor?: string;
   limit?: number;
   filter?: TaskListFilter;
+  sort?: TaskSortParams;
 }
 
 // Response from list tasks API with cursor pagination
@@ -96,6 +110,14 @@ export class CrawlerApiService {
       }
     }
 
+    // Add sort params
+    if (params?.sort?.sort_field) {
+      httpParams = httpParams.set('sort_field', params.sort.sort_field);
+    }
+    if (params?.sort?.sort_order) {
+      httpParams = httpParams.set('sort_order', params.sort.sort_order);
+    }
+
     return this.http.get<JobListResponse>(`${this.baseUrl}${API_ENDPOINTS.JOBS}`, { params: httpParams });
   }
 
@@ -146,6 +168,14 @@ export class CrawlerApiService {
       if (params.filter.enqueued_to) {
         httpParams = httpParams.set('filter.enqueued_to', params.filter.enqueued_to);
       }
+    }
+
+    // Add sort params
+    if (params?.sort?.sort_field) {
+      httpParams = httpParams.set('sort_field', params.sort.sort_field);
+    }
+    if (params?.sort?.sort_order) {
+      httpParams = httpParams.set('sort_order', params.sort.sort_order);
     }
 
     return this.http.get<TaskListResponse>(`${this.baseUrl}${API_ENDPOINTS.JOBS}/${jobId}/tasks`, { params: httpParams });

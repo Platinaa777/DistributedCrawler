@@ -25,6 +25,16 @@ type GetCrawlTaskQuery struct {
 	ID string
 }
 
+// TaskSortField defines which task field to sort by
+type TaskSortField string
+
+const (
+	TaskSortByEnqueuedAt TaskSortField = "enqueued_at" // default
+	TaskSortByURL        TaskSortField = "url"
+	TaskSortByStatus     TaskSortField = "status"
+	TaskSortByDepth      TaskSortField = "depth"
+)
+
 // ListTasksFilter contains filter criteria for listing tasks
 type ListTasksFilter struct {
 	Status       *string    // Exact match on task status
@@ -37,16 +47,23 @@ type ListTasksFilter struct {
 
 // ListTasksCursor represents decoded pagination cursor
 type ListTasksCursor struct {
-	EnqueuedAt time.Time `json:"e"`
-	ID         string    `json:"i"`
+	SortField  string     `json:"sf,omitempty"` // sort field at time of pagination
+	SortAsc    bool       `json:"sa"`           // sort direction at time of pagination
+	EnqueuedAt time.Time  `json:"e"`            // always set
+	URL        string     `json:"u,omitempty"`  // set when sorting by url
+	Status     string     `json:"st,omitempty"` // set when sorting by status
+	Depth      *uint64    `json:"d,omitempty"`  // set when sorting by depth
+	ID         string     `json:"i"`
 }
 
 // ListTasksByJobQuery contains pagination and filter parameters
 type ListTasksByJobQuery struct {
-	JobID  string
-	Cursor *ListTasksCursor // nil for first page
-	Limit  int              // Default: 20, Max: 100
-	Filter ListTasksFilter
+	JobID     string
+	Cursor    *ListTasksCursor // nil for first page
+	Limit     int              // Default: 20, Max: 100
+	Filter    ListTasksFilter
+	SortField TaskSortField // field to sort by
+	SortAsc   bool          // true = ASC, false = DESC
 }
 
 // ListTasksResult contains paginated results

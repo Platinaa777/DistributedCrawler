@@ -53,4 +53,13 @@ type CrawlJobConfig struct {
 	// Use CrawlModePaginationOnly, CrawlModeLinksOnly, or CrawlModePaginationAndLinks.
 	// Defaults to CrawlModePaginationAndLinks when empty.
 	CrawlMode CrawlMode
+
+	// QueueEndpointAssignments lists the queue endpoints assigned to this job config with routing weights.
+	QueueEndpointAssignments []QueueEndpointAssignment
+}
+
+// QueueEndpointAssignment links a queue endpoint to a job config with a routing weight.
+type QueueEndpointAssignment struct {
+	EndpointID string
+	Weight     int32
 }

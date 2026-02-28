@@ -144,6 +144,8 @@ message CrawlJobConfig {
   // Controls link-following behavior: pagination_only, links_only, or pagination_and_links (default)
   CrawlMode crawl_mode = 12 [json_name = "crawl_mode"];
   reserved 13; // was allowed_url_pattern (moved to scopes.allowed_url_patterns)
+  // Queue endpoint assignments for this job config with per-endpoint routing weights
+  repeated QueueEndpointAssignment queue_endpoint_assignments = 14 [json_name = "queue_endpoint_assignments"];
 }
 
 // CrawlJob represents a crawling job
@@ -187,6 +189,30 @@ message JobListFilter {
   optional google.protobuf.Timestamp created_to = 4 [json_name = "created_to"];
 }
 
+// SortOrder defines ascending or descending sort direction
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_ASC = 1;
+  SORT_ORDER_DESC = 2;
+}
+
+// JobSortField defines which job field to sort by
+enum JobSortField {
+  JOB_SORT_FIELD_UNSPECIFIED = 0; // defaults to created_at DESC
+  JOB_SORT_FIELD_CREATED_AT = 1;
+  JOB_SORT_FIELD_NAME = 2;
+  JOB_SORT_FIELD_STATUS = 3;
+}
+
+// TaskSortField defines which task field to sort by
+enum TaskSortField {
+  TASK_SORT_FIELD_UNSPECIFIED = 0; // defaults to enqueued_at ASC
+  TASK_SORT_FIELD_ENQUEUED_AT = 1;
+  TASK_SORT_FIELD_URL = 2;
+  TASK_SORT_FIELD_STATUS = 3;
+  TASK_SORT_FIELD_DEPTH = 4;
+}
+
 message ListJobsRequest {
   // Cursor for pagination (opaque string, empty for first page)
   optional string cursor = 1;
@@ -194,6 +220,10 @@ message ListJobsRequest {
   int32 limit = 2;
   // Filtering options
   JobListFilter filter = 3;
+  // Field to sort by (default: created_at)
+  JobSortField sort_field = 4 [json_name = "sort_field"];
+  // Sort direction (default: DESC for created_at, ASC for other fields)
+  SortOrder sort_order = 5 [json_name = "sort_order"];
 }
 
 message ListJobsResponse {
@@ -257,6 +287,10 @@ message ListTasksByJobRequest {
   int32 limit = 3;
   // Filtering options
   TaskListFilter filter = 4;
+  // Field to sort by (default: enqueued_at)
+  TaskSortField sort_field = 5 [json_name = "sort_field"];
+  // Sort direction (default: ASC for enqueued_at, ASC for other fields)
+  SortOrder sort_order = 6 [json_name = "sort_order"];
 }
 
 message ListTasksByJobResponse {
@@ -412,6 +446,64 @@ message UpdateUserRoleRequest {
 message UpdateUserRoleResponse {
   bool updated = 1;
 }
+
+// Queue admin messages
+
+// QueueStage identifies which pipeline stage a queue belongs to.
+enum QueueStage {
+  QUEUE_STAGE_UNSPECIFIED = 0;
+  QUEUE_STAGE_CRAWL = 1;
+  QUEUE_STAGE_PARSE = 2;
+}
+
+// QueueBrokerType identifies the messaging broker implementation.
+enum QueueBrokerType {
+  QUEUE_BROKER_TYPE_UNSPECIFIED = 0;
+  QUEUE_BROKER_TYPE_RABBITMQ = 1;
+  QUEUE_BROKER_TYPE_KAFKA = 2;
+}
+
+// QueueEndpoint describes a single queue/topic that workers can connect to.
+message QueueEndpoint {
+  string id = 1;
+  string display_name = 2 [json_name = "display_name"];
+  QueueBrokerType broker_type = 3 [json_name = "broker_type"];
+  QueueStage stage = 4;
+  string host = 6;
+  string queue_name = 7 [json_name = "queue_name"];
+  string secret_key = 9 [json_name = "secret_key"];
+  reserved 10; // was enabled
+  string created_at = 11 [json_name = "created_at"];
+  string updated_at = 12 [json_name = "updated_at"];
+}
+
+// QueueEndpointAssignment links a queue endpoint to a job config with a routing weight.
+message QueueEndpointAssignment {
+  string endpoint_id = 1 [json_name = "endpoint_id"];
+  int32 weight = 2;
+}
+
+// QueueRoutingRule defines routing across endpoints for a given stage.
+message QueueRoutingRule {
+  string id = 1;
+  QueueStage stage = 2;
+  string scope = 3;
+  reserved 4; // was repeated QueueRouteWeight weights
+  reserved 5; // was enabled
+}
+
+message ListQueueEndpointsRequest {}
+message ListQueueEndpointsResponse { repeated QueueEndpoint endpoints = 1; }
+message CreateQueueEndpointRequest { QueueEndpoint endpoint = 1; }
+message CreateQueueEndpointResponse { QueueEndpoint endpoint = 1; }
+message UpdateQueueEndpointRequest { QueueEndpoint endpoint = 1; }
+message UpdateQueueEndpointResponse { QueueEndpoint endpoint = 1; }
+message DeleteQueueEndpointRequest { string id = 1; }
+message DeleteQueueEndpointResponse {}
+message ListQueueRoutingRulesRequest { QueueStage stage = 1; }
+message ListQueueRoutingRulesResponse { repeated QueueRoutingRule rules = 1; }
+message UpsertQueueRoutingRulesRequest { QueueRoutingRule rule = 1; }
+message UpsertQueueRoutingRulesResponse { QueueRoutingRule rule = 1; }
 
 // Worker monitoring messages
 

@@ -422,21 +422,60 @@ func (c *crawlTaskRepository) ListWithCursor(ctx context.Context, query service.
 		conditions = append(conditions, sq.LtOrEq{taskEnqueuedAtColumn: *query.Filter.EnqueuedTo})
 	}
 
+	// Resolve effective sort field and direction
+	sortField := query.SortField
+	if sortField == "" {
+		sortField = service.TaskSortByEnqueuedAt
+	}
+	sortAsc := query.SortAsc
+
 	// Apply cursor condition (seek method for keyset pagination)
-	// For ASC ordering: WHERE (enqueued_at, id) > (cursor.enqueued_at, cursor.id)
 	if query.Cursor != nil {
-		cursorCondition := sq.Expr(
-			"("+taskEnqueuedAtColumn+", "+taskIDColumn+") > (?, ?)",
-			query.Cursor.EnqueuedAt,
-			query.Cursor.ID,
-		)
-		conditions = append(conditions, cursorCondition)
+		op := ">"
+		if !sortAsc {
+			op = "<"
+		}
+		switch sortField {
+		case service.TaskSortByURL:
+			conditions = append(conditions, sq.Expr(
+				"("+taskURLColumn+", "+taskIDColumn+") "+op+" (?, ?)",
+				query.Cursor.URL, query.Cursor.ID,
+			))
+		case service.TaskSortByStatus:
+			conditions = append(conditions, sq.Expr(
+				"("+taskStatusColumn+", "+taskIDColumn+") "+op+" (?, ?)",
+				query.Cursor.Status, query.Cursor.ID,
+			))
+		case service.TaskSortByDepth:
+			conditions = append(conditions, sq.Expr(
+				"("+taskDepthColumn+", "+taskIDColumn+") "+op+" (?, ?)",
+				query.Cursor.Depth, query.Cursor.ID,
+			))
+		default: // enqueued_at
+			conditions = append(conditions, sq.Expr(
+				"("+taskEnqueuedAtColumn+", "+taskIDColumn+") "+op+" (?, ?)",
+				query.Cursor.EnqueuedAt, query.Cursor.ID,
+			))
+		}
 	}
 
 	builder = builder.Where(conditions)
 
-	// Order by enqueued_at ASC, id ASC for stable ordering
-	builder = builder.OrderBy(taskEnqueuedAtColumn+" ASC", taskIDColumn+" ASC")
+	// Build ORDER BY from sort field and direction
+	dir := "ASC"
+	if !sortAsc {
+		dir = "DESC"
+	}
+	switch sortField {
+	case service.TaskSortByURL:
+		builder = builder.OrderBy(taskURLColumn+" "+dir, taskIDColumn+" "+dir)
+	case service.TaskSortByStatus:
+		builder = builder.OrderBy(taskStatusColumn+" "+dir, taskIDColumn+" "+dir)
+	case service.TaskSortByDepth:
+		builder = builder.OrderBy(taskDepthColumn+" "+dir, taskIDColumn+" "+dir)
+	default: // enqueued_at
+		builder = builder.OrderBy(taskEnqueuedAtColumn+" "+dir, taskIDColumn+" "+dir)
+	}
 	builder = builder.Limit(uint64(fetchLimit))
 
 	sqlQuery, args, err := builder.ToSql()
@@ -471,12 +510,18 @@ func (c *crawlTaskRepository) ListWithCursor(ctx context.Context, query service.
 	// Determine if there are more results
 	hasMore := len(taskSnapshots) > effectiveLimit
 
-	// Build next cursor from last item
+	// Build next cursor from last item (include sort info for stable pagination)
 	var nextCursor *service.ListTasksCursor
 	if hasMore && len(tasks) > 0 {
 		lastTask := tasks[len(tasks)-1]
+		lastDepth := lastTask.Depth
 		nextCursor = &service.ListTasksCursor{
+			SortField:  string(sortField),
+			SortAsc:    sortAsc,
 			EnqueuedAt: lastTask.EnqueuedAt,
+			URL:        lastTask.URL,
+			Status:     string(lastTask.Status),
+			Depth:      &lastDepth,
 			ID:         lastTask.ID.String(),
 		}
 	}

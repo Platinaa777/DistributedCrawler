@@ -56,7 +56,13 @@ func requiredRoleForMethod(method string) (models.Role, bool) {
 		"/crawler.v1.WorkerService/DrainWorker",
 		"/crawler.v1.WorkerService/ForceKillWorker",
 		"/crawler.v1.UserService/ListUsers",
-		"/crawler.v1.UserService/UpdateUserRole":
+		"/crawler.v1.UserService/UpdateUserRole",
+		"/crawler.v1.QueueAdminService/ListQueueEndpoints",
+		"/crawler.v1.QueueAdminService/CreateQueueEndpoint",
+		"/crawler.v1.QueueAdminService/UpdateQueueEndpoint",
+		"/crawler.v1.QueueAdminService/DeleteQueueEndpoint",
+		"/crawler.v1.QueueAdminService/ListQueueRoutingRules",
+		"/crawler.v1.QueueAdminService/UpsertQueueRoutingRules":
 		return models.RoleAdministrator, true
 	default:
 		return "", false

@@ -18,13 +18,32 @@ func (i *CrawlJobImplementation) ListTasksByJob(ctx context.Context, req *crawle
 		Limit: int(req.Limit),
 	}
 
+	// Map sort field and direction (default: enqueued_at ASC)
+	switch req.SortField {
+	case crawlergrpc.TaskSortField_TASK_SORT_FIELD_URL:
+		query.SortField = service.TaskSortByURL
+		query.SortAsc = req.SortOrder != crawlergrpc.SortOrder_SORT_ORDER_DESC
+	case crawlergrpc.TaskSortField_TASK_SORT_FIELD_STATUS:
+		query.SortField = service.TaskSortByStatus
+		query.SortAsc = req.SortOrder != crawlergrpc.SortOrder_SORT_ORDER_DESC
+	case crawlergrpc.TaskSortField_TASK_SORT_FIELD_DEPTH:
+		query.SortField = service.TaskSortByDepth
+		query.SortAsc = req.SortOrder != crawlergrpc.SortOrder_SORT_ORDER_DESC
+	default: // enqueued_at (default field, default ASC)
+		query.SortField = service.TaskSortByEnqueuedAt
+		query.SortAsc = req.SortOrder != crawlergrpc.SortOrder_SORT_ORDER_DESC
+	}
+
 	// Decode cursor if provided
 	if req.Cursor != nil && *req.Cursor != "" {
 		cursor, err := decodeTaskCursor(*req.Cursor)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid cursor: %v", err)
 		}
+		// Cursor carries its own sort info; use it for consistent pagination
 		query.Cursor = cursor
+		query.SortField = service.TaskSortField(cursor.SortField)
+		query.SortAsc = cursor.SortAsc
 	}
 
 	// Map filters

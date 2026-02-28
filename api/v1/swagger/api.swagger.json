@@ -24,6 +24,9 @@
       "name": "UserService"
     },
     {
+      "name": "QueueAdminService"
+    },
+    {
       "name": "WorkerService"
     }
   ],
@@ -233,6 +236,33 @@
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "sort_field",
+            "description": "Field to sort by (default: created_at)\n\n - JOB_SORT_FIELD_UNSPECIFIED: defaults to created_at DESC",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "JOB_SORT_FIELD_UNSPECIFIED",
+              "JOB_SORT_FIELD_CREATED_AT",
+              "JOB_SORT_FIELD_NAME",
+              "JOB_SORT_FIELD_STATUS"
+            ],
+            "default": "JOB_SORT_FIELD_UNSPECIFIED"
+          },
+          {
+            "name": "sort_order",
+            "description": "Sort direction (default: DESC for created_at, ASC for other fields)",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "SORT_ORDER_UNSPECIFIED",
+              "SORT_ORDER_ASC",
+              "SORT_ORDER_DESC"
+            ],
+            "default": "SORT_ORDER_UNSPECIFIED"
           }
         ],
         "tags": [
@@ -450,6 +480,34 @@
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "sort_field",
+            "description": "Field to sort by (default: enqueued_at)\n\n - TASK_SORT_FIELD_UNSPECIFIED: defaults to enqueued_at ASC",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "TASK_SORT_FIELD_UNSPECIFIED",
+              "TASK_SORT_FIELD_ENQUEUED_AT",
+              "TASK_SORT_FIELD_URL",
+              "TASK_SORT_FIELD_STATUS",
+              "TASK_SORT_FIELD_DEPTH"
+            ],
+            "default": "TASK_SORT_FIELD_UNSPECIFIED"
+          },
+          {
+            "name": "sort_order",
+            "description": "Sort direction (default: ASC for enqueued_at, ASC for other fields)",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "SORT_ORDER_UNSPECIFIED",
+              "SORT_ORDER_ASC",
+              "SORT_ORDER_DESC"
+            ],
+            "default": "SORT_ORDER_UNSPECIFIED"
           }
         ],
         "tags": [
@@ -518,6 +576,219 @@
         ],
         "tags": [
           "PreviewService"
+        ]
+      }
+    },
+    "/api/v1/queue-routing": {
+      "get": {
+        "operationId": "QueueAdminService_ListQueueRoutingRules",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListQueueRoutingRulesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "QUEUE_STAGE_UNSPECIFIED",
+              "QUEUE_STAGE_CRAWL",
+              "QUEUE_STAGE_PARSE"
+            ],
+            "default": "QUEUE_STAGE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "QueueAdminService"
+        ]
+      },
+      "put": {
+        "operationId": "QueueAdminService_UpsertQueueRoutingRules",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpsertQueueRoutingRulesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "rule",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1QueueRoutingRule"
+            }
+          }
+        ],
+        "tags": [
+          "QueueAdminService"
+        ]
+      }
+    },
+    "/api/v1/queues": {
+      "get": {
+        "operationId": "QueueAdminService_ListQueueEndpoints",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListQueueEndpointsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "QueueAdminService"
+        ]
+      },
+      "post": {
+        "operationId": "QueueAdminService_CreateQueueEndpoint",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateQueueEndpointResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "endpoint",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1QueueEndpoint"
+            }
+          }
+        ],
+        "tags": [
+          "QueueAdminService"
+        ]
+      }
+    },
+    "/api/v1/queues/{endpoint.id}": {
+      "patch": {
+        "operationId": "QueueAdminService_UpdateQueueEndpoint",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateQueueEndpointResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "endpoint.id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "endpoint",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "display_name": {
+                  "type": "string"
+                },
+                "broker_type": {
+                  "$ref": "#/definitions/v1QueueBrokerType"
+                },
+                "stage": {
+                  "$ref": "#/definitions/v1QueueStage"
+                },
+                "host": {
+                  "type": "string"
+                },
+                "queue_name": {
+                  "type": "string"
+                },
+                "secret_key": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "updated_at": {
+                  "type": "string"
+                }
+              },
+              "description": "QueueEndpoint describes a single queue/topic that workers can connect to."
+            }
+          }
+        ],
+        "tags": [
+          "QueueAdminService"
+        ]
+      }
+    },
+    "/api/v1/queues/{id}": {
+      "delete": {
+        "operationId": "QueueAdminService_DeleteQueueEndpoint",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteQueueEndpointResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "QueueAdminService"
         ]
       }
     },
@@ -908,6 +1179,14 @@
         "crawl_mode": {
           "$ref": "#/definitions/v1CrawlMode",
           "title": "Controls link-following behavior: pagination_only, links_only, or pagination_and_links (default)"
+        },
+        "queue_endpoint_assignments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1QueueEndpointAssignment"
+          },
+          "title": "Queue endpoint assignments for this job config with per-endpoint routing weights"
         }
       },
       "title": "CrawlJobConfig represents crawl job configuration"
@@ -995,6 +1274,17 @@
           "type": "string"
         }
       }
+    },
+    "v1CreateQueueEndpointResponse": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "$ref": "#/definitions/v1QueueEndpoint"
+        }
+      }
+    },
+    "v1DeleteQueueEndpointResponse": {
+      "type": "object"
     },
     "v1DrainWorkerResponse": {
       "type": "object",
@@ -1187,6 +1477,18 @@
       },
       "title": "JobListFilter defines filtering options for listing jobs"
     },
+    "v1JobSortField": {
+      "type": "string",
+      "enum": [
+        "JOB_SORT_FIELD_UNSPECIFIED",
+        "JOB_SORT_FIELD_CREATED_AT",
+        "JOB_SORT_FIELD_NAME",
+        "JOB_SORT_FIELD_STATUS"
+      ],
+      "default": "JOB_SORT_FIELD_UNSPECIFIED",
+      "description": "- JOB_SORT_FIELD_UNSPECIFIED: defaults to created_at DESC",
+      "title": "JobSortField defines which job field to sort by"
+    },
     "v1JobType": {
       "type": "string",
       "enum": [
@@ -1214,6 +1516,30 @@
         "has_more": {
           "type": "boolean",
           "title": "Indicates if there are more results after this page"
+        }
+      }
+    },
+    "v1ListQueueEndpointsResponse": {
+      "type": "object",
+      "properties": {
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1QueueEndpoint"
+          }
+        }
+      }
+    },
+    "v1ListQueueRoutingRulesResponse": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1QueueRoutingRule"
+          }
         }
       }
     },
@@ -1352,6 +1678,87 @@
         }
       }
     },
+    "v1QueueBrokerType": {
+      "type": "string",
+      "enum": [
+        "QUEUE_BROKER_TYPE_UNSPECIFIED",
+        "QUEUE_BROKER_TYPE_RABBITMQ",
+        "QUEUE_BROKER_TYPE_KAFKA"
+      ],
+      "default": "QUEUE_BROKER_TYPE_UNSPECIFIED",
+      "description": "QueueBrokerType identifies the messaging broker implementation."
+    },
+    "v1QueueEndpoint": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "broker_type": {
+          "$ref": "#/definitions/v1QueueBrokerType"
+        },
+        "stage": {
+          "$ref": "#/definitions/v1QueueStage"
+        },
+        "host": {
+          "type": "string"
+        },
+        "queue_name": {
+          "type": "string"
+        },
+        "secret_key": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        }
+      },
+      "description": "QueueEndpoint describes a single queue/topic that workers can connect to."
+    },
+    "v1QueueEndpointAssignment": {
+      "type": "object",
+      "properties": {
+        "endpoint_id": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "QueueEndpointAssignment links a queue endpoint to a job config with a routing weight."
+    },
+    "v1QueueRoutingRule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/definitions/v1QueueStage"
+        },
+        "scope": {
+          "type": "string"
+        }
+      },
+      "description": "QueueRoutingRule defines routing across endpoints for a given stage."
+    },
+    "v1QueueStage": {
+      "type": "string",
+      "enum": [
+        "QUEUE_STAGE_UNSPECIFIED",
+        "QUEUE_STAGE_CRAWL",
+        "QUEUE_STAGE_PARSE"
+      ],
+      "default": "QUEUE_STAGE_UNSPECIFIED",
+      "description": "QueueStage identifies which pipeline stage a queue belongs to."
+    },
     "v1RateLimitPolicy": {
       "type": "object",
       "properties": {
@@ -1486,6 +1893,16 @@
       },
       "title": "Seed represents a starting URL"
     },
+    "v1SortOrder": {
+      "type": "string",
+      "enum": [
+        "SORT_ORDER_UNSPECIFIED",
+        "SORT_ORDER_ASC",
+        "SORT_ORDER_DESC"
+      ],
+      "default": "SORT_ORDER_UNSPECIFIED",
+      "title": "SortOrder defines ascending or descending sort direction"
+    },
     "v1TaskAnalytics": {
       "type": "object",
       "properties": {
@@ -1545,6 +1962,19 @@
       },
       "title": "TaskListFilter defines filtering options for listing tasks"
     },
+    "v1TaskSortField": {
+      "type": "string",
+      "enum": [
+        "TASK_SORT_FIELD_UNSPECIFIED",
+        "TASK_SORT_FIELD_ENQUEUED_AT",
+        "TASK_SORT_FIELD_URL",
+        "TASK_SORT_FIELD_STATUS",
+        "TASK_SORT_FIELD_DEPTH"
+      ],
+      "default": "TASK_SORT_FIELD_UNSPECIFIED",
+      "description": "- TASK_SORT_FIELD_UNSPECIFIED: defaults to enqueued_at ASC",
+      "title": "TaskSortField defines which task field to sort by"
+    },
     "v1TransformSpec": {
       "type": "object",
       "properties": {
@@ -1559,11 +1989,27 @@
       },
       "title": "TransformSpec defines a transformation operation"
     },
+    "v1UpdateQueueEndpointResponse": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "$ref": "#/definitions/v1QueueEndpoint"
+        }
+      }
+    },
     "v1UpdateUserRoleResponse": {
       "type": "object",
       "properties": {
         "updated": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1UpsertQueueRoutingRulesResponse": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "$ref": "#/definitions/v1QueueRoutingRule"
         }
       }
     },

@@ -8,9 +8,11 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TagModule } from 'primeng/tag';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { CrawlerApiService, JobListFilter } from '../../core/services/api/crawler-api.service';
+import { CrawlerApiService, JobListFilter, JobSortParams } from '../../core/services/api/crawler-api.service';
+import { QueueAdminApiService } from '../../core/services/api/queue-admin-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CrawlJob } from '../../core/models';
+import { QueueEndpoint } from '../../core/models/queue.model';
 import { JobFiltersComponent } from './components/job-filters.component';
 
 @Component({
@@ -50,6 +52,14 @@ import { JobFiltersComponent } from './components/job-filters.component';
             Monitoring
           </p-button>
           <p-button
+            *ngIf="canManageUsers"
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="goToQueues()">
+            <i class="pi pi-server mr-2"></i>
+            Queue Admin
+          </p-button>
+          <p-button
             severity="primary"
             (onClick)="createJob()"
             [disabled]="!canCreateJobs">
@@ -78,14 +88,18 @@ import { JobFiltersComponent } from './components/job-filters.component';
           [expandedRowKeys]="expandedRows"
           (onRowExpand)="onRowExpand($event)"
           (onRowCollapse)="onRowCollapse($event)"
+          [lazy]="true"
+          (onLazyLoad)="onLazyLoad($event)"
+          [sortField]="currentSortField"
+          [sortOrder]="currentSortOrder"
           [tableStyle]="{'min-width': '60rem'}">
           <ng-template #header>
             <tr>
               <th style="width: 3rem"></th>
-              <th>Name</th>
+              <th pSortableColumn="name">Name <p-sortIcon field="name" /></th>
               <th>Type</th>
-              <th>Status</th>
-              <th>Created At</th>
+              <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+              <th pSortableColumn="created_at">Created At <p-sortIcon field="created_at" /></th>
               <th style="width: 8rem"></th>
             </tr>
           </ng-template>
@@ -133,6 +147,13 @@ import { JobFiltersComponent } from './components/job-filters.component';
                     <code class="text-xs bg-white dark:bg-gray-700 rounded px-3 py-2 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 inline-block">
                       {{ job.job_config?.scopes?.allowed_url_patterns?.join(', ') }}
                     </code>
+                  </div>
+                  <div class="mb-3" *ngIf="job.job_config?.queue_endpoint_assignments?.length">
+                    <p class="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Queue Endpoints</p>
+                    <div class="flex flex-wrap gap-2">
+                      <p-tag *ngFor="let a of job.job_config?.queue_endpoint_assignments"
+                        [value]="getEndpointLabel(a.endpoint_id, a.weight)" severity="secondary" />
+                    </div>
                   </div>
                   <div class="pagination-info mb-3" *ngIf="job.job_config?.extraction_spec?.pagination?.length">
                     <p class="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Pagination Selectors</p>
@@ -229,19 +250,33 @@ export class JobsListComponent implements OnInit, OnDestroy {
   error: string | null = null;
   expandedRows: { [key: string]: boolean } = {};
   hasMore = false;
+  endpointMap = new Map<string, QueueEndpoint>();
+
+  // Sort state (PrimeNG: 1 = ASC, -1 = DESC)
+  currentSortField = 'created_at';
+  currentSortOrder = -1;
 
   private nextCursor: string | null = null;
   private currentFilter: JobListFilter = {};
+  private currentSort: JobSortParams = { sort_field: 'JOB_SORT_FIELD_CREATED_AT', sort_order: 'SORT_ORDER_DESC' };
   private readonly pageSize = 20;
 
   constructor(
     private crawlerApi: CrawlerApiService,
+    private queueAdminApi: QueueAdminApiService,
     private router: Router,
     private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    this.loadJobs();
+    // Initial job load is triggered by (onLazyLoad) from p-table init
+    this.queueAdminApi.listEndpoints().subscribe({
+      next: (res) => {
+        this.endpointMap.clear();
+        (res.endpoints ?? []).forEach(ep => this.endpointMap.set(ep.id, ep));
+      },
+      error: () => { /* non-critical */ }
+    });
   }
 
   ngOnDestroy(): void {
@@ -256,13 +291,39 @@ export class JobsListComponent implements OnInit, OnDestroy {
     this.loadJobs();
   }
 
+  private readonly jobSortFieldMap: Record<string, JobSortParams['sort_field']> = {
+    'name': 'JOB_SORT_FIELD_NAME',
+    'status': 'JOB_SORT_FIELD_STATUS',
+    'created_at': 'JOB_SORT_FIELD_CREATED_AT',
+  };
+
+  onLazyLoad(event: { sortField?: string | string[] | null; sortOrder?: number | null }): void {
+    const field = (event.sortField as string) || 'created_at';
+    const order = event.sortOrder ?? -1;
+
+    const sortChanged = field !== this.currentSortField || order !== this.currentSortOrder;
+    this.currentSortField = field;
+    this.currentSortOrder = order;
+    this.currentSort = {
+      sort_field: this.jobSortFieldMap[field] ?? 'JOB_SORT_FIELD_CREATED_AT',
+      sort_order: order === 1 ? 'SORT_ORDER_ASC' : 'SORT_ORDER_DESC',
+    };
+
+    if (sortChanged) {
+      this.jobs = [];
+      this.nextCursor = null;
+    }
+    this.loadJobs();
+  }
+
   loadJobs(): void {
     this.loading = true;
     this.error = null;
 
     this.crawlerApi.listJobs({
       limit: this.pageSize,
-      filter: this.currentFilter
+      filter: this.currentFilter,
+      sort: this.currentSort
     }).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
@@ -286,7 +347,8 @@ export class JobsListComponent implements OnInit, OnDestroy {
     this.crawlerApi.listJobs({
       cursor: this.nextCursor,
       limit: this.pageSize,
-      filter: this.currentFilter
+      filter: this.currentFilter,
+      sort: this.currentSort
     }).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
@@ -343,6 +405,18 @@ export class JobsListComponent implements OnInit, OnDestroy {
 
   goToMonitoring(): void {
     this.router.navigate(['/workers']);
+  }
+
+  goToQueues(): void {
+    this.router.navigate(['/queues']);
+  }
+
+  getEndpointLabel(id: string, weight?: number): string {
+    const ep = this.endpointMap.get(id);
+    const name = ep ? ep.display_name : id;
+    const stage = ep ? (ep.stage === 'QUEUE_STAGE_CRAWL' ? 'crawl' : 'parse') : '';
+    const label = stage ? `${name} (${stage})` : name;
+    return weight && weight !== 1 ? `${label} ×${weight}` : label;
   }
 
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
