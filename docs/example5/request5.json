@@ -1,0 +1,119 @@
+{
+  "config": {
+    "name": "Books to Scrape - All Products",
+    "job_type": "JOB_TYPE_SCHEDULED",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_ONLY",
+    "seeds": [
+      {
+        "url": "https://books.toscrape.com/"
+      }
+    ],
+    "scopes": {
+      "max_depth": 5,
+      "allowed_domains": ["books.toscrape.com"],
+      "deny_url_patterns": []
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 500,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": "* * * * *"
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "page_title",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div.page-header h1",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        }
+      ],
+      "items": {
+        "container_selector": "article.product_pod",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "h3 a",
+              "attribute": "title",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "price",
+            "type": "float",
+            "required": true,
+            "extractor": {
+              "selector": "p.price_color",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "parse_price" }
+            ]
+          },
+          {
+            "name": "availability",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": "p.instock.availability",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "h3 a",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "ul.pager li.next a",
+          "attribute": "href",
+          "multiple": false
+        }
+      ]
+    }
+  }
+}

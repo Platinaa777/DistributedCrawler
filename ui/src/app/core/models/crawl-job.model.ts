@@ -4,6 +4,8 @@ export interface CrawlJob {
   id: string;
   job_config_id: string;
   job_config?: CrawlJobConfig;
+  // For scheduled runs: "{config_name}_{scheduled_at}". Absent for one-time jobs.
+  name?: string;
   status: string;
   created_at: string;
   completed_at?: string;

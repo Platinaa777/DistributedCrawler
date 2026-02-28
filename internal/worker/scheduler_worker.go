@@ -201,10 +201,12 @@ func (w *ScheduleWorker) createScheduledJob(
 		}
 
 		jobID := valueobjects.GenerateCrawlJobID()
+		jobName := config.Name + "_" + now.UTC().Format(time.RFC3339)
 		crawlJob := models.CrawlJob{
 			ID:           jobID,
 			JobConfigID:  config.ID,
 			JobConfig:    config,
+			Name:         &jobName,
 			Status:       models.TaskStatusInProgress,
 			CreatedAt:    now,
 			ExportStatus: models.ExportStatusNotStarted,

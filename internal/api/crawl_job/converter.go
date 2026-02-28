@@ -215,6 +215,7 @@ func ToProtoCrawlJob(job *models.CrawlJob) *crawlergrpc.CrawlJob {
 		Id:           job.ID.String(),
 		JobConfigId:  job.JobConfigID.String(),
 		JobConfig:    ToProtoCrawlJobConfig(job.JobConfig),
+		Name:         job.Name,
 		Status:       job.Status.String(),
 		CreatedAt:    timestamppb.New(job.CreatedAt),
 		ExportStatus: job.ExportStatus.String(),

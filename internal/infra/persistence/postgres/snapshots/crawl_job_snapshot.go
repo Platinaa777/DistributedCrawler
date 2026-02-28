@@ -8,6 +8,7 @@ import (
 type CrawlJobSnapshot struct {
 	ID          string         `db:"id"`
 	JobConfigID sql.NullString `db:"job_config_id"`
+	Name        sql.NullString `db:"name"`
 	Status      string         `db:"status"`
 	CreatedAt   time.Time      `db:"created_at"`
 	CompletedAt sql.NullTime   `db:"completed_at"`

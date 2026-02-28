@@ -1130,6 +1130,10 @@
         },
         "export_status": {
           "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "For scheduled job runs: \"{config_name}_{scheduled_at}\" (RFC3339). Empty for one-time jobs."
         }
       },
       "title": "CrawlJob represents a crawling job"

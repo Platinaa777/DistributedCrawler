@@ -114,7 +114,7 @@ import { JobFiltersComponent } from './components/job-filters.component';
                   [plain]="true"
                   [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
               </td>
-              <td>{{ job.job_config?.name || 'Unnamed Job' }}</td>
+              <td>{{ job.name || job.job_config?.name || 'Unnamed Job' }}</td>
               <td>
                 <p-tag
                   [value]="job.job_config?.job_type === 'JOB_TYPE_SCHEDULED' ? 'Scheduled' : 'One-time'"

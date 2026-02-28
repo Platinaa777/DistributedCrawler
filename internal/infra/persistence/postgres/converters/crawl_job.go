@@ -14,6 +14,10 @@ func SaveCrawlJobToSnapshot(crawlJob models.CrawlJob) *snapshots.CrawlJobSnapsho
 		CreatedAt: crawlJob.CreatedAt,
 	}
 
+	if crawlJob.Name != nil {
+		snapshot.Name = sql.NullString{String: *crawlJob.Name, Valid: true}
+	}
+
 	// Handle JobConfigID
 	if !crawlJob.JobConfigID.IsEmpty() {
 		snapshot.JobConfigID = sql.NullString{
@@ -77,6 +81,10 @@ func RestoreCrawlJobFromSnapshot(crawlJob snapshots.CrawlJobSnapshot) (*models.C
 		ID:        id,
 		Status:    models.TaskStatus(crawlJob.Status),
 		CreatedAt: crawlJob.CreatedAt,
+	}
+
+	if crawlJob.Name.Valid {
+		job.Name = &crawlJob.Name.String
 	}
 
 	// Handle JobConfigID

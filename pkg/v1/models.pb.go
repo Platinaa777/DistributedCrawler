@@ -1422,6 +1422,8 @@ type CrawlJob struct {
 	ExportCsvKey  *string                `protobuf:"bytes,8,opt,name=export_csv_key,proto3,oneof" json:"export_csv_key,omitempty"`
 	ExportedAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=exported_at,proto3,oneof" json:"exported_at,omitempty"`
 	ExportStatus  string                 `protobuf:"bytes,10,opt,name=export_status,proto3" json:"export_status,omitempty"`
+	// For scheduled job runs: "{config_name}_{scheduled_at}" (RFC3339). Empty for one-time jobs.
+	Name          *string `protobuf:"bytes,11,opt,name=name,proto3,oneof" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1522,6 +1524,13 @@ func (x *CrawlJob) GetExportedAt() *timestamppb.Timestamp {
 func (x *CrawlJob) GetExportStatus() string {
 	if x != nil {
 		return x.ExportStatus
+	}
+	return ""
+}
+
+func (x *CrawlJob) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
 	}
 	return ""
 }
@@ -5057,7 +5066,7 @@ const file_v1_models_proto_rawDesc = "" +
 	"\n" +
 	"crawl_mode\x18\f \x01(\x0e2\x15.crawler.v1.CrawlModeR\n" +
 	"crawl_mode\x12c\n" +
-	"\x1aqueue_endpoint_assignments\x18\x0e \x03(\v2#.crawler.v1.QueueEndpointAssignmentR\x1aqueue_endpoint_assignmentsJ\x04\b\r\x10\x0e\"\xb6\x04\n" +
+	"\x1aqueue_endpoint_assignments\x18\x0e \x03(\v2#.crawler.v1.QueueEndpointAssignmentR\x1aqueue_endpoint_assignmentsJ\x04\b\r\x10\x0e\"\xd8\x04\n" +
 	"\bCrawlJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
 	"\rjob_config_id\x18\x02 \x01(\tR\rjob_config_id\x12?\n" +
@@ -5073,12 +5082,14 @@ const file_v1_models_proto_rawDesc = "" +
 	"\x0eexport_csv_key\x18\b \x01(\tH\x03R\x0eexport_csv_key\x88\x01\x01\x12A\n" +
 	"\vexported_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampH\x04R\vexported_at\x88\x01\x01\x12$\n" +
 	"\rexport_status\x18\n" +
-	" \x01(\tR\rexport_statusB\r\n" +
+	" \x01(\tR\rexport_status\x12\x17\n" +
+	"\x04name\x18\v \x01(\tH\x05R\x04name\x88\x01\x01B\r\n" +
 	"\v_job_configB\x0f\n" +
 	"\r_completed_atB\x12\n" +
 	"\x10_export_json_keyB\x11\n" +
 	"\x0f_export_csv_keyB\x0e\n" +
-	"\f_exported_at\"\xcf\x03\n" +
+	"\f_exported_atB\a\n" +
+	"\x05_name\"\xcf\x03\n" +
 	"\tCrawlTask\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x06job_id\x12+\n" +

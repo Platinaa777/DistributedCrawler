@@ -11,6 +11,10 @@ type CrawlJob struct {
 	JobConfigID valueobjects.ID
 	JobConfig   *CrawlJobConfig
 
+	// Name is set for scheduled job runs as "{config_name}_{scheduled_at}" (RFC3339).
+	// Nil for one-time jobs.
+	Name *string
+
 	Status TaskStatus
 
 	CreatedAt   time.Time

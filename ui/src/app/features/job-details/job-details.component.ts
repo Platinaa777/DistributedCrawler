@@ -59,7 +59,7 @@ import { TaskFiltersComponent } from './components/task-filters.component';
         <p-card styleClass="mb-6">
           <ng-template pTemplate="header">
             <div class="p-4 pb-0">
-              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ job?.job_config?.name || 'Unnamed Job' }}</h2>
+              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ job?.name || job?.job_config?.name || 'Unnamed Job' }}</h2>
               <p class="text-sm text-gray-500 dark:text-gray-400">Job ID: {{ job?.id }}</p>
             </div>
           </ng-template>
