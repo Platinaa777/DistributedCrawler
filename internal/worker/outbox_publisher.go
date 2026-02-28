@@ -117,28 +117,25 @@ func (w *OutboxPublisher) Stop() {
 func (w *OutboxPublisher) processOutboxEvents(ctx context.Context) {
 	err := w.txManager.ReadCommitted(ctx, func(ctxTX context.Context) error {
 		// Fetch unprocessed events with row-level locking
-		events, err := w.outboxRepo.FetchUnprocessedEvents(ctxTX, w.batchSize)
+		evts, err := w.outboxRepo.FetchUnprocessedEvents(ctxTX, w.batchSize)
 		if err != nil {
 			return fmt.Errorf("failed to fetch unprocessed events: %w", err)
 		}
 
-		if len(events) == 0 {
+		if len(evts) == 0 {
 			w.logger.Debug("No unprocessed outbox events found")
 			return nil
 		}
 
-		w.logger.Info("Processing outbox events", zap.Int("count", len(events)))
+		w.logger.Info("Processing outbox events", zap.Int("count", len(evts)))
 
-		// Process each event
-		for _, event := range events {
-			if err := w.processEvent(ctxTX, event); err != nil {
-				w.logger.Error("Failed to process outbox event",
-					zap.String("event_id", event.ID.String()),
-					zap.String("event_type", event.EventType),
-					zap.Error(err),
-				)
-				// Continue processing other events even if one fails
-				continue
+		// Process each event. ctx (no-tx) is passed for network/routing calls;
+		// ctxTX is used only for DB writes inside processEvent.
+		for _, event := range evts {
+			if err := w.processEvent(ctx, ctxTX, event); err != nil {
+				// Return on the first error to avoid running further DB ops
+				// on an already-aborted transaction.
+				return fmt.Errorf("failed to process outbox event %s: %w", event.ID, err)
 			}
 		}
 
@@ -150,22 +147,23 @@ func (w *OutboxPublisher) processOutboxEvents(ctx context.Context) {
 	}
 }
 
-// processEvent publishes a single outbox event to RabbitMQ and marks it as processed
-func (w *OutboxPublisher) processEvent(ctx context.Context, event *models.OutboxEvent) error {
-	// Parse event based on type
+// processEvent publishes a single outbox event to the message broker and marks it as processed.
+// ctx is the original context (no DB transaction) used for routing and network calls.
+// ctxTX is the transaction context used only for DB writes.
+func (w *OutboxPublisher) processEvent(ctx, ctxTX context.Context, event *models.OutboxEvent) error {
 	switch event.EventType {
 	case string(events.EventTypeTaskEnqueued):
-		return w.publishTaskEnqueuedEvent(ctx, event)
+		return w.publishTaskEnqueuedEvent(ctx, ctxTX, event)
 	default:
 		w.logger.Warn("Unknown event type", zap.String("event_type", event.EventType))
-		// Mark as processed anyway to avoid reprocessing
-		return w.outboxRepo.MarkAsProcessed(ctx, event.ID)
+		return w.outboxRepo.MarkAsProcessed(ctxTX, event.ID)
 	}
 }
 
-// publishTaskEnqueuedEvent publishes a TaskEnqueuedEvent to the message broker
-func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEvent *models.OutboxEvent) error {
-	// Unmarshal payload
+// publishTaskEnqueuedEvent publishes a TaskEnqueuedEvent to the message broker.
+// ctx (no-tx) is used for routing lookups and the broker publish.
+// ctxTX is used only for the final DB write (MarkAsProcessed).
+func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx, ctxTX context.Context, outboxEvent *models.OutboxEvent) error {
 	var event events.TaskEnqueuedEvent
 	if err := json.Unmarshal(outboxEvent.Payload, &event); err != nil {
 		return fmt.Errorf("failed to unmarshal event payload: %w", err)
@@ -179,7 +177,9 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 		ctx = telemetry.ExtractTraceContext(ctx, event.TraceContext)
 	}
 
-	// Resolve target queue via routing policy (or fall back to static queue)
+	// Resolve target queue via routing policy (or fall back to static queue).
+	// Uses ctx (no-tx) so that a DB error in the routing query cannot abort
+	// the outbox transaction.
 	targetQueue := w.resolveQueue(ctx, event.JobID)
 
 	// Start a child span — now correctly linked to the originating trace
@@ -200,7 +200,6 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 		traceCtx = telemetry.InjectTraceContext(ctx)
 	}
 
-	// Create message for RabbitMQ (use the same structure as before)
 	message := messaging.CrawlTaskMessage{
 		TaskID:       event.TaskID,
 		JobID:        event.JobID,
@@ -209,7 +208,6 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 		TraceContext: traceCtx,
 	}
 
-	// Publish to message broker
 	if err := w.msgClient.Publish(ctx, targetQueue, message); err != nil {
 		return fmt.Errorf("failed to publish task to message broker: %w", err)
 	}
@@ -220,8 +218,8 @@ func (w *OutboxPublisher) publishTaskEnqueuedEvent(ctx context.Context, outboxEv
 		zap.String("queue", targetQueue),
 	)
 
-	// Mark event as processed
-	if err := w.outboxRepo.MarkAsProcessed(ctx, outboxEvent.ID); err != nil {
+	// Mark event as processed inside the outbox transaction.
+	if err := w.outboxRepo.MarkAsProcessed(ctxTX, outboxEvent.ID); err != nil {
 		return fmt.Errorf("failed to mark event as processed: %w", err)
 	}
 
