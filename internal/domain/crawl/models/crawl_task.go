@@ -34,11 +34,33 @@ func (task *CrawlTask) MarkAsFetched(finalUrl, minioKey string) {
 	task.FinalURL = &finalUrl
 
 	task.Status = TaskStatusFetched
+	task.ErrorMessage = nil
 }
 
-func (task *CrawlTask) MarkAsParsed(objectKey string, contentType string, sizeBytes int64, time time.Time) {
+func (task *CrawlTask) MarkAsParsed(objectKey string, contentType string, sizeBytes int64, parsedAt time.Time) {
 	task.Status = TaskStatusParsed
 	task.ResultObjectKey = &objectKey
 	task.ResultContentType = &contentType
 	task.ResultSizeBytes = &sizeBytes
+	task.ResultCreatedAt = &parsedAt
+	task.ErrorMessage = nil
+}
+
+func (task *CrawlTask) MarkAsFailed(reason string) {
+	task.Status = TaskStatusFailed
+	task.clearResultMetadata()
+	task.ErrorMessage = &reason
+}
+
+func (task *CrawlTask) MarkAsSkipped(reason string) {
+	task.Status = TaskStatusSkipped
+	task.clearResultMetadata()
+	task.ErrorMessage = &reason
+}
+
+func (task *CrawlTask) clearResultMetadata() {
+	task.ResultObjectKey = nil
+	task.ResultContentType = nil
+	task.ResultSizeBytes = nil
+	task.ResultCreatedAt = nil
 }

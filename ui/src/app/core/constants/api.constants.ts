@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:8084',
+  BASE_URL: '',
   API_PREFIX: '/api/v1'
 };
 

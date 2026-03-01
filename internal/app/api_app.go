@@ -15,6 +15,8 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
 	"go.uber.org/zap/zapcore"
@@ -187,6 +189,10 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 
 	reflection.Register(a.grpcServer)
 
+	healthSrv := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(a.grpcServer, healthSrv)
+	healthSrv.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+
 	crawlergrpc.RegisterCrawlerServiceServer(a.grpcServer, a.serviceProvider.CrawlerServiceImpl(ctx))
 	crawlergrpc.RegisterPreviewServiceServer(a.grpcServer, a.serviceProvider.PreviewServiceImpl(ctx))
 	crawlergrpc.RegisterAuthServiceServer(a.grpcServer, a.serviceProvider.AuthServiceImpl(ctx))
@@ -241,8 +247,9 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
+	corsCfg, _ := env.NewCORSConfig()
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:4200"}, // или []string{"*"} если без credentials
+		AllowedOrigins:   corsCfg.AllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type", "Accept", "X-Preview-Cookie"},
 		ExposedHeaders:   []string{"Grpc-Status", "Grpc-Message", "Grpc-Metadata-*", "Location"},

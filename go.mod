@@ -15,6 +15,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/minio/minio-go/v7 v7.0.97
+	github.com/pressly/goose/v3 v3.14.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/rakyll/statik v0.1.7
 	github.com/redis/go-redis/v9 v9.17.2
@@ -64,7 +65,6 @@ require (
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/pressly/goose/v3 v3.14.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/tinylib/msgp v1.3.0 // indirect
@@ -92,8 +92,8 @@ require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/georgysavva/scany v1.2.3
 	github.com/joho/godotenv v1.5.1
-	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/net v0.47.0
 	golang.org/x/sys v0.39.0 // indirect
-	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/text v0.32.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251222181119-0a764e51fe1b // indirect
 )

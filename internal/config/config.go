@@ -1,6 +1,10 @@
 package config
 
-import "github.com/joho/godotenv"
+import (
+	"os"
+
+	"github.com/joho/godotenv"
+)
 
 const (
 	// Queue name keys
@@ -8,13 +12,15 @@ const (
 	ParsingQueueKey = "parsing_queue"
 )
 
+// Load loads configuration from a dotenv file.
+// If the CONFIG_SOURCE environment variable is set to "env", the file is
+// skipped and the process environment is used as-is (e.g. K8s ConfigMap/Secret).
 func Load(path string) error {
-	err := godotenv.Load(path)
-	if err != nil {
-		return err
+	if os.Getenv("CONFIG_SOURCE") == "env" {
+		return nil
 	}
 
-	return nil
+	return godotenv.Load(path)
 }
 
 type GRPCConfig interface {
@@ -107,4 +113,9 @@ type WorkerRegionConfig interface {
 type SecretsFileConfig interface {
 	FilePath() string
 	WatchEnabled() bool
+}
+
+// CORSConfig holds allowed origins for the HTTP server CORS policy.
+type CORSConfig interface {
+	AllowedOrigins() []string
 }

@@ -13,7 +13,7 @@
 #     -f values-external-infra.yaml
 #
 # Adjust the host/endpoint values below if your infra release name or
-# namespace differs from the defaults (RELEASE_NAME=infra, NAMESPACE=crawler).
+# namespace differs from the defaults (RELEASE_NAME=infra, NAMESPACE=infra).
 # =============================================================================
 
 # ---- Disable all embedded subcharts ---------------------------------------
@@ -35,18 +35,20 @@ migrations:
   enabled: true
 
 # ---- Point app config to the external infra services ---------------------
-# Service DNS:  <service-name>.<namespace>.svc.cluster.local
-# If infra and app share the same namespace, the short name is enough.
+# Uses fully-qualified DNS names so cross-namespace resolution works:
+#   <svc>.<namespace>.svc.cluster.local
+# Default: infra release name = "infra", namespace = "infra".
+# If you changed RELEASE_NAME or NAMESPACE in deploy-infra.sh, update accordingly.
 config:
   postgres:
-    host: "infra-postgresql"   # bitnami: <release>-postgresql
+    host: "infra-postgresql.infra.svc.cluster.local"
     port: 5432
     database: crawler
     user: crawler
     sslMode: disable
 
   rabbitmq:
-    host: "infra-rabbitmq"     # bitnami: <release>-rabbitmq
+    host: "infra-rabbitmq.infra.svc.cluster.local"
     port: 5672
     user: guest
     crawlQueueName: crawl_queue
@@ -54,21 +56,25 @@ config:
     exportQueueName: export_queue
 
   minio:
-    endpoint: "infra-minio"    # bitnami: <release>-minio
+    endpoint: "infra-minio.infra.svc.cluster.local"
     port: 9000
     useSSL: false
     bucketName: pages
 
   redis:
-    host: "infra-redis-master" # bitnami: <release>-redis-master
+    host: "infra-redis-master.infra.svc.cluster.local"
     port: 6379
     db: 0
 
   # Point OTel to the collector running in the infra release
   otel:
     enabled: true
-    exporterEndpoint: "infra-otelcollector:4317"
+    exporterEndpoint: "infra-otelcollector.infra.svc.cluster.local:4317"
     exporterInsecure: true
+
+  opensearch:
+    enabled: true
+    endpoint: "http://infra-opensearch.infra.svc.cluster.local:9200"
 
 # ---- Secrets must match what the infra chart was deployed with -----------
 # Either copy the values here or reference an existing secret:

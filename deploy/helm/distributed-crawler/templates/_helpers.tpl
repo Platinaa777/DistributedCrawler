@@ -121,11 +121,15 @@ RabbitMQ host
 {{- end }}
 
 {{/*
-MinIO endpoint
+MinIO endpoint (host:port)
 */}}
 {{- define "distributed-crawler.minioEndpoint" -}}
 {{- if .Values.config.minio.endpoint }}
+{{- if .Values.config.minio.port }}
+{{- printf "%s:%d" .Values.config.minio.endpoint (int .Values.config.minio.port) }}
+{{- else }}
 {{- .Values.config.minio.endpoint }}
+{{- end }}
 {{- else if .Values.minio.enabled }}
 {{- printf "%s-minio:%d" .Release.Name (int .Values.config.minio.port) }}
 {{- else }}
@@ -236,6 +240,50 @@ Export Worker selector labels
 {{- define "distributed-crawler.exportWorker.selectorLabels" -}}
 {{ include "distributed-crawler.selectorLabels" . }}
 app.kubernetes.io/component: export-worker
+{{- end }}
+
+{{/*
+Queue secrets volume (mounts queue-secrets.json from the app Secret)
+*/}}
+{{- define "distributed-crawler.queueSecretsVolume" -}}
+- name: queue-secrets
+  secret:
+    secretName: {{ include "distributed-crawler.secretName" . }}
+    items:
+      - key: queue-secrets.json
+        path: queue-secrets.json
+{{- end }}
+
+{{/*
+Queue secrets volumeMount
+*/}}
+{{- define "distributed-crawler.queueSecretsVolumeMount" -}}
+- name: queue-secrets
+  mountPath: /etc/crawler
+  readOnly: true
+{{- end }}
+
+{{/*
+UI name
+*/}}
+{{- define "distributed-crawler.ui.fullname" -}}
+{{- printf "%s-ui" (include "distributed-crawler.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+UI labels
+*/}}
+{{- define "distributed-crawler.ui.labels" -}}
+{{ include "distributed-crawler.labels" . }}
+app.kubernetes.io/component: ui
+{{- end }}
+
+{{/*
+UI selector labels
+*/}}
+{{- define "distributed-crawler.ui.selectorLabels" -}}
+{{ include "distributed-crawler.selectorLabels" . }}
+app.kubernetes.io/component: ui
 {{- end }}
 
 {{/*

@@ -52,6 +52,7 @@ func isPublicEndpoint(method string) bool {
 		"/crawler.v1.AuthService/Login",
 		"/crawler.v1.AuthService/Refresh",
 		"/crawler.v1.AuthService/Logout",
+		"/grpc.health.v1.Health/Check",
 	}
 
 	for _, endpoint := range publicEndpoints {

@@ -49,6 +49,10 @@ spec:
                 name: {{ include "distributed-crawler.secretName" . }}
           resources:
             {{- toYaml .Values.fetchWorker.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "distributed-crawler.queueSecretsVolumeMount" . | nindent 12 }}
+      volumes:
+        {{- include "distributed-crawler.queueSecretsVolume" . | nindent 8 }}
       {{- with .Values.fetchWorker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

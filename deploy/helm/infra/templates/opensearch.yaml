@@ -44,6 +44,7 @@ spec:
       containers:
         - name: opensearch
           image: {{ .Values.opensearch.image.repository }}:{{ .Values.opensearch.image.tag }}
+          imagePullPolicy: {{ .Values.opensearch.image.pullPolicy | default "IfNotPresent" }}
           env:
             - name: discovery.type
               value: single-node

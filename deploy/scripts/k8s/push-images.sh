@@ -20,10 +20,10 @@ TARGET_REGISTRY="${TARGET_REGISTRY:?TARGET_REGISTRY is required (e.g. ghcr.io/my
 TAG="${IMAGE_TAG:-latest}"
 
 COMPONENTS=(
-  "export-worker"
+  "grpc-server"
   "fetch-worker"
   "parser-worker"
-  "grpc-server"
+  "export-worker"
 )
 
 push_image() {

@@ -44,6 +44,9 @@ spec:
             - name: http
               containerPort: {{ .Values.grpcServer.service.httpPort }}
               protocol: TCP
+          env:
+            - name: GRPC_HOST
+              value: "0.0.0.0"
           envFrom:
             - configMapRef:
                 name: {{ include "distributed-crawler.configMapName" . }}
@@ -69,6 +72,10 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.grpcServer.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "distributed-crawler.queueSecretsVolumeMount" . | nindent 12 }}
+      volumes:
+        {{- include "distributed-crawler.queueSecretsVolume" . | nindent 8 }}
       {{- with .Values.grpcServer.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

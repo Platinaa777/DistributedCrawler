@@ -24,14 +24,14 @@ config:
     capacity: 1000
 
   otel:
-    enabled: true
+    enabled: false
     environment: "development"
-    exporterEndpoint: "otel-collector:4317"
+    exporterEndpoint: ""
     exporterInsecure: true
 
   opensearch:
-    enabled: true
-    endpoint: "http://opensearch:9200"
+    enabled: false
+    endpoint: ""
     index: "app-logs"
     flushIntervalSeconds: 5
     batchSize: 100
@@ -55,7 +55,20 @@ secrets:
     jwtSecret: "your-secret-key-change-this-in-production-make-it-long-and-random"
     defaultPassword: "12345678"
 
+  queueSecrets:
+    content: '{}'
+
 # Lower resource requirements for development
+ui:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 20m
+      memory: 32Mi
+
 grpcServer:
   replicaCount: 1
   resources:

@@ -6,6 +6,9 @@ metadata:
   labels:
     {{- include "distributed-crawler.labels" . | nindent 4 }}
 data:
+  # Config source: "env" = read from process environment (K8s); "file" = load dotenv file
+  CONFIG_SOURCE: "env"
+
   # PostgreSQL
   PG_HOST: {{ include "distributed-crawler.postgresHost" . | quote }}
   PG_PORT: {{ .Values.config.postgres.port | quote }}
@@ -32,7 +35,8 @@ data:
   REDIS_DB: {{ .Values.config.redis.db | quote }}
 
   # gRPC Server
-  GRPC_HOST: "0.0.0.0"
+  # Workers use this to connect to the gRPC server; the server pod overrides GRPC_HOST to 0.0.0.0 via pod env.
+  GRPC_HOST: {{ include "distributed-crawler.grpcServer.fullname" . | quote }}
   GRPC_PORT: {{ .Values.grpcServer.service.grpcPort | quote }}
 
   # HTTP Server
@@ -87,3 +91,6 @@ data:
   QUEUE_SECRETS_FILE_PATH: {{ .Values.config.queueSecrets.filePath | quote }}
   QUEUE_SECRETS_WATCH_ENABLED: {{ .Values.config.queueSecrets.watchEnabled | quote }}
   QUEUE_SECRETS_RELOAD_INTERVAL: {{ .Values.config.queueSecrets.reloadInterval | quote }}
+
+  # CORS
+  HTTP_CORS_ALLOWED_ORIGINS: {{ .Values.config.corsAllowedOrigins | quote }}

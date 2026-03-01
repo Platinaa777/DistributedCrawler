@@ -50,7 +50,7 @@ redis:
       memory: 64Mi
 
 redisinsight:
-  enabled: false
+  enabled: true
 
 otelcollector:
   resources:
@@ -70,16 +70,30 @@ jaeger:
       cpu: 50m
       memory: 64Mi
 
-# Disable Prometheus/Grafana in dev – use Jaeger UI directly
 prometheus:
-  enabled: false
+  enabled: true
 
 grafana:
-  enabled: false
+  enabled: true
 
-# Disable OpenSearch in dev – use structured stdout logs instead
 opensearch:
-  enabled: false
+  enabled: true
+  persistence:
+    size: 2Gi
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 512Mi
 
 opensearch-dashboards:
-  enabled: false
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi

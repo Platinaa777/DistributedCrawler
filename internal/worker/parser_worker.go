@@ -199,10 +199,7 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 			zap.Error(err),
 		)
 
-		// Mark task as failed with error message
-		crawlTask.Status = models.TaskStatusFailed
-		errMsg := fmt.Sprintf("extraction failed: %v", err)
-		crawlTask.ErrorMessage = &errMsg
+		crawlTask.MarkAsFailed(fmt.Sprintf("extraction failed: %v", err))
 		if updateErr := w.taskRepo.Update(ctx, *crawlTask); updateErr != nil {
 			w.logger.Error("Failed to update task status to failed",
 				zap.String("task_id", task.TaskID),
@@ -234,9 +231,7 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 			zap.Error(err),
 		)
 
-		crawlTask.Status = models.TaskStatusFailed
-		errMsg := fmt.Sprintf("failed to persist results: %v", err)
-		crawlTask.ErrorMessage = &errMsg
+		crawlTask.MarkAsFailed(fmt.Sprintf("failed to persist results: %v", err))
 		if updateErr := w.taskRepo.Update(ctx, *crawlTask); updateErr != nil {
 			w.logger.Error("Failed to update task status to failed",
 				zap.String("task_id", task.TaskID),
@@ -329,9 +324,7 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 			zap.Error(err),
 		)
 
-		crawlTask.Status = models.TaskStatusFailed
-		errMsg := fmt.Sprintf("failed to persist results: %v", err)
-		crawlTask.ErrorMessage = &errMsg
+		crawlTask.MarkAsFailed(fmt.Sprintf("failed to persist results: %v", err))
 		if updateErr := w.taskRepo.Update(ctx, *crawlTask); updateErr != nil {
 			w.logger.Error("Failed to update task status to failed",
 				zap.String("task_id", task.TaskID),

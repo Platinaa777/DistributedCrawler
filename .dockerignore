@@ -1,5 +1,7 @@
-# Frontend
-ui/
+# Frontend (allow ui/ for UI Docker build; exclude heavy dirs)
+ui/node_modules/
+ui/.angular/
+ui/dist/
 
 # Build artifacts
 bin/
@@ -20,6 +22,7 @@ Thumbs.db
 
 # Docker
 docker/
+!docker/ui/
 
 # Deploy scripts
 deploy/

@@ -214,6 +214,58 @@ exportWorker:
         - ALL
 
 # =============================================================================
+# UI (Angular frontend) Configuration
+# =============================================================================
+ui:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: distributed-crawler/ui
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: crawler.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101  # nginxinc/nginx-unprivileged default uid
+    fsGroup: 101
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop:
+        - ALL
+
+# =============================================================================
 # Application Configuration
 # =============================================================================
 config:
@@ -308,6 +360,9 @@ config:
     watchEnabled: "true"
     reloadInterval: "60s"
 
+  # CORS allowed origins (comma-separated)
+  corsAllowedOrigins: "http://localhost:4200"
+
 # =============================================================================
 # Secrets Configuration
 # =============================================================================
@@ -333,6 +388,9 @@ secrets:
   auth:
     jwtSecret: "changeme-jwt-secret-min-32-chars-long"
     defaultPassword: "changeme-admin-password"
+
+  queueSecrets:
+    content: '{}'
 
 # =============================================================================
 # Database Migrations Job

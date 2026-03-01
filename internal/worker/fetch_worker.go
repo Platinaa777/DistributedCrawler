@@ -165,9 +165,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 			return nil
 		}
 
-		task.Status = models.TaskStatusSkipped
-		errMsg := fmt.Sprintf("duplicate URL: %s", task.URL)
-		task.ErrorMessage = &errMsg
+		task.MarkAsSkipped(fmt.Sprintf("duplicate URL: %s", task.URL))
 		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
 			w.logger.Error("Failed to update task status to skipped",
 				zap.String("task_id", taskMsg.TaskID),
@@ -199,10 +197,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 			zap.Error(err),
 		)
 
-		// Mark task as failed with error message
-		task.Status = models.TaskStatusFailed
-		errMsg := fmt.Sprintf("scope validation failed: %v", err)
-		task.ErrorMessage = &errMsg
+		task.MarkAsFailed(fmt.Sprintf("scope validation failed: %v", err))
 		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
 			w.logger.Error("Failed to update task status to failed",
 				zap.String("task_id", taskMsg.TaskID),
@@ -236,10 +231,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 			zap.String("url", task.URL),
 		)
 
-		// Mark task as failed due to robots.txt with error message
-		task.Status = models.TaskStatusFailed
-		errMsg := "URL disallowed by robots.txt"
-		task.ErrorMessage = &errMsg
+		task.MarkAsFailed("URL disallowed by robots.txt")
 		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
 			w.logger.Error("Failed to update task status to failed",
 				zap.String("task_id", taskMsg.TaskID),
@@ -371,9 +363,7 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 				span.SetStatus(codes.Error, "fetch failed")
 			}
 
-			task.Status = models.TaskStatusFailed
-			errMsg := fmt.Sprintf("fetch failed: %v", err)
-			task.ErrorMessage = &errMsg
+			task.MarkAsFailed(fmt.Sprintf("fetch failed: %v", err))
 			if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
 				w.logger.Error("Failed to update task status to failed",
 					zap.String("task_id", taskMsg.TaskID),

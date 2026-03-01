@@ -23,6 +23,7 @@ spec:
       containers:
         - name: opensearch-dashboards
           image: {{ index .Values "opensearch-dashboards" "image" "repository" }}:{{ index .Values "opensearch-dashboards" "image" "tag" }}
+          imagePullPolicy: {{ index .Values "opensearch-dashboards" "image" "pullPolicy" | default "IfNotPresent" }}
           env:
             - name: OPENSEARCH_HOSTS
               value: {{ printf "[\"http://%s-opensearch:9200\"]" .Release.Name | quote }}
