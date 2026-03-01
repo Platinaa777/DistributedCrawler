@@ -478,6 +478,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   depthChartOptions: ChartOptions<'doughnut'> | null = null;
   private analyticsPollingSub: Subscription | null = null;
   private tasksPollingSub: Subscription | null = null;
+  private jobPollingSub: Subscription | null = null;
 
   // Pagination state
   taskCursor: string | null = null;
@@ -526,6 +527,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.stopAnalyticsPolling();
     this.stopTasksPolling();
+    this.stopJobPolling();
   }
 
   loadJobDetails(id: string): void {
@@ -547,6 +549,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
         this.buildChartsFromAnalytics();
         this.loading = false;
         this.startTasksPolling();
+        this.startJobPolling(id);
       },
       error: (err) => {
         this.error = `Failed to load job details: ${err.message}`;
@@ -658,8 +661,7 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
 
   private startTasksPolling(): void {
     this.stopTasksPolling();
-    const isInProgress = this.job?.status?.toLowerCase().replace(/_/g, '') === 'inprogress';
-    if (!this.job || !isInProgress) return;
+    if (!this.job || this.isTerminalStatus(this.job.status || '')) return;
 
     const id = this.job.id;
     this.tasksPollingSub = interval(5000)
@@ -687,6 +689,47 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   private stopTasksPolling(): void {
     this.tasksPollingSub?.unsubscribe();
     this.tasksPollingSub = null;
+  }
+
+  private isTerminalStatus(status: string): boolean {
+    const normalized = status.toLowerCase().replace(/_/g, '');
+    return normalized === 'completed' || normalized === 'failed';
+  }
+
+  private startJobPolling(id: string): void {
+    this.stopJobPolling();
+    if (this.job && this.isTerminalStatus(this.job.status || '')) return;
+
+    this.jobPollingSub = interval(5000)
+      .pipe(
+        switchMap(() => this.crawlerApi.getJob(id).pipe(
+          catchError((err) => {
+            console.error(`Failed to poll job: ${err.message}`);
+            return of({ job: this.job! });
+          })
+        ))
+      )
+      .subscribe({
+        next: (response) => {
+          const updatedJob = response.job;
+          const becameTerminal = !this.isTerminalStatus(this.job?.status || '') &&
+                                 this.isTerminalStatus(updatedJob?.status || '');
+          this.job = updatedJob;
+
+          if (this.isTerminalStatus(updatedJob?.status || '')) {
+            this.stopJobPolling();
+            if (becameTerminal) {
+              this.loadTasks();
+              this.stopTasksPolling();
+            }
+          }
+        }
+      });
+  }
+
+  private stopJobPolling(): void {
+    this.jobPollingSub?.unsubscribe();
+    this.jobPollingSub = null;
   }
 
   goBack(): void {
