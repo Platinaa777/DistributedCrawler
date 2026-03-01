@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	configTableName             = "crawl_job_configs"
-	configQueueEndpointsTable   = "crawl_job_config_queue_endpoints"
+	configTableName           = "crawl_job_configs"
+	configQueueEndpointsTable = "crawl_job_config_queue_endpoints"
 
 	configIDColumn               = "id"
 	configNameColumn             = "name"
@@ -31,6 +31,25 @@ const (
 	configJobTypeColumn          = "job_type"
 	configRespectRobotsTxtColumn = "respect_robots_txt"
 	configCrawlModeColumn        = "crawl_mode"
+
+	configQueueEndpointConfigIDColumn = "crawl_job_config_id"
+	configQueueEndpointIDColumn       = "queue_endpoint_id"
+	configQueueEndpointWeightColumn   = "weight"
+)
+
+var (
+	configQueueEndpointAssignmentColumns = []string{
+		configQueueEndpointIDColumn,
+		configQueueEndpointWeightColumn,
+	}
+	configQueueEndpointAssignmentColumnsWithConfigID = []string{
+		configQueueEndpointConfigIDColumn,
+		configQueueEndpointIDColumn,
+		configQueueEndpointWeightColumn,
+	}
+	configQueueEndpointAssignmentSelectList             = strings.Join(configQueueEndpointAssignmentColumns, ", ")
+	configQueueEndpointAssignmentSelectWithConfigIDList = strings.Join(configQueueEndpointAssignmentColumnsWithConfigID, ", ")
+	configQueueEndpointInsertColumnList                 = strings.Join(configQueueEndpointAssignmentColumnsWithConfigID, ", ")
 )
 
 type crawlJobConfigRepository struct {
@@ -273,8 +292,10 @@ func (r *crawlJobConfigRepository) ListAllScheduled(ctx context.Context, limit, 
 // fetchQueueEndpointAssignments returns assignments for a single config.
 func fetchQueueEndpointAssignments(ctx context.Context, client persistence.Client, configID string) ([]snapshots.QueueEndpointAssignmentSnap, error) {
 	rawQuery := fmt.Sprintf(
-		"SELECT queue_endpoint_id, weight FROM %s WHERE crawl_job_config_id = $1",
+		"SELECT %s FROM %s WHERE %s = $1",
+		configQueueEndpointAssignmentSelectList,
 		configQueueEndpointsTable,
+		configQueueEndpointConfigIDColumn,
 	)
 
 	rows, err := client.DB().QueryContext(ctx, persistence.Query{
@@ -289,7 +310,7 @@ func fetchQueueEndpointAssignments(ctx context.Context, client persistence.Clien
 	var result []snapshots.QueueEndpointAssignmentSnap
 	for rows.Next() {
 		var a snapshots.QueueEndpointAssignmentSnap
-		if err := rows.Scan(&a.EndpointID, &a.Weight); err != nil {
+		if err := scanQueueEndpointAssignment(rows, &a); err != nil {
 			return nil, err
 		}
 		result = append(result, a)
@@ -312,8 +333,10 @@ func fetchQueueEndpointAssignmentsForMany(ctx context.Context, client persistenc
 	}
 
 	rawQuery := fmt.Sprintf(
-		"SELECT crawl_job_config_id, queue_endpoint_id, weight FROM %s WHERE crawl_job_config_id IN (%s)",
+		"SELECT %s FROM %s WHERE %s IN (%s)",
+		configQueueEndpointAssignmentSelectWithConfigIDList,
 		configQueueEndpointsTable,
+		configQueueEndpointConfigIDColumn,
 		strings.Join(placeholders, ", "),
 	)
 
@@ -329,7 +352,7 @@ func fetchQueueEndpointAssignmentsForMany(ctx context.Context, client persistenc
 	for rows.Next() {
 		var configID string
 		var a snapshots.QueueEndpointAssignmentSnap
-		if err := rows.Scan(&configID, &a.EndpointID, &a.Weight); err != nil {
+		if err := scanQueueEndpointAssignmentWithConfigID(rows, &configID, &a); err != nil {
 			return nil, err
 		}
 		result[configID] = append(result[configID], a)
@@ -355,8 +378,9 @@ func (r *crawlJobConfigRepository) insertQueueEndpoints(ctx context.Context, con
 	}
 
 	rawQuery := fmt.Sprintf(
-		"INSERT INTO %s (crawl_job_config_id, queue_endpoint_id, weight) VALUES %s ON CONFLICT DO NOTHING",
+		"INSERT INTO %s (%s) VALUES %s ON CONFLICT DO NOTHING",
 		configQueueEndpointsTable,
+		configQueueEndpointInsertColumnList,
 		strings.Join(placeholders, ", "),
 	)
 
@@ -369,7 +393,7 @@ func (r *crawlJobConfigRepository) insertQueueEndpoints(ctx context.Context, con
 
 // replaceQueueEndpoints deletes existing join rows and inserts the new set.
 func (r *crawlJobConfigRepository) replaceQueueEndpoints(ctx context.Context, configID string, assignments []models.QueueEndpointAssignment) error {
-	deleteQuery := fmt.Sprintf("DELETE FROM %s WHERE crawl_job_config_id = $1", configQueueEndpointsTable)
+	deleteQuery := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", configQueueEndpointsTable, configQueueEndpointConfigIDColumn)
 	_, err := r.client.DB().ExecContext(ctx, persistence.Query{
 		Name:     "crawl_job_config_repository.deleteQueueEndpoints",
 		QueryRaw: deleteQuery,
@@ -381,3 +405,10 @@ func (r *crawlJobConfigRepository) replaceQueueEndpoints(ctx context.Context, co
 	return r.insertQueueEndpoints(ctx, configID, assignments)
 }
 
+func scanQueueEndpointAssignment(row scanner, assignment *snapshots.QueueEndpointAssignmentSnap) error {
+	return row.Scan(&assignment.EndpointID, &assignment.Weight)
+}
+
+func scanQueueEndpointAssignmentWithConfigID(row scanner, configID *string, assignment *snapshots.QueueEndpointAssignmentSnap) error {
+	return row.Scan(configID, &assignment.EndpointID, &assignment.Weight)
+}

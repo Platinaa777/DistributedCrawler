@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
@@ -30,6 +31,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	htmlcharset "golang.org/x/net/html/charset"
 )
 
 // ParserWorker consumes parsing tasks, loads HTML from MinIO, parses using DSL, and prints results
@@ -418,7 +420,7 @@ func (w *ParserWorker) extractData(
 	htmlContent []byte,
 ) (*extractionResult, error) {
 	// Parse HTML with goquery
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlContent)))
+	doc, err := w.parseHTMLDocument(htmlContent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
@@ -669,7 +671,7 @@ func (w *ParserWorker) extractElementValue(
 	}
 
 	// Обычные HTML-атрибуты
-	value, exists := selection.Attr(attribute)
+	value, exists := selection.Attr(attr)
 	if !exists {
 		return ""
 	}
@@ -684,6 +686,20 @@ func (w *ParserWorker) extractElementValue(
 	}
 
 	return value
+}
+
+func (w *ParserWorker) parseHTMLDocument(htmlContent []byte) (*goquery.Document, error) {
+	reader, err := htmlcharset.NewReader(bytes.NewReader(htmlContent), "")
+	if err != nil {
+		if w.logger != nil {
+			w.logger.Debug("Failed to detect HTML charset, falling back to raw bytes",
+				zap.Error(err),
+			)
+		}
+		reader = bytes.NewReader(htmlContent)
+	}
+
+	return goquery.NewDocumentFromReader(reader)
 }
 
 // applyTransform applies a single transform operation to a value
@@ -927,7 +943,7 @@ func (w *ParserWorker) preparePaginationLinks(
 	}
 
 	// Parse HTML with goquery
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlContent)))
+	doc, err := w.parseHTMLDocument(htmlContent)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse HTML for pagination extraction: %w", err)
 	}
@@ -1150,7 +1166,7 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 	}
 
 	// Parse HTML with goquery
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlContent)))
+	doc, err := w.parseHTMLDocument(htmlContent)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse HTML for link discovery: %w", err)
 	}

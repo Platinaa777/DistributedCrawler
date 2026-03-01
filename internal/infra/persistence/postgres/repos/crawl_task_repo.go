@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	taskTableName = "crawl_tasks"
+	taskTableName     = "crawl_tasks"
+	taskTableAlias    = "t"
+	taskJobTableAlias = "j"
 
 	taskIDColumn             = "id"
 	taskJobIDColumn          = "job_id"
@@ -34,6 +36,31 @@ const (
 
 	// Error message column
 	taskErrorMessageColumn = "error_message"
+)
+
+var (
+	crawlTaskColumns = []string{
+		taskIDColumn,
+		taskJobIDColumn,
+		taskURLColumn,
+		taskFinalURLColumn,
+		taskStatusColumn,
+		taskEnqueuedAtColumn,
+		taskDepthColumn,
+		taskMinioObjectKeyColumn,
+		taskResultObjectKeyColumn,
+		taskResultContentTypeColumn,
+		taskResultSizeBytesColumn,
+		taskResultCreatedAtColumn,
+		taskErrorMessageColumn,
+	}
+	crawlTaskJobColumns = []string{
+		idColumn,
+		jobConfigIDColumn,
+		statusColumn,
+		createdAtColumn,
+		completedAtColumn,
+	}
 )
 
 type crawlTaskRepository struct {
@@ -142,15 +169,11 @@ func (c *crawlTaskRepository) BulkCreate(ctx context.Context, entities []models.
 }
 
 func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTaskID) (*models.CrawlTask, error) {
-	builder := sq.Select(
-		"t.id", "t.job_id", "t.url", "t.final_url", "t.status", "t.enqueued_at", "t.depth", "t.minio_object_key",
-		"t.result_object_key", "t.result_content_type", "t.result_size_bytes", "t.result_created_at", "t.error_message",
-		"j.id", "j.job_config_id", "j.status", "j.created_at", "j.completed_at",
-	).
+	builder := sq.Select(crawlTaskWithJobSelectColumns()...).
 		PlaceholderFormat(sq.Dollar).
-		From(taskTableName + " t").
-		InnerJoin("crawl_jobs j ON t.job_id = j.id").
-		Where(sq.Eq{"t.id": id.String()}).
+		From(aliasedColumnSet(taskTableName, taskTableAlias)).
+		InnerJoin(crawlTaskJobJoinClause()).
+		Where(sq.Eq{qualifiedColumn(taskTableAlias, taskIDColumn): id.String()}).
 		Limit(1)
 
 	query, args, err := builder.ToSql()
@@ -163,39 +186,12 @@ func (c *crawlTaskRepository) Get(ctx context.Context, id valueobjects.CrawlTask
 		QueryRaw: query,
 	}
 
-	var taskSnapshot snapshots.CrawlTaskSnapshot
-	var jobSnapshot snapshots.CrawlJobSnapshot
-
-	err = c.client.DB().QueryRowContext(ctx, q, args...).Scan(
-		&taskSnapshot.ID,
-		&taskSnapshot.JobID,
-		&taskSnapshot.URL,
-		&taskSnapshot.FinalURL,
-		&taskSnapshot.Status,
-		&taskSnapshot.EnqueuedAt,
-		&taskSnapshot.Depth,
-		&taskSnapshot.MinioObjectKey,
-		&taskSnapshot.ResultObjectKey,
-		&taskSnapshot.ResultContentType,
-		&taskSnapshot.ResultSizeBytes,
-		&taskSnapshot.ResultCreatedAt,
-		&taskSnapshot.ErrorMessage,
-		&jobSnapshot.ID,
-		&jobSnapshot.JobConfigID,
-		&jobSnapshot.Status,
-		&jobSnapshot.CreatedAt,
-		&jobSnapshot.CompletedAt,
-	)
+	taskWithJob, err := scanCrawlTaskWithJob(c.client.DB().QueryRowContext(ctx, q, args...))
 	if err != nil {
 		return nil, err
 	}
 
-	taskWithJob := snapshots.CrawlTaskWithJobSnapshot{
-		CrawlTaskSnapshot: taskSnapshot,
-		Job:               &jobSnapshot,
-	}
-
-	return converters.RestoreCrawlTaskWithJobFromSnapshot(taskWithJob)
+	return converters.RestoreCrawlTaskWithJobFromSnapshot(*taskWithJob)
 }
 
 func (c *crawlTaskRepository) Update(ctx context.Context, entity models.CrawlTask) error {
@@ -310,6 +306,68 @@ func (c *crawlTaskRepository) ListByStatus(ctx context.Context, status models.Ta
 	return tasks, nil
 }
 
+func crawlTaskWithJobSelectColumns() []string {
+	columns := make([]string, 0, len(crawlTaskColumns)+len(crawlTaskJobColumns))
+	columns = append(columns, qualifiedColumns(taskTableAlias, crawlTaskColumns)...)
+	columns = append(columns, qualifiedColumns(taskJobTableAlias, crawlTaskJobColumns)...)
+	return columns
+}
+
+func crawlTaskJobJoinClause() string {
+	return aliasedColumnSet(tableName, taskJobTableAlias) + " ON " +
+		qualifiedColumn(taskTableAlias, taskJobIDColumn) + " = " +
+		qualifiedColumn(taskJobTableAlias, idColumn)
+}
+
+func aliasedColumnSet(table, alias string) string {
+	return table + " " + alias
+}
+
+func qualifiedColumns(alias string, columns []string) []string {
+	qualified := make([]string, len(columns))
+	for i, column := range columns {
+		qualified[i] = qualifiedColumn(alias, column)
+	}
+	return qualified
+}
+
+func qualifiedColumn(alias, column string) string {
+	return alias + "." + column
+}
+
+func scanCrawlTaskWithJob(row scanner) (*snapshots.CrawlTaskWithJobSnapshot, error) {
+	var taskSnapshot snapshots.CrawlTaskSnapshot
+	var jobSnapshot snapshots.CrawlJobSnapshot
+
+	if err := row.Scan(
+		&taskSnapshot.ID,
+		&taskSnapshot.JobID,
+		&taskSnapshot.URL,
+		&taskSnapshot.FinalURL,
+		&taskSnapshot.Status,
+		&taskSnapshot.EnqueuedAt,
+		&taskSnapshot.Depth,
+		&taskSnapshot.MinioObjectKey,
+		&taskSnapshot.ResultObjectKey,
+		&taskSnapshot.ResultContentType,
+		&taskSnapshot.ResultSizeBytes,
+		&taskSnapshot.ResultCreatedAt,
+		&taskSnapshot.ErrorMessage,
+		&jobSnapshot.ID,
+		&jobSnapshot.JobConfigID,
+		&jobSnapshot.Status,
+		&jobSnapshot.CreatedAt,
+		&jobSnapshot.CompletedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return &snapshots.CrawlTaskWithJobSnapshot{
+		CrawlTaskSnapshot: taskSnapshot,
+		Job:               &jobSnapshot,
+	}, nil
+}
+
 // SetTaskResult updates the result fields for a task (Part A - ParserWorker persistence)
 func (c *crawlTaskRepository) SetTaskResult(ctx context.Context, taskID valueobjects.CrawlTaskID, objectKey string, contentType string, sizeBytes int64) error {
 	builder := sq.Update(taskTableName).
@@ -342,7 +400,7 @@ func (c *crawlTaskRepository) ExistsByJobIDAndURL(ctx context.Context, jobID val
 		Where(sq.And{
 			sq.Eq{taskJobIDColumn: jobID.String()},
 			sq.Eq{taskURLColumn: url},
-			sq.NotEq{taskStatusColumn: models.TaskStatusInProgress.String() },
+			sq.NotEq{taskStatusColumn: models.TaskStatusInProgress.String()},
 		}).
 		Limit(1)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -25,15 +26,37 @@ const (
 	colQEBrokerType  = "broker_type"
 	colQEStage       = "stage"
 	colQEHost        = "host"
-	colQEQueueName = "queue_name"
-	colQESecretKey = "secret_key"
-	colQECreatedAt = "created_at"
+	colQEQueueName   = "queue_name"
+	colQESecretKey   = "secret_key"
+	colQECreatedAt   = "created_at"
 	colQEUpdatedAt   = "updated_at"
 
 	// queue_routing_rules columns
 	colRuleID    = "id"
 	colRuleStage = "stage"
 	colRuleScope = "scope"
+)
+
+var (
+	queueEndpointColumns = []string{
+		colQEID,
+		colQEDisplayName,
+		colQEBrokerType,
+		colQEStage,
+		colQEHost,
+		colQEQueueName,
+		colQESecretKey,
+		colQECreatedAt,
+		colQEUpdatedAt,
+	}
+	queueEndpointReturningColumns = "RETURNING " + strings.Join(queueEndpointColumns, ", ")
+
+	queueRoutingRuleColumns = []string{
+		colRuleID,
+		colRuleStage,
+		colRuleScope,
+	}
+	queueRoutingRuleReturningColumns = "RETURNING " + strings.Join(queueRoutingRuleColumns, ", ")
 )
 
 // -- QueueEndpointRepository --
@@ -59,7 +82,7 @@ func (r *queueEndpointRepository) Create(ctx context.Context, endpoint queuemode
 			endpoint.DisplayName, endpoint.BrokerType, endpoint.Stage, endpoint.Host,
 			endpoint.QueueName, endpoint.SecretKey, now, now,
 		).
-		Suffix("RETURNING id, display_name, broker_type, stage, host, queue_name, secret_key, created_at, updated_at")
+		Suffix(queueEndpointReturningColumns)
 
 	query, args, err := builder.ToSql()
 	if err != nil {
@@ -77,13 +100,10 @@ func (r *queueEndpointRepository) Create(ctx context.Context, endpoint queuemode
 }
 
 func (r *queueEndpointRepository) Get(ctx context.Context, id string) (*queuemodels.QueueEndpoint, error) {
-	builder := sq.Select(
-		colQEID, colQEDisplayName, colQEBrokerType, colQEStage, colQEHost,
-		colQEQueueName, colQESecretKey, colQECreatedAt, colQEUpdatedAt,
-	).
+	builder := sq.Select(queueEndpointColumns...).
 		PlaceholderFormat(sq.Dollar).
 		From(queueEndpointsTable).
-		Where(sq.Eq{"id": id}).
+		Where(sq.Eq{colQEID: id}).
 		Limit(1)
 
 	query, args, err := builder.ToSql()
@@ -105,10 +125,7 @@ func (r *queueEndpointRepository) Get(ctx context.Context, id string) (*queuemod
 }
 
 func (r *queueEndpointRepository) List(ctx context.Context) ([]*queuemodels.QueueEndpoint, error) {
-	builder := sq.Select(
-		colQEID, colQEDisplayName, colQEBrokerType, colQEStage, colQEHost,
-		colQEQueueName, colQESecretKey, colQECreatedAt, colQEUpdatedAt,
-	).
+	builder := sq.Select(queueEndpointColumns...).
 		PlaceholderFormat(sq.Dollar).
 		From(queueEndpointsTable).
 		OrderBy(colQECreatedAt + " ASC")
@@ -149,7 +166,7 @@ func (r *queueEndpointRepository) Update(ctx context.Context, endpoint queuemode
 		Set(colQESecretKey, endpoint.SecretKey).
 		Set(colQEUpdatedAt, now).
 		Where(sq.Eq{colQEID: endpoint.ID}).
-		Suffix("RETURNING id, display_name, broker_type, stage, host, queue_name, secret_key, created_at, updated_at")
+		Suffix(queueEndpointReturningColumns)
 
 	query, args, err := builder.ToSql()
 	if err != nil {
@@ -181,16 +198,15 @@ func (r *queueEndpointRepository) Delete(ctx context.Context, id string) error {
 	return err
 }
 
-// scanQueueEndpoint scans a row into a QueueEndpointSnapshot.
-type queueEndpointScanner interface {
-	Scan(dest ...interface{}) error
-}
-
-func scanQueueEndpoint(row queueEndpointScanner, s *snapshots.QueueEndpointSnapshot) error {
+func scanQueueEndpoint(row scanner, s *snapshots.QueueEndpointSnapshot) error {
 	return row.Scan(
 		&s.ID, &s.DisplayName, &s.BrokerType, &s.Stage, &s.Host,
 		&s.QueueName, &s.SecretKey, &s.CreatedAt, &s.UpdatedAt,
 	)
+}
+
+func scanQueueRoutingRule(row scanner, s *snapshots.QueueRoutingRuleSnapshot) error {
+	return row.Scan(&s.ID, &s.Stage, &s.Scope)
 }
 
 // -- QueueRoutingRuleRepository --
@@ -212,7 +228,7 @@ func (r *queueRoutingRuleRepository) Upsert(ctx context.Context, rule queuemodel
 		PlaceholderFormat(sq.Dollar).
 		Columns(colRuleStage, colRuleScope, colQECreatedAt, colQEUpdatedAt).
 		Values(rule.Stage, rule.Scope, now, now).
-		Suffix("ON CONFLICT (stage, scope) DO UPDATE SET updated_at = EXCLUDED.updated_at RETURNING id, stage, scope")
+		Suffix("ON CONFLICT (stage, scope) DO UPDATE SET updated_at = EXCLUDED.updated_at " + queueRoutingRuleReturningColumns)
 
 	ruleSQL, ruleArgs, err := upsertRule.ToSql()
 	if err != nil {
@@ -222,7 +238,7 @@ func (r *queueRoutingRuleRepository) Upsert(ctx context.Context, rule queuemodel
 	q := persistence.Query{Name: "queue_routing_rule_repo.Upsert", QueryRaw: ruleSQL}
 	var ruleSnap snapshots.QueueRoutingRuleSnapshot
 	row := r.client.DB().QueryRowContext(ctx, q, ruleArgs...)
-	if err := row.Scan(&ruleSnap.ID, &ruleSnap.Stage, &ruleSnap.Scope); err != nil {
+	if err := scanQueueRoutingRule(row, &ruleSnap); err != nil {
 		return nil, err
 	}
 
@@ -230,7 +246,7 @@ func (r *queueRoutingRuleRepository) Upsert(ctx context.Context, rule queuemodel
 }
 
 func (r *queueRoutingRuleRepository) ListByStage(ctx context.Context, stage queuemodels.Stage) ([]*queuemodels.RoutingRule, error) {
-	rulesBuilder := sq.Select(colRuleID, colRuleStage, colRuleScope).
+	rulesBuilder := sq.Select(queueRoutingRuleColumns...).
 		PlaceholderFormat(sq.Dollar).
 		From(queueRulesTable)
 	if stage != "" {
@@ -252,7 +268,7 @@ func (r *queueRoutingRuleRepository) ListByStage(ctx context.Context, stage queu
 	var rules []*queuemodels.RoutingRule
 	for ruleRows.Next() {
 		var rs snapshots.QueueRoutingRuleSnapshot
-		if err := ruleRows.Scan(&rs.ID, &rs.Stage, &rs.Scope); err != nil {
+		if err := scanQueueRoutingRule(ruleRows, &rs); err != nil {
 			return nil, err
 		}
 		rules = append(rules, converters.RestoreRoutingRuleFromSnapshot(rs))

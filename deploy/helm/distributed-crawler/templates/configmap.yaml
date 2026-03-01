@@ -66,3 +66,24 @@ data:
   OPENSEARCH_INDEX: {{ .Values.config.opensearch.index | quote }}
   OPENSEARCH_FLUSH_INTERVAL_SECONDS: {{ .Values.config.opensearch.flushIntervalSeconds | quote }}
   OPENSEARCH_BATCH_SIZE: {{ .Values.config.opensearch.batchSize | quote }}
+
+  # Messaging broker selection
+  MESSAGING_BROKER: {{ .Values.config.messaging.broker | quote }}
+
+  # Rate limiter type
+  LIMITER_TYPE: {{ .Values.config.limiterType | quote }}
+
+  # Kafka (used when MESSAGING_BROKER=kafka)
+  KAFKA_BROKERS: {{ .Values.config.kafka.brokers | quote }}
+  KAFKA_CONSUMER_GROUP: {{ .Values.config.kafka.consumerGroup | quote }}
+  KAFKA_CRAWL_TOPIC_NAME: {{ .Values.config.kafka.crawlTopicName | quote }}
+  KAFKA_PARSING_TOPIC_NAME: {{ .Values.config.kafka.parsingTopicName | quote }}
+
+  # Memory broker gRPC address (used when MESSAGING_BROKER=grpc_memory)
+  MEMORY_BROKER_ADDR: {{ .Values.config.memoryBroker.addr | quote }}
+  MEMORY_BROKER_CAPACITY: {{ .Values.config.memoryBroker.capacity | toString | quote }}
+
+  # Queue secrets file store
+  QUEUE_SECRETS_FILE_PATH: {{ .Values.config.queueSecrets.filePath | quote }}
+  QUEUE_SECRETS_WATCH_ENABLED: {{ .Values.config.queueSecrets.watchEnabled | quote }}
+  QUEUE_SECRETS_RELOAD_INTERVAL: {{ .Values.config.queueSecrets.reloadInterval | quote }}

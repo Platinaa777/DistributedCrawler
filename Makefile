@@ -7,6 +7,7 @@ LOCAL_BIN_WIN := $(shell cygpath -w "$(LOCAL_BIN)")
 GOOSE := $(LOCAL_BIN)/goose
 LOCAL_MIGRATION_DIR=$(MIGRATION_DIR)
 LOCAL_MIGRATION_DSN="host=localhost port=$(PG_PORT) dbname=$(PG_DATABASE_NAME) user=$(PG_USER) password=$(PG_PASSWORD) sslmode=disable"
+MIGRATE := go run ./cmd/migrate
 
 APP_NAME := distributed-crawler
 GO_FILES := $(shell find . -name '*.go' -type f)
@@ -86,6 +87,18 @@ local-migration-down:
 
 local-migration-create:
 	$(GOOSE) -dir $(LOCAL_MIGRATION_DIR) create $(NAME) sql
+
+migration-status:
+	$(MIGRATE) --dsn $(LOCAL_MIGRATION_DSN) status
+
+migration-up:
+	$(MIGRATE) --dsn $(LOCAL_MIGRATION_DSN) up
+
+migration-down:
+	$(MIGRATE) --dsn $(LOCAL_MIGRATION_DSN) down
+
+migration-create:
+	$(MIGRATE) --dsn $(LOCAL_MIGRATION_DSN) create $(NAME)
 
 docker-build:
 	@echo "Building docker image for $(APP)..."

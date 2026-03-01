@@ -7,6 +7,54 @@ config:
     level: debug
     env: development
 
+  # Match .env settings
+  messaging:
+    broker: "rabbitmq"
+
+  limiterType: "redis"
+
+  kafka:
+    brokers: "localhost:9091"
+    consumerGroup: "distributed-crawler"
+    crawlTopicName: "crawl_queue"
+    parsingTopicName: "parsing_queue"
+
+  memoryBroker:
+    addr: ":9095"
+    capacity: 1000
+
+  otel:
+    enabled: true
+    environment: "development"
+    exporterEndpoint: "otel-collector:4317"
+    exporterInsecure: true
+
+  opensearch:
+    enabled: true
+    endpoint: "http://opensearch:9200"
+    index: "app-logs"
+    flushIntervalSeconds: 5
+    batchSize: 100
+
+# Secrets matching .env values
+secrets:
+  postgres:
+    password: "some-pwd-123"
+
+  rabbitmq:
+    password: "guest"
+
+  minio:
+    user: "minioadmin"
+    password: "minioadmin"
+
+  redis:
+    password: "some_redis_pwd_123"
+
+  auth:
+    jwtSecret: "your-secret-key-change-this-in-production-make-it-long-and-random"
+    defaultPassword: "12345678"
+
 # Lower resource requirements for development
 grpcServer:
   replicaCount: 1
@@ -48,8 +96,10 @@ exportWorker:
       cpu: 50m
       memory: 64Mi
 
-# Use smaller storage for development
+# Subchart configuration (auth must match secrets above so DSN is consistent)
 postgresql:
+  auth:
+    password: "some-pwd-123"
   primary:
     persistence:
       size: 1Gi
@@ -62,6 +112,8 @@ postgresql:
         memory: 128Mi
 
 rabbitmq:
+  auth:
+    password: "guest"
   persistence:
     size: 1Gi
   resources:
@@ -73,6 +125,8 @@ rabbitmq:
       memory: 128Mi
 
 minio:
+  auth:
+    rootPassword: "minioadmin"
   persistence:
     size: 5Gi
   resources:
@@ -84,6 +138,8 @@ minio:
       memory: 128Mi
 
 redis:
+  auth:
+    password: "some_redis_pwd_123"
   master:
     persistence:
       size: 1Gi

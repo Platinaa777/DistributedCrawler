@@ -283,6 +283,31 @@ config:
     flushIntervalSeconds: 5
     batchSize: 100
 
+  # Messaging broker selection: rabbitmq | kafka | grpc_memory
+  messaging:
+    broker: "rabbitmq"
+
+  # Rate limiter: redis | inmemory
+  limiterType: "redis"
+
+  # Kafka configuration (used when messaging.broker=kafka)
+  kafka:
+    brokers: "kafka:9092"
+    consumerGroup: "distributed-crawler"
+    crawlTopicName: "crawl_queue"
+    parsingTopicName: "parsing_queue"
+
+  # Memory broker (used when messaging.broker=grpc_memory)
+  memoryBroker:
+    addr: ":9095"
+    capacity: 1000
+
+  # Queue secrets file store
+  queueSecrets:
+    filePath: "/etc/crawler/queue-secrets.json"
+    watchEnabled: "true"
+    reloadInterval: "60s"
+
 # =============================================================================
 # Secrets Configuration
 # =============================================================================

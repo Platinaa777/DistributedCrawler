@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"golang.org/x/text/encoding/charmap"
 )
 
 // newTestParserWorker creates a minimal ParserWorker suitable for unit-testing extraction logic.
@@ -320,6 +321,36 @@ func TestExtractItems_MultipleFieldWithinScope(t *testing.T) {
 // CrawlMode: constants have expected string values
 // ──────────────────────────────────────────────────────────────────────────────
 
+func TestExtractElementValue_AttributeLookupIsCaseInsensitive(t *testing.T) {
+	t.Parallel()
+
+	w := newTestParserWorker(t)
+	baseURL := mustParseURL(t, "https://books.toscrape.com/")
+	doc := parseHTML(t, `<html><body><a href="catalogue/page-2.html" title="A Light in the Attic">next</a></body></html>`)
+
+	link := w.extractElementValue(doc.Find("a").First(), "HREF", baseURL)
+	title := w.extractElementValue(doc.Find("a").First(), "TITLE", baseURL)
+
+	assert.Equal(t, "https://books.toscrape.com/catalogue/page-2.html", link)
+	assert.Equal(t, "A Light in the Attic", title)
+}
+
+func TestParseHTMLDocument_RespectsDeclaredCharset(t *testing.T) {
+	t.Parallel()
+
+	w := newTestParserWorker(t)
+	expected := "Shakespeare\u2019s Globe \u00a39.99"
+	encodedHTML, err := charmap.Windows1252.NewEncoder().String(
+		"<html><head><meta charset=\"windows-1252\"></head><body><h1>" + expected + "</h1></body></html>",
+	)
+	require.NoError(t, err)
+
+	doc, err := w.parseHTMLDocument([]byte(encodedHTML))
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, strings.TrimSpace(doc.Find("h1").Text()))
+}
+
 func TestCrawlMode_Constants(t *testing.T) {
 	t.Parallel()
 
@@ -355,33 +386,33 @@ func TestCrawlMode_PaginationOnly_GatesPaginationAndLinks(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name             string
-		mode             models.CrawlMode
-		runsPagination   bool
+		name              string
+		mode              models.CrawlMode
+		runsPagination    bool
 		runsLinkDiscovery bool
 	}{
 		{
-			name:             "pagination_and_links runs both",
-			mode:             models.CrawlModePaginationAndLinks,
-			runsPagination:   true,
+			name:              "pagination_and_links runs both",
+			mode:              models.CrawlModePaginationAndLinks,
+			runsPagination:    true,
 			runsLinkDiscovery: true,
 		},
 		{
-			name:             "pagination_only disables link discovery",
-			mode:             models.CrawlModePaginationOnly,
-			runsPagination:   true,
+			name:              "pagination_only disables link discovery",
+			mode:              models.CrawlModePaginationOnly,
+			runsPagination:    true,
 			runsLinkDiscovery: false,
 		},
 		{
-			name:             "links_only disables pagination",
-			mode:             models.CrawlModeLinksOnly,
-			runsPagination:   false,
+			name:              "links_only disables pagination",
+			mode:              models.CrawlModeLinksOnly,
+			runsPagination:    false,
 			runsLinkDiscovery: true,
 		},
 		{
-			name:             "empty (default) runs both",
-			mode:             "",
-			runsPagination:   true,
+			name:              "empty (default) runs both",
+			mode:              "",
+			runsPagination:    true,
 			runsLinkDiscovery: true,
 		},
 	}
