@@ -79,6 +79,7 @@ import { ThemeService } from '../../core/services/theme.service';
                 Password must be at least 8 characters
               </small>
 
+              <div class="mt-6" style="margin-top: 1.5rem;">
               <p-floatlabel>
                 <p-password
                   id="confirmPassword"
@@ -90,6 +91,7 @@ import { ThemeService } from '../../core/services/theme.service';
                   inputStyleClass="w-full" />
                 <label for="confirmPassword">Confirm password</label>
               </p-floatlabel>
+              </div>
               <small *ngIf="confirmPassword?.hasError('required') && confirmPassword?.touched" class="text-red-500">
                 Confirm your password
               </small>

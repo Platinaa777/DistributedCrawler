@@ -52,7 +52,11 @@ export class AuthInterceptor implements HttpInterceptor {
     req: HttpRequest<unknown>,
     next: HttpHandler
   ): Observable<HttpEvent<unknown>> {
-    if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
+    if (error instanceof HttpErrorResponse && error.status === 403) {
+      return throwError(() => error);
+    }
+
+    if (error instanceof HttpErrorResponse && error.status === 401) {
       if (req.headers.has(this.retryHeader) || !this.authService.refreshToken || this.isAuthRequest(req.url)) {
         this.forceLoginRedirect();
         return throwError(() => error);

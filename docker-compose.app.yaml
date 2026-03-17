@@ -1,0 +1,144 @@
+# Application services — overlay on top of docker-compose.yaml (infra).
+# Connects to infra services via the shared Docker Compose network.
+#
+# Usage (full stack):
+#   docker compose -f docker-compose.yaml -f docker-compose.app.yaml up -d
+#
+# Usage (single component):
+#   docker compose -f docker-compose.yaml -f docker-compose.app.yaml up -d grpc-server
+#
+# Build images first:
+#   ./deploy/scripts/k8s/build-images.sh   (or the docker equivalents below)
+#
+# See deploy/scripts/docker/ for convenience scripts.
+
+x-app-env: &app-env
+  # PostgreSQL — uses the 'pg' service from docker-compose.yaml
+  PG_DSN: "postgres://${PG_USER:-denis}:${PG_PASSWORD:-some-pwd-123}@pg:5432/${PG_DATABASE_NAME:-crawler}?sslmode=disable"
+
+  # Messaging
+  MESSAGING_BROKER: "${MESSAGING_BROKER:-rabbitmq}"
+  RABBITMQ_URL: "amqp://${RMQ_USER:-guest}:${RMQ_PWD:-guest}@rabbitmq:5672/"
+  RABBITMQ_CRAWL_QUEUE_NAME: "${RABBITMQ_CRAWL_QUEUE_NAME:-crawl_queue}"
+  RABBITMQ_PARSING_QUEUE_NAME: "${RABBITMQ_PARSING_QUEUE_NAME:-parsing_queue}"
+  KAFKA_BROKERS: "kafka:29091"
+  KAFKA_CONSUMER_GROUP: "${KAFKA_CONSUMER_GROUP:-distributed-crawler}"
+  KAFKA_CRAWL_TOPIC_NAME: "${KAFKA_CRAWL_TOPIC_NAME:-crawl_queue}"
+  KAFKA_PARSING_TOPIC_NAME: "${KAFKA_PARSING_TOPIC_NAME:-parsing_queue}"
+  MEMORY_BROKER_ADDR: "${MEMORY_BROKER_ADDR:-:9095}"
+  MEMORY_BROKER_CAPACITY: "${MEMORY_BROKER_CAPACITY:-1000}"
+
+  # MinIO — uses the 'minio' service
+  MINIO_ENDPOINT: "minio:9000"
+  MINIO_USER: "${MINIO_USER:-minioadmin}"
+  MINIO_PWD: "${MINIO_PWD:-minioadmin}"
+  MINIO_USE_SSL: "false"
+  MINIO_BUCKET_NAME: "${MINIO_BUCKET_NAME:-pages}"
+
+  # Redis — uses the 'redis' service
+  REDIS_ADDRESS: "redis:6379"
+  REDIS_PWD: "${REDIS_PWD:-some_redis_pwd_123}"
+  REDIS_DB: "0"
+  LIMITER_TYPE: "${LIMITER_TYPE:-redis}"
+
+  # Logger
+  LOG_LEVEL: "${LOG_LEVEL:-info}"
+  LOG_ENV: "${LOG_ENV:-development}"
+
+  # Auth
+  JWT_SECRET: "${JWT_SECRET:-your-secret-key-change-this-in-production-make-it-long-and-random}"
+  ACCESS_TOKEN_TTL: "${ACCESS_TOKEN_TTL:-15m}"
+  REFRESH_TOKEN_TTL: "${REFRESH_TOKEN_TTL:-720h}"
+  JWT_ISSUER: "${JWT_ISSUER:-distributed-crawler}"
+  JWT_AUDIENCE: "${JWT_AUDIENCE:-api}"
+  DEFAULT_USER_EMAIL: "${DEFAULT_USER_EMAIL:-admin@example.com}"
+  DEFAULT_USER_PWD: "${DEFAULT_USER_PWD:-12345678}"
+
+  # OpenTelemetry — uses the 'otel-collector' service
+  OTEL_ENABLED: "${OTEL_ENABLED:-true}"
+  OTEL_SERVICE_NAME: "${OTEL_SERVICE_NAME:-distributed-crawler}"
+  OTEL_SERVICE_VERSION: "${OTEL_SERVICE_VERSION:-1.0.0}"
+  OTEL_ENVIRONMENT: "${OTEL_ENVIRONMENT:-development}"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+  OTEL_EXPORTER_OTLP_INSECURE: "true"
+  OTEL_TRACE_SAMPLE_RATE: "${OTEL_TRACE_SAMPLE_RATE:-1}"
+  OTEL_METRICS_INTERVAL_SECONDS: "${OTEL_METRICS_INTERVAL_SECONDS:-15}"
+
+  # OpenSearch — uses the 'opensearch' service
+  OPENSEARCH_ENABLED: "${OPENSEARCH_ENABLED:-true}"
+  OPENSEARCH_ENDPOINT: "http://opensearch:9200"
+  OPENSEARCH_INDEX: "${OPENSEARCH_INDEX:-app-logs}"
+  OPENSEARCH_FLUSH_INTERVAL_SECONDS: "${OPENSEARCH_FLUSH_INTERVAL_SECONDS:-5}"
+  OPENSEARCH_BATCH_SIZE: "${OPENSEARCH_BATCH_SIZE:-100}"
+
+  # Queue secrets
+  QUEUE_SECRETS_FILE_PATH: "${QUEUE_SECRETS_FILE_PATH:-./queue-secrets.json.example}"
+  QUEUE_SECRETS_WATCH_ENABLED: "${QUEUE_SECRETS_WATCH_ENABLED:-false}"
+  QUEUE_SECRETS_RELOAD_INTERVAL: "${QUEUE_SECRETS_RELOAD_INTERVAL:-60s}"
+
+services:
+  migrate:
+    image: "${REGISTRY:-distributed-crawler}/grpc-server:${TAG:-latest}"
+    entrypoint: ["/app/migrate"]
+    command: ["up"]
+    environment:
+      <<: *app-env
+      MIGRATION_DIR: "./internal/infra/persistence/postgres/migrations/"
+    depends_on:
+      - pg
+    restart: "no"
+
+  grpc-server:
+    image: "${REGISTRY:-distributed-crawler}/grpc-server:${TAG:-latest}"
+    ports:
+      - "${GRPC_PORT:-8083}:8083"
+      - "${HTTP_PORT:-8084}:8084"
+    environment:
+      <<: *app-env
+      GRPC_HOST: "0.0.0.0"
+      GRPC_PORT: "8083"
+      HTTP_HOST: "0.0.0.0"
+      HTTP_PORT: "8084"
+    depends_on:
+      - pg
+      - rabbitmq
+      - redis
+    restart: unless-stopped
+
+  fetch-worker:
+    image: "${REGISTRY:-distributed-crawler}/fetch-worker:${TAG:-latest}"
+    environment: *app-env
+    depends_on:
+      - grpc-server
+      - rabbitmq
+      - minio
+      - redis
+    restart: unless-stopped
+
+  parser-worker:
+    image: "${REGISTRY:-distributed-crawler}/parser-worker:${TAG:-latest}"
+    environment: *app-env
+    depends_on:
+      - grpc-server
+      - rabbitmq
+      - minio
+      - redis
+    restart: unless-stopped
+
+  export-worker:
+    image: "${REGISTRY:-distributed-crawler}/export-worker:${TAG:-latest}"
+    environment: *app-env
+    depends_on:
+      - grpc-server
+      - minio
+    restart: unless-stopped
+
+  ui:
+    image: "${REGISTRY:-distributed-crawler}/ui:${TAG:-latest}"
+    ports:
+      - "${UI_PORT:-8080}:8080"
+    environment:
+      BACKEND_URL: "http://grpc-server:8084"
+    depends_on:
+      - grpc-server
+    restart: unless-stopped
