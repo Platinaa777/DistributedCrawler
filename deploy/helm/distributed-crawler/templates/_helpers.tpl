@@ -95,15 +95,42 @@ Return the configmap name for the application
 {{- end }}
 
 {{/*
+Infrastructure release name
+*/}}
+{{- define "distributed-crawler.infraReleaseName" -}}
+{{- if .Values.infra.releaseName }}
+{{- .Values.infra.releaseName }}
+{{- else }}
+{{- .Release.Name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Infrastructure namespace
+*/}}
+{{- define "distributed-crawler.infraNamespace" -}}
+{{- if .Values.infra.namespace }}
+{{- .Values.infra.namespace }}
+{{- else }}
+{{- include "distributed-crawler.namespace" . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Build a service FQDN for the configured infra release
+*/}}
+{{- define "distributed-crawler.infraServiceFQDN" -}}
+{{- printf "%s.%s.svc.cluster.local" .service (include "distributed-crawler.infraNamespace" .root) -}}
+{{- end }}
+
+{{/*
 PostgreSQL host
 */}}
 {{- define "distributed-crawler.postgresHost" -}}
 {{- if .Values.config.postgres.host }}
 {{- .Values.config.postgres.host }}
-{{- else if .Values.postgresql.enabled }}
-{{- printf "%s-postgresql" .Release.Name }}
 {{- else }}
-{{- fail "PostgreSQL host must be specified when postgresql.enabled is false" }}
+{{- include "distributed-crawler.infraServiceFQDN" (dict "root" . "service" (printf "%s-postgresql" (include "distributed-crawler.infraReleaseName" .))) }}
 {{- end }}
 {{- end }}
 
@@ -113,10 +140,19 @@ RabbitMQ host
 {{- define "distributed-crawler.rabbitmqHost" -}}
 {{- if .Values.config.rabbitmq.host }}
 {{- .Values.config.rabbitmq.host }}
-{{- else if .Values.rabbitmq.enabled }}
-{{- printf "%s-rabbitmq" .Release.Name }}
 {{- else }}
-{{- fail "RabbitMQ host must be specified when rabbitmq.enabled is false" }}
+{{- include "distributed-crawler.infraServiceFQDN" (dict "root" . "service" (printf "%s-rabbitmq" (include "distributed-crawler.infraReleaseName" .))) }}
+{{- end }}
+{{- end }}
+
+{{/*
+MinIO endpoint (host:port)
+*/}}
+{{- define "distributed-crawler.minioHost" -}}
+{{- if .Values.config.minio.endpoint }}
+{{- .Values.config.minio.endpoint }}
+{{- else }}
+{{- include "distributed-crawler.infraServiceFQDN" (dict "root" . "service" (printf "%s-minio" (include "distributed-crawler.infraReleaseName" .))) }}
 {{- end }}
 {{- end }}
 
@@ -130,10 +166,8 @@ MinIO endpoint (host:port)
 {{- else }}
 {{- .Values.config.minio.endpoint }}
 {{- end }}
-{{- else if .Values.minio.enabled }}
-{{- printf "%s-minio:%d" .Release.Name (int .Values.config.minio.port) }}
 {{- else }}
-{{- fail "MinIO endpoint must be specified when minio.enabled is false" }}
+{{- printf "%s:%d" (include "distributed-crawler.minioHost" .) (int .Values.config.minio.port) }}
 {{- end }}
 {{- end }}
 
@@ -143,10 +177,30 @@ Redis host
 {{- define "distributed-crawler.redisHost" -}}
 {{- if .Values.config.redis.host }}
 {{- .Values.config.redis.host }}
-{{- else if .Values.redis.enabled }}
-{{- printf "%s-redis-master" .Release.Name }}
 {{- else }}
-{{- fail "Redis host must be specified when redis.enabled is false" }}
+{{- include "distributed-crawler.infraServiceFQDN" (dict "root" . "service" (printf "%s-redis-master" (include "distributed-crawler.infraReleaseName" .))) }}
+{{- end }}
+{{- end }}
+
+{{/*
+OTel collector endpoint
+*/}}
+{{- define "distributed-crawler.otelEndpoint" -}}
+{{- if .Values.config.otel.exporterEndpoint }}
+{{- .Values.config.otel.exporterEndpoint }}
+{{- else }}
+{{- printf "%s:%d" (include "distributed-crawler.infraServiceFQDN" (dict "root" . "service" (printf "%s-otelcollector" (include "distributed-crawler.infraReleaseName" .))) ) 4317 }}
+{{- end }}
+{{- end }}
+
+{{/*
+OpenSearch endpoint
+*/}}
+{{- define "distributed-crawler.opensearchEndpoint" -}}
+{{- if .Values.config.opensearch.endpoint }}
+{{- .Values.config.opensearch.endpoint }}
+{{- else }}
+{{- printf "http://%s:%d" (include "distributed-crawler.infraServiceFQDN" (dict "root" . "service" (printf "%s-opensearch" (include "distributed-crawler.infraReleaseName" .))) ) 9200 }}
 {{- end }}
 {{- end }}
 
@@ -155,6 +209,17 @@ gRPC Server name
 */}}
 {{- define "distributed-crawler.grpcServer.fullname" -}}
 {{- printf "%s-grpc-server" (include "distributed-crawler.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+gRPC Server host used by workers and the UI
+*/}}
+{{- define "distributed-crawler.grpcServer.host" -}}
+{{- if .Values.grpcServer.hostOverride }}
+{{- .Values.grpcServer.hostOverride }}
+{{- else }}
+{{- include "distributed-crawler.grpcServer.fullname" . }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -261,6 +326,23 @@ Queue secrets volumeMount
 - name: queue-secrets
   mountPath: /etc/crawler
   readOnly: true
+{{- end }}
+
+{{/*
+Wait for a TCP dependency before starting a container
+*/}}
+{{- define "distributed-crawler.waitForService" -}}
+- name: wait-for-{{ .name }}
+  image: "{{ .root.Values.dependencyWaiter.image.repository }}:{{ .root.Values.dependencyWaiter.image.tag }}"
+  imagePullPolicy: {{ .root.Values.dependencyWaiter.image.pullPolicy }}
+  command:
+    - sh
+    - -ec
+    - |
+      until nc -z -w 2 {{ .host | quote }} {{ .port }}; do
+        echo "waiting for {{ .name }} at {{ .host }}:{{ .port }}"
+        sleep {{ .root.Values.dependencyWaiter.pollIntervalSeconds }}
+      done
 {{- end }}
 
 {{/*

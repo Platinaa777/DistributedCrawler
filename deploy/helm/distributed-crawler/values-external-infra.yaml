@@ -1,95 +1,33 @@
-# =============================================================================
-# App chart overlay – use the separate infra Helm release
-# =============================================================================
-# Apply this file in addition to values-dev.yaml or values-prod.yaml when the
-# infrastructure is managed by the "infra" release (deploy-infra.sh).
+# App chart overlay for using a separate infra Helm release.
 #
 # Usage:
-#   ./deploy-all.sh -f values-external-infra.yaml
-#   or
-#   helm upgrade --install distributed-crawler ./deploy/helm/distributed-crawler \
+#   helm upgrade --install crawler ./deploy/helm/distributed-crawler \
 #     -f values.yaml \
 #     -f values-dev.yaml \
 #     -f values-external-infra.yaml
-#
-# Adjust the host/endpoint values below if your infra release name or
-# namespace differs from the defaults (RELEASE_NAME=infra, NAMESPACE=infra).
-# =============================================================================
 
-# ---- Disable all embedded subcharts ---------------------------------------
-postgresql:
-  enabled: false
+infra:
+  releaseName: "infra"
+  namespace: "infra"
 
-rabbitmq:
-  enabled: false
-
-minio:
-  enabled: false
-
-redis:
-  enabled: false
-
-# ---- Disable the migrations job (run separately or via infra) -------------
-# Set to true if you still want Helm to run migrations on app upgrades.
-migrations:
-  enabled: true
-
-# ---- Point app config to the external infra services ---------------------
-# Uses fully-qualified DNS names so cross-namespace resolution works:
-#   <svc>.<namespace>.svc.cluster.local
-# Default: infra release name = "infra", namespace = "infra".
-# If you changed RELEASE_NAME or NAMESPACE in deploy-infra.sh, update accordingly.
 config:
-  postgres:
-    host: "infra-postgresql.infra.svc.cluster.local"
-    port: 5432
-    database: crawler
-    user: crawler
-    sslMode: disable
-
-  rabbitmq:
-    host: "infra-rabbitmq.infra.svc.cluster.local"
-    port: 5672
-    user: guest
-    crawlQueueName: crawl_queue
-    parsingQueueName: parsing_queue
-    exportQueueName: export_queue
-
-  minio:
-    endpoint: "infra-minio.infra.svc.cluster.local"
-    port: 9000
-    useSSL: false
-    bucketName: pages
-
-  redis:
-    host: "infra-redis-master.infra.svc.cluster.local"
-    port: 6379
-    db: 0
-
-  # Point OTel to the collector running in the infra release
   otel:
     enabled: true
-    exporterEndpoint: "infra-otelcollector.infra.svc.cluster.local:4317"
     exporterInsecure: true
 
   opensearch:
     enabled: true
-    endpoint: "http://infra-opensearch.infra.svc.cluster.local:9200"
 
-# ---- Secrets must match what the infra chart was deployed with -----------
-# Either copy the values here or reference an existing secret:
-#   secrets:
-#     existingSecret: "infra-secrets"
 secrets:
   postgres:
-    password: "changeme-postgres-password"   # must match infra postgresql.auth.password
+    password: "changeme-postgres-password"
 
   rabbitmq:
-    password: "changeme-rabbitmq-password"   # must match infra rabbitmq.auth.password
+    password: "changeme-rabbitmq-password"
 
   minio:
     user: "minioadmin"
-    password: "changeme-minio-password"      # must match infra minio.auth.rootPassword
+    password: "changeme-minio-password"
 
   redis:
-    password: "changeme-redis-password"      # must match infra redis.auth.password
+    password: "changeme-redis-password"

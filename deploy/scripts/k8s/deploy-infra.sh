@@ -1,20 +1,10 @@
 #!/usr/bin/env bash
-# Deploy the infrastructure Helm release (PostgreSQL, RabbitMQ, MinIO, Redis,
-# RedisInsight, OTel Collector, Jaeger, Prometheus, Grafana, OpenSearch).
-#
-# This release is intentionally separate from the application release so infra
-# can be upgraded or rolled back independently.
-#
-# Usage:
-#   ./deploy-infra.sh                          # dev (default)
-#   VALUES_ENV=prod ./deploy-infra.sh          # production
-#   NAMESPACE=infra ./deploy-infra.sh          # custom namespace
-#   ./deploy-infra.sh --set postgresql.auth.password=secret123
+# Deploy the shared infrastructure Helm release.
 #
 # Environment variables:
-#   RELEASE_NAME  – Helm release name (default: infra)
-#   NAMESPACE     – Kubernetes namespace (default: infra)
-#   VALUES_ENV    – Values overlay: dev | prod  (default: dev)
+#   RELEASE_NAME  - infra Helm release name (default: infra)
+#   NAMESPACE     - infra namespace (default: infra)
+#   VALUES_ENV    - values overlay: dev | prod (default: dev)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,16 +13,23 @@ RELEASE_NAME="${RELEASE_NAME:-infra}"
 NAMESPACE="${NAMESPACE:-infra}"
 VALUES_ENV="${VALUES_ENV:-dev}"
 
-echo "==> Infra deploy: release=${RELEASE_NAME}  namespace=${NAMESPACE}  env=${VALUES_ENV}"
+VALUE_FILES=(
+  -f "${CHART_DIR}/values.yaml"
+  -f "${CHART_DIR}/values-${VALUES_ENV}.yaml"
+)
+
+echo "==> Infra deploy: release=${RELEASE_NAME} namespace=${NAMESPACE} env=${VALUES_ENV}"
 
 kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 
-rm -f "${CHART_DIR}/Chart.lock"
+echo "==> Validating infra chart with helm template..."
+helm template "${RELEASE_NAME}" "${CHART_DIR}" \
+  --namespace "${NAMESPACE}" \
+  "${VALUE_FILES[@]}" > /dev/null
 
 helm upgrade --install "${RELEASE_NAME}" "${CHART_DIR}" \
   --namespace "${NAMESPACE}" \
-  -f "${CHART_DIR}/values.yaml" \
-  -f "${CHART_DIR}/values-${VALUES_ENV}.yaml" \
+  "${VALUE_FILES[@]}" \
   --wait \
   --timeout 15m \
   "$@"

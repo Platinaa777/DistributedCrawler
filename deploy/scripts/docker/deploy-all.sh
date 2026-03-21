@@ -3,67 +3,72 @@
 #
 # Two modes:
 #   Self-contained (default):
-#     Starts infra (PostgreSQL, RabbitMQ, MinIO, Redis, OTel, etc.) AND
-#     all app components (grpc-server, workers, UI) in a single compose project.
+#     Starts infra, waits for the core dependencies, runs migrations, then
+#     starts the API before the workers and UI.
 #
 #   App only (APP_ONLY=true):
-#     Starts app components only. Infra must already be running via:
-#       docker compose -f docker-compose.yaml up -d
+#     Starts only the application components. Infra must already be running in
+#     the same compose project.
 #
 # Usage:
-#   ./deploy-all.sh                    # infra + all app components
-#   APP_ONLY=true ./deploy-all.sh      # app components only
-#   NO_BUILD=true ./deploy-all.sh      # skip image build
+#   ./deploy-all.sh
+#   APP_ONLY=true ./deploy-all.sh
+#   NO_BUILD=true ./deploy-all.sh
 #   ./deploy-all.sh --scale fetch-worker=3
 #
 # Environment variables:
-#   REGISTRY   – image name prefix    (default: distributed-crawler)
-#   TAG        – image tag            (default: latest)
-#   APP_ONLY   – skip infra startup   (default: false)
-#   NO_BUILD   – skip docker build    (default: false)
+#   REGISTRY   - image name prefix    (default: distributed-crawler)
+#   TAG        - image tag            (default: latest)
+#   APP_ONLY   - skip infra startup   (default: false)
+#   NO_BUILD   - skip docker build    (default: false)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 BUILD_SCRIPT="${SCRIPT_DIR}/../k8s/build-images.sh"
+
+source "${SCRIPT_DIR}/common.sh"
+
+load_project_env
 
 REGISTRY="${REGISTRY:-distributed-crawler}"
 TAG="${TAG:-latest}"
 APP_ONLY="${APP_ONLY:-false}"
 NO_BUILD="${NO_BUILD:-false}"
 
-INFRA_COMPOSE="-f ${PROJECT_ROOT}/docker-compose.yaml"
-APP_COMPOSE="-f ${PROJECT_ROOT}/docker-compose.app.yaml"
-
 export REGISTRY TAG
+export DOCKER_REGISTRY="${REGISTRY}"
+export IMAGE_TAG="${TAG}"
 
 echo "==> Docker deploy: registry=${REGISTRY}  tag=${TAG}  app-only=${APP_ONLY}"
 
-# Build images unless skipped
+validate_compose_config
+
 if [[ "${NO_BUILD}" != "true" ]]; then
   echo "==> Building images..."
   bash "${BUILD_SCRIPT}"
 fi
 
-# Start infra if not app-only
 if [[ "${APP_ONLY}" != "true" ]]; then
   echo "==> Starting infrastructure..."
-  docker compose ${INFRA_COMPOSE} up -d
+  compose_infra up -d
 fi
 
-# Run DB migrations
-echo "==> Running migrations..."
-docker compose ${INFRA_COMPOSE} ${APP_COMPOSE} run --rm migrate
+wait_for_core_infra
 
-# Start all app components
-echo "==> Starting application..."
-docker compose ${INFRA_COMPOSE} ${APP_COMPOSE} up -d \
-  grpc-server fetch-worker parser-worker export-worker ui \
-  "$@"
+echo "==> Running migrations..."
+compose_stack run --rm migrate
+
+echo "==> Starting gRPC server..."
+compose_stack up -d grpc-server
+
+wait_for_grpc_server
+
+echo "==> Starting remaining application components..."
+compose_stack up -d fetch-worker parser-worker export-worker ui "$@"
 
 echo ""
 echo "==> Deploy complete. Running containers:"
-docker compose ${INFRA_COMPOSE} ${APP_COMPOSE} ps
+compose_stack ps
 
 echo ""
 echo "==> Endpoints:"

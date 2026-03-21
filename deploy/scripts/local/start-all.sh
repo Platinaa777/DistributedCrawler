@@ -51,10 +51,10 @@ run_component() {
 }
 
 run_component grpc_server     --config-path="${CONFIG_PATH}"
-run_component fetch_worker    --config-path="${WORKER_CONFIG}"
-run_component parser_worker   --config-path="${WORKER_CONFIG}"
-run_component export_worker   --config-path="${WORKER_CONFIG}"
-run_component scheduler_worker --config-path="${WORKER_CONFIG}"
+run_component fetch_worker    --worker-config-path="${WORKER_CONFIG}"
+run_component parser_worker   --worker-config-path="${WORKER_CONFIG}"
+run_component export_worker   --worker-config-path="${WORKER_CONFIG}"
+run_component scheduler_worker --worker-config-path="${WORKER_CONFIG}"
 
 echo ""
 echo "==> All components started."

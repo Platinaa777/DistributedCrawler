@@ -59,15 +59,24 @@ spec:
           ports:
             - name: redis
               containerPort: 6379
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - redis-cli -a "$REDIS_PASSWORD" ping | grep PONG
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
           livenessProbe:
             exec:
               command:
-                - redis-cli
-                - -a
-                - $(REDIS_PASSWORD)
-                - ping
+                - sh
+                - -ec
+                - redis-cli -a "$REDIS_PASSWORD" ping | grep PONG
             initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 3
           volumeMounts:
             - name: data
               mountPath: /data

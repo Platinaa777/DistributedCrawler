@@ -6,91 +6,56 @@ metadata:
   labels:
     {{- include "distributed-crawler.labels" . | nindent 4 }}
 data:
-  # Config source: "env" = read from process environment (K8s); "file" = load dotenv file
   CONFIG_SOURCE: "env"
 
-  # PostgreSQL
-  PG_HOST: {{ include "distributed-crawler.postgresHost" . | quote }}
-  PG_PORT: {{ .Values.config.postgres.port | quote }}
-  PG_DATABASE_NAME: {{ .Values.config.postgres.database | quote }}
-  PG_USER: {{ .Values.config.postgres.user | quote }}
-  PG_SSL_MODE: {{ .Values.config.postgres.sslMode | quote }}
-
-  # RabbitMQ
-  RABBITMQ_HOST: {{ include "distributed-crawler.rabbitmqHost" . | quote }}
-  RABBITMQ_PORT: {{ .Values.config.rabbitmq.port | quote }}
-  RABBITMQ_USER: {{ .Values.config.rabbitmq.user | quote }}
+  # Canonical application env contract
+  MESSAGING_BROKER: {{ .Values.config.messaging.broker | quote }}
   RABBITMQ_CRAWL_QUEUE_NAME: {{ .Values.config.rabbitmq.crawlQueueName | quote }}
   RABBITMQ_PARSING_QUEUE_NAME: {{ .Values.config.rabbitmq.parsingQueueName | quote }}
-  RABBITMQ_EXPORT_QUEUE_NAME: {{ .Values.config.rabbitmq.exportQueueName | quote }}
+  KAFKA_BROKERS: {{ .Values.config.kafka.brokers | quote }}
+  KAFKA_CONSUMER_GROUP: {{ .Values.config.kafka.consumerGroup | quote }}
+  KAFKA_CRAWL_TOPIC_NAME: {{ .Values.config.kafka.crawlTopicName | quote }}
+  KAFKA_PARSING_TOPIC_NAME: {{ .Values.config.kafka.parsingTopicName | quote }}
+  MEMORY_BROKER_ADDR: {{ .Values.config.memoryBroker.addr | quote }}
+  MEMORY_BROKER_CAPACITY: {{ .Values.config.memoryBroker.capacity | toString | quote }}
 
-  # MinIO
   MINIO_ENDPOINT: {{ include "distributed-crawler.minioEndpoint" . | quote }}
   MINIO_USE_SSL: {{ .Values.config.minio.useSSL | quote }}
   MINIO_BUCKET_NAME: {{ .Values.config.minio.bucketName | quote }}
 
-  # Redis
-  REDIS_HOST: {{ include "distributed-crawler.redisHost" . | quote }}
-  REDIS_PORT: {{ .Values.config.redis.port | quote }}
   REDIS_DB: {{ .Values.config.redis.db | quote }}
 
-  # gRPC Server
-  # Workers use this to connect to the gRPC server; the server pod overrides GRPC_HOST to 0.0.0.0 via pod env.
-  GRPC_HOST: {{ include "distributed-crawler.grpcServer.fullname" . | quote }}
+  GRPC_HOST: {{ include "distributed-crawler.grpcServer.host" . | quote }}
   GRPC_PORT: {{ .Values.grpcServer.service.grpcPort | quote }}
-
-  # HTTP Server
   HTTP_HOST: "0.0.0.0"
   HTTP_PORT: {{ .Values.grpcServer.service.httpPort | quote }}
 
-  # Logging
   LOG_LEVEL: {{ .Values.config.log.level | quote }}
   LOG_ENV: {{ .Values.config.log.env | quote }}
 
-  # Auth / JWT (non-sensitive)
   ACCESS_TOKEN_TTL: {{ .Values.config.auth.accessTokenTTL | quote }}
   REFRESH_TOKEN_TTL: {{ .Values.config.auth.refreshTokenTTL | quote }}
   JWT_ISSUER: {{ .Values.config.auth.issuer | quote }}
   JWT_AUDIENCE: {{ .Values.config.auth.audience | quote }}
   DEFAULT_USER_EMAIL: {{ .Values.config.auth.defaultUserEmail | quote }}
 
-  # OpenTelemetry
   OTEL_ENABLED: {{ .Values.config.otel.enabled | quote }}
   OTEL_SERVICE_NAME: {{ .Values.config.otel.serviceName | quote }}
   OTEL_SERVICE_VERSION: {{ .Values.config.otel.serviceVersion | quote }}
   OTEL_ENVIRONMENT: {{ .Values.config.otel.environment | quote }}
-  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otel.exporterEndpoint | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ include "distributed-crawler.otelEndpoint" . | quote }}
   OTEL_EXPORTER_OTLP_INSECURE: {{ .Values.config.otel.exporterInsecure | quote }}
   OTEL_TRACE_SAMPLE_RATE: {{ .Values.config.otel.traceSampleRate | quote }}
   OTEL_METRICS_INTERVAL_SECONDS: {{ .Values.config.otel.metricsIntervalSeconds | quote }}
 
-  # OpenSearch log shipping
   OPENSEARCH_ENABLED: {{ .Values.config.opensearch.enabled | quote }}
-  OPENSEARCH_ENDPOINT: {{ .Values.config.opensearch.endpoint | quote }}
+  OPENSEARCH_ENDPOINT: {{ include "distributed-crawler.opensearchEndpoint" . | quote }}
   OPENSEARCH_INDEX: {{ .Values.config.opensearch.index | quote }}
   OPENSEARCH_FLUSH_INTERVAL_SECONDS: {{ .Values.config.opensearch.flushIntervalSeconds | quote }}
   OPENSEARCH_BATCH_SIZE: {{ .Values.config.opensearch.batchSize | quote }}
 
-  # Messaging broker selection
-  MESSAGING_BROKER: {{ .Values.config.messaging.broker | quote }}
-
-  # Rate limiter type
-  LIMITER_TYPE: {{ .Values.config.limiterType | quote }}
-
-  # Kafka (used when MESSAGING_BROKER=kafka)
-  KAFKA_BROKERS: {{ .Values.config.kafka.brokers | quote }}
-  KAFKA_CONSUMER_GROUP: {{ .Values.config.kafka.consumerGroup | quote }}
-  KAFKA_CRAWL_TOPIC_NAME: {{ .Values.config.kafka.crawlTopicName | quote }}
-  KAFKA_PARSING_TOPIC_NAME: {{ .Values.config.kafka.parsingTopicName | quote }}
-
-  # Memory broker gRPC address (used when MESSAGING_BROKER=grpc_memory)
-  MEMORY_BROKER_ADDR: {{ .Values.config.memoryBroker.addr | quote }}
-  MEMORY_BROKER_CAPACITY: {{ .Values.config.memoryBroker.capacity | toString | quote }}
-
-  # Queue secrets file store
   QUEUE_SECRETS_FILE_PATH: {{ .Values.config.queueSecrets.filePath | quote }}
   QUEUE_SECRETS_WATCH_ENABLED: {{ .Values.config.queueSecrets.watchEnabled | quote }}
   QUEUE_SECRETS_RELOAD_INTERVAL: {{ .Values.config.queueSecrets.reloadInterval | quote }}
 
-  # CORS
   HTTP_CORS_ALLOWED_ORIGINS: {{ .Values.config.corsAllowedOrigins | quote }}

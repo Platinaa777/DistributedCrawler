@@ -10,12 +10,20 @@ commonAnnotations: {}
 # Namespace to deploy to (if not set, uses release namespace)
 namespaceOverride: ""
 
+# Infrastructure release to target for PostgreSQL, RabbitMQ, MinIO, Redis,
+# OTel Collector, and OpenSearch. When omitted, the app release name and
+# namespace are used for service discovery.
+infra:
+  releaseName: ""
+  namespace: ""
+
 # =============================================================================
 # gRPC Server Configuration
 # =============================================================================
 grpcServer:
   enabled: true
   replicaCount: 1
+  hostOverride: ""
 
   image:
     repository: distributed-crawler/grpc-server
@@ -322,7 +330,7 @@ config:
     serviceName: "distributed-crawler"
     serviceVersion: "1.0.0"
     environment: "production"
-    exporterEndpoint: "otel-collector:4317"
+    exporterEndpoint: ""
     exporterInsecure: true
     traceSampleRate: 1.0
     metricsIntervalSeconds: 15
@@ -330,7 +338,7 @@ config:
   # OpenSearch log shipping
   opensearch:
     enabled: false
-    endpoint: "http://opensearch:9200"
+    endpoint: ""
     index: "app-logs"
     flushIntervalSeconds: 5
     batchSize: 100
@@ -535,3 +543,13 @@ podDisruptionBudget:
 # =============================================================================
 networkPolicy:
   enabled: false
+
+# =============================================================================
+# Dependency Waiter Init Containers
+# =============================================================================
+dependencyWaiter:
+  image:
+    repository: busybox
+    tag: "1.36.1"
+    pullPolicy: IfNotPresent
+  pollIntervalSeconds: 2

@@ -50,6 +50,24 @@ spec:
               containerPort: 5672
             - name: management
               containerPort: 15672
+          readinessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - ping
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - ping
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq

@@ -2,37 +2,38 @@
 # Build Docker images for all application components.
 #
 # Usage:
-#   ./build-images.sh                          # build all components
-#   ./build-images.sh fetch-worker grpc-server # build specific components
-#   ./build-images.sh --minikube               # point to minikube's Docker daemon first
+#   ./build-images.sh
+#   ./build-images.sh fetch-worker grpc-server
+#   ./build-images.sh --minikube
 #
 # Environment variables:
-#   DOCKER_REGISTRY  – image name prefix (default: distributed-crawler)
-#   IMAGE_TAG        – image tag         (default: latest)
-#   NO_CACHE         – set to 1 to pass --no-cache to docker build
+#   REGISTRY         - preferred image name prefix alias
+#   TAG              - preferred image tag alias
+#   DOCKER_REGISTRY  - legacy image name prefix alias
+#   IMAGE_TAG        - legacy image tag alias
+#   NO_CACHE         - set to 1 to pass --no-cache to docker build
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-REGISTRY="${DOCKER_REGISTRY:-distributed-crawler}"
-TAG="${IMAGE_TAG:-latest}"
+REGISTRY="${REGISTRY:-${DOCKER_REGISTRY:-distributed-crawler}}"
+TAG="${TAG:-${IMAGE_TAG:-latest}}"
 EXTRA_BUILD_ARGS=()
 [[ "${NO_CACHE:-0}" == "1" ]] && EXTRA_BUILD_ARGS+=(--no-cache)
 
-# Parse --minikube flag (may appear anywhere in args)
 ARGS=()
 USE_MINIKUBE=false
 for arg in "$@"; do
-  if [[ "$arg" == "--minikube" ]]; then
+  if [[ "${arg}" == "--minikube" ]]; then
     USE_MINIKUBE=true
   else
-    ARGS+=("$arg")
+    ARGS+=("${arg}")
   fi
 done
 set -- "${ARGS[@]+"${ARGS[@]}"}"
 
-if [[ "$USE_MINIKUBE" == true ]]; then
+if [[ "${USE_MINIKUBE}" == "true" ]]; then
   echo "==> Switching Docker context to minikube..."
   eval "$(minikube docker-env)"
 fi
@@ -49,8 +50,9 @@ build_image() {
   local name="$1"
   local dockerfile="$2"
   local image="${REGISTRY}/${name}:${TAG}"
+
   echo "==> Building ${image} ..."
-  docker build "${EXTRA_BUILD_ARGS[@]}" -t "$image" -f "${PROJECT_ROOT}/${dockerfile}" "$PROJECT_ROOT"
+  docker build "${EXTRA_BUILD_ARGS[@]}" -t "${image}" -f "${PROJECT_ROOT}/${dockerfile}" "${PROJECT_ROOT}"
   echo "==> Done: ${image}"
 }
 
@@ -60,13 +62,14 @@ if [[ $# -gt 0 ]]; then
     for entry in "${COMPONENTS[@]}"; do
       name="${entry%%:*}"
       dockerfile="${entry##*:}"
-      if [[ "$name" == "$arg" ]]; then
-        build_image "$name" "$dockerfile"
+      if [[ "${name}" == "${arg}" ]]; then
+        build_image "${name}" "${dockerfile}"
         found=true
         break
       fi
     done
-    if [[ "$found" == false ]]; then
+
+    if [[ "${found}" == "false" ]]; then
       echo "ERROR: Unknown component '${arg}'." >&2
       echo "Available: ${COMPONENTS[*]%%:*}" >&2
       exit 1

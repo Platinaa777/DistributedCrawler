@@ -27,11 +27,13 @@ spec:
       serviceAccountName: {{ include "distributed-crawler.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.ui.podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "http-gateway" "host" (include "distributed-crawler.grpcServer.host" .) "port" .Values.grpcServer.service.httpPort) | nindent 8 }}
       containers:
         - name: ui
           securityContext:
             {{- toYaml .Values.ui.securityContext | nindent 12 }}
-          image: "{{ .Values.ui.image.repository }}:{{ .Values.ui.image.tag | default .Chart.AppVersion }}"
+          image: {{ include "distributed-crawler.image" (dict "imageRoot" .Values.ui.image "global" .Values.global) | quote }}
           imagePullPolicy: {{ .Values.ui.image.pullPolicy }}
           ports:
             - name: http
@@ -39,7 +41,7 @@ spec:
               protocol: TCP
           env:
             - name: BACKEND_URL
-              value: "http://{{ include "distributed-crawler.grpcServer.fullname" . }}:{{ .Values.grpcServer.service.httpPort }}"
+              value: "http://{{ include "distributed-crawler.grpcServer.host" . }}:{{ .Values.grpcServer.service.httpPort }}"
           livenessProbe:
             httpGet:
               path: /

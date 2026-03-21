@@ -1,5 +1,9 @@
 # Helm Deployment Guide
 
+Canonical launch documentation now lives in [docs/deployment-launch-spec.md](../../docs/deployment-launch-spec.md).
+
+This file is kept only as a lightweight entry point.
+
 Scripts live in `deploy/scripts/k8s/`. All scripts are idempotent (`helm upgrade --install`).
 
 ---

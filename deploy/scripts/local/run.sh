@@ -45,7 +45,7 @@ case "${COMPONENT}" in
     run_cmd http_server --config-path="${CONFIG_PATH}" "$@"
     ;;
   fetch_worker|parser_worker|export_worker|scheduler_worker)
-    run_cmd "${COMPONENT}" --config-path="${WORKER_CONFIG}" "$@"
+    run_cmd "${COMPONENT}" --worker-config-path="${WORKER_CONFIG}" "$@"
     ;;
   memory_broker)
     run_cmd memory_broker --addr="${MEMORY_BROKER_ADDR}" "$@"

@@ -31,11 +31,17 @@ spec:
       serviceAccountName: {{ include "distributed-crawler.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.exportWorker.podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "postgresql" "host" (include "distributed-crawler.postgresHost" .) "port" .Values.config.postgres.port) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "rabbitmq" "host" (include "distributed-crawler.rabbitmqHost" .) "port" .Values.config.rabbitmq.port) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "minio" "host" (include "distributed-crawler.minioHost" .) "port" .Values.config.minio.port) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "redis" "host" (include "distributed-crawler.redisHost" .) "port" .Values.config.redis.port) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "grpc-server" "host" (include "distributed-crawler.grpcServer.host" .) "port" .Values.grpcServer.service.grpcPort) | nindent 8 }}
       containers:
         - name: export-worker
           securityContext:
             {{- toYaml .Values.exportWorker.securityContext | nindent 12 }}
-          image: "{{ .Values.exportWorker.image.repository }}:{{ .Values.exportWorker.image.tag | default .Chart.AppVersion }}"
+          image: {{ include "distributed-crawler.image" (dict "imageRoot" .Values.exportWorker.image "global" .Values.global) | quote }}
           imagePullPolicy: {{ .Values.exportWorker.image.pullPolicy }}
           env:
             - name: WORKER_ID
