@@ -32,6 +32,11 @@ service CrawlerService {
       get: "/api/v1/jobs/{job_id}/export-url"
     };
   }
+  rpc DeleteJob(DeleteJobRequest) returns (DeleteJobResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/jobs/{id}"
+    };
+  }
 
   // Task operations
   rpc GetTask(GetTaskRequest) returns (GetTaskResponse) {

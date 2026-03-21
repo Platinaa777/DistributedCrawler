@@ -238,6 +238,13 @@
             "format": "date-time"
           },
           {
+            "name": "filter.user_email",
+            "description": "Filter by creator email (partial match, case-insensitive)",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
             "name": "sort_field",
             "description": "Field to sort by (default: created_at)\n\n - JOB_SORT_FIELD_UNSPECIFIED: defaults to created_at DESC",
             "in": "query",
@@ -308,6 +315,34 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v1GetJobResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CrawlerService"
+        ]
+      },
+      "delete": {
+        "operationId": "CrawlerService_DeleteJob",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteJobResponse"
             }
           },
           "default": {
@@ -1134,6 +1169,9 @@
         "name": {
           "type": "string",
           "description": "For scheduled job runs: \"{config_name}_{scheduled_at}\" (RFC3339). Empty for one-time jobs."
+        },
+        "user_id": {
+          "type": "string"
         }
       },
       "title": "CrawlJob represents a crawling job"
@@ -1142,6 +1180,9 @@
       "type": "object",
       "properties": {
         "id": {
+          "type": "string"
+        },
+        "user_id": {
           "type": "string"
         },
         "name": {
@@ -1286,6 +1327,9 @@
           "$ref": "#/definitions/v1QueueEndpoint"
         }
       }
+    },
+    "v1DeleteJobResponse": {
+      "type": "object"
     },
     "v1DeleteQueueEndpointResponse": {
       "type": "object"
@@ -1477,6 +1521,10 @@
         "created_to": {
           "type": "string",
           "format": "date-time"
+        },
+        "user_email": {
+          "type": "string",
+          "title": "Filter by creator email (partial match, case-insensitive)"
         }
       },
       "title": "JobListFilter defines filtering options for listing jobs"

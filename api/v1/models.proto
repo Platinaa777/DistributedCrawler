@@ -129,6 +129,7 @@ enum JobType {
 // CrawlJobConfig represents crawl job configuration
 message CrawlJobConfig {
   string id = 1;
+  optional string user_id = 15 [json_name = "user_id"];
   string name = 2;
   ExtractionSpec extraction_spec = 3 [json_name = "extraction_spec"];
   ScopeRules scopes = 4;
@@ -162,6 +163,7 @@ message CrawlJob {
   string export_status = 10 [json_name = "export_status"];
   // For scheduled job runs: "{config_name}_{scheduled_at}" (RFC3339). Empty for one-time jobs.
   optional string name = 11;
+  optional string user_id = 12 [json_name = "user_id"];
 }
 
 // CrawlTask represents a single crawl task within a job
@@ -189,6 +191,8 @@ message JobListFilter {
   // Filter by created_at date range
   optional google.protobuf.Timestamp created_from = 3 [json_name = "created_from"];
   optional google.protobuf.Timestamp created_to = 4 [json_name = "created_to"];
+  // Filter by creator email (partial match, case-insensitive)
+  optional string user_email = 5 [json_name = "user_email"];
 }
 
 // SortOrder defines ascending or descending sort direction
@@ -251,6 +255,12 @@ message GetJobRequest {
 message GetJobResponse {
   CrawlJob job = 1;
 }
+
+message DeleteJobRequest {
+  string id = 1 [(validate.rules).string.min_len = 1];
+}
+
+message DeleteJobResponse {}
 
 // Request/Response messages for Tasks
 
