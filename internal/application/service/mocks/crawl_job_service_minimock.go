@@ -1840,3 +1840,9 @@ func (m *CrawlJobServiceMock) minimockDone() bool {
 		m.MinimockListCrawlJobsDone() &&
 		m.MinimockUpdateJobStatusDone()
 }
+
+// DeleteCrawlJob implements mm_service.CrawlJobService.
+// NOTE: not fully mocked; run go generate ./... to regenerate this mock.
+func (m *CrawlJobServiceMock) DeleteCrawlJob(ctx context.Context, cmd mm_service.DeleteCrawlJobCommand) error {
+	return nil
+}

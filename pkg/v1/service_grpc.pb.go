@@ -23,6 +23,7 @@ const (
 	CrawlerService_CreateJob_FullMethodName           = "/crawler.v1.CrawlerService/CreateJob"
 	CrawlerService_GetJob_FullMethodName              = "/crawler.v1.CrawlerService/GetJob"
 	CrawlerService_GetJobExportFileURL_FullMethodName = "/crawler.v1.CrawlerService/GetJobExportFileURL"
+	CrawlerService_DeleteJob_FullMethodName           = "/crawler.v1.CrawlerService/DeleteJob"
 	CrawlerService_GetTask_FullMethodName             = "/crawler.v1.CrawlerService/GetTask"
 	CrawlerService_ListTasksByJob_FullMethodName      = "/crawler.v1.CrawlerService/ListTasksByJob"
 	CrawlerService_GetTaskAnalytics_FullMethodName    = "/crawler.v1.CrawlerService/GetTaskAnalytics"
@@ -41,6 +42,7 @@ type CrawlerServiceClient interface {
 	GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*GetJobResponse, error)
 	// Get a presigned URL for downloading a job export file (JSON or CSV)
 	GetJobExportFileURL(ctx context.Context, in *GetJobExportFileURLRequest, opts ...grpc.CallOption) (*GetJobExportFileURLResponse, error)
+	DeleteJob(ctx context.Context, in *DeleteJobRequest, opts ...grpc.CallOption) (*DeleteJobResponse, error)
 	// Task operations
 	GetTask(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*GetTaskResponse, error)
 	ListTasksByJob(ctx context.Context, in *ListTasksByJobRequest, opts ...grpc.CallOption) (*ListTasksByJobResponse, error)
@@ -92,6 +94,16 @@ func (c *crawlerServiceClient) GetJobExportFileURL(ctx context.Context, in *GetJ
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetJobExportFileURLResponse)
 	err := c.cc.Invoke(ctx, CrawlerService_GetJobExportFileURL_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *crawlerServiceClient) DeleteJob(ctx context.Context, in *DeleteJobRequest, opts ...grpc.CallOption) (*DeleteJobResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteJobResponse)
+	err := c.cc.Invoke(ctx, CrawlerService_DeleteJob_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +162,7 @@ type CrawlerServiceServer interface {
 	GetJob(context.Context, *GetJobRequest) (*GetJobResponse, error)
 	// Get a presigned URL for downloading a job export file (JSON or CSV)
 	GetJobExportFileURL(context.Context, *GetJobExportFileURLRequest) (*GetJobExportFileURLResponse, error)
+	DeleteJob(context.Context, *DeleteJobRequest) (*DeleteJobResponse, error)
 	// Task operations
 	GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error)
 	ListTasksByJob(context.Context, *ListTasksByJobRequest) (*ListTasksByJobResponse, error)
@@ -178,6 +191,9 @@ func (UnimplementedCrawlerServiceServer) GetJob(context.Context, *GetJobRequest)
 }
 func (UnimplementedCrawlerServiceServer) GetJobExportFileURL(context.Context, *GetJobExportFileURLRequest) (*GetJobExportFileURLResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetJobExportFileURL not implemented")
+}
+func (UnimplementedCrawlerServiceServer) DeleteJob(context.Context, *DeleteJobRequest) (*DeleteJobResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteJob not implemented")
 }
 func (UnimplementedCrawlerServiceServer) GetTask(context.Context, *GetTaskRequest) (*GetTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTask not implemented")
@@ -284,6 +300,24 @@ func _CrawlerService_GetJobExportFileURL_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CrawlerService_DeleteJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrawlerServiceServer).DeleteJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CrawlerService_DeleteJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrawlerServiceServer).DeleteJob(ctx, req.(*DeleteJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CrawlerService_GetTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetTaskRequest)
 	if err := dec(in); err != nil {
@@ -378,6 +412,10 @@ var CrawlerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetJobExportFileURL",
 			Handler:    _CrawlerService_GetJobExportFileURL_Handler,
+		},
+		{
+			MethodName: "DeleteJob",
+			Handler:    _CrawlerService_DeleteJob_Handler,
 		},
 		{
 			MethodName: "GetTask",

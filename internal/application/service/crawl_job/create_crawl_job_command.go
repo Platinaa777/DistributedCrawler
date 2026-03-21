@@ -3,6 +3,7 @@ package crawljob
 import (
 	"context"
 	"distributed-crawler/internal/application/service"
+	authvalueobjects "distributed-crawler/internal/domain/auth/valueobjects"
 	"distributed-crawler/internal/domain/crawl/events"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
@@ -29,10 +30,14 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 	if _, err := models.CompileAllowedURLPatterns(command.Config.Scopes.AllowedURLPatterns); err != nil {
 		return valueobjects.CrawlJobID{}, fmt.Errorf("invalid scopes.allowed_url_patterns: %w", err)
 	}
+	userID, err := authvalueobjects.NewUserID(command.UserID)
+	if err != nil {
+		return valueobjects.CrawlJobID{}, fmt.Errorf("invalid user_id: %w", err)
+	}
 
 	var jobID valueobjects.CrawlJobID
 
-	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+	err = s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		// Generate IDs
 		configID := valueobjects.GenerateID()
 		jobID = valueobjects.GenerateCrawlJobID()
@@ -40,6 +45,7 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 		// Set config ID
 		config := command.Config
 		config.ID = configID
+		config.UserID = userID
 
 		// Create job config first
 		createdConfigID, err := s.crawlJobConfigRepo.Create(ctx, config)
@@ -52,6 +58,7 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 			ID:           jobID,
 			JobConfigID:  createdConfigID,
 			JobConfig:    &config,
+			UserID:       userID,
 			Status:       models.TaskStatusInProgress,
 			CreatedAt:    time.Now().UTC(),
 			ExportStatus: models.ExportStatusNotStarted,

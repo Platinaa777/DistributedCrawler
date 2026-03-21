@@ -2,6 +2,7 @@ package converters
 
 import (
 	"database/sql"
+	authvalueobjects "distributed-crawler/internal/domain/auth/valueobjects"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/persistence/postgres/snapshots"
@@ -22,6 +23,12 @@ func SaveCrawlJobToSnapshot(crawlJob models.CrawlJob) *snapshots.CrawlJobSnapsho
 	if !crawlJob.JobConfigID.IsEmpty() {
 		snapshot.JobConfigID = sql.NullString{
 			String: crawlJob.JobConfigID.String(),
+			Valid:  true,
+		}
+	}
+	if !crawlJob.UserID.IsEmpty() {
+		snapshot.UserID = sql.NullString{
+			String: crawlJob.UserID.String(),
 			Valid:  true,
 		}
 	}
@@ -94,6 +101,13 @@ func RestoreCrawlJobFromSnapshot(crawlJob snapshots.CrawlJobSnapshot) (*models.C
 			return nil, err
 		}
 		job.JobConfigID = configID
+	}
+	if crawlJob.UserID.Valid {
+		userID, err := authvalueobjects.NewUserID(crawlJob.UserID.String)
+		if err != nil {
+			return nil, err
+		}
+		job.UserID = userID
 	}
 
 	// Handle CompletedAt

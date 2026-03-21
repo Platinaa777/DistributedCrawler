@@ -10,7 +10,10 @@ import (
 	"distributed-crawler/internal/infra/messaging"
 	"distributed-crawler/internal/telemetry"
 	"encoding/json"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v4"
 	"net/url"
 	"strings"
 	"sync/atomic"
@@ -137,11 +140,23 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	// Get existing task from database (includes Job)
 	task, err := w.taskRepo.Get(ctx, taskID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.logger.Info("Task not found (job deleted), skipping message",
+				zap.String("task_id", taskMsg.TaskID),
+			)
+			return nil
+		}
 		w.logger.Error("Failed to get task",
 			zap.String("task_id", taskMsg.TaskID),
 			zap.Error(err),
 		)
 		return fmt.Errorf("failed to get task: %w", err)
+	}
+	if task == nil {
+		w.logger.Info("Task not found (job deleted), skipping message",
+			zap.String("task_id", taskMsg.TaskID),
+		)
+		return nil
 	}
 
 	// URL deduplication: check if another task with the same URL already exists in this job
@@ -180,12 +195,24 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 	// Load job config
 	config, err := w.jobConfigRepo.Get(ctx, task.Job.JobConfigID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.logger.Info("Job config not found (job deleted), skipping message",
+				zap.String("task_id", taskMsg.TaskID),
+			)
+			return nil
+		}
 		w.logger.Error("Failed to get job config",
 			zap.String("task_id", taskMsg.TaskID),
 			zap.String("config_id", task.Job.JobConfigID.String()),
 			zap.Error(err),
 		)
 		return fmt.Errorf("failed to get job config: %w", err)
+	}
+	if config == nil {
+		w.logger.Info("Job config not found (job deleted), skipping message",
+			zap.String("task_id", taskMsg.TaskID),
+		)
+		return nil
 	}
 
 	// Validate scope

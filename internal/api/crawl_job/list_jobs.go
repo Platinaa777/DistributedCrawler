@@ -47,6 +47,9 @@ func (i *CrawlJobImplementation) ListJobs(ctx context.Context, req *crawlergrpc.
 		if req.Filter.Name != nil {
 			query.Filter.Name = req.Filter.Name
 		}
+		if req.Filter.UserEmail != nil {
+			query.Filter.UserEmail = req.Filter.UserEmail
+		}
 		if req.Filter.Status != nil {
 			query.Filter.Status = req.Filter.Status
 		}

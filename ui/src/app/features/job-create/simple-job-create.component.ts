@@ -28,6 +28,7 @@ interface SimpleJobFormValue {
   allowed_url_patterns: string[];
   max_depth: number;
   rps: number;
+  respect_robots_txt: boolean;
   retries: RetryPolicy;
   auth: {
     basic_user?: string;
@@ -40,6 +41,12 @@ interface SimpleJobFormValue {
   crawl_mode: CrawlMode;
   items_enabled: boolean;
   items_container_selector: string;
+}
+
+interface JobCopyNavigationState {
+  initialConfig?: CrawlJobConfig;
+  copySourceJobId?: string;
+  copySourceJobName?: string;
 }
 
 @Component({
@@ -120,6 +127,12 @@ interface SimpleJobFormValue {
               Apply
             </p-button>
           </div>
+        </div>
+      </p-card>
+
+      <p-card *ngIf="copiedFromJobName" styleClass="mb-6 border border-blue-200 dark:border-blue-900">
+        <div class="p-4 text-sm text-blue-700 dark:text-blue-300">
+          Config copied from <strong>{{ copiedFromJobName }}</strong>. Enter a new job name before creating the copied crawl.
         </div>
       </p-card>
 
@@ -294,6 +307,22 @@ interface SimpleJobFormValue {
                 styleClass="w-full">
               </p-select>
               <small class="text-gray-500 dark:text-gray-400">{{ crawlModeDescription }}</small>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Robots Policy</label>
+              <div class="flex items-center gap-2">
+                <p-checkbox
+                  formControlName="respect_robots_txt"
+                  [binary]="true"
+                  inputId="respectRobotsTxt">
+                </p-checkbox>
+                <label for="respectRobotsTxt" class="text-sm text-gray-900 dark:text-gray-100 cursor-pointer">
+                  Respect robots.txt
+                </label>
+              </div>
+              <small class="text-gray-500 dark:text-gray-400">
+                When enabled, the crawler skips URLs disallowed by the target site's robots.txt.
+              </small>
             </div>
             <div [formGroup]="scheduleGroup">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cron</label>
@@ -680,6 +709,8 @@ export class SimpleJobCreateComponent implements OnInit {
   showImportPanel = false;
   importJsonText = '';
   importError?: string;
+  copiedFromJobName?: string;
+  copiedFromJobId?: string;
   readonly fieldTypeOptions: FieldSpec['type'][] = ['string', 'int', 'float', 'bool', 'url', 'json'];
   readonly attributeOptions = ['text', 'html', 'href', 'src', 'content'];
   readonly transformOpOptions: TransformSpec['op'][] = [
@@ -742,6 +773,7 @@ export class SimpleJobCreateComponent implements OnInit {
       max_depth: 0
     },
     rate_limit: { rps: 1 },
+    respect_robots_txt: true,
     retries: { max_attempts: 3, backoff_initial_ms: 500, backoff_multiplier: 2 },
     schedule: { cron: '0 9 * * 1' },
     auth: { basic_user: '', basic_password: '', bearer_token: '', cookie: '' },
@@ -792,6 +824,7 @@ export class SimpleJobCreateComponent implements OnInit {
       allowed_url_patterns: this.fb.array([]),
       max_depth: [0, [Validators.required, Validators.min(0)]],
       rps: [1, [Validators.required, Validators.min(0.1)]],
+      respect_robots_txt: [false],
       retries: this.fb.group({
         max_attempts: [3],
         backoff_initial_ms: [500],
@@ -822,7 +855,9 @@ export class SimpleJobCreateComponent implements OnInit {
 
     this.jobForm.valueChanges.subscribe(() => this.updatePreview());
 
-    this.updatePreview();
+    if (!this.applyInitialConfigFromNavigation()) {
+      this.updatePreview();
+    }
   }
 
   get seeds(): FormArray {
@@ -895,47 +930,7 @@ export class SimpleJobCreateComponent implements OnInit {
     const config = parsed.config ?? parsed;
 
     try {
-      this.jobForm.patchValue({
-        name: config.name ?? '',
-        job_type: (config.job_type as JobType) ?? 'JOB_TYPE_ONCE',
-        crawl_mode: config.crawl_mode ?? 'CRAWL_MODE_PAGINATION_AND_LINKS',
-        max_depth: config.scopes?.max_depth ?? 0,
-        rps: config.rate_limit?.rps ?? 1,
-        retries: config.retries ?? {},
-        auth: config.auth ?? {},
-        schedule: config.schedule ?? {},
-        items_enabled: !!config.extraction_spec?.items,
-        items_container_selector: config.extraction_spec?.items?.container_selector ?? ''
-      });
-
-      // Load queue endpoint assignments
-      this.endpointSelections.clear();
-      const assignments: QueueEndpointAssignment[] = config.queue_endpoint_assignments ?? [];
-      assignments.forEach(a => this.endpointSelections.set(a.endpoint_id, a.weight > 0 ? a.weight : 1));
-
-      if (config.seeds?.length > 0) {
-        this.resetArray(this.seeds, config.seeds.map((s: any) => this.createSeedGroup(s.url ?? '')));
-      }
-
-      const domains: string[] = config.scopes?.allowed_domains ?? [];
-      this.resetArray(this.allowedDomains, domains.map(d => this.fb.control(d)));
-
-      const patterns: string[] = config.scopes?.deny_url_patterns ?? [];
-      this.resetArray(this.denyPatterns, patterns.map(p => this.fb.control(p)));
-
-      const allowedUrlPatterns: string[] = config.scopes?.allowed_url_patterns ?? [];
-      this.resetArray(this.allowedUrlPatterns, allowedUrlPatterns.map(p => this.fb.control(p)));
-
-      const fields: any[] = config.extraction_spec?.fields ?? [];
-      this.resetArray(this.extractionFields, fields.map(f => this.createExtractionFieldGroup(f as Partial<FieldSpec>)));
-
-      const itemFields: any[] = config.extraction_spec?.items?.fields ?? [];
-      this.resetArray(this.itemFields, itemFields.map(f => this.createExtractionFieldGroup(f as Partial<FieldSpec>)));
-
-      const paginationItems: any[] = config.extraction_spec?.pagination ?? [];
-      this.resetArray(this.pagination, paginationItems.map(p => this.createPaginationGroup(p)));
-
-      this.updatePreview();
+      this.applyConfig(config as CrawlJobConfig);
       this.showImportPanel = false;
       this.importJsonText = '';
       this.messageService.add({
@@ -1070,32 +1065,9 @@ export class SimpleJobCreateComponent implements OnInit {
   }
 
   resetToSample(): void {
-    const s = this.sampleConfig;
-    this.jobForm.patchValue({
-      name: s.name,
-      max_depth: s.scopes.max_depth,
-      rps: s.rate_limit.rps,
-      retries: s.retries,
-      schedule: s.schedule,
-      auth: s.auth
-    });
-
-    this.resetArray(this.seeds, s.seeds.map(seed => this.createSeedGroup(seed.url)));
-    this.resetArray(this.allowedDomains, s.scopes.allowed_domains.map(d => this.fb.control(d)));
-    this.resetArray(this.denyPatterns, (s.scopes.deny_url_patterns || []).map(p => this.fb.control(p)));
-    this.resetArray(this.allowedUrlPatterns, (s.scopes.allowed_url_patterns || []).map(p => this.fb.control(p)));
-
-    this.resetArray(
-      this.extractionFields,
-      s.extraction_spec.fields.map(f => this.createExtractionFieldGroup(f as Partial<FieldSpec>))
-    );
-    this.jobForm.patchValue({
-      items_enabled: false,
-      items_container_selector: ''
-    });
-    this.resetArray(this.itemFields, []);
-
-    this.updatePreview();
+    this.copiedFromJobName = undefined;
+    this.copiedFromJobId = undefined;
+    this.applyConfig(this.sampleConfig);
   }
 
   submit(): void {
@@ -1212,6 +1184,7 @@ export class SimpleJobCreateComponent implements OnInit {
       name: raw.name,
       job_type: raw.job_type,
       crawl_mode: raw.crawl_mode,
+      respect_robots_txt: !!raw.respect_robots_txt,
       seeds: raw.seeds.map(seed => ({ url: seed.url })),
       scopes: {
         max_depth: Number(raw.max_depth),
@@ -1264,5 +1237,77 @@ export class SimpleJobCreateComponent implements OnInit {
   private updatePreview(): void {
     const config = this.buildConfig();
     this.previewJson = JSON.stringify({ config }, null, 2);
+  }
+
+  private applyInitialConfigFromNavigation(): boolean {
+    const navigationState = (
+      this.router.getCurrentNavigation()?.extras.state ??
+      history.state ??
+      {}
+    ) as JobCopyNavigationState;
+
+    if (!navigationState.initialConfig) {
+      return false;
+    }
+
+    this.copiedFromJobId = navigationState.copySourceJobId;
+    this.copiedFromJobName = navigationState.copySourceJobName || navigationState.initialConfig.name;
+    this.applyConfig({
+      ...navigationState.initialConfig,
+      name: ''
+    });
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Config copied',
+      detail: `Loaded configuration from ${this.copiedFromJobName}`,
+      life: 3000
+    });
+
+    return true;
+  }
+
+  private applyConfig(config: CrawlJobConfig): void {
+    this.jobForm.patchValue({
+      name: config.name ?? '',
+      job_type: (config.job_type as JobType) ?? 'JOB_TYPE_ONCE',
+      crawl_mode: config.crawl_mode ?? 'CRAWL_MODE_PAGINATION_AND_LINKS',
+      max_depth: config.scopes?.max_depth ?? 0,
+      rps: config.rate_limit?.rps ?? 1,
+      respect_robots_txt: !!config.respect_robots_txt,
+      retries: config.retries ?? {},
+      auth: config.auth ?? {},
+      schedule: config.schedule ?? {},
+      items_enabled: !!config.extraction_spec?.items,
+      items_container_selector: config.extraction_spec?.items?.container_selector ?? ''
+    });
+
+    this.endpointSelections.clear();
+    const assignments: QueueEndpointAssignment[] = config.queue_endpoint_assignments ?? [];
+    assignments.forEach(a => this.endpointSelections.set(a.endpoint_id, a.weight > 0 ? a.weight : 1));
+
+    const seeds = config.seeds?.length > 0
+      ? config.seeds.map(seed => this.createSeedGroup(seed.url ?? ''))
+      : [this.createSeedGroup()];
+    this.resetArray(this.seeds, seeds);
+
+    const domains: string[] = config.scopes?.allowed_domains ?? [];
+    this.resetArray(this.allowedDomains, domains.map(d => this.fb.control(d)));
+
+    const patterns: string[] = config.scopes?.deny_url_patterns ?? [];
+    this.resetArray(this.denyPatterns, patterns.map(p => this.fb.control(p)));
+
+    const allowedUrlPatterns: string[] = config.scopes?.allowed_url_patterns ?? [];
+    this.resetArray(this.allowedUrlPatterns, allowedUrlPatterns.map(p => this.fb.control(p)));
+
+    const fields: FieldSpec[] = config.extraction_spec?.fields ?? [];
+    this.resetArray(this.extractionFields, fields.map(field => this.createExtractionFieldGroup(field)));
+
+    const itemFields: FieldSpec[] = config.extraction_spec?.items?.fields ?? [];
+    this.resetArray(this.itemFields, itemFields.map(field => this.createExtractionFieldGroup(field)));
+
+    const paginationItems: PaginationSpec[] = config.extraction_spec?.pagination ?? [];
+    this.resetArray(this.pagination, paginationItems.map(pagination => this.createPaginationGroup(pagination)));
+
+    this.updatePreview();
   }
 }

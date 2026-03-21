@@ -206,6 +206,7 @@ func (w *ScheduleWorker) createScheduledJob(
 			ID:           jobID,
 			JobConfigID:  config.ID,
 			JobConfig:    config,
+			UserID:       config.UserID,
 			Name:         &jobName,
 			Status:       models.TaskStatusInProgress,
 			CreatedAt:    now,

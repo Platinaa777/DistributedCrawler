@@ -12,6 +12,7 @@ import (
 
 type CreateCrawlJobCommand struct {
 	Config models.CrawlJobConfig
+	UserID string
 }
 
 type UpdateCrawlJobStatusCommand struct {
@@ -41,6 +42,7 @@ const (
 // ListCrawlJobsFilter contains filter criteria for listing jobs
 type ListCrawlJobsFilter struct {
 	Name        *string    // Partial match on config name (ILIKE %name%)
+	UserEmail   *string    // Partial match on creator email (ILIKE %email%)
 	Status      *string    // Exact match on job status
 	CreatedFrom *time.Time // Jobs created >= this timestamp
 	CreatedTo   *time.Time // Jobs created <= this timestamp
@@ -74,8 +76,13 @@ type ListCrawlJobsResult struct {
 
 // Service interfaces
 
+type DeleteCrawlJobCommand struct {
+	JobID string
+}
+
 type CrawlJobService interface {
 	CreateCrawlJob(ctx context.Context, cmd CreateCrawlJobCommand) (valueobjects.CrawlJobID, error)
 	GetCrawlJob(ctx context.Context, query GetCrawlJobQuery) (*models.CrawlJob, error)
 	ListCrawlJobs(ctx context.Context, query ListCrawlJobsQuery) (*ListCrawlJobsResult, error)
+	DeleteCrawlJob(ctx context.Context, cmd DeleteCrawlJobCommand) error
 }

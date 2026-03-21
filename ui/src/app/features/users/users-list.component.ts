@@ -69,7 +69,7 @@ import { User, UserRole } from '../../core/models';
                 <div class="flex items-center gap-2">
                   <p-select
                     [options]="getRoleOptions(user)"
-                    [(ngModel)]="user.role"
+                    [ngModel]="user.role"
                     (onChange)="updateRole(user, $event.value)"
                     [disabled]="isUpdating(user.id) || user.role === 'ADMINISTRATOR' || isCurrentUser(user.id)"
                     appendTo="body"

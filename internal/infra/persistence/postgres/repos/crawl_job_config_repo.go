@@ -20,6 +20,7 @@ const (
 	configQueueEndpointsTable = "crawl_job_config_queue_endpoints"
 
 	configIDColumn               = "id"
+	configUserIDColumn           = "user_id"
 	configNameColumn             = "name"
 	configExtractionSpecColumn   = "extraction_spec"
 	configScopesColumn           = "scopes"
@@ -70,6 +71,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 		PlaceholderFormat(sq.Dollar).
 		Columns(
 			configIDColumn,
+			configUserIDColumn,
 			configNameColumn,
 			configExtractionSpecColumn,
 			configScopesColumn,
@@ -84,6 +86,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 		).
 		Values(
 			dbEntity.ID,
+			dbEntity.UserID,
 			dbEntity.Name,
 			dbEntity.ExtractionSpec,
 			dbEntity.Scopes,
@@ -124,6 +127,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 func (r *crawlJobConfigRepository) Get(ctx context.Context, id valueobjects.ID) (*models.CrawlJobConfig, error) {
 	builder := sq.Select(
 		configIDColumn,
+		configUserIDColumn,
 		configNameColumn,
 		configExtractionSpecColumn,
 		configScopesColumn,
@@ -175,6 +179,7 @@ func (r *crawlJobConfigRepository) Update(ctx context.Context, entity models.Cra
 	builder := sq.Update(configTableName).
 		PlaceholderFormat(sq.Dollar).
 		Set(configNameColumn, dbEntity.Name).
+		Set(configUserIDColumn, dbEntity.UserID).
 		Set(configExtractionSpecColumn, dbEntity.ExtractionSpec).
 		Set(configScopesColumn, dbEntity.Scopes).
 		Set(configSeedsColumn, dbEntity.Seeds).
@@ -231,6 +236,7 @@ func (r *crawlJobConfigRepository) Delete(ctx context.Context, id valueobjects.I
 func (r *crawlJobConfigRepository) ListAllScheduled(ctx context.Context, limit, offset int) ([]*models.CrawlJobConfig, error) {
 	builder := sq.Select(
 		configIDColumn,
+		configUserIDColumn,
 		configNameColumn,
 		configExtractionSpecColumn,
 		configScopesColumn,

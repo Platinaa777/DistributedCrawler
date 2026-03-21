@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -26,6 +27,7 @@ import (
 	"distributed-crawler/internal/telemetry"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/jackc/pgx/v4"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
@@ -145,11 +147,23 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 	// Load task from DB
 	crawlTask, err := w.taskRepo.Get(ctx, taskID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.logger.Info("Task not found (job deleted), skipping message",
+				zap.String("task_id", task.TaskID),
+			)
+			return nil
+		}
 		w.logger.Error("Failed to load crawl task",
 			zap.String("task_id", task.TaskID),
 			zap.Error(err),
 		)
 		return fmt.Errorf("failed to load crawl task: %w", err)
+	}
+	if crawlTask == nil {
+		w.logger.Info("Task not found (job deleted), skipping message",
+			zap.String("task_id", task.TaskID),
+		)
+		return nil
 	}
 
 	// Idempotency guard: skip if already parsed (e.g. RMQ retry after successful processing)
@@ -163,21 +177,45 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 	// Load job from DB
 	crawlJob, err := w.jobRepo.Get(ctx, crawlTask.JobID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.logger.Info("Crawl job not found (job deleted), skipping message",
+				zap.String("task_id", task.TaskID),
+			)
+			return nil
+		}
 		w.logger.Error("Failed to load crawl job",
 			zap.String("job_id", task.JobID),
 			zap.Error(err),
 		)
 		return fmt.Errorf("failed to load crawl job: %w", err)
 	}
+	if crawlJob == nil {
+		w.logger.Info("Crawl job not found (job deleted), skipping message",
+			zap.String("task_id", task.TaskID),
+		)
+		return nil
+	}
 
 	// Load job config from DB
 	jobConfig, err := w.jobConfigRepo.Get(ctx, crawlJob.JobConfigID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			w.logger.Info("Job config not found (job deleted), skipping message",
+				zap.String("task_id", task.TaskID),
+			)
+			return nil
+		}
 		w.logger.Error("Failed to load job config",
 			zap.String("job_config_id", crawlJob.JobConfigID.String()),
 			zap.Error(err),
 		)
 		return fmt.Errorf("failed to load job config: %w", err)
+	}
+	if jobConfig == nil {
+		w.logger.Info("Job config not found (job deleted), skipping message",
+			zap.String("task_id", task.TaskID),
+		)
+		return nil
 	}
 
 	// Load HTML from MinIO

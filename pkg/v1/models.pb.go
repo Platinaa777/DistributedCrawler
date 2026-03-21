@@ -1268,6 +1268,7 @@ func (x *ExtractionSpec) GetItems() *ItemsSpec {
 type CrawlJobConfig struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId         *string                `protobuf:"bytes,15,opt,name=user_id,proto3,oneof" json:"user_id,omitempty"`
 	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	ExtractionSpec *ExtractionSpec        `protobuf:"bytes,3,opt,name=extraction_spec,proto3" json:"extraction_spec,omitempty"`
 	Scopes         *ScopeRules            `protobuf:"bytes,4,opt,name=scopes,proto3" json:"scopes,omitempty"`
@@ -1321,6 +1322,13 @@ func (*CrawlJobConfig) Descriptor() ([]byte, []int) {
 func (x *CrawlJobConfig) GetId() string {
 	if x != nil {
 		return x.Id
+	}
+	return ""
+}
+
+func (x *CrawlJobConfig) GetUserId() string {
+	if x != nil && x.UserId != nil {
+		return *x.UserId
 	}
 	return ""
 }
@@ -1424,6 +1432,7 @@ type CrawlJob struct {
 	ExportStatus  string                 `protobuf:"bytes,10,opt,name=export_status,proto3" json:"export_status,omitempty"`
 	// For scheduled job runs: "{config_name}_{scheduled_at}" (RFC3339). Empty for one-time jobs.
 	Name          *string `protobuf:"bytes,11,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	UserId        *string `protobuf:"bytes,12,opt,name=user_id,proto3,oneof" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1531,6 +1540,13 @@ func (x *CrawlJob) GetExportStatus() string {
 func (x *CrawlJob) GetName() string {
 	if x != nil && x.Name != nil {
 		return *x.Name
+	}
+	return ""
+}
+
+func (x *CrawlJob) GetUserId() string {
+	if x != nil && x.UserId != nil {
+		return *x.UserId
 	}
 	return ""
 }
@@ -1668,8 +1684,10 @@ type JobListFilter struct {
 	// Filter by job status (exact match)
 	Status *string `protobuf:"bytes,2,opt,name=status,proto3,oneof" json:"status,omitempty"`
 	// Filter by created_at date range
-	CreatedFrom   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_from,proto3,oneof" json:"created_from,omitempty"`
-	CreatedTo     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_to,proto3,oneof" json:"created_to,omitempty"`
+	CreatedFrom *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_from,proto3,oneof" json:"created_from,omitempty"`
+	CreatedTo   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_to,proto3,oneof" json:"created_to,omitempty"`
+	// Filter by creator email (partial match, case-insensitive)
+	UserEmail     *string `protobuf:"bytes,5,opt,name=user_email,proto3,oneof" json:"user_email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1730,6 +1748,13 @@ func (x *JobListFilter) GetCreatedTo() *timestamppb.Timestamp {
 		return x.CreatedTo
 	}
 	return nil
+}
+
+func (x *JobListFilter) GetUserEmail() string {
+	if x != nil && x.UserEmail != nil {
+		return *x.UserEmail
+	}
+	return ""
 }
 
 type ListJobsRequest struct {
@@ -2051,6 +2076,86 @@ func (x *GetJobResponse) GetJob() *CrawlJob {
 	return nil
 }
 
+type DeleteJobRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteJobRequest) Reset() {
+	*x = DeleteJobRequest{}
+	mi := &file_v1_models_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteJobRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteJobRequest) ProtoMessage() {}
+
+func (x *DeleteJobRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteJobRequest.ProtoReflect.Descriptor instead.
+func (*DeleteJobRequest) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *DeleteJobRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type DeleteJobResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteJobResponse) Reset() {
+	*x = DeleteJobResponse{}
+	mi := &file_v1_models_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteJobResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteJobResponse) ProtoMessage() {}
+
+func (x *DeleteJobResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_models_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteJobResponse.ProtoReflect.Descriptor instead.
+func (*DeleteJobResponse) Descriptor() ([]byte, []int) {
+	return file_v1_models_proto_rawDescGZIP(), []int{23}
+}
+
 type CreateTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
@@ -2061,7 +2166,7 @@ type CreateTaskRequest struct {
 
 func (x *CreateTaskRequest) Reset() {
 	*x = CreateTaskRequest{}
-	mi := &file_v1_models_proto_msgTypes[22]
+	mi := &file_v1_models_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2073,7 +2178,7 @@ func (x *CreateTaskRequest) String() string {
 func (*CreateTaskRequest) ProtoMessage() {}
 
 func (x *CreateTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[22]
+	mi := &file_v1_models_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2086,7 +2191,7 @@ func (x *CreateTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTaskRequest.ProtoReflect.Descriptor instead.
 func (*CreateTaskRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{22}
+	return file_v1_models_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CreateTaskRequest) GetJobId() string {
@@ -2112,7 +2217,7 @@ type GetTaskRequest struct {
 
 func (x *GetTaskRequest) Reset() {
 	*x = GetTaskRequest{}
-	mi := &file_v1_models_proto_msgTypes[23]
+	mi := &file_v1_models_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2124,7 +2229,7 @@ func (x *GetTaskRequest) String() string {
 func (*GetTaskRequest) ProtoMessage() {}
 
 func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[23]
+	mi := &file_v1_models_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2137,7 +2242,7 @@ func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskRequest.ProtoReflect.Descriptor instead.
 func (*GetTaskRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{23}
+	return file_v1_models_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetTaskRequest) GetId() string {
@@ -2156,7 +2261,7 @@ type GetTaskResponse struct {
 
 func (x *GetTaskResponse) Reset() {
 	*x = GetTaskResponse{}
-	mi := &file_v1_models_proto_msgTypes[24]
+	mi := &file_v1_models_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2168,7 +2273,7 @@ func (x *GetTaskResponse) String() string {
 func (*GetTaskResponse) ProtoMessage() {}
 
 func (x *GetTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[24]
+	mi := &file_v1_models_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2181,7 +2286,7 @@ func (x *GetTaskResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskResponse.ProtoReflect.Descriptor instead.
 func (*GetTaskResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{24}
+	return file_v1_models_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetTaskResponse) GetTask() *CrawlTask {
@@ -2210,7 +2315,7 @@ type TaskListFilter struct {
 
 func (x *TaskListFilter) Reset() {
 	*x = TaskListFilter{}
-	mi := &file_v1_models_proto_msgTypes[25]
+	mi := &file_v1_models_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2222,7 +2327,7 @@ func (x *TaskListFilter) String() string {
 func (*TaskListFilter) ProtoMessage() {}
 
 func (x *TaskListFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[25]
+	mi := &file_v1_models_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2235,7 +2340,7 @@ func (x *TaskListFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskListFilter.ProtoReflect.Descriptor instead.
 func (*TaskListFilter) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{25}
+	return file_v1_models_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *TaskListFilter) GetStatus() string {
@@ -2299,7 +2404,7 @@ type ListTasksByJobRequest struct {
 
 func (x *ListTasksByJobRequest) Reset() {
 	*x = ListTasksByJobRequest{}
-	mi := &file_v1_models_proto_msgTypes[26]
+	mi := &file_v1_models_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2311,7 +2416,7 @@ func (x *ListTasksByJobRequest) String() string {
 func (*ListTasksByJobRequest) ProtoMessage() {}
 
 func (x *ListTasksByJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[26]
+	mi := &file_v1_models_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2324,7 +2429,7 @@ func (x *ListTasksByJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTasksByJobRequest.ProtoReflect.Descriptor instead.
 func (*ListTasksByJobRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{26}
+	return file_v1_models_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ListTasksByJobRequest) GetJobId() string {
@@ -2382,7 +2487,7 @@ type ListTasksByJobResponse struct {
 
 func (x *ListTasksByJobResponse) Reset() {
 	*x = ListTasksByJobResponse{}
-	mi := &file_v1_models_proto_msgTypes[27]
+	mi := &file_v1_models_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2394,7 +2499,7 @@ func (x *ListTasksByJobResponse) String() string {
 func (*ListTasksByJobResponse) ProtoMessage() {}
 
 func (x *ListTasksByJobResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[27]
+	mi := &file_v1_models_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2407,7 +2512,7 @@ func (x *ListTasksByJobResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTasksByJobResponse.ProtoReflect.Descriptor instead.
 func (*ListTasksByJobResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{27}
+	return file_v1_models_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ListTasksByJobResponse) GetTasks() []*CrawlTask {
@@ -2446,7 +2551,7 @@ type TaskAnalytics struct {
 
 func (x *TaskAnalytics) Reset() {
 	*x = TaskAnalytics{}
-	mi := &file_v1_models_proto_msgTypes[28]
+	mi := &file_v1_models_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2458,7 +2563,7 @@ func (x *TaskAnalytics) String() string {
 func (*TaskAnalytics) ProtoMessage() {}
 
 func (x *TaskAnalytics) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[28]
+	mi := &file_v1_models_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2471,7 +2576,7 @@ func (x *TaskAnalytics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskAnalytics.ProtoReflect.Descriptor instead.
 func (*TaskAnalytics) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{28}
+	return file_v1_models_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *TaskAnalytics) GetStatusCounts() map[string]int64 {
@@ -2505,7 +2610,7 @@ type GetTaskAnalyticsRequest struct {
 
 func (x *GetTaskAnalyticsRequest) Reset() {
 	*x = GetTaskAnalyticsRequest{}
-	mi := &file_v1_models_proto_msgTypes[29]
+	mi := &file_v1_models_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2517,7 +2622,7 @@ func (x *GetTaskAnalyticsRequest) String() string {
 func (*GetTaskAnalyticsRequest) ProtoMessage() {}
 
 func (x *GetTaskAnalyticsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[29]
+	mi := &file_v1_models_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2530,7 +2635,7 @@ func (x *GetTaskAnalyticsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskAnalyticsRequest.ProtoReflect.Descriptor instead.
 func (*GetTaskAnalyticsRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{29}
+	return file_v1_models_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetTaskAnalyticsRequest) GetJobId() string {
@@ -2550,7 +2655,7 @@ type GetTaskAnalyticsResponse struct {
 
 func (x *GetTaskAnalyticsResponse) Reset() {
 	*x = GetTaskAnalyticsResponse{}
-	mi := &file_v1_models_proto_msgTypes[30]
+	mi := &file_v1_models_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2562,7 +2667,7 @@ func (x *GetTaskAnalyticsResponse) String() string {
 func (*GetTaskAnalyticsResponse) ProtoMessage() {}
 
 func (x *GetTaskAnalyticsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[30]
+	mi := &file_v1_models_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2575,7 +2680,7 @@ func (x *GetTaskAnalyticsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskAnalyticsResponse.ProtoReflect.Descriptor instead.
 func (*GetTaskAnalyticsResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{30}
+	return file_v1_models_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GetTaskAnalyticsResponse) GetAnalytics() *TaskAnalytics {
@@ -2596,7 +2701,7 @@ type GetJobExportFileURLRequest struct {
 
 func (x *GetJobExportFileURLRequest) Reset() {
 	*x = GetJobExportFileURLRequest{}
-	mi := &file_v1_models_proto_msgTypes[31]
+	mi := &file_v1_models_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2608,7 +2713,7 @@ func (x *GetJobExportFileURLRequest) String() string {
 func (*GetJobExportFileURLRequest) ProtoMessage() {}
 
 func (x *GetJobExportFileURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[31]
+	mi := &file_v1_models_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2621,7 +2726,7 @@ func (x *GetJobExportFileURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetJobExportFileURLRequest.ProtoReflect.Descriptor instead.
 func (*GetJobExportFileURLRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{31}
+	return file_v1_models_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetJobExportFileURLRequest) GetJobId() string {
@@ -2649,7 +2754,7 @@ type GetJobExportFileURLResponse struct {
 
 func (x *GetJobExportFileURLResponse) Reset() {
 	*x = GetJobExportFileURLResponse{}
-	mi := &file_v1_models_proto_msgTypes[32]
+	mi := &file_v1_models_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2661,7 +2766,7 @@ func (x *GetJobExportFileURLResponse) String() string {
 func (*GetJobExportFileURLResponse) ProtoMessage() {}
 
 func (x *GetJobExportFileURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[32]
+	mi := &file_v1_models_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2674,7 +2779,7 @@ func (x *GetJobExportFileURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetJobExportFileURLResponse.ProtoReflect.Descriptor instead.
 func (*GetJobExportFileURLResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{32}
+	return file_v1_models_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *GetJobExportFileURLResponse) GetUrl() string {
@@ -2702,7 +2807,7 @@ type GetTaskFileURLRequest struct {
 
 func (x *GetTaskFileURLRequest) Reset() {
 	*x = GetTaskFileURLRequest{}
-	mi := &file_v1_models_proto_msgTypes[33]
+	mi := &file_v1_models_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2714,7 +2819,7 @@ func (x *GetTaskFileURLRequest) String() string {
 func (*GetTaskFileURLRequest) ProtoMessage() {}
 
 func (x *GetTaskFileURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[33]
+	mi := &file_v1_models_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2727,7 +2832,7 @@ func (x *GetTaskFileURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskFileURLRequest.ProtoReflect.Descriptor instead.
 func (*GetTaskFileURLRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{33}
+	return file_v1_models_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetTaskFileURLRequest) GetTaskId() string {
@@ -2755,7 +2860,7 @@ type GetTaskFileURLResponse struct {
 
 func (x *GetTaskFileURLResponse) Reset() {
 	*x = GetTaskFileURLResponse{}
-	mi := &file_v1_models_proto_msgTypes[34]
+	mi := &file_v1_models_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2767,7 +2872,7 @@ func (x *GetTaskFileURLResponse) String() string {
 func (*GetTaskFileURLResponse) ProtoMessage() {}
 
 func (x *GetTaskFileURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[34]
+	mi := &file_v1_models_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2780,7 +2885,7 @@ func (x *GetTaskFileURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskFileURLResponse.ProtoReflect.Descriptor instead.
 func (*GetTaskFileURLResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{34}
+	return file_v1_models_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetTaskFileURLResponse) GetUrl() string {
@@ -2813,7 +2918,7 @@ type Preview struct {
 
 func (x *Preview) Reset() {
 	*x = Preview{}
-	mi := &file_v1_models_proto_msgTypes[35]
+	mi := &file_v1_models_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2825,7 +2930,7 @@ func (x *Preview) String() string {
 func (*Preview) ProtoMessage() {}
 
 func (x *Preview) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[35]
+	mi := &file_v1_models_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2838,7 +2943,7 @@ func (x *Preview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Preview.ProtoReflect.Descriptor instead.
 func (*Preview) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{35}
+	return file_v1_models_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *Preview) GetId() string {
@@ -2906,7 +3011,7 @@ type CreatePreviewRequest struct {
 
 func (x *CreatePreviewRequest) Reset() {
 	*x = CreatePreviewRequest{}
-	mi := &file_v1_models_proto_msgTypes[36]
+	mi := &file_v1_models_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2918,7 +3023,7 @@ func (x *CreatePreviewRequest) String() string {
 func (*CreatePreviewRequest) ProtoMessage() {}
 
 func (x *CreatePreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[36]
+	mi := &file_v1_models_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2931,7 +3036,7 @@ func (x *CreatePreviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePreviewRequest.ProtoReflect.Descriptor instead.
 func (*CreatePreviewRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{36}
+	return file_v1_models_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *CreatePreviewRequest) GetUrl() string {
@@ -2950,7 +3055,7 @@ type CreatePreviewResponse struct {
 
 func (x *CreatePreviewResponse) Reset() {
 	*x = CreatePreviewResponse{}
-	mi := &file_v1_models_proto_msgTypes[37]
+	mi := &file_v1_models_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2962,7 +3067,7 @@ func (x *CreatePreviewResponse) String() string {
 func (*CreatePreviewResponse) ProtoMessage() {}
 
 func (x *CreatePreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[37]
+	mi := &file_v1_models_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2975,7 +3080,7 @@ func (x *CreatePreviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePreviewResponse.ProtoReflect.Descriptor instead.
 func (*CreatePreviewResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{37}
+	return file_v1_models_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *CreatePreviewResponse) GetId() string {
@@ -2994,7 +3099,7 @@ type GetPreviewRequest struct {
 
 func (x *GetPreviewRequest) Reset() {
 	*x = GetPreviewRequest{}
-	mi := &file_v1_models_proto_msgTypes[38]
+	mi := &file_v1_models_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3006,7 +3111,7 @@ func (x *GetPreviewRequest) String() string {
 func (*GetPreviewRequest) ProtoMessage() {}
 
 func (x *GetPreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[38]
+	mi := &file_v1_models_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3019,7 +3124,7 @@ func (x *GetPreviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreviewRequest.ProtoReflect.Descriptor instead.
 func (*GetPreviewRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{38}
+	return file_v1_models_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *GetPreviewRequest) GetId() string {
@@ -3038,7 +3143,7 @@ type GetPreviewResponse struct {
 
 func (x *GetPreviewResponse) Reset() {
 	*x = GetPreviewResponse{}
-	mi := &file_v1_models_proto_msgTypes[39]
+	mi := &file_v1_models_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3050,7 +3155,7 @@ func (x *GetPreviewResponse) String() string {
 func (*GetPreviewResponse) ProtoMessage() {}
 
 func (x *GetPreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[39]
+	mi := &file_v1_models_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3063,7 +3168,7 @@ func (x *GetPreviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreviewResponse.ProtoReflect.Descriptor instead.
 func (*GetPreviewResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{39}
+	return file_v1_models_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetPreviewResponse) GetPreview() *Preview {
@@ -3083,7 +3188,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_v1_models_proto_msgTypes[40]
+	mi := &file_v1_models_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3095,7 +3200,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[40]
+	mi := &file_v1_models_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3108,7 +3213,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{40}
+	return file_v1_models_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *RegisterRequest) GetEmail() string {
@@ -3136,7 +3241,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_v1_models_proto_msgTypes[41]
+	mi := &file_v1_models_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3148,7 +3253,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[41]
+	mi := &file_v1_models_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3161,7 +3266,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{41}
+	return file_v1_models_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *RegisterResponse) GetAccessToken() string {
@@ -3195,7 +3300,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_v1_models_proto_msgTypes[42]
+	mi := &file_v1_models_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3207,7 +3312,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[42]
+	mi := &file_v1_models_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3220,7 +3325,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{42}
+	return file_v1_models_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *LoginRequest) GetEmail() string {
@@ -3248,7 +3353,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_v1_models_proto_msgTypes[43]
+	mi := &file_v1_models_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3260,7 +3365,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[43]
+	mi := &file_v1_models_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3273,7 +3378,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{43}
+	return file_v1_models_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *LoginResponse) GetAccessToken() string {
@@ -3306,7 +3411,7 @@ type RefreshRequest struct {
 
 func (x *RefreshRequest) Reset() {
 	*x = RefreshRequest{}
-	mi := &file_v1_models_proto_msgTypes[44]
+	mi := &file_v1_models_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3318,7 +3423,7 @@ func (x *RefreshRequest) String() string {
 func (*RefreshRequest) ProtoMessage() {}
 
 func (x *RefreshRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[44]
+	mi := &file_v1_models_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3331,7 +3436,7 @@ func (x *RefreshRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefreshRequest.ProtoReflect.Descriptor instead.
 func (*RefreshRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{44}
+	return file_v1_models_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *RefreshRequest) GetRefreshToken() string {
@@ -3352,7 +3457,7 @@ type RefreshResponse struct {
 
 func (x *RefreshResponse) Reset() {
 	*x = RefreshResponse{}
-	mi := &file_v1_models_proto_msgTypes[45]
+	mi := &file_v1_models_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3364,7 +3469,7 @@ func (x *RefreshResponse) String() string {
 func (*RefreshResponse) ProtoMessage() {}
 
 func (x *RefreshResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[45]
+	mi := &file_v1_models_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3377,7 +3482,7 @@ func (x *RefreshResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefreshResponse.ProtoReflect.Descriptor instead.
 func (*RefreshResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{45}
+	return file_v1_models_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *RefreshResponse) GetAccessToken() string {
@@ -3410,7 +3515,7 @@ type LogoutRequest struct {
 
 func (x *LogoutRequest) Reset() {
 	*x = LogoutRequest{}
-	mi := &file_v1_models_proto_msgTypes[46]
+	mi := &file_v1_models_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3422,7 +3527,7 @@ func (x *LogoutRequest) String() string {
 func (*LogoutRequest) ProtoMessage() {}
 
 func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[46]
+	mi := &file_v1_models_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3435,7 +3540,7 @@ func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
 func (*LogoutRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{46}
+	return file_v1_models_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *LogoutRequest) GetRefreshToken() string {
@@ -3453,7 +3558,7 @@ type LogoutResponse struct {
 
 func (x *LogoutResponse) Reset() {
 	*x = LogoutResponse{}
-	mi := &file_v1_models_proto_msgTypes[47]
+	mi := &file_v1_models_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3465,7 +3570,7 @@ func (x *LogoutResponse) String() string {
 func (*LogoutResponse) ProtoMessage() {}
 
 func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[47]
+	mi := &file_v1_models_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3478,7 +3583,7 @@ func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
 func (*LogoutResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{47}
+	return file_v1_models_proto_rawDescGZIP(), []int{49}
 }
 
 type User struct {
@@ -3494,7 +3599,7 @@ type User struct {
 
 func (x *User) Reset() {
 	*x = User{}
-	mi := &file_v1_models_proto_msgTypes[48]
+	mi := &file_v1_models_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3506,7 +3611,7 @@ func (x *User) String() string {
 func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[48]
+	mi := &file_v1_models_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3519,7 +3624,7 @@ func (x *User) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use User.ProtoReflect.Descriptor instead.
 func (*User) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{48}
+	return file_v1_models_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *User) GetId() string {
@@ -3565,7 +3670,7 @@ type ListUsersRequest struct {
 
 func (x *ListUsersRequest) Reset() {
 	*x = ListUsersRequest{}
-	mi := &file_v1_models_proto_msgTypes[49]
+	mi := &file_v1_models_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3577,7 +3682,7 @@ func (x *ListUsersRequest) String() string {
 func (*ListUsersRequest) ProtoMessage() {}
 
 func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[49]
+	mi := &file_v1_models_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3590,7 +3695,7 @@ func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUsersRequest.ProtoReflect.Descriptor instead.
 func (*ListUsersRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{49}
+	return file_v1_models_proto_rawDescGZIP(), []int{51}
 }
 
 type ListUsersResponse struct {
@@ -3602,7 +3707,7 @@ type ListUsersResponse struct {
 
 func (x *ListUsersResponse) Reset() {
 	*x = ListUsersResponse{}
-	mi := &file_v1_models_proto_msgTypes[50]
+	mi := &file_v1_models_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3614,7 +3719,7 @@ func (x *ListUsersResponse) String() string {
 func (*ListUsersResponse) ProtoMessage() {}
 
 func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[50]
+	mi := &file_v1_models_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3627,7 +3732,7 @@ func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
 func (*ListUsersResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{50}
+	return file_v1_models_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ListUsersResponse) GetUsers() []*User {
@@ -3647,7 +3752,7 @@ type UpdateUserRoleRequest struct {
 
 func (x *UpdateUserRoleRequest) Reset() {
 	*x = UpdateUserRoleRequest{}
-	mi := &file_v1_models_proto_msgTypes[51]
+	mi := &file_v1_models_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3659,7 +3764,7 @@ func (x *UpdateUserRoleRequest) String() string {
 func (*UpdateUserRoleRequest) ProtoMessage() {}
 
 func (x *UpdateUserRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[51]
+	mi := &file_v1_models_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3672,7 +3777,7 @@ func (x *UpdateUserRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserRoleRequest.ProtoReflect.Descriptor instead.
 func (*UpdateUserRoleRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{51}
+	return file_v1_models_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *UpdateUserRoleRequest) GetId() string {
@@ -3698,7 +3803,7 @@ type UpdateUserRoleResponse struct {
 
 func (x *UpdateUserRoleResponse) Reset() {
 	*x = UpdateUserRoleResponse{}
-	mi := &file_v1_models_proto_msgTypes[52]
+	mi := &file_v1_models_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3710,7 +3815,7 @@ func (x *UpdateUserRoleResponse) String() string {
 func (*UpdateUserRoleResponse) ProtoMessage() {}
 
 func (x *UpdateUserRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[52]
+	mi := &file_v1_models_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3723,7 +3828,7 @@ func (x *UpdateUserRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserRoleResponse.ProtoReflect.Descriptor instead.
 func (*UpdateUserRoleResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{52}
+	return file_v1_models_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *UpdateUserRoleResponse) GetUpdated() bool {
@@ -3751,7 +3856,7 @@ type QueueEndpoint struct {
 
 func (x *QueueEndpoint) Reset() {
 	*x = QueueEndpoint{}
-	mi := &file_v1_models_proto_msgTypes[53]
+	mi := &file_v1_models_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3763,7 +3868,7 @@ func (x *QueueEndpoint) String() string {
 func (*QueueEndpoint) ProtoMessage() {}
 
 func (x *QueueEndpoint) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[53]
+	mi := &file_v1_models_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3776,7 +3881,7 @@ func (x *QueueEndpoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueueEndpoint.ProtoReflect.Descriptor instead.
 func (*QueueEndpoint) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{53}
+	return file_v1_models_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *QueueEndpoint) GetId() string {
@@ -3853,7 +3958,7 @@ type QueueEndpointAssignment struct {
 
 func (x *QueueEndpointAssignment) Reset() {
 	*x = QueueEndpointAssignment{}
-	mi := &file_v1_models_proto_msgTypes[54]
+	mi := &file_v1_models_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3865,7 +3970,7 @@ func (x *QueueEndpointAssignment) String() string {
 func (*QueueEndpointAssignment) ProtoMessage() {}
 
 func (x *QueueEndpointAssignment) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[54]
+	mi := &file_v1_models_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3878,7 +3983,7 @@ func (x *QueueEndpointAssignment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueueEndpointAssignment.ProtoReflect.Descriptor instead.
 func (*QueueEndpointAssignment) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{54}
+	return file_v1_models_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *QueueEndpointAssignment) GetEndpointId() string {
@@ -3907,7 +4012,7 @@ type QueueRoutingRule struct {
 
 func (x *QueueRoutingRule) Reset() {
 	*x = QueueRoutingRule{}
-	mi := &file_v1_models_proto_msgTypes[55]
+	mi := &file_v1_models_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3919,7 +4024,7 @@ func (x *QueueRoutingRule) String() string {
 func (*QueueRoutingRule) ProtoMessage() {}
 
 func (x *QueueRoutingRule) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[55]
+	mi := &file_v1_models_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3932,7 +4037,7 @@ func (x *QueueRoutingRule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueueRoutingRule.ProtoReflect.Descriptor instead.
 func (*QueueRoutingRule) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{55}
+	return file_v1_models_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *QueueRoutingRule) GetId() string {
@@ -3964,7 +4069,7 @@ type ListQueueEndpointsRequest struct {
 
 func (x *ListQueueEndpointsRequest) Reset() {
 	*x = ListQueueEndpointsRequest{}
-	mi := &file_v1_models_proto_msgTypes[56]
+	mi := &file_v1_models_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3976,7 +4081,7 @@ func (x *ListQueueEndpointsRequest) String() string {
 func (*ListQueueEndpointsRequest) ProtoMessage() {}
 
 func (x *ListQueueEndpointsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[56]
+	mi := &file_v1_models_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3989,7 +4094,7 @@ func (x *ListQueueEndpointsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQueueEndpointsRequest.ProtoReflect.Descriptor instead.
 func (*ListQueueEndpointsRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{56}
+	return file_v1_models_proto_rawDescGZIP(), []int{58}
 }
 
 type ListQueueEndpointsResponse struct {
@@ -4001,7 +4106,7 @@ type ListQueueEndpointsResponse struct {
 
 func (x *ListQueueEndpointsResponse) Reset() {
 	*x = ListQueueEndpointsResponse{}
-	mi := &file_v1_models_proto_msgTypes[57]
+	mi := &file_v1_models_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4013,7 +4118,7 @@ func (x *ListQueueEndpointsResponse) String() string {
 func (*ListQueueEndpointsResponse) ProtoMessage() {}
 
 func (x *ListQueueEndpointsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[57]
+	mi := &file_v1_models_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4026,7 +4131,7 @@ func (x *ListQueueEndpointsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQueueEndpointsResponse.ProtoReflect.Descriptor instead.
 func (*ListQueueEndpointsResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{57}
+	return file_v1_models_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *ListQueueEndpointsResponse) GetEndpoints() []*QueueEndpoint {
@@ -4045,7 +4150,7 @@ type CreateQueueEndpointRequest struct {
 
 func (x *CreateQueueEndpointRequest) Reset() {
 	*x = CreateQueueEndpointRequest{}
-	mi := &file_v1_models_proto_msgTypes[58]
+	mi := &file_v1_models_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4057,7 +4162,7 @@ func (x *CreateQueueEndpointRequest) String() string {
 func (*CreateQueueEndpointRequest) ProtoMessage() {}
 
 func (x *CreateQueueEndpointRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[58]
+	mi := &file_v1_models_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4070,7 +4175,7 @@ func (x *CreateQueueEndpointRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQueueEndpointRequest.ProtoReflect.Descriptor instead.
 func (*CreateQueueEndpointRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{58}
+	return file_v1_models_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *CreateQueueEndpointRequest) GetEndpoint() *QueueEndpoint {
@@ -4089,7 +4194,7 @@ type CreateQueueEndpointResponse struct {
 
 func (x *CreateQueueEndpointResponse) Reset() {
 	*x = CreateQueueEndpointResponse{}
-	mi := &file_v1_models_proto_msgTypes[59]
+	mi := &file_v1_models_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4101,7 +4206,7 @@ func (x *CreateQueueEndpointResponse) String() string {
 func (*CreateQueueEndpointResponse) ProtoMessage() {}
 
 func (x *CreateQueueEndpointResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[59]
+	mi := &file_v1_models_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4114,7 +4219,7 @@ func (x *CreateQueueEndpointResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQueueEndpointResponse.ProtoReflect.Descriptor instead.
 func (*CreateQueueEndpointResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{59}
+	return file_v1_models_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *CreateQueueEndpointResponse) GetEndpoint() *QueueEndpoint {
@@ -4133,7 +4238,7 @@ type UpdateQueueEndpointRequest struct {
 
 func (x *UpdateQueueEndpointRequest) Reset() {
 	*x = UpdateQueueEndpointRequest{}
-	mi := &file_v1_models_proto_msgTypes[60]
+	mi := &file_v1_models_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4145,7 +4250,7 @@ func (x *UpdateQueueEndpointRequest) String() string {
 func (*UpdateQueueEndpointRequest) ProtoMessage() {}
 
 func (x *UpdateQueueEndpointRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[60]
+	mi := &file_v1_models_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4158,7 +4263,7 @@ func (x *UpdateQueueEndpointRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQueueEndpointRequest.ProtoReflect.Descriptor instead.
 func (*UpdateQueueEndpointRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{60}
+	return file_v1_models_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *UpdateQueueEndpointRequest) GetEndpoint() *QueueEndpoint {
@@ -4177,7 +4282,7 @@ type UpdateQueueEndpointResponse struct {
 
 func (x *UpdateQueueEndpointResponse) Reset() {
 	*x = UpdateQueueEndpointResponse{}
-	mi := &file_v1_models_proto_msgTypes[61]
+	mi := &file_v1_models_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4189,7 +4294,7 @@ func (x *UpdateQueueEndpointResponse) String() string {
 func (*UpdateQueueEndpointResponse) ProtoMessage() {}
 
 func (x *UpdateQueueEndpointResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[61]
+	mi := &file_v1_models_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4202,7 +4307,7 @@ func (x *UpdateQueueEndpointResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQueueEndpointResponse.ProtoReflect.Descriptor instead.
 func (*UpdateQueueEndpointResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{61}
+	return file_v1_models_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *UpdateQueueEndpointResponse) GetEndpoint() *QueueEndpoint {
@@ -4221,7 +4326,7 @@ type DeleteQueueEndpointRequest struct {
 
 func (x *DeleteQueueEndpointRequest) Reset() {
 	*x = DeleteQueueEndpointRequest{}
-	mi := &file_v1_models_proto_msgTypes[62]
+	mi := &file_v1_models_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4233,7 +4338,7 @@ func (x *DeleteQueueEndpointRequest) String() string {
 func (*DeleteQueueEndpointRequest) ProtoMessage() {}
 
 func (x *DeleteQueueEndpointRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[62]
+	mi := &file_v1_models_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4246,7 +4351,7 @@ func (x *DeleteQueueEndpointRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQueueEndpointRequest.ProtoReflect.Descriptor instead.
 func (*DeleteQueueEndpointRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{62}
+	return file_v1_models_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *DeleteQueueEndpointRequest) GetId() string {
@@ -4264,7 +4369,7 @@ type DeleteQueueEndpointResponse struct {
 
 func (x *DeleteQueueEndpointResponse) Reset() {
 	*x = DeleteQueueEndpointResponse{}
-	mi := &file_v1_models_proto_msgTypes[63]
+	mi := &file_v1_models_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4276,7 +4381,7 @@ func (x *DeleteQueueEndpointResponse) String() string {
 func (*DeleteQueueEndpointResponse) ProtoMessage() {}
 
 func (x *DeleteQueueEndpointResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[63]
+	mi := &file_v1_models_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4289,7 +4394,7 @@ func (x *DeleteQueueEndpointResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQueueEndpointResponse.ProtoReflect.Descriptor instead.
 func (*DeleteQueueEndpointResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{63}
+	return file_v1_models_proto_rawDescGZIP(), []int{65}
 }
 
 type ListQueueRoutingRulesRequest struct {
@@ -4301,7 +4406,7 @@ type ListQueueRoutingRulesRequest struct {
 
 func (x *ListQueueRoutingRulesRequest) Reset() {
 	*x = ListQueueRoutingRulesRequest{}
-	mi := &file_v1_models_proto_msgTypes[64]
+	mi := &file_v1_models_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4313,7 +4418,7 @@ func (x *ListQueueRoutingRulesRequest) String() string {
 func (*ListQueueRoutingRulesRequest) ProtoMessage() {}
 
 func (x *ListQueueRoutingRulesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[64]
+	mi := &file_v1_models_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4326,7 +4431,7 @@ func (x *ListQueueRoutingRulesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQueueRoutingRulesRequest.ProtoReflect.Descriptor instead.
 func (*ListQueueRoutingRulesRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{64}
+	return file_v1_models_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *ListQueueRoutingRulesRequest) GetStage() QueueStage {
@@ -4345,7 +4450,7 @@ type ListQueueRoutingRulesResponse struct {
 
 func (x *ListQueueRoutingRulesResponse) Reset() {
 	*x = ListQueueRoutingRulesResponse{}
-	mi := &file_v1_models_proto_msgTypes[65]
+	mi := &file_v1_models_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4357,7 +4462,7 @@ func (x *ListQueueRoutingRulesResponse) String() string {
 func (*ListQueueRoutingRulesResponse) ProtoMessage() {}
 
 func (x *ListQueueRoutingRulesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[65]
+	mi := &file_v1_models_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4370,7 +4475,7 @@ func (x *ListQueueRoutingRulesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQueueRoutingRulesResponse.ProtoReflect.Descriptor instead.
 func (*ListQueueRoutingRulesResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{65}
+	return file_v1_models_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ListQueueRoutingRulesResponse) GetRules() []*QueueRoutingRule {
@@ -4389,7 +4494,7 @@ type UpsertQueueRoutingRulesRequest struct {
 
 func (x *UpsertQueueRoutingRulesRequest) Reset() {
 	*x = UpsertQueueRoutingRulesRequest{}
-	mi := &file_v1_models_proto_msgTypes[66]
+	mi := &file_v1_models_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4401,7 +4506,7 @@ func (x *UpsertQueueRoutingRulesRequest) String() string {
 func (*UpsertQueueRoutingRulesRequest) ProtoMessage() {}
 
 func (x *UpsertQueueRoutingRulesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[66]
+	mi := &file_v1_models_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4414,7 +4519,7 @@ func (x *UpsertQueueRoutingRulesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertQueueRoutingRulesRequest.ProtoReflect.Descriptor instead.
 func (*UpsertQueueRoutingRulesRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{66}
+	return file_v1_models_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *UpsertQueueRoutingRulesRequest) GetRule() *QueueRoutingRule {
@@ -4433,7 +4538,7 @@ type UpsertQueueRoutingRulesResponse struct {
 
 func (x *UpsertQueueRoutingRulesResponse) Reset() {
 	*x = UpsertQueueRoutingRulesResponse{}
-	mi := &file_v1_models_proto_msgTypes[67]
+	mi := &file_v1_models_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4445,7 +4550,7 @@ func (x *UpsertQueueRoutingRulesResponse) String() string {
 func (*UpsertQueueRoutingRulesResponse) ProtoMessage() {}
 
 func (x *UpsertQueueRoutingRulesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[67]
+	mi := &file_v1_models_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4458,7 +4563,7 @@ func (x *UpsertQueueRoutingRulesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertQueueRoutingRulesResponse.ProtoReflect.Descriptor instead.
 func (*UpsertQueueRoutingRulesResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{67}
+	return file_v1_models_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *UpsertQueueRoutingRulesResponse) GetRule() *QueueRoutingRule {
@@ -4483,7 +4588,7 @@ type WorkerHeartbeat struct {
 
 func (x *WorkerHeartbeat) Reset() {
 	*x = WorkerHeartbeat{}
-	mi := &file_v1_models_proto_msgTypes[68]
+	mi := &file_v1_models_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4495,7 +4600,7 @@ func (x *WorkerHeartbeat) String() string {
 func (*WorkerHeartbeat) ProtoMessage() {}
 
 func (x *WorkerHeartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[68]
+	mi := &file_v1_models_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4508,7 +4613,7 @@ func (x *WorkerHeartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkerHeartbeat.ProtoReflect.Descriptor instead.
 func (*WorkerHeartbeat) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{68}
+	return file_v1_models_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *WorkerHeartbeat) GetWorkerId() string {
@@ -4568,7 +4673,7 @@ type WorkerInfo struct {
 
 func (x *WorkerInfo) Reset() {
 	*x = WorkerInfo{}
-	mi := &file_v1_models_proto_msgTypes[69]
+	mi := &file_v1_models_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4580,7 +4685,7 @@ func (x *WorkerInfo) String() string {
 func (*WorkerInfo) ProtoMessage() {}
 
 func (x *WorkerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[69]
+	mi := &file_v1_models_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4593,7 +4698,7 @@ func (x *WorkerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkerInfo.ProtoReflect.Descriptor instead.
 func (*WorkerInfo) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{69}
+	return file_v1_models_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *WorkerInfo) GetWorkerId() string {
@@ -4646,7 +4751,7 @@ type ListWorkersRequest struct {
 
 func (x *ListWorkersRequest) Reset() {
 	*x = ListWorkersRequest{}
-	mi := &file_v1_models_proto_msgTypes[70]
+	mi := &file_v1_models_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4658,7 +4763,7 @@ func (x *ListWorkersRequest) String() string {
 func (*ListWorkersRequest) ProtoMessage() {}
 
 func (x *ListWorkersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[70]
+	mi := &file_v1_models_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4671,7 +4776,7 @@ func (x *ListWorkersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWorkersRequest.ProtoReflect.Descriptor instead.
 func (*ListWorkersRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{70}
+	return file_v1_models_proto_rawDescGZIP(), []int{72}
 }
 
 type ListWorkersResponse struct {
@@ -4683,7 +4788,7 @@ type ListWorkersResponse struct {
 
 func (x *ListWorkersResponse) Reset() {
 	*x = ListWorkersResponse{}
-	mi := &file_v1_models_proto_msgTypes[71]
+	mi := &file_v1_models_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4695,7 +4800,7 @@ func (x *ListWorkersResponse) String() string {
 func (*ListWorkersResponse) ProtoMessage() {}
 
 func (x *ListWorkersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[71]
+	mi := &file_v1_models_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4708,7 +4813,7 @@ func (x *ListWorkersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWorkersResponse.ProtoReflect.Descriptor instead.
 func (*ListWorkersResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{71}
+	return file_v1_models_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *ListWorkersResponse) GetWorkers() []*WorkerInfo {
@@ -4730,7 +4835,7 @@ type WorkerCommand struct {
 
 func (x *WorkerCommand) Reset() {
 	*x = WorkerCommand{}
-	mi := &file_v1_models_proto_msgTypes[72]
+	mi := &file_v1_models_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4742,7 +4847,7 @@ func (x *WorkerCommand) String() string {
 func (*WorkerCommand) ProtoMessage() {}
 
 func (x *WorkerCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[72]
+	mi := &file_v1_models_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4755,7 +4860,7 @@ func (x *WorkerCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkerCommand.ProtoReflect.Descriptor instead.
 func (*WorkerCommand) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{72}
+	return file_v1_models_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *WorkerCommand) GetType() WorkerCommandType {
@@ -4789,7 +4894,7 @@ type DrainWorkerRequest struct {
 
 func (x *DrainWorkerRequest) Reset() {
 	*x = DrainWorkerRequest{}
-	mi := &file_v1_models_proto_msgTypes[73]
+	mi := &file_v1_models_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4801,7 +4906,7 @@ func (x *DrainWorkerRequest) String() string {
 func (*DrainWorkerRequest) ProtoMessage() {}
 
 func (x *DrainWorkerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[73]
+	mi := &file_v1_models_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4814,7 +4919,7 @@ func (x *DrainWorkerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DrainWorkerRequest.ProtoReflect.Descriptor instead.
 func (*DrainWorkerRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{73}
+	return file_v1_models_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *DrainWorkerRequest) GetWorkerId() string {
@@ -4841,7 +4946,7 @@ type DrainWorkerResponse struct {
 
 func (x *DrainWorkerResponse) Reset() {
 	*x = DrainWorkerResponse{}
-	mi := &file_v1_models_proto_msgTypes[74]
+	mi := &file_v1_models_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4853,7 +4958,7 @@ func (x *DrainWorkerResponse) String() string {
 func (*DrainWorkerResponse) ProtoMessage() {}
 
 func (x *DrainWorkerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[74]
+	mi := &file_v1_models_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4866,7 +4971,7 @@ func (x *DrainWorkerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DrainWorkerResponse.ProtoReflect.Descriptor instead.
 func (*DrainWorkerResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{74}
+	return file_v1_models_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *DrainWorkerResponse) GetDelivered() bool {
@@ -4893,7 +4998,7 @@ type ForceKillWorkerRequest struct {
 
 func (x *ForceKillWorkerRequest) Reset() {
 	*x = ForceKillWorkerRequest{}
-	mi := &file_v1_models_proto_msgTypes[75]
+	mi := &file_v1_models_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4905,7 +5010,7 @@ func (x *ForceKillWorkerRequest) String() string {
 func (*ForceKillWorkerRequest) ProtoMessage() {}
 
 func (x *ForceKillWorkerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[75]
+	mi := &file_v1_models_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4918,7 +5023,7 @@ func (x *ForceKillWorkerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForceKillWorkerRequest.ProtoReflect.Descriptor instead.
 func (*ForceKillWorkerRequest) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{75}
+	return file_v1_models_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *ForceKillWorkerRequest) GetWorkerId() string {
@@ -4945,7 +5050,7 @@ type ForceKillWorkerResponse struct {
 
 func (x *ForceKillWorkerResponse) Reset() {
 	*x = ForceKillWorkerResponse{}
-	mi := &file_v1_models_proto_msgTypes[76]
+	mi := &file_v1_models_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4957,7 +5062,7 @@ func (x *ForceKillWorkerResponse) String() string {
 func (*ForceKillWorkerResponse) ProtoMessage() {}
 
 func (x *ForceKillWorkerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_models_proto_msgTypes[76]
+	mi := &file_v1_models_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4970,7 +5075,7 @@ func (x *ForceKillWorkerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForceKillWorkerResponse.ProtoReflect.Descriptor instead.
 func (*ForceKillWorkerResponse) Descriptor() ([]byte, []int) {
-	return file_v1_models_proto_rawDescGZIP(), []int{76}
+	return file_v1_models_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *ForceKillWorkerResponse) GetDelivered() bool {
@@ -5047,9 +5152,10 @@ const file_v1_models_proto_rawDesc = "" +
 	"pagination\x18\x03 \x03(\v2\x1a.crawler.v1.PaginationSpecR\n" +
 	"pagination\x120\n" +
 	"\x05items\x18\x04 \x01(\v2\x15.crawler.v1.ItemsSpecH\x00R\x05items\x88\x01\x01B\b\n" +
-	"\x06_itemsJ\x04\b\x02\x10\x03\"\xab\x05\n" +
+	"\x06_itemsJ\x04\b\x02\x10\x03\"\xd6\x05\n" +
 	"\x0eCrawlJobConfig\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\auser_id\x18\x0f \x01(\tH\x00R\auser_id\x88\x01\x01\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12D\n" +
 	"\x0fextraction_spec\x18\x03 \x01(\v2\x1a.crawler.v1.ExtractionSpecR\x0fextraction_spec\x12.\n" +
 	"\x06scopes\x18\x04 \x01(\v2\x16.crawler.v1.ScopeRulesR\x06scopes\x12&\n" +
@@ -5066,7 +5172,9 @@ const file_v1_models_proto_rawDesc = "" +
 	"\n" +
 	"crawl_mode\x18\f \x01(\x0e2\x15.crawler.v1.CrawlModeR\n" +
 	"crawl_mode\x12c\n" +
-	"\x1aqueue_endpoint_assignments\x18\x0e \x03(\v2#.crawler.v1.QueueEndpointAssignmentR\x1aqueue_endpoint_assignmentsJ\x04\b\r\x10\x0e\"\xd8\x04\n" +
+	"\x1aqueue_endpoint_assignments\x18\x0e \x03(\v2#.crawler.v1.QueueEndpointAssignmentR\x1aqueue_endpoint_assignmentsB\n" +
+	"\n" +
+	"\b_user_idJ\x04\b\r\x10\x0e\"\x83\x05\n" +
 	"\bCrawlJob\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
 	"\rjob_config_id\x18\x02 \x01(\tR\rjob_config_id\x12?\n" +
@@ -5083,13 +5191,16 @@ const file_v1_models_proto_rawDesc = "" +
 	"\vexported_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampH\x04R\vexported_at\x88\x01\x01\x12$\n" +
 	"\rexport_status\x18\n" +
 	" \x01(\tR\rexport_status\x12\x17\n" +
-	"\x04name\x18\v \x01(\tH\x05R\x04name\x88\x01\x01B\r\n" +
+	"\x04name\x18\v \x01(\tH\x05R\x04name\x88\x01\x01\x12\x1d\n" +
+	"\auser_id\x18\f \x01(\tH\x06R\auser_id\x88\x01\x01B\r\n" +
 	"\v_job_configB\x0f\n" +
 	"\r_completed_atB\x12\n" +
 	"\x10_export_json_keyB\x11\n" +
 	"\x0f_export_csv_keyB\x0e\n" +
 	"\f_exported_atB\a\n" +
-	"\x05_name\"\xcf\x03\n" +
+	"\x05_nameB\n" +
+	"\n" +
+	"\b_user_id\"\xcf\x03\n" +
 	"\tCrawlTask\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x06job_id\x12+\n" +
@@ -5108,18 +5219,22 @@ const file_v1_models_proto_rawDesc = "" +
 	"_final_urlB\x14\n" +
 	"\x12_result_object_keyB\x10\n" +
 	"\x0e_error_messageJ\x04\b\t\x10\n" +
-	"\"\xff\x01\n" +
+	"\"\xb3\x02\n" +
 	"\rJobListFilter\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tH\x00R\x04name\x88\x01\x01\x12\x1b\n" +
 	"\x06status\x18\x02 \x01(\tH\x01R\x06status\x88\x01\x01\x12C\n" +
 	"\fcreated_from\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\fcreated_from\x88\x01\x01\x12?\n" +
 	"\n" +
 	"created_to\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x03R\n" +
-	"created_to\x88\x01\x01B\a\n" +
+	"created_to\x88\x01\x01\x12#\n" +
+	"\n" +
+	"user_email\x18\x05 \x01(\tH\x04R\n" +
+	"user_email\x88\x01\x01B\a\n" +
 	"\x05_nameB\t\n" +
 	"\a_statusB\x0f\n" +
 	"\r_created_fromB\r\n" +
-	"\v_created_to\"\xf3\x01\n" +
+	"\v_created_toB\r\n" +
+	"\v_user_email\"\xf3\x01\n" +
 	"\x0fListJobsRequest\x12\x1b\n" +
 	"\x06cursor\x18\x01 \x01(\tH\x00R\x06cursor\x88\x01\x01\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x121\n" +
@@ -5142,7 +5257,10 @@ const file_v1_models_proto_rawDesc = "" +
 	"\rGetJobRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"8\n" +
 	"\x0eGetJobResponse\x12&\n" +
-	"\x03job\x18\x01 \x01(\v2\x14.crawler.v1.CrawlJobR\x03job\"N\n" +
+	"\x03job\x18\x01 \x01(\v2\x14.crawler.v1.CrawlJobR\x03job\"+\n" +
+	"\x10DeleteJobRequest\x12\x17\n" +
+	"\x02id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x02id\"\x13\n" +
+	"\x11DeleteJobResponse\"N\n" +
 	"\x11CreateTaskRequest\x12\x1e\n" +
 	"\x06job_id\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x05jobId\x12\x19\n" +
 	"\x03url\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x03url\" \n" +
@@ -5431,7 +5549,7 @@ func file_v1_models_proto_rawDescGZIP() []byte {
 }
 
 var file_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
-var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 79)
+var file_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 81)
 var file_v1_models_proto_goTypes = []any{
 	(CrawlMode)(0),                          // 0: crawler.v1.CrawlMode
 	(JobType)(0),                            // 1: crawler.v1.JobType
@@ -5465,65 +5583,67 @@ var file_v1_models_proto_goTypes = []any{
 	(*CreateJobResponse)(nil),               // 29: crawler.v1.CreateJobResponse
 	(*GetJobRequest)(nil),                   // 30: crawler.v1.GetJobRequest
 	(*GetJobResponse)(nil),                  // 31: crawler.v1.GetJobResponse
-	(*CreateTaskRequest)(nil),               // 32: crawler.v1.CreateTaskRequest
-	(*GetTaskRequest)(nil),                  // 33: crawler.v1.GetTaskRequest
-	(*GetTaskResponse)(nil),                 // 34: crawler.v1.GetTaskResponse
-	(*TaskListFilter)(nil),                  // 35: crawler.v1.TaskListFilter
-	(*ListTasksByJobRequest)(nil),           // 36: crawler.v1.ListTasksByJobRequest
-	(*ListTasksByJobResponse)(nil),          // 37: crawler.v1.ListTasksByJobResponse
-	(*TaskAnalytics)(nil),                   // 38: crawler.v1.TaskAnalytics
-	(*GetTaskAnalyticsRequest)(nil),         // 39: crawler.v1.GetTaskAnalyticsRequest
-	(*GetTaskAnalyticsResponse)(nil),        // 40: crawler.v1.GetTaskAnalyticsResponse
-	(*GetJobExportFileURLRequest)(nil),      // 41: crawler.v1.GetJobExportFileURLRequest
-	(*GetJobExportFileURLResponse)(nil),     // 42: crawler.v1.GetJobExportFileURLResponse
-	(*GetTaskFileURLRequest)(nil),           // 43: crawler.v1.GetTaskFileURLRequest
-	(*GetTaskFileURLResponse)(nil),          // 44: crawler.v1.GetTaskFileURLResponse
-	(*Preview)(nil),                         // 45: crawler.v1.Preview
-	(*CreatePreviewRequest)(nil),            // 46: crawler.v1.CreatePreviewRequest
-	(*CreatePreviewResponse)(nil),           // 47: crawler.v1.CreatePreviewResponse
-	(*GetPreviewRequest)(nil),               // 48: crawler.v1.GetPreviewRequest
-	(*GetPreviewResponse)(nil),              // 49: crawler.v1.GetPreviewResponse
-	(*RegisterRequest)(nil),                 // 50: crawler.v1.RegisterRequest
-	(*RegisterResponse)(nil),                // 51: crawler.v1.RegisterResponse
-	(*LoginRequest)(nil),                    // 52: crawler.v1.LoginRequest
-	(*LoginResponse)(nil),                   // 53: crawler.v1.LoginResponse
-	(*RefreshRequest)(nil),                  // 54: crawler.v1.RefreshRequest
-	(*RefreshResponse)(nil),                 // 55: crawler.v1.RefreshResponse
-	(*LogoutRequest)(nil),                   // 56: crawler.v1.LogoutRequest
-	(*LogoutResponse)(nil),                  // 57: crawler.v1.LogoutResponse
-	(*User)(nil),                            // 58: crawler.v1.User
-	(*ListUsersRequest)(nil),                // 59: crawler.v1.ListUsersRequest
-	(*ListUsersResponse)(nil),               // 60: crawler.v1.ListUsersResponse
-	(*UpdateUserRoleRequest)(nil),           // 61: crawler.v1.UpdateUserRoleRequest
-	(*UpdateUserRoleResponse)(nil),          // 62: crawler.v1.UpdateUserRoleResponse
-	(*QueueEndpoint)(nil),                   // 63: crawler.v1.QueueEndpoint
-	(*QueueEndpointAssignment)(nil),         // 64: crawler.v1.QueueEndpointAssignment
-	(*QueueRoutingRule)(nil),                // 65: crawler.v1.QueueRoutingRule
-	(*ListQueueEndpointsRequest)(nil),       // 66: crawler.v1.ListQueueEndpointsRequest
-	(*ListQueueEndpointsResponse)(nil),      // 67: crawler.v1.ListQueueEndpointsResponse
-	(*CreateQueueEndpointRequest)(nil),      // 68: crawler.v1.CreateQueueEndpointRequest
-	(*CreateQueueEndpointResponse)(nil),     // 69: crawler.v1.CreateQueueEndpointResponse
-	(*UpdateQueueEndpointRequest)(nil),      // 70: crawler.v1.UpdateQueueEndpointRequest
-	(*UpdateQueueEndpointResponse)(nil),     // 71: crawler.v1.UpdateQueueEndpointResponse
-	(*DeleteQueueEndpointRequest)(nil),      // 72: crawler.v1.DeleteQueueEndpointRequest
-	(*DeleteQueueEndpointResponse)(nil),     // 73: crawler.v1.DeleteQueueEndpointResponse
-	(*ListQueueRoutingRulesRequest)(nil),    // 74: crawler.v1.ListQueueRoutingRulesRequest
-	(*ListQueueRoutingRulesResponse)(nil),   // 75: crawler.v1.ListQueueRoutingRulesResponse
-	(*UpsertQueueRoutingRulesRequest)(nil),  // 76: crawler.v1.UpsertQueueRoutingRulesRequest
-	(*UpsertQueueRoutingRulesResponse)(nil), // 77: crawler.v1.UpsertQueueRoutingRulesResponse
-	(*WorkerHeartbeat)(nil),                 // 78: crawler.v1.WorkerHeartbeat
-	(*WorkerInfo)(nil),                      // 79: crawler.v1.WorkerInfo
-	(*ListWorkersRequest)(nil),              // 80: crawler.v1.ListWorkersRequest
-	(*ListWorkersResponse)(nil),             // 81: crawler.v1.ListWorkersResponse
-	(*WorkerCommand)(nil),                   // 82: crawler.v1.WorkerCommand
-	(*DrainWorkerRequest)(nil),              // 83: crawler.v1.DrainWorkerRequest
-	(*DrainWorkerResponse)(nil),             // 84: crawler.v1.DrainWorkerResponse
-	(*ForceKillWorkerRequest)(nil),          // 85: crawler.v1.ForceKillWorkerRequest
-	(*ForceKillWorkerResponse)(nil),         // 86: crawler.v1.ForceKillWorkerResponse
-	nil,                                     // 87: crawler.v1.TaskAnalytics.StatusCountsEntry
-	nil,                                     // 88: crawler.v1.TaskAnalytics.DepthCountsEntry
-	(*timestamppb.Timestamp)(nil),           // 89: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),             // 90: google.protobuf.Duration
+	(*DeleteJobRequest)(nil),                // 32: crawler.v1.DeleteJobRequest
+	(*DeleteJobResponse)(nil),               // 33: crawler.v1.DeleteJobResponse
+	(*CreateTaskRequest)(nil),               // 34: crawler.v1.CreateTaskRequest
+	(*GetTaskRequest)(nil),                  // 35: crawler.v1.GetTaskRequest
+	(*GetTaskResponse)(nil),                 // 36: crawler.v1.GetTaskResponse
+	(*TaskListFilter)(nil),                  // 37: crawler.v1.TaskListFilter
+	(*ListTasksByJobRequest)(nil),           // 38: crawler.v1.ListTasksByJobRequest
+	(*ListTasksByJobResponse)(nil),          // 39: crawler.v1.ListTasksByJobResponse
+	(*TaskAnalytics)(nil),                   // 40: crawler.v1.TaskAnalytics
+	(*GetTaskAnalyticsRequest)(nil),         // 41: crawler.v1.GetTaskAnalyticsRequest
+	(*GetTaskAnalyticsResponse)(nil),        // 42: crawler.v1.GetTaskAnalyticsResponse
+	(*GetJobExportFileURLRequest)(nil),      // 43: crawler.v1.GetJobExportFileURLRequest
+	(*GetJobExportFileURLResponse)(nil),     // 44: crawler.v1.GetJobExportFileURLResponse
+	(*GetTaskFileURLRequest)(nil),           // 45: crawler.v1.GetTaskFileURLRequest
+	(*GetTaskFileURLResponse)(nil),          // 46: crawler.v1.GetTaskFileURLResponse
+	(*Preview)(nil),                         // 47: crawler.v1.Preview
+	(*CreatePreviewRequest)(nil),            // 48: crawler.v1.CreatePreviewRequest
+	(*CreatePreviewResponse)(nil),           // 49: crawler.v1.CreatePreviewResponse
+	(*GetPreviewRequest)(nil),               // 50: crawler.v1.GetPreviewRequest
+	(*GetPreviewResponse)(nil),              // 51: crawler.v1.GetPreviewResponse
+	(*RegisterRequest)(nil),                 // 52: crawler.v1.RegisterRequest
+	(*RegisterResponse)(nil),                // 53: crawler.v1.RegisterResponse
+	(*LoginRequest)(nil),                    // 54: crawler.v1.LoginRequest
+	(*LoginResponse)(nil),                   // 55: crawler.v1.LoginResponse
+	(*RefreshRequest)(nil),                  // 56: crawler.v1.RefreshRequest
+	(*RefreshResponse)(nil),                 // 57: crawler.v1.RefreshResponse
+	(*LogoutRequest)(nil),                   // 58: crawler.v1.LogoutRequest
+	(*LogoutResponse)(nil),                  // 59: crawler.v1.LogoutResponse
+	(*User)(nil),                            // 60: crawler.v1.User
+	(*ListUsersRequest)(nil),                // 61: crawler.v1.ListUsersRequest
+	(*ListUsersResponse)(nil),               // 62: crawler.v1.ListUsersResponse
+	(*UpdateUserRoleRequest)(nil),           // 63: crawler.v1.UpdateUserRoleRequest
+	(*UpdateUserRoleResponse)(nil),          // 64: crawler.v1.UpdateUserRoleResponse
+	(*QueueEndpoint)(nil),                   // 65: crawler.v1.QueueEndpoint
+	(*QueueEndpointAssignment)(nil),         // 66: crawler.v1.QueueEndpointAssignment
+	(*QueueRoutingRule)(nil),                // 67: crawler.v1.QueueRoutingRule
+	(*ListQueueEndpointsRequest)(nil),       // 68: crawler.v1.ListQueueEndpointsRequest
+	(*ListQueueEndpointsResponse)(nil),      // 69: crawler.v1.ListQueueEndpointsResponse
+	(*CreateQueueEndpointRequest)(nil),      // 70: crawler.v1.CreateQueueEndpointRequest
+	(*CreateQueueEndpointResponse)(nil),     // 71: crawler.v1.CreateQueueEndpointResponse
+	(*UpdateQueueEndpointRequest)(nil),      // 72: crawler.v1.UpdateQueueEndpointRequest
+	(*UpdateQueueEndpointResponse)(nil),     // 73: crawler.v1.UpdateQueueEndpointResponse
+	(*DeleteQueueEndpointRequest)(nil),      // 74: crawler.v1.DeleteQueueEndpointRequest
+	(*DeleteQueueEndpointResponse)(nil),     // 75: crawler.v1.DeleteQueueEndpointResponse
+	(*ListQueueRoutingRulesRequest)(nil),    // 76: crawler.v1.ListQueueRoutingRulesRequest
+	(*ListQueueRoutingRulesResponse)(nil),   // 77: crawler.v1.ListQueueRoutingRulesResponse
+	(*UpsertQueueRoutingRulesRequest)(nil),  // 78: crawler.v1.UpsertQueueRoutingRulesRequest
+	(*UpsertQueueRoutingRulesResponse)(nil), // 79: crawler.v1.UpsertQueueRoutingRulesResponse
+	(*WorkerHeartbeat)(nil),                 // 80: crawler.v1.WorkerHeartbeat
+	(*WorkerInfo)(nil),                      // 81: crawler.v1.WorkerInfo
+	(*ListWorkersRequest)(nil),              // 82: crawler.v1.ListWorkersRequest
+	(*ListWorkersResponse)(nil),             // 83: crawler.v1.ListWorkersResponse
+	(*WorkerCommand)(nil),                   // 84: crawler.v1.WorkerCommand
+	(*DrainWorkerRequest)(nil),              // 85: crawler.v1.DrainWorkerRequest
+	(*DrainWorkerResponse)(nil),             // 86: crawler.v1.DrainWorkerResponse
+	(*ForceKillWorkerRequest)(nil),          // 87: crawler.v1.ForceKillWorkerRequest
+	(*ForceKillWorkerResponse)(nil),         // 88: crawler.v1.ForceKillWorkerResponse
+	nil,                                     // 89: crawler.v1.TaskAnalytics.StatusCountsEntry
+	nil,                                     // 90: crawler.v1.TaskAnalytics.DepthCountsEntry
+	(*timestamppb.Timestamp)(nil),           // 91: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),             // 92: google.protobuf.Duration
 }
 var file_v1_models_proto_depIdxs = []int32{
 	16, // 0: crawler.v1.FieldSpec.extractor:type_name -> crawler.v1.ExtractorSpec
@@ -5541,15 +5661,15 @@ var file_v1_models_proto_depIdxs = []int32{
 	13, // 12: crawler.v1.CrawlJobConfig.schedule:type_name -> crawler.v1.ScheduleOptions
 	1,  // 13: crawler.v1.CrawlJobConfig.job_type:type_name -> crawler.v1.JobType
 	0,  // 14: crawler.v1.CrawlJobConfig.crawl_mode:type_name -> crawler.v1.CrawlMode
-	64, // 15: crawler.v1.CrawlJobConfig.queue_endpoint_assignments:type_name -> crawler.v1.QueueEndpointAssignment
+	66, // 15: crawler.v1.CrawlJobConfig.queue_endpoint_assignments:type_name -> crawler.v1.QueueEndpointAssignment
 	22, // 16: crawler.v1.CrawlJob.job_config:type_name -> crawler.v1.CrawlJobConfig
-	89, // 17: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
-	89, // 18: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
-	89, // 19: crawler.v1.CrawlJob.exported_at:type_name -> google.protobuf.Timestamp
+	91, // 17: crawler.v1.CrawlJob.created_at:type_name -> google.protobuf.Timestamp
+	91, // 18: crawler.v1.CrawlJob.completed_at:type_name -> google.protobuf.Timestamp
+	91, // 19: crawler.v1.CrawlJob.exported_at:type_name -> google.protobuf.Timestamp
 	23, // 20: crawler.v1.CrawlTask.job:type_name -> crawler.v1.CrawlJob
-	89, // 21: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
-	89, // 22: crawler.v1.JobListFilter.created_from:type_name -> google.protobuf.Timestamp
-	89, // 23: crawler.v1.JobListFilter.created_to:type_name -> google.protobuf.Timestamp
+	91, // 21: crawler.v1.CrawlTask.enqueued_at:type_name -> google.protobuf.Timestamp
+	91, // 22: crawler.v1.JobListFilter.created_from:type_name -> google.protobuf.Timestamp
+	91, // 23: crawler.v1.JobListFilter.created_to:type_name -> google.protobuf.Timestamp
 	25, // 24: crawler.v1.ListJobsRequest.filter:type_name -> crawler.v1.JobListFilter
 	3,  // 25: crawler.v1.ListJobsRequest.sort_field:type_name -> crawler.v1.JobSortField
 	2,  // 26: crawler.v1.ListJobsRequest.sort_order:type_name -> crawler.v1.SortOrder
@@ -5557,44 +5677,44 @@ var file_v1_models_proto_depIdxs = []int32{
 	22, // 28: crawler.v1.CreateJobRequest.config:type_name -> crawler.v1.CrawlJobConfig
 	23, // 29: crawler.v1.GetJobResponse.job:type_name -> crawler.v1.CrawlJob
 	24, // 30: crawler.v1.GetTaskResponse.task:type_name -> crawler.v1.CrawlTask
-	89, // 31: crawler.v1.TaskListFilter.enqueued_from:type_name -> google.protobuf.Timestamp
-	89, // 32: crawler.v1.TaskListFilter.enqueued_to:type_name -> google.protobuf.Timestamp
-	35, // 33: crawler.v1.ListTasksByJobRequest.filter:type_name -> crawler.v1.TaskListFilter
+	91, // 31: crawler.v1.TaskListFilter.enqueued_from:type_name -> google.protobuf.Timestamp
+	91, // 32: crawler.v1.TaskListFilter.enqueued_to:type_name -> google.protobuf.Timestamp
+	37, // 33: crawler.v1.ListTasksByJobRequest.filter:type_name -> crawler.v1.TaskListFilter
 	4,  // 34: crawler.v1.ListTasksByJobRequest.sort_field:type_name -> crawler.v1.TaskSortField
 	2,  // 35: crawler.v1.ListTasksByJobRequest.sort_order:type_name -> crawler.v1.SortOrder
 	24, // 36: crawler.v1.ListTasksByJobResponse.tasks:type_name -> crawler.v1.CrawlTask
-	87, // 37: crawler.v1.TaskAnalytics.status_counts:type_name -> crawler.v1.TaskAnalytics.StatusCountsEntry
-	88, // 38: crawler.v1.TaskAnalytics.depth_counts:type_name -> crawler.v1.TaskAnalytics.DepthCountsEntry
-	38, // 39: crawler.v1.GetTaskAnalyticsResponse.analytics:type_name -> crawler.v1.TaskAnalytics
-	89, // 40: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
-	89, // 41: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
-	45, // 42: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
+	89, // 37: crawler.v1.TaskAnalytics.status_counts:type_name -> crawler.v1.TaskAnalytics.StatusCountsEntry
+	90, // 38: crawler.v1.TaskAnalytics.depth_counts:type_name -> crawler.v1.TaskAnalytics.DepthCountsEntry
+	40, // 39: crawler.v1.GetTaskAnalyticsResponse.analytics:type_name -> crawler.v1.TaskAnalytics
+	91, // 40: crawler.v1.Preview.created_at:type_name -> google.protobuf.Timestamp
+	91, // 41: crawler.v1.Preview.expires_at:type_name -> google.protobuf.Timestamp
+	47, // 42: crawler.v1.GetPreviewResponse.preview:type_name -> crawler.v1.Preview
 	5,  // 43: crawler.v1.User.role:type_name -> crawler.v1.Role
-	89, // 44: crawler.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	89, // 45: crawler.v1.User.updated_at:type_name -> google.protobuf.Timestamp
-	58, // 46: crawler.v1.ListUsersResponse.users:type_name -> crawler.v1.User
+	91, // 44: crawler.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	91, // 45: crawler.v1.User.updated_at:type_name -> google.protobuf.Timestamp
+	60, // 46: crawler.v1.ListUsersResponse.users:type_name -> crawler.v1.User
 	5,  // 47: crawler.v1.UpdateUserRoleRequest.role:type_name -> crawler.v1.Role
 	7,  // 48: crawler.v1.QueueEndpoint.broker_type:type_name -> crawler.v1.QueueBrokerType
 	6,  // 49: crawler.v1.QueueEndpoint.stage:type_name -> crawler.v1.QueueStage
 	6,  // 50: crawler.v1.QueueRoutingRule.stage:type_name -> crawler.v1.QueueStage
-	63, // 51: crawler.v1.ListQueueEndpointsResponse.endpoints:type_name -> crawler.v1.QueueEndpoint
-	63, // 52: crawler.v1.CreateQueueEndpointRequest.endpoint:type_name -> crawler.v1.QueueEndpoint
-	63, // 53: crawler.v1.CreateQueueEndpointResponse.endpoint:type_name -> crawler.v1.QueueEndpoint
-	63, // 54: crawler.v1.UpdateQueueEndpointRequest.endpoint:type_name -> crawler.v1.QueueEndpoint
-	63, // 55: crawler.v1.UpdateQueueEndpointResponse.endpoint:type_name -> crawler.v1.QueueEndpoint
+	65, // 51: crawler.v1.ListQueueEndpointsResponse.endpoints:type_name -> crawler.v1.QueueEndpoint
+	65, // 52: crawler.v1.CreateQueueEndpointRequest.endpoint:type_name -> crawler.v1.QueueEndpoint
+	65, // 53: crawler.v1.CreateQueueEndpointResponse.endpoint:type_name -> crawler.v1.QueueEndpoint
+	65, // 54: crawler.v1.UpdateQueueEndpointRequest.endpoint:type_name -> crawler.v1.QueueEndpoint
+	65, // 55: crawler.v1.UpdateQueueEndpointResponse.endpoint:type_name -> crawler.v1.QueueEndpoint
 	6,  // 56: crawler.v1.ListQueueRoutingRulesRequest.stage:type_name -> crawler.v1.QueueStage
-	65, // 57: crawler.v1.ListQueueRoutingRulesResponse.rules:type_name -> crawler.v1.QueueRoutingRule
-	65, // 58: crawler.v1.UpsertQueueRoutingRulesRequest.rule:type_name -> crawler.v1.QueueRoutingRule
-	65, // 59: crawler.v1.UpsertQueueRoutingRulesResponse.rule:type_name -> crawler.v1.QueueRoutingRule
-	89, // 60: crawler.v1.WorkerHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
+	67, // 57: crawler.v1.ListQueueRoutingRulesResponse.rules:type_name -> crawler.v1.QueueRoutingRule
+	67, // 58: crawler.v1.UpsertQueueRoutingRulesRequest.rule:type_name -> crawler.v1.QueueRoutingRule
+	67, // 59: crawler.v1.UpsertQueueRoutingRulesResponse.rule:type_name -> crawler.v1.QueueRoutingRule
+	91, // 60: crawler.v1.WorkerHeartbeat.timestamp:type_name -> google.protobuf.Timestamp
 	8,  // 61: crawler.v1.WorkerHeartbeat.status:type_name -> crawler.v1.WorkerStatus
-	89, // 62: crawler.v1.WorkerHeartbeat.started_at:type_name -> google.protobuf.Timestamp
+	91, // 62: crawler.v1.WorkerHeartbeat.started_at:type_name -> google.protobuf.Timestamp
 	8,  // 63: crawler.v1.WorkerInfo.status:type_name -> crawler.v1.WorkerStatus
-	89, // 64: crawler.v1.WorkerInfo.last_heartbeat_at:type_name -> google.protobuf.Timestamp
-	90, // 65: crawler.v1.WorkerInfo.uptime:type_name -> google.protobuf.Duration
-	79, // 66: crawler.v1.ListWorkersResponse.workers:type_name -> crawler.v1.WorkerInfo
+	91, // 64: crawler.v1.WorkerInfo.last_heartbeat_at:type_name -> google.protobuf.Timestamp
+	92, // 65: crawler.v1.WorkerInfo.uptime:type_name -> google.protobuf.Duration
+	81, // 66: crawler.v1.ListWorkersResponse.workers:type_name -> crawler.v1.WorkerInfo
 	9,  // 67: crawler.v1.WorkerCommand.type:type_name -> crawler.v1.WorkerCommandType
-	89, // 68: crawler.v1.WorkerCommand.issued_at:type_name -> google.protobuf.Timestamp
+	91, // 68: crawler.v1.WorkerCommand.issued_at:type_name -> google.protobuf.Timestamp
 	69, // [69:69] is the sub-list for method output_type
 	69, // [69:69] is the sub-list for method input_type
 	69, // [69:69] is the sub-list for extension type_name
@@ -5609,20 +5729,21 @@ func file_v1_models_proto_init() {
 	}
 	file_v1_models_proto_msgTypes[6].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[11].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[12].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[13].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[14].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[15].OneofWrappers = []any{}
 	file_v1_models_proto_msgTypes[16].OneofWrappers = []any{}
-	file_v1_models_proto_msgTypes[25].OneofWrappers = []any{}
-	file_v1_models_proto_msgTypes[26].OneofWrappers = []any{}
-	file_v1_models_proto_msgTypes[35].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[27].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[28].OneofWrappers = []any{}
+	file_v1_models_proto_msgTypes[37].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_models_proto_rawDesc), len(file_v1_models_proto_rawDesc)),
 			NumEnums:      10,
-			NumMessages:   79,
+			NumMessages:   81,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

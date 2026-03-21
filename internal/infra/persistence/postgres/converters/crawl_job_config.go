@@ -1,9 +1,11 @@
 package converters
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
+	authvalueobjects "distributed-crawler/internal/domain/auth/valueobjects"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/persistence/postgres/snapshots"
@@ -13,6 +15,12 @@ func SaveCrawlJobConfigToSnapshot(config models.CrawlJobConfig) (*snapshots.Craw
 	snapshot := &snapshots.CrawlJobConfigSnapshot{
 		ID:   config.ID.String(),
 		Name: config.Name,
+	}
+	if !config.UserID.IsEmpty() {
+		snapshot.UserID = sql.NullString{
+			String: config.UserID.String(),
+			Valid:  true,
+		}
 	}
 
 	// Convert ExtractionSpec to JSONB
@@ -126,6 +134,13 @@ func RestoreCrawlJobConfigFromSnapshot(snapshot snapshots.CrawlJobConfigSnapshot
 	config := &models.CrawlJobConfig{
 		ID:   id,
 		Name: snapshot.Name,
+	}
+	if snapshot.UserID.Valid {
+		userID, err := authvalueobjects.NewUserID(snapshot.UserID.String)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse user id: %w", err)
+		}
+		config.UserID = userID
 	}
 
 	// Restore ExtractionSpec

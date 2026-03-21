@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, OnDestroy, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, OnDestroy, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
@@ -38,6 +38,28 @@ import { JobListFilter } from '../../../core/services/api/crawler-api.service';
             placeholder="Enter job name..."
             class="w-full" />
         </p-iconfield>
+      </div>
+
+      <div class="flex-1 min-w-48">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search by user email</label>
+        <div class="flex gap-2">
+          <p-iconfield class="flex-1">
+            <p-inputicon styleClass="pi pi-user" />
+            <input
+              pInputText
+              [formControl]="filterForm.controls.userEmail"
+              placeholder="Enter user email..."
+              class="w-full" />
+          </p-iconfield>
+          <p-button
+            *ngIf="currentUserEmail"
+            type="button"
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="useCurrentUserEmail()">
+            Mine
+          </p-button>
+        </div>
       </div>
 
       <!-- Status Filter -->
@@ -88,6 +110,7 @@ import { JobListFilter } from '../../../core/services/api/crawler-api.service';
   `]
 })
 export class JobFiltersComponent implements OnInit, OnDestroy {
+  @Input() currentUserEmail?: string;
   @Output() filterChange = new EventEmitter<JobListFilter>();
 
   private destroy$ = new Subject<void>();
@@ -101,6 +124,7 @@ export class JobFiltersComponent implements OnInit, OnDestroy {
 
   filterForm = this.fb.group({
     name: [''],
+    userEmail: [''],
     status: [null as JobStatus | null],
     createdFrom: [null as Date | null],
     createdTo: [null as Date | null]
@@ -128,6 +152,9 @@ export class JobFiltersComponent implements OnInit, OnDestroy {
     if (value.name?.trim()) {
       filter.name = value.name.trim();
     }
+    if (value.userEmail?.trim()) {
+      filter.user_email = value.userEmail.trim();
+    }
     if (value.status) {
       filter.status = value.status;
     }
@@ -146,5 +173,12 @@ export class JobFiltersComponent implements OnInit, OnDestroy {
 
   clearFilters(): void {
     this.filterForm.reset();
+  }
+
+  useCurrentUserEmail(): void {
+    if (!this.currentUserEmail) {
+      return;
+    }
+    this.filterForm.patchValue({ userEmail: this.currentUserEmail });
   }
 }

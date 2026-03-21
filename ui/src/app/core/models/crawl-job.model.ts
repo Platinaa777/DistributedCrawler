@@ -4,6 +4,7 @@ export interface CrawlJob {
   id: string;
   job_config_id: string;
   job_config?: CrawlJobConfig;
+  user_id?: string;
   // For scheduled runs: "{config_name}_{scheduled_at}". Absent for one-time jobs.
   name?: string;
   status: string;
@@ -34,6 +35,7 @@ export const JOB_TYPES: { value: JobType; label: string; description: string }[]
 
 export interface CrawlJobConfig {
   id?: string;
+  user_id?: string;
   name: string;
   extraction_spec: ExtractionSpec;
   scopes: ScopeRules;

@@ -247,6 +247,10 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
+	if err = mux.HandlePath("DELETE", "/api/v1/jobs/{id}", a.deleteJobHandlerFunc()); err != nil {
+		return err
+	}
+
 	corsCfg, _ := env.NewCORSConfig()
 	c := cors.New(cors.Options{
 		AllowedOrigins:   corsCfg.AllowedOrigins(),

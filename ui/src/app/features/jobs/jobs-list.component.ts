@@ -6,12 +6,14 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TagModule } from 'primeng/tag';
+import { DialogModule } from 'primeng/dialog';
+import { TooltipModule } from 'primeng/tooltip';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CrawlerApiService, JobListFilter, JobSortParams } from '../../core/services/api/crawler-api.service';
 import { QueueAdminApiService } from '../../core/services/api/queue-admin-api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { CrawlJob } from '../../core/models';
+import { CrawlJob, CrawlJobConfig } from '../../core/models';
 import { QueueEndpoint } from '../../core/models/queue.model';
 import { JobFiltersComponent } from './components/job-filters.component';
 
@@ -25,6 +27,8 @@ import { JobFiltersComponent } from './components/job-filters.component';
     ButtonModule,
     ProgressSpinnerModule,
     TagModule,
+    DialogModule,
+    TooltipModule,
     JobFiltersComponent
   ],
   template: `
@@ -70,7 +74,9 @@ import { JobFiltersComponent } from './components/job-filters.component';
       </div>
 
       <!-- Filters -->
-      <app-job-filters (filterChange)="onFilterChange($event)"></app-job-filters>
+      <app-job-filters
+        [currentUserEmail]="currentUserEmail"
+        (filterChange)="onFilterChange($event)"></app-job-filters>
 
       <p-card *ngIf="loading && jobs.length === 0" styleClass="text-center p-8">
         <p-progressSpinner />
@@ -100,7 +106,7 @@ import { JobFiltersComponent } from './components/job-filters.component';
               <th>Type</th>
               <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
               <th pSortableColumn="created_at">Created At <p-sortIcon field="created_at" /></th>
-              <th style="width: 8rem"></th>
+              <th style="width: 16rem"></th>
             </tr>
           </ng-template>
           <ng-template #body let-job let-expanded="expanded">
@@ -126,12 +132,32 @@ import { JobFiltersComponent } from './components/job-filters.component';
               </td>
               <td>{{ job.created_at | date:'short' }}</td>
               <td class="text-right">
-                <p-button
-                  [outlined]="true"
-                  severity="secondary"
-                  (onClick)="viewJob(job)">
-                  <i class="pi pi-external-link"></i>
-                </p-button>
+                <div class="flex justify-end gap-2">
+                  <p-button
+                    *ngIf="canCreateJobs"
+                    [outlined]="true"
+                    severity="secondary"
+                    [disabled]="!job.job_config"
+                    (onClick)="copyJob(job)">
+                    <i class="pi pi-copy mr-2"></i>
+                    Copy
+                  </p-button>
+                  <p-button
+                    [outlined]="true"
+                    severity="secondary"
+                    (onClick)="viewJob(job)">
+                    <i class="pi pi-external-link mr-2"></i>
+                    Open
+                  </p-button>
+                  <p-button
+                    *ngIf="canDeleteJobs"
+                    [outlined]="true"
+                    severity="danger"
+                    pTooltip="Delete job and its config (all runs for scheduled jobs)"
+                    (onClick)="confirmDelete(job)">
+                    <i class="pi pi-trash"></i>
+                  </p-button>
+                </div>
               </td>
             </tr>
           </ng-template>
@@ -194,6 +220,42 @@ import { JobFiltersComponent } from './components/job-filters.component';
         </div>
       </p-card>
     </div>
+
+    <!-- Delete Confirm Dialog -->
+    <p-dialog
+      header="Delete Job"
+      [(visible)]="showDeleteDialog"
+      [modal]="true"
+      [style]="{ width: '420px' }"
+      [closable]="!deleting">
+      <div class="py-2">
+        <p class="text-gray-700 dark:text-gray-300 mb-2">
+          Are you sure you want to delete this job?
+        </p>
+        <p class="text-sm text-amber-600 dark:text-amber-400" *ngIf="jobToDelete?.job_config?.job_type === 'JOB_TYPE_SCHEDULED'">
+          <i class="pi pi-exclamation-triangle mr-1"></i>
+          This is a <strong>scheduled job</strong>. Deleting it will remove the schedule config and <strong>all runs</strong> associated with it.
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2" *ngIf="jobToDelete">
+          Job: <strong>{{ jobToDelete.name || jobToDelete.job_config?.name || 'Unnamed Job' }}</strong>
+        </p>
+      </div>
+      <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2">
+          <p-button
+            label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="deleting"
+            (onClick)="cancelDelete()" />
+          <p-button
+            label="Delete"
+            severity="danger"
+            [loading]="deleting"
+            (onClick)="executeDelete()" />
+        </div>
+      </ng-template>
+    </p-dialog>
   `,
   styles: [`
     :host {
@@ -251,6 +313,11 @@ export class JobsListComponent implements OnInit, OnDestroy {
   expandedRows: { [key: string]: boolean } = {};
   hasMore = false;
   endpointMap = new Map<string, QueueEndpoint>();
+
+  // Delete state
+  showDeleteDialog = false;
+  jobToDelete: CrawlJob | null = null;
+  deleting = false;
 
   // Sort state (PrimeNG: 1 = ASC, -1 = DESC)
   currentSortField = 'created_at';
@@ -377,6 +444,20 @@ export class JobsListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/jobs', job.id]);
   }
 
+  copyJob(job: CrawlJob): void {
+    if (!job.job_config) {
+      return;
+    }
+
+    this.router.navigate(['/jobs/simple-create'], {
+      state: {
+        initialConfig: this.cloneJobConfig(job.job_config),
+        copySourceJobId: job.id,
+        copySourceJobName: job.name || job.job_config.name || 'Unnamed Job'
+      }
+    });
+  }
+
   getJobConfigWithoutAuth(job: CrawlJob) {
     const config = job.job_config;
     if (!config) {
@@ -391,12 +472,56 @@ export class JobsListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/jobs/simple-create']);
   }
 
+  private cloneJobConfig(config: CrawlJobConfig): CrawlJobConfig {
+    return JSON.parse(JSON.stringify(config)) as CrawlJobConfig;
+  }
+
   get canCreateJobs(): boolean {
     return this.authService.hasMinimumRole('READ_WRITE');
   }
 
+  get canDeleteJobs(): boolean {
+    return this.authService.hasMinimumRole('READ_WRITE');
+  }
+
+  confirmDelete(job: CrawlJob): void {
+    this.jobToDelete = job;
+    this.showDeleteDialog = true;
+  }
+
+  cancelDelete(): void {
+    this.showDeleteDialog = false;
+    this.jobToDelete = null;
+  }
+
+  executeDelete(): void {
+    if (!this.jobToDelete) return;
+    this.deleting = true;
+    this.crawlerApi.deleteJob(this.jobToDelete.id).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: () => {
+        this.showDeleteDialog = false;
+        this.jobToDelete = null;
+        this.deleting = false;
+        this.jobs = [];
+        this.nextCursor = null;
+        this.loadJobs();
+      },
+      error: (err) => {
+        this.error = `Failed to delete job: ${err.message}`;
+        this.deleting = false;
+        this.showDeleteDialog = false;
+      }
+    });
+  }
+
   get canManageUsers(): boolean {
     return this.authService.hasMinimumRole('ADMINISTRATOR');
+  }
+
+  get currentUserEmail(): string | undefined {
+    return this.authService.email;
   }
 
   goToUsers(): void {

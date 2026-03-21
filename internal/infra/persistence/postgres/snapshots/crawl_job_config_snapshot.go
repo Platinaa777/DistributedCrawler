@@ -1,24 +1,26 @@
 package snapshots
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
 )
 
 type CrawlJobConfigSnapshot struct {
-	ID               string     `db:"id"`
-	Name             string     `db:"name"`
-	ExtractionSpec   JSONB      `db:"extraction_spec"`
-	Scopes           JSONB      `db:"scopes"`
-	Seeds            JSONBArray `db:"seeds"`
-	RateLimit        JSONB      `db:"rate_limit"`
-	Retries          JSONB      `db:"retries"`
-	Auth             JSONB      `db:"auth"`
-	Schedule         JSONB      `db:"schedule"`
-	JobType          string     `db:"job_type"`
-	RespectRobotsTxt bool       `db:"respect_robots_txt"`
-	CrawlMode        string     `db:"crawl_mode"`
+	ID               string         `db:"id"`
+	UserID           sql.NullString `db:"user_id"`
+	Name             string         `db:"name"`
+	ExtractionSpec   JSONB          `db:"extraction_spec"`
+	Scopes           JSONB          `db:"scopes"`
+	Seeds            JSONBArray     `db:"seeds"`
+	RateLimit        JSONB          `db:"rate_limit"`
+	Retries          JSONB          `db:"retries"`
+	Auth             JSONB          `db:"auth"`
+	Schedule         JSONB          `db:"schedule"`
+	JobType          string         `db:"job_type"`
+	RespectRobotsTxt bool           `db:"respect_robots_txt"`
+	CrawlMode        string         `db:"crawl_mode"`
 	// QueueEndpointAssignments is populated via join table query, not scanned from the main row.
 	QueueEndpointAssignments []QueueEndpointAssignmentSnap
 }

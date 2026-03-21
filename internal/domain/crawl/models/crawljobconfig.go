@@ -1,6 +1,7 @@
 package models
 
 import (
+	authvalueobjects "distributed-crawler/internal/domain/auth/valueobjects"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 )
 
@@ -31,6 +32,7 @@ const (
 
 type CrawlJobConfig struct {
 	ID             valueobjects.ID
+	UserID         authvalueobjects.UserID
 	Name           string
 	ExtractionSpec ExtractionSpec
 	Scopes         ScopeRules

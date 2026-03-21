@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"distributed-crawler/internal/application/service"
+	"distributed-crawler/internal/auth"
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	crawlergrpc "distributed-crawler/pkg/v1"
@@ -33,11 +34,14 @@ func (f fakeCrawlJobService) GetCrawlJob(ctx context.Context, query service.GetC
 func (f fakeCrawlJobService) ListCrawlJobs(ctx context.Context, query service.ListCrawlJobsQuery) (*service.ListCrawlJobsResult, error) {
 	return f.listFn(ctx, query)
 }
+func (f fakeCrawlJobService) DeleteCrawlJob(context.Context, service.DeleteCrawlJobCommand) error {
+	return nil
+}
 
 type fakeCrawlTaskService struct {
-	getFn          func(ctx context.Context, query service.GetCrawlTaskQuery) (*models.CrawlTask, error)
-	listFn         func(ctx context.Context, query service.ListTasksByJobQuery) (*service.ListTasksResult, error)
-	analyticsFn    func(ctx context.Context, query service.GetTaskAnalyticsQuery) (*service.TaskAnalytics, error)
+	getFn       func(ctx context.Context, query service.GetCrawlTaskQuery) (*models.CrawlTask, error)
+	listFn      func(ctx context.Context, query service.ListTasksByJobQuery) (*service.ListTasksResult, error)
+	analyticsFn func(ctx context.Context, query service.GetTaskAnalyticsQuery) (*service.TaskAnalytics, error)
 }
 
 func (f fakeCrawlTaskService) GetTask(ctx context.Context, query service.GetCrawlTaskQuery) (*models.CrawlTask, error) {
@@ -66,6 +70,7 @@ func TestCreateJob_MapsProtoConfigToCommand(t *testing.T) {
 		fakeCrawlJobService{
 			createFn: func(ctx context.Context, cmd service.CreateCrawlJobCommand) (valueobjects.CrawlJobID, error) {
 				assert.Equal(t, "Books", cmd.Config.Name)
+				assert.Equal(t, "user-123", cmd.UserID)
 				assert.Equal(t, models.JobTypeScheduled, cmd.Config.JobType)
 				assert.Equal(t, models.CrawlModePaginationOnly, cmd.Config.CrawlMode)
 				require.Len(t, cmd.Config.Seeds, 1)
@@ -77,7 +82,8 @@ func TestCreateJob_MapsProtoConfigToCommand(t *testing.T) {
 		fakeURLGenerator{},
 	)
 
-	resp, err := impl.CreateJob(context.Background(), &crawlergrpc.CreateJobRequest{
+	ctx := context.WithValue(context.Background(), auth.UserIDContextKey, "user-123")
+	resp, err := impl.CreateJob(ctx, &crawlergrpc.CreateJobRequest{
 		Config: &crawlergrpc.CrawlJobConfig{
 			Name:      "Books",
 			JobType:   crawlergrpc.JobType_JOB_TYPE_SCHEDULED,
@@ -120,12 +126,14 @@ func TestListJobs_UsesDecodedCursorAndEncodesNextCursor(t *testing.T) {
 				assert.Equal(t, inputCursor, query.Cursor)
 				assert.Equal(t, service.JobSortByStatus, query.SortField)
 				assert.True(t, query.SortAsc)
+				require.NotNil(t, query.Filter.UserEmail)
+				assert.Equal(t, "user@example.com", *query.Filter.UserEmail)
 				return &service.ListCrawlJobsResult{
 					Jobs: []*models.CrawlJob{{
-						ID:          jobID,
-						JobConfigID: configID,
-						Status:      models.TaskStatusCompleted,
-						CreatedAt:   createdAt,
+						ID:           jobID,
+						JobConfigID:  configID,
+						Status:       models.TaskStatusCompleted,
+						CreatedAt:    createdAt,
 						ExportStatus: models.ExportStatusNotStarted,
 					}},
 					NextCursor: nextCursor,
@@ -140,6 +148,9 @@ func TestListJobs_UsesDecodedCursorAndEncodesNextCursor(t *testing.T) {
 	resp, err := impl.ListJobs(context.Background(), &crawlergrpc.ListJobsRequest{
 		Limit:  10,
 		Cursor: &encodedInput,
+		Filter: &crawlergrpc.JobListFilter{
+			UserEmail: ptr("user@example.com"),
+		},
 	})
 	require.NoError(t, err)
 	assert.True(t, resp.HasMore)
@@ -258,9 +269,9 @@ func TestGetTaskFileURL_UsesRequestedObjectKey(t *testing.T) {
 			getFn: func(ctx context.Context, query service.GetCrawlTaskQuery) (*models.CrawlTask, error) {
 				assert.Equal(t, "task-id", query.ID)
 				return &models.CrawlTask{
-					ID:           valueobjects.GenerateCrawlTaskID(),
-					JobID:        valueobjects.GenerateCrawlJobID(),
-					MinioObjectKey: "pages/task-1.html",
+					ID:              valueobjects.GenerateCrawlTaskID(),
+					JobID:           valueobjects.GenerateCrawlJobID(),
+					MinioObjectKey:  "pages/task-1.html",
 					ResultObjectKey: &resultKey,
 				}, nil
 			},
@@ -368,9 +379,9 @@ func TestGetJobExportFileURL_ValidatesTypeAndUsesKey(t *testing.T) {
 		fakeCrawlJobService{
 			getFn: func(ctx context.Context, query service.GetCrawlJobQuery) (*models.CrawlJob, error) {
 				return &models.CrawlJob{
-					ID:           valueobjects.GenerateCrawlJobID(),
-					JobConfigID:  valueobjects.GenerateID(),
-					CreatedAt:    time.Now().UTC(),
+					ID:            valueobjects.GenerateCrawlJobID(),
+					JobConfigID:   valueobjects.GenerateID(),
+					CreatedAt:     time.Now().UTC(),
 					ExportJSONKey: &jsonKey,
 				}, nil
 			},

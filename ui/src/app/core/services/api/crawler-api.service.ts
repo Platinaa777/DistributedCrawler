@@ -7,6 +7,7 @@ import { API_CONFIG, API_ENDPOINTS } from '../../constants/api.constants';
 // Filter options for listing jobs
 export interface JobListFilter {
   name?: string;
+  user_email?: string;
   status?: string;
   created_from?: string; // ISO 8601 timestamp
   created_to?: string;   // ISO 8601 timestamp
@@ -99,6 +100,9 @@ export class CrawlerApiService {
       if (params.filter.name) {
         httpParams = httpParams.set('filter.name', params.filter.name);
       }
+      if (params.filter.user_email) {
+        httpParams = httpParams.set('filter.user_email', params.filter.user_email);
+      }
       if (params.filter.status) {
         httpParams = httpParams.set('filter.status', params.filter.status);
       }
@@ -135,6 +139,10 @@ export class CrawlerApiService {
 
   createJob(config: CrawlJobConfig): Observable<{ id: string }> {
     return this.http.post<{ id: string }>(`${this.baseUrl}${API_ENDPOINTS.JOBS}`, { config });
+  }
+
+  deleteJob(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}${API_ENDPOINTS.JOBS}/${id}`);
   }
 
   // Tasks - Updated with pagination and filtering

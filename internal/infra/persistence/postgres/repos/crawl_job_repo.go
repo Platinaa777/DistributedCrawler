@@ -22,6 +22,7 @@ const (
 
 	idColumn          = "id"
 	jobConfigIDColumn = "job_config_id"
+	jobUserIDColumn   = "user_id"
 	nameColumn        = "name"
 	statusColumn      = "status"
 	createdAtColumn   = "created_at"
@@ -35,6 +36,7 @@ const (
 
 	// Config table column aliases (for joins)
 	aliasConfigID               = "config_id"
+	aliasConfigUserID           = "config_user_id"
 	aliasConfigName             = "config_name"
 	aliasConfigExtractionSpec   = "config_extraction_spec"
 	aliasConfigScopes           = "config_scopes"
@@ -46,6 +48,7 @@ const (
 	aliasConfigJobType          = "config_job_type"
 	aliasConfigRespectRobotsTxt = "config_respect_robots_txt"
 	aliasConfigCrawlMode        = "config_crawl_mode"
+	aliasUserTable              = "u"
 )
 
 type crawlJobRepository struct {
@@ -62,11 +65,11 @@ func (c *crawlJobRepository) Create(ctx context.Context, entity models.CrawlJob)
 	builder := sq.Insert(tableName).
 		PlaceholderFormat(sq.Dollar).
 		Columns(
-			idColumn, jobConfigIDColumn, nameColumn, statusColumn, createdAtColumn, completedAtColumn,
+			idColumn, jobConfigIDColumn, jobUserIDColumn, nameColumn, statusColumn, createdAtColumn, completedAtColumn,
 			exportJSONKeyColumn, exportCSVKeyColumn, exportedAtColumn, exportStatusColumn,
 		).
 		Values(
-			dbEntity.ID, dbEntity.JobConfigID, dbEntity.Name, dbEntity.Status, dbEntity.CreatedAt, dbEntity.CompletedAt,
+			dbEntity.ID, dbEntity.JobConfigID, dbEntity.UserID, dbEntity.Name, dbEntity.Status, dbEntity.CreatedAt, dbEntity.CompletedAt,
 			dbEntity.ExportJSONKey, dbEntity.ExportCSVKey, dbEntity.ExportedAt, dbEntity.ExportStatus,
 		).
 		Suffix("RETURNING id")
@@ -90,11 +93,30 @@ func (c *crawlJobRepository) Create(ctx context.Context, entity models.CrawlJob)
 	return valueobjects.NewCrawlJobID(id)
 }
 
+func (c *crawlJobRepository) Delete(ctx context.Context, id valueobjects.CrawlJobID) error {
+	builder := sq.Delete(tableName).
+		PlaceholderFormat(sq.Dollar).
+		Where(sq.Eq{idColumn: id.String()})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_job_repository.Delete",
+		QueryRaw: query,
+	}
+
+	_, err = c.client.DB().ExecContext(ctx, q, args...)
+	return err
+}
+
 func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID) (*models.CrawlJob, error) {
 	builder := sq.Select(
-		"j."+idColumn, "j."+jobConfigIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+jobUserIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
-		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.id as "+aliasConfigID, "c."+configUserIDColumn+" as "+aliasConfigUserID, "c.name as "+aliasConfigName,
 		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
@@ -142,6 +164,7 @@ func (c *crawlJobRepository) Update(ctx context.Context, entity models.CrawlJob)
 	builder := sq.Update(tableName).
 		PlaceholderFormat(sq.Dollar).
 		Set(jobConfigIDColumn, dbEntity.JobConfigID).
+		Set(jobUserIDColumn, dbEntity.UserID).
 		Set(nameColumn, dbEntity.Name).
 		Set(statusColumn, dbEntity.Status).
 		Set(completedAtColumn, dbEntity.CompletedAt).
@@ -167,9 +190,9 @@ func (c *crawlJobRepository) Update(ctx context.Context, entity models.CrawlJob)
 
 func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus, limit, offset int) ([]*models.CrawlJob, error) {
 	builder := sq.Select(
-		"j."+idColumn, "j."+jobConfigIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+jobUserIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
-		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.id as "+aliasConfigID, "c."+configUserIDColumn+" as "+aliasConfigUserID, "c.name as "+aliasConfigName,
 		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
@@ -212,9 +235,9 @@ func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus,
 
 func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]*models.CrawlJob, error) {
 	builder := sq.Select(
-		"j."+idColumn, "j."+jobConfigIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+jobUserIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
-		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.id as "+aliasConfigID, "c."+configUserIDColumn+" as "+aliasConfigUserID, "c.name as "+aliasConfigName,
 		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
@@ -260,9 +283,9 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 	fetchLimit := query.Limit + 1
 
 	builder := sq.Select(
-		"j."+idColumn, "j."+jobConfigIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+jobUserIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
-		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.id as "+aliasConfigID, "c."+configUserIDColumn+" as "+aliasConfigUserID, "c.name as "+aliasConfigName,
 		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
@@ -273,7 +296,8 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
-		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id")
+		LeftJoin(configTableName + " c ON j." + jobConfigIDColumn + " = c.id").
+		LeftJoin(usersTableName + " " + aliasUserTable + " ON j." + jobUserIDColumn + " = " + aliasUserTable + "." + userIDColumn)
 
 	// Build WHERE conditions
 	conditions := sq.And{}
@@ -281,6 +305,9 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 	// Filter by status
 	if query.Filter.Status != nil && *query.Filter.Status != "" {
 		conditions = append(conditions, sq.Eq{"j." + statusColumn: *query.Filter.Status})
+	}
+	if query.Filter.UserEmail != nil && *query.Filter.UserEmail != "" {
+		conditions = append(conditions, sq.ILike{aliasUserTable + "." + userEmailColumn: "%" + *query.Filter.UserEmail + "%"})
 	}
 
 	// Filter by name (partial match, case-insensitive)
@@ -400,9 +427,9 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 
 func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID valueobjects.ID) (*models.CrawlJob, error) {
 	builder := sq.Select(
-		"j."+idColumn, "j."+jobConfigIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+jobUserIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
-		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.id as "+aliasConfigID, "c."+configUserIDColumn+" as "+aliasConfigUserID, "c.name as "+aliasConfigName,
 		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
@@ -457,9 +484,9 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 	// 4) there are no unprocessed task.enqueued outbox events for this job
 	// 5) export has never been generated OR task results were updated after last export
 	builder := sq.Select(
-		"j."+idColumn, "j."+jobConfigIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
+		"j."+idColumn, "j."+jobConfigIDColumn, "j."+jobUserIDColumn, "j."+nameColumn, "j."+statusColumn, "j."+createdAtColumn, "j."+completedAtColumn,
 		"j."+exportJSONKeyColumn, "j."+exportCSVKeyColumn, "j."+exportedAtColumn, "j."+exportStatusColumn,
-		"c.id as "+aliasConfigID, "c.name as "+aliasConfigName,
+		"c.id as "+aliasConfigID, "c."+configUserIDColumn+" as "+aliasConfigUserID, "c.name as "+aliasConfigName,
 		"c.extraction_spec as "+aliasConfigExtractionSpec, "c.scopes as "+aliasConfigScopes,
 		"c.seeds as "+aliasConfigSeeds, "c.rate_limit as "+aliasConfigRateLimit,
 		"c.retries as "+aliasConfigRetries, "c.auth as "+aliasConfigAuth,
@@ -604,6 +631,7 @@ func scanCrawlJobWithConfig(row scanner) (*snapshots.CrawlJobSnapshot, error) {
 		// Job fields
 		&job.ID,
 		&job.JobConfigID,
+		&job.UserID,
 		&job.Name,
 		&job.Status,
 		&job.CreatedAt,
@@ -614,6 +642,7 @@ func scanCrawlJobWithConfig(row scanner) (*snapshots.CrawlJobSnapshot, error) {
 		&job.ExportStatus,
 		// Config fields (may be NULL if LEFT JOIN returns no match)
 		&config.ID,
+		&config.UserID,
 		&config.Name,
 		&config.ExtractionSpec,
 		&config.Scopes,

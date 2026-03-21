@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Router, UrlTree } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
-import { catchError, finalize, map, shareReplay, tap } from 'rxjs/operators';
+import { catchError, finalize, map, shareReplay } from 'rxjs/operators';
 import { AuthApiService } from './api/auth-api.service';
 import { AuthResponse, AuthTokens, UserRole } from '../models';
 
@@ -91,17 +91,13 @@ export class AuthService {
     const refreshToken = this.refreshToken;
     this.clearTokens();
 
-    const logout$ = refreshToken
-      ? this.authApi.logout(refreshToken).pipe(
-          catchError(() => of(void 0)) // ignore logout errors
-        )
-      : of(void 0);
-
     if (redirectToLogin) {
-      return logout$.pipe(tap(() => this.router.navigate(['/auth/login'])));
+      this.router.navigate(['/auth/login']);
     }
 
-    return logout$;
+    return refreshToken
+      ? this.authApi.logout(refreshToken).pipe(catchError(() => of(void 0)))
+      : of(void 0);
   }
 
   clearTokens(): void {

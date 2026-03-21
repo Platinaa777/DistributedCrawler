@@ -189,18 +189,19 @@ func ToProtoCrawlJobConfig(config *models.CrawlJobConfig) *crawlergrpc.CrawlJobC
 	}
 
 	return &crawlergrpc.CrawlJobConfig{
-		Id:               config.ID.String(),
-		Name:             config.Name,
-		ExtractionSpec:   ToProtoExtractionSpec(config.ExtractionSpec),
-		Scopes:           ToProtoScopeRules(config.Scopes),
-		Seeds:            seeds,
-		RateLimit:        ToProtoRateLimitPolicy(config.RateLimit),
-		Retries:          ToProtoRetryPolicy(config.Retries),
-		Auth:             ToProtoAuthOptions(config.Auth),
-		Schedule:         ToProtoScheduleOptions(config.Schedule),
-		JobType:          ToProtoJobType(config.JobType),
-		RespectRobotsTxt: config.RespectRobotsTxt,
-		CrawlMode:        ToProtoCrawlMode(config.CrawlMode),
+		Id:                       config.ID.String(),
+		UserId:                   userIDPtr(config.UserID.String()),
+		Name:                     config.Name,
+		ExtractionSpec:           ToProtoExtractionSpec(config.ExtractionSpec),
+		Scopes:                   ToProtoScopeRules(config.Scopes),
+		Seeds:                    seeds,
+		RateLimit:                ToProtoRateLimitPolicy(config.RateLimit),
+		Retries:                  ToProtoRetryPolicy(config.Retries),
+		Auth:                     ToProtoAuthOptions(config.Auth),
+		Schedule:                 ToProtoScheduleOptions(config.Schedule),
+		JobType:                  ToProtoJobType(config.JobType),
+		RespectRobotsTxt:         config.RespectRobotsTxt,
+		CrawlMode:                ToProtoCrawlMode(config.CrawlMode),
 		QueueEndpointAssignments: toProtoAssignments(config.QueueEndpointAssignments),
 	}
 }
@@ -215,6 +216,7 @@ func ToProtoCrawlJob(job *models.CrawlJob) *crawlergrpc.CrawlJob {
 		Id:           job.ID.String(),
 		JobConfigId:  job.JobConfigID.String(),
 		JobConfig:    ToProtoCrawlJobConfig(job.JobConfig),
+		UserId:       userIDPtr(job.UserID.String()),
 		Name:         job.Name,
 		Status:       job.Status.String(),
 		CreatedAt:    timestamppb.New(job.CreatedAt),
@@ -498,17 +500,17 @@ func FromProtoCrawlJobConfig(proto *crawlergrpc.CrawlJobConfig) models.CrawlJobC
 
 	return models.CrawlJobConfig{
 		// ID will be generated in the service layer
-		Name:             proto.Name,
-		ExtractionSpec:   FromProtoExtractionSpec(proto.ExtractionSpec),
-		Scopes:           FromProtoScopeRules(proto.Scopes),
-		Seeds:            seeds,
-		RateLimit:        FromProtoRateLimitPolicy(proto.RateLimit),
-		Retries:          FromProtoRetryPolicy(proto.Retries),
-		Auth:             FromProtoAuthOptions(proto.Auth),
-		Schedule:         FromProtoScheduleOptions(proto.Schedule),
-		JobType:          FromProtoJobType(proto.JobType),
-		RespectRobotsTxt: proto.RespectRobotsTxt,
-		CrawlMode:        FromProtoCrawlMode(proto.CrawlMode),
+		Name:                     proto.Name,
+		ExtractionSpec:           FromProtoExtractionSpec(proto.ExtractionSpec),
+		Scopes:                   FromProtoScopeRules(proto.Scopes),
+		Seeds:                    seeds,
+		RateLimit:                FromProtoRateLimitPolicy(proto.RateLimit),
+		Retries:                  FromProtoRetryPolicy(proto.Retries),
+		Auth:                     FromProtoAuthOptions(proto.Auth),
+		Schedule:                 FromProtoScheduleOptions(proto.Schedule),
+		JobType:                  FromProtoJobType(proto.JobType),
+		RespectRobotsTxt:         proto.RespectRobotsTxt,
+		CrawlMode:                FromProtoCrawlMode(proto.CrawlMode),
 		QueueEndpointAssignments: fromProtoAssignments(proto.QueueEndpointAssignments),
 	}
 }
@@ -537,4 +539,11 @@ func fromProtoAssignments(proto []*crawlergrpc.QueueEndpointAssignment) []models
 		}
 	}
 	return result
+}
+
+func userIDPtr(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
 }

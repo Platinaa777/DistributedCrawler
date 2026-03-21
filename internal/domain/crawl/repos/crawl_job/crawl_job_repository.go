@@ -12,6 +12,7 @@ type CrawlJobRepository interface {
 	Create(ctx context.Context, entity models.CrawlJob) (valueobjects.CrawlJobID, error)
 	Get(ctx context.Context, id valueobjects.CrawlJobID) (*models.CrawlJob, error)
 	Update(ctx context.Context, entity models.CrawlJob) error
+	Delete(ctx context.Context, id valueobjects.CrawlJobID) error
 
 	// ListWithCursor returns jobs with cursor-based pagination and filtering
 	ListWithCursor(ctx context.Context, query service.ListCrawlJobsQuery) (*service.ListCrawlJobsResult, error)
