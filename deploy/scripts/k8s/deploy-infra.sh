@@ -25,7 +25,8 @@ kubectl create namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply
 echo "==> Validating infra chart with helm template..."
 helm template "${RELEASE_NAME}" "${CHART_DIR}" \
   --namespace "${NAMESPACE}" \
-  "${VALUE_FILES[@]}" > /dev/null
+  "${VALUE_FILES[@]}" \
+  "$@" > /dev/null
 
 helm upgrade --install "${RELEASE_NAME}" "${CHART_DIR}" \
   --namespace "${NAMESPACE}" \

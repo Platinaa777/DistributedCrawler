@@ -13,6 +13,7 @@ const (
 	minioSecretAccessKeyEnvName = "MINIO_PWD"
 	minioUseSSLEnvName          = "MINIO_USE_SSL"
 	minioBucketNameEnvName      = "MINIO_BUCKET_NAME"
+	minioPublicBaseURLEnvName   = "MINIO_PUBLIC_BASE_URL"
 )
 
 type minioConfig struct {
@@ -21,6 +22,7 @@ type minioConfig struct {
 	secretAccessKey string
 	useSSL          bool
 	bucketName      string
+	publicBaseURL   string
 }
 
 func NewMinIOConfig() (config.MinIOConfig, error) {
@@ -60,6 +62,7 @@ func NewMinIOConfig() (config.MinIOConfig, error) {
 		secretAccessKey: secretAccessKey,
 		useSSL:          useSSL,
 		bucketName:      bucketName,
+		publicBaseURL:   os.Getenv(minioPublicBaseURLEnvName),
 	}, nil
 }
 
@@ -81,4 +84,8 @@ func (c *minioConfig) UseSSL() bool {
 
 func (c *minioConfig) BucketName() string {
 	return c.bucketName
+}
+
+func (c *minioConfig) PublicBaseURL() string {
+	return c.publicBaseURL
 }

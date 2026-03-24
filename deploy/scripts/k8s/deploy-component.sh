@@ -79,7 +79,8 @@ helm template "${RELEASE_NAME}" "${CHART_DIR}" \
   --namespace "${NAMESPACE}" \
   "${VALUE_FILES[@]}" \
   "${DISABLE_ALL[@]}" \
-  "${ENABLE[@]}" > /dev/null
+  "${ENABLE[@]}" \
+  "$@" > /dev/null
 
 helm upgrade --install "${RELEASE_NAME}" "${CHART_DIR}" \
   --namespace "${NAMESPACE}" \

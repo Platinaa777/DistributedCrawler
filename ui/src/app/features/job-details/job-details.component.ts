@@ -858,32 +858,8 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
 
     this.crawlerApi.getTaskFileURL(task.id, fileType).subscribe({
       next: (response) => {
-        fetch(response.url)
-          .then(res => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            return res.blob();
-          })
-          .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-
-            const extension = fileType === 'pages' ? 'html' : 'json';
-            link.download = `task-${task.id}.${extension}`;
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            window.URL.revokeObjectURL(url);
-            this.loadingFile[loadingKey] = false;
-          })
-          .catch(err => {
-            this.loadingFile[loadingKey] = false;
-            console.error(`Failed to download file: ${err.message}`);
-          });
+        this.openPresignedDownload(response.url);
+        this.loadingFile[loadingKey] = false;
       },
       error: (err) => {
         this.loadingFile[loadingKey] = false;
@@ -902,35 +878,23 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
 
     this.crawlerApi.getJobExportFileURL(this.job.id, fileType).subscribe({
       next: (response) => {
-        fetch(response.url)
-          .then(res => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            return res.blob();
-          })
-          .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `job-${this.job?.id}-export.${fileType}`;
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            window.URL.revokeObjectURL(url);
-            this.loadingFile[loadingKey] = false;
-          })
-          .catch(err => {
-            this.loadingFile[loadingKey] = false;
-            console.error(`Failed to download export: ${err.message}`);
-          });
+        this.openPresignedDownload(response.url);
+        this.loadingFile[loadingKey] = false;
       },
       error: (err) => {
         this.loadingFile[loadingKey] = false;
         console.error(`Failed to get export URL: ${err.message}`);
       }
     });
+  }
+
+  private openPresignedDownload(url: string): void {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }

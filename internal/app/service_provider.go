@@ -440,6 +440,7 @@ func (s *serviceProvider) ContentStore() services.ContentStore {
 			minioCfg.SecretAccessKey(),
 			minioCfg.UseSSL(),
 			minioCfg.BucketName(),
+			minioCfg.PublicBaseURL(),
 			s.Logger(),
 		)
 		if err != nil {
@@ -461,7 +462,7 @@ func (s *serviceProvider) Fetcher() services.Fetcher {
 			BackoffInitialMs:  1000,
 			BackoffMultiplier: 2.0,
 		}
-		s.fetcher = fetcher.NewBrowserFetcher(authOptions, retryPolicy)
+		s.fetcher = fetcher.NewBrowserFetcher(authOptions, retryPolicy, "")
 	}
 
 	return s.fetcher
@@ -469,7 +470,7 @@ func (s *serviceProvider) Fetcher() services.Fetcher {
 
 func (s *serviceProvider) PreviewFetcherFactory() services.FetcherFactory {
 	if s.previewFetcherFactory == nil {
-		s.previewFetcherFactory = fetcher.NewBrowserFetcherFactory()
+		s.previewFetcherFactory = fetcher.NewBrowserFetcherFactory("")
 	}
 
 	return s.previewFetcherFactory

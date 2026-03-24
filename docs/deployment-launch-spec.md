@@ -9,6 +9,8 @@ It is grounded in the current scripts and configuration files:
 
 - `deploy/scripts/docker/*`
 - `deploy/scripts/k8s/*`
+- `deploy/scripts/docker/launch.sh`
+- `deploy/scripts/k8s/launch-minikube.sh`
 - `docker-compose.yaml`
 - `docker-compose.app.yaml`
 - `deploy/helm/distributed-crawler/*`
@@ -115,6 +117,42 @@ The default Docker entrypoint is:
 ./deploy/scripts/docker/deploy-all.sh
 ```
 
+For argument-driven local launch without preparing a root `.env`, use:
+
+```bash
+./deploy/scripts/docker/launch.sh \
+  --pg-password some-pwd-123 \
+  --rabbitmq-password guest \
+  --minio-password minioadmin \
+  --redis-password some_redis_pwd_123 \
+  --jwt-secret your-secret-key-change-this-in-production-make-it-long-and-random \
+  --default-user-password 12345678
+```
+
+If you want one explicitly named full-stack Docker entrypoint, use:
+
+```bash
+./deploy/scripts/docker/deploy-everything.sh \
+  --pg-password some-pwd-123 \
+  --rabbitmq-password guest \
+  --minio-password minioadmin \
+  --redis-password some_redis_pwd_123 \
+  --jwt-secret your-secret-key-change-this-in-production-make-it-long-and-random \
+  --default-user-password 12345678
+```
+
+On Windows PowerShell, use:
+
+```powershell
+.\deploy\scripts\docker\deploy-everything.ps1 `
+  -PgPassword some-pwd-123 `
+  -RabbitMqPassword guest `
+  -MinioPassword minioadmin `
+  -RedisPassword some_redis_pwd_123 `
+  -JwtSecret your-secret-key-change-this-in-production-make-it-long-and-random `
+  -DefaultUserPassword 12345678
+```
+
 Behavior:
 
 1. Loads `.env` if present.
@@ -190,7 +228,7 @@ After a successful full launch, the primary endpoints are:
 
 - gRPC API: `localhost:8083`
 - HTTP gateway: `http://localhost:8084`
-- Admin UI: `http://localhost:8080`
+- Admin UI: `http://localhost:18080`
 - RabbitMQ UI: `http://localhost:15672`
 - MinIO console: `http://localhost:9001`
 - RedisInsight: `http://localhost:5540`
@@ -330,6 +368,29 @@ Use:
 ```bash
 ./deploy/scripts/k8s/deploy-all.sh
 ```
+
+For the simplest local `minikube + Helm` flow with arguments instead of env vars,
+use the dedicated wrapper:
+
+```bash
+./deploy/scripts/k8s/launch-minikube.sh \
+  --pg-password some-pwd-123 \
+  --rabbitmq-password guest \
+  --minio-password minioadmin \
+  --redis-password some_redis_pwd_123 \
+  --jwt-secret your-secret-key-change-this-in-production-make-it-long-and-random \
+  --default-user-password 12345678 \
+  --port-forward
+```
+
+Wrapper behavior:
+
+1. Starts minikube unless `--skip-minikube-start` is used.
+2. Builds images into minikube unless `--no-build` is used.
+3. Deploys infra as a separate Helm release.
+4. Deploys the app release against that infra.
+5. Creates the MinIO bucket automatically unless `--no-bucket` is used.
+6. Starts port-forward when `--port-forward` is requested.
 
 Behavior:
 
@@ -483,7 +544,7 @@ Or selected services:
 
 Typical local endpoints after port-forward:
 
-- UI: `http://localhost:8080`
+- UI: `http://localhost:18080`
 - gRPC: `localhost:8083`
 - HTTP gateway: `http://localhost:8084`
 - RabbitMQ UI: `http://localhost:15672`

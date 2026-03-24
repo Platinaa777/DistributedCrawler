@@ -78,7 +78,10 @@ export IMAGE_TAG="${TAG}"
 echo "==> Deploying component: ${COMPONENT}  registry=${REGISTRY}  tag=${TAG}"
 
 validate_compose_config
+APP_COMPONENTS_CSV="${SERVICE}"
+resolve_launch_selection
 wait_for_core_infra
+wait_for_optional_services
 
 if [[ "${WAIT_FOR_GRPC}" == "true" ]]; then
   wait_for_grpc_server

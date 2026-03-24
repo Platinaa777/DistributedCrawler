@@ -5,7 +5,10 @@ import (
 	"distributed-crawler/internal/domain/crawl/models"
 	"distributed-crawler/internal/domain/crawl/services"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -27,14 +30,19 @@ const (
 )
 
 // BrowserFetcher renders pages using a headless browser (Chromium).
+// When remoteURL is set (e.g. "http://chrome:9222") it connects to an external
+// Chrome instance via CDP instead of spawning a local process.
 type BrowserFetcher struct {
 	authOptions models.AuthOptions
 	retryPolicy models.RetryPolicy
 	timeout     time.Duration
+	remoteURL   string // empty = local Chrome process; non-empty = remote CDP endpoint
 }
 
 // NewBrowserFetcher creates a browser-based fetcher with specified options.
-func NewBrowserFetcher(auth models.AuthOptions, retry models.RetryPolicy) *BrowserFetcher {
+// remoteURL is the HTTP endpoint of a remote Chrome instance (e.g. "http://chrome:9222").
+// Pass an empty string to spawn a local Chrome process instead.
+func NewBrowserFetcher(auth models.AuthOptions, retry models.RetryPolicy, remoteURL string) *BrowserFetcher {
 	if retry.MaxAttempts == 0 {
 		retry.MaxAttempts = 1
 	}
@@ -43,6 +51,7 @@ func NewBrowserFetcher(auth models.AuthOptions, retry models.RetryPolicy) *Brows
 		authOptions: auth,
 		retryPolicy: retry,
 		timeout:     defaultBrowserTimeout,
+		remoteURL:   remoteURL,
 	}
 }
 
@@ -77,12 +86,22 @@ func (f *BrowserFetcher) doFetch(ctx context.Context, url string) (*services.Fet
 	ctx, cancel := context.WithTimeout(ctx, f.timeout)
 	defer cancel()
 
-	allocOpts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true),
-		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("no-sandbox", true),
-	)
-	allocCtx, allocCancel := chromedp.NewExecAllocator(ctx, allocOpts...)
+	var allocCtx context.Context
+	var allocCancel context.CancelFunc
+	if f.remoteURL != "" {
+		wsURL, err := resolveWSURL(ctx, f.remoteURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve remote Chrome WS URL: %w", err)
+		}
+		allocCtx, allocCancel = chromedp.NewRemoteAllocator(ctx, wsURL)
+	} else {
+		allocOpts := append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", true),
+			chromedp.Flag("disable-gpu", true),
+			chromedp.Flag("no-sandbox", true),
+		)
+		allocCtx, allocCancel = chromedp.NewExecAllocator(ctx, allocOpts...)
+	}
 	defer allocCancel()
 
 	browserCtx, browserCancel := chromedp.NewContext(allocCtx)
@@ -184,6 +203,32 @@ func (f *BrowserFetcher) doFetch(ctx context.Context, url string) (*services.Fet
 }
 
 const httpStatusOK = 200
+
+// resolveWSURL fetches the WebSocket debugger URL from a remote Chrome CDP endpoint.
+// remoteURL is the HTTP base, e.g. "http://chrome:9222".
+func resolveWSURL(ctx context.Context, remoteURL string) (string, error) {
+	endpoint := strings.TrimRight(remoteURL, "/") + "/json/version"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return "", fmt.Errorf("build request: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("GET %s: %w", endpoint, err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		WebSocketDebuggerURL string `json:"webSocketDebuggerUrl"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("decode response: %w", err)
+	}
+	if result.WebSocketDebuggerURL == "" {
+		return "", fmt.Errorf("empty webSocketDebuggerUrl from %s", endpoint)
+	}
+	return result.WebSocketDebuggerURL, nil
+}
 
 func waitForReadyState(state string) chromedp.ActionFunc {
 	return func(ctx context.Context) error {

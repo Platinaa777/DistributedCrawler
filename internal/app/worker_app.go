@@ -26,6 +26,7 @@ import (
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	"distributed-crawler/internal/infra/persistence/postgres/repos"
 	"distributed-crawler/internal/infra/persistence/postgres/transaction"
+	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/infra/services/contentstore"
 	"distributed-crawler/internal/infra/services/fetcher"
 	"distributed-crawler/internal/telemetry"
@@ -403,6 +404,7 @@ func (a *WorkerApp) initFetchWorker() error {
 		minioCfg.SecretAccessKey(),
 		minioCfg.UseSSL(),
 		minioCfg.BucketName(),
+		minioCfg.PublicBaseURL(),
 		a.zapLogger,
 	)
 	if err != nil {
@@ -414,7 +416,15 @@ func (a *WorkerApp) initFetchWorker() error {
 	jobConfigRepo := repos.NewCrawlJobConfigRepository(a.pgClient)
 
 	// Initialize fetcher services
-	fetcherFactory := fetcher.NewHTTPFetcherFactory()
+	var fetcherFactory services.FetcherFactory
+	if env.GetFetcherType() == env.FetcherTypeBrowser {
+		chromeURL := env.GetChromeRemoteURL()
+		a.zapLogger.Info("Fetcher: using browser (chromedp)", zap.String("chrome_remote_url", chromeURL))
+		fetcherFactory = fetcher.NewBrowserFetcherFactory(chromeURL)
+	} else {
+		a.zapLogger.Info("Fetcher: using HTTP")
+		fetcherFactory = fetcher.NewHTTPFetcherFactory()
+	}
 	scopeValidator := fetcher.NewDomainScopeValidator()
 
 	// Initialize rate limiter with 5 minute TTL.
@@ -474,6 +484,7 @@ func (a *WorkerApp) initParserWorker() error {
 		minioCfg.SecretAccessKey(),
 		minioCfg.UseSSL(),
 		minioCfg.BucketName(),
+		minioCfg.PublicBaseURL(),
 		a.zapLogger,
 	)
 	if err != nil {
@@ -539,6 +550,7 @@ func (a *WorkerApp) initExportWorker() error {
 		minioCfg.SecretAccessKey(),
 		minioCfg.UseSSL(),
 		minioCfg.BucketName(),
+		minioCfg.PublicBaseURL(),
 		a.zapLogger,
 	)
 	if err != nil {

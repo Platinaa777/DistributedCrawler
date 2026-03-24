@@ -59,6 +59,7 @@ type MinIOConfig interface {
 	SecretAccessKey() string
 	UseSSL() bool
 	BucketName() string
+	PublicBaseURL() string
 }
 
 type RedisConfig interface {

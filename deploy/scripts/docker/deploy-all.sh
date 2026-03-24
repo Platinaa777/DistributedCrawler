@@ -39,32 +39,48 @@ export REGISTRY TAG
 export DOCKER_REGISTRY="${REGISTRY}"
 export IMAGE_TAG="${TAG}"
 
+resolve_launch_selection
+
 echo "==> Docker deploy: registry=${REGISTRY}  tag=${TAG}  app-only=${APP_ONLY}"
+echo "==> App services: ${SELECTED_APP_SERVICES[*]}"
+echo "==> Infra services: ${SELECTED_INFRA_SERVICES[*]}"
 
 validate_compose_config
 
 if [[ "${NO_BUILD}" != "true" ]]; then
   echo "==> Building images..."
-  bash "${BUILD_SCRIPT}"
+  bash "${BUILD_SCRIPT}" "${SELECTED_APP_SERVICES[@]}"
 fi
 
 if [[ "${APP_ONLY}" != "true" ]]; then
   echo "==> Starting infrastructure..."
-  compose_infra up -d
+  compose_infra up -d "${SELECTED_INFRA_SERVICES[@]}"
 fi
 
 wait_for_core_infra
+wait_for_optional_services
 
-echo "==> Running migrations..."
-compose_stack run --rm migrate
+if array_contains "grpc-server" "${SELECTED_APP_SERVICES[@]}"; then
+  echo "==> Running migrations..."
+  compose_stack run --rm migrate
 
-echo "==> Starting gRPC server..."
-compose_stack up -d grpc-server
+  echo "==> Starting gRPC server..."
+  compose_stack up -d grpc-server
 
-wait_for_grpc_server
+  wait_for_grpc_server
+fi
 
-echo "==> Starting remaining application components..."
-compose_stack up -d fetch-worker parser-worker export-worker ui "$@"
+remaining_app_services=()
+for service in "${SELECTED_APP_SERVICES[@]}"; do
+  if [[ "${service}" != "grpc-server" ]]; then
+    remaining_app_services+=("${service}")
+  fi
+done
+
+if [[ "${#remaining_app_services[@]}" -gt 0 ]]; then
+  echo "==> Starting remaining application components..."
+  compose_stack up -d "${remaining_app_services[@]}" "$@"
+fi
 
 echo ""
 echo "==> Deploy complete. Running containers:"
@@ -72,6 +88,10 @@ compose_stack ps
 
 echo ""
 echo "==> Endpoints:"
-echo "  gRPC API      localhost:${GRPC_PORT:-8083}"
-echo "  HTTP gateway  http://localhost:${HTTP_PORT:-8084}"
-echo "  Admin UI      http://localhost:${UI_PORT:-8080}"
+if array_contains "grpc-server" "${SELECTED_APP_SERVICES[@]}"; then
+  echo "  gRPC API      localhost:${GRPC_PORT:-8083}"
+  echo "  HTTP gateway  http://localhost:${HTTP_PORT:-8084}"
+fi
+if array_contains "ui" "${SELECTED_APP_SERVICES[@]}"; then
+  echo "  Admin UI      http://localhost:${UI_PORT:-18080}"
+fi

@@ -6,6 +6,7 @@ import (
 	"distributed-crawler/internal/domain/crawl/services"
 	"fmt"
 	"io"
+	neturl "net/url"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -17,9 +18,11 @@ var _ services.ContentStore = (*MinIOStore)(nil)
 
 // MinIOStore implements ContentStore using MinIO/S3
 type MinIOStore struct {
-	client     *minio.Client
-	bucketName string
-	logger     *zap.Logger
+	client        *minio.Client
+	presignClient *minio.Client
+	bucketName    string
+	logger        *zap.Logger
+	publicBase    *neturl.URL
 }
 
 // NewMinIOStore creates a new MinIO-based content store
@@ -29,6 +32,7 @@ func NewMinIOStore(
 	secretAccessKey string,
 	useSSL bool,
 	bucketName string,
+	publicBaseURL string,
 	logger *zap.Logger,
 ) (*MinIOStore, error) {
 	// Initialize MinIO client
@@ -40,10 +44,32 @@ func NewMinIOStore(
 		return nil, fmt.Errorf("failed to create MinIO client: %w", err)
 	}
 
+	var parsedPublicBase *neturl.URL
+	presignClient := client
+	if publicBaseURL != "" {
+		parsed, err := neturl.Parse(publicBaseURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse public MinIO base URL: %w", err)
+		}
+		parsedPublicBase = parsed
+
+		presignClient, err = minio.New(parsed.Host, &minio.Options{
+			Creds:        credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+			Secure:       parsed.Scheme == "https",
+			Region:       "us-east-1",
+			BucketLookup: minio.BucketLookupPath,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create public MinIO presign client: %w", err)
+		}
+	}
+
 	store := &MinIOStore{
-		client:     client,
-		bucketName: bucketName,
-		logger:     logger,
+		client:        client,
+		presignClient: presignClient,
+		bucketName:    bucketName,
+		logger:        logger,
+		publicBase:    parsedPublicBase,
 	}
 
 	// Ensure bucket exists
@@ -169,7 +195,7 @@ func (s *MinIOStore) Exists(ctx context.Context, key string) (bool, error) {
 // PresignGetURL generates a presigned URL for downloading an object from MinIO
 func (s *MinIOStore) PresignGetURL(key string, ttlMinutes int) (string, error) {
 	// Generate presigned URL with specified TTL
-	url, err := s.client.PresignedGetObject(
+	url, err := s.presignClient.PresignedGetObject(
 		context.Background(),
 		s.bucketName,
 		key,

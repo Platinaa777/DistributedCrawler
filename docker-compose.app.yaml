@@ -5,7 +5,7 @@ x-app-env: &app-env
   CONFIG_SOURCE: "env"
 
   # PostgreSQL
-  PG_DSN: "postgres://${PG_USER:-denis}:${PG_PASSWORD:-some-pwd-123}@pg:5432/${PG_DATABASE_NAME:-crawler}?sslmode=disable"
+  PG_DSN: "postgres://${PG_USER:-crawler}:${PG_PASSWORD:-some-pwd-123}@pg:5432/${PG_DATABASE_NAME:-crawler}?sslmode=disable"
 
   # Messaging
   MESSAGING_BROKER: "${MESSAGING_BROKER:-rabbitmq}"
@@ -29,12 +29,17 @@ x-app-env: &app-env
   MINIO_PWD: "${MINIO_PWD:-minioadmin}"
   MINIO_USE_SSL: "false"
   MINIO_BUCKET_NAME: "${MINIO_BUCKET_NAME:-pages}"
+  MINIO_PUBLIC_BASE_URL: "${MINIO_PUBLIC_BASE_URL:-http://host.docker.internal:9000}"
 
   # Redis
   REDIS_ADDRESS: "redis:6379"
   REDIS_PWD: "${REDIS_PWD:-some_redis_pwd_123}"
   REDIS_DB: "0"
   LIMITER_TYPE: "${LIMITER_TYPE:-redis}"
+
+  # Fetcher
+  FETCHER_TYPE: "${FETCHER_TYPE:-http}"
+  CHROME_REMOTE_URL: "${CHROME_REMOTE_URL:-http://chrome:9222}"
 
   # Logger
   LOG_LEVEL: "${LOG_LEVEL:-info}"
@@ -75,7 +80,7 @@ x-app-env: &app-env
   HTTP_CORS_ALLOWED_ORIGINS: "${HTTP_CORS_ALLOWED_ORIGINS:-http://localhost:4200}"
 
 x-queue-secrets-volume: &queue-secrets-volume
-  - ./queue-secrets.json.example:/etc/crawler/queue-secrets.json:ro
+  - ${QUEUE_SECRETS_HOST_PATH:-./queue-secrets.json.example}:/etc/crawler/queue-secrets.json:ro
 
 services:
   migrate:
@@ -105,8 +110,6 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
       minio:
         condition: service_started
       redis:
@@ -120,8 +123,6 @@ services:
     depends_on:
       grpc-server:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
       minio:
         condition: service_started
       redis:
@@ -135,8 +136,6 @@ services:
     depends_on:
       grpc-server:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
       minio:
         condition: service_started
       redis:
@@ -150,8 +149,6 @@ services:
     depends_on:
       grpc-server:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
       minio:
         condition: service_started
       redis:
@@ -162,7 +159,7 @@ services:
   ui:
     image: "${REGISTRY:-distributed-crawler}/ui:${TAG:-latest}"
     ports:
-      - "${UI_PORT:-8080}:8080"
+      - "${UI_PORT:-18080}:8080"
     environment:
       BACKEND_URL: "http://grpc-server:8084"
     depends_on:

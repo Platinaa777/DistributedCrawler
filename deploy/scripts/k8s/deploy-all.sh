@@ -66,7 +66,8 @@ echo "==> Validating app chart with helm template..."
 helm template "${RELEASE_NAME}" "${APP_CHART_DIR}" \
   --namespace "${NAMESPACE}" \
   "${APP_VALUE_FILES[@]}" \
-  "${APP_SET_ARGS[@]}" > /dev/null
+  "${APP_SET_ARGS[@]}" \
+  "$@" > /dev/null
 
 if [[ "${EXTERNAL_INFRA}" != "true" ]]; then
   echo "==> Deploying infrastructure release..."

@@ -2,6 +2,7 @@ package crawljob
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"testing"
@@ -172,6 +173,26 @@ func TestListJobs_InvalidCursorReturnsInvalidArgument(t *testing.T) {
 	require.Error(t, err)
 	assert.Nil(t, resp)
 	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestGetJob_NotFoundReturnsGrpcNotFound(t *testing.T) {
+	t.Parallel()
+
+	impl := NewImplementation(
+		fakeCrawlJobService{
+			getFn: func(ctx context.Context, query service.GetCrawlJobQuery) (*models.CrawlJob, error) {
+				assert.Equal(t, "missing-job", query.ID)
+				return nil, sql.ErrNoRows
+			},
+		},
+		fakeCrawlTaskService{},
+		fakeURLGenerator{},
+	)
+
+	resp, err := impl.GetJob(context.Background(), &crawlergrpc.GetJobRequest{Id: "missing-job"})
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Equal(t, codes.NotFound, status.Code(err))
 }
 
 func TestListTasksByJob_MapsFiltersAndCursor(t *testing.T) {
