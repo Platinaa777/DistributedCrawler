@@ -219,7 +219,7 @@ services:
       - "4318:4318"    # OTLP HTTP receiver
       - "8889:8889"    # Prometheus exporter
       - "13133:13133"  # Health check
-      - "55679:55679"  # zPages
+      # - "55679:55679"  # zPages
     volumes:
       - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
     depends_on:

@@ -229,7 +229,6 @@ JOIN crawl_job_configs cjc ON cjc.id = cjcqe.crawl_job_config_id
 JOIN crawl_jobs cj ON cj.job_config_id = cjc.id
 WHERE cj.id = $1
   AND qe.stage = $2
-  AND qe.enabled = true
 `
 
 func (l *DBJobQueueLoader) LoadAssignments(ctx context.Context, jobID string, stage queuemodels.Stage) ([]endpointEntry, error) {

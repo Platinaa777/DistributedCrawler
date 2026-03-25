@@ -132,7 +132,7 @@ import { JobFiltersComponent } from './components/job-filters.component';
               </td>
               <td>{{ job.created_at | date:'short' }}</td>
               <td class="text-right">
-                <div class="flex justify-end gap-2">
+                <div class="flex items-center justify-end gap-2">
                   <p-button
                     *ngIf="canCreateJobs"
                     [outlined]="true"
@@ -153,10 +153,10 @@ import { JobFiltersComponent } from './components/job-filters.component';
                     *ngIf="canDeleteJobs"
                     [outlined]="true"
                     severity="danger"
+                    styleClass="job-delete-button"
+                    icon="pi pi-trash"
                     pTooltip="Delete job and its config (all runs for scheduled jobs)"
-                    (onClick)="confirmDelete(job)">
-                    <i class="pi pi-trash"></i>
-                  </p-button>
+                    (onClick)="confirmDelete(job)" />
                 </div>
               </td>
             </tr>
@@ -300,6 +300,20 @@ import { JobFiltersComponent } from './components/job-filters.component';
       overflow: auto;
       font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 13px;
+    }
+
+    :host ::ng-deep .job-delete-button.p-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      padding-inline: 0;
+    }
+
+    :host ::ng-deep .job-delete-button .pi {
+      line-height: 1;
     }
   `]
 })

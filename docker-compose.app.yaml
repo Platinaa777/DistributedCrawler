@@ -29,7 +29,7 @@ x-app-env: &app-env
   MINIO_PWD: "${MINIO_PWD:-minioadmin}"
   MINIO_USE_SSL: "false"
   MINIO_BUCKET_NAME: "${MINIO_BUCKET_NAME:-pages}"
-  MINIO_PUBLIC_BASE_URL: "${MINIO_PUBLIC_BASE_URL:-http://host.docker.internal:9000}"
+  MINIO_PUBLIC_BASE_URL: "${MINIO_PUBLIC_BASE_URL:-http://localhost:9000}"
 
   # Redis
   REDIS_ADDRESS: "redis:6379"

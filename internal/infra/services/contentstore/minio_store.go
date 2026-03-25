@@ -37,8 +37,9 @@ func NewMinIOStore(
 ) (*MinIOStore, error) {
 	// Initialize MinIO client
 	client, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: useSSL,
+		Creds:        credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Secure:       useSSL,
+		BucketLookup: minio.BucketLookupPath,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create MinIO client: %w", err)
