@@ -448,8 +448,21 @@ func (a *WorkerApp) initFetchWorker() error {
 	robotsTxtService := cache.NewCachedRobotsTxtService(a.redisClient, 24*time.Hour, a.zapLogger)
 
 	// Get queue/topic names from configuration
-	crawlQueue := a.getQueueName(config.CrawlQueueKey)
+	defaultCrawlQueue := a.getQueueName(config.CrawlQueueKey)
 	parsingQueue := a.getQueueName(config.ParsingQueueKey)
+
+	// Build the set of crawl queues this worker consumes.
+	// Always includes the default queue; if WORKER_REGION is set, also subscribes
+	// to the region-specific queue (e.g. crawl_queue_east_ua).
+	crawlQueues := []string{defaultCrawlQueue}
+	if region := os.Getenv("WORKER_REGION"); region != "" {
+		regionQueue := defaultCrawlQueue + "_" + region
+		crawlQueues = append(crawlQueues, regionQueue)
+		a.zapLogger.Info("Worker region configured",
+			zap.String("region", region),
+			zap.String("region_queue", regionQueue),
+		)
+	}
 
 	// Get tracer if telemetry is available
 	var tracer trace.Tracer
@@ -460,7 +473,7 @@ func (a *WorkerApp) initFetchWorker() error {
 	// Create fetch worker
 	a.fetchWorker = worker.NewFetchWorker(
 		a.msgClient,
-		crawlQueue,   // Consume from crawl_queue
+		crawlQueues,  // Consume from default + region-specific queues
 		parsingQueue, // Publish to parsing_queue
 		contentStore,
 		taskRepo,

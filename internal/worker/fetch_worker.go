@@ -29,7 +29,7 @@ import (
 // FetchWorker consumes crawl tasks, fetches pages, stores in MinIO, and publishes to parsing queue
 type FetchWorker struct {
 	msgClient        messaging.Client
-	crawlQueue       string
+	crawlQueues      []string
 	parsingQueue     string
 	contentStore     services.ContentStore
 	taskRepo         crawltask.CrawlTaskRepository
@@ -49,7 +49,7 @@ type FetchWorker struct {
 // NewFetchWorker creates a new fetch worker
 func NewFetchWorker(
 	msgClient messaging.Client,
-	crawlQueue string,
+	crawlQueues []string,
 	parsingQueue string,
 	contentStore services.ContentStore,
 	taskRepo crawltask.CrawlTaskRepository,
@@ -65,7 +65,7 @@ func NewFetchWorker(
 ) *FetchWorker {
 	return &FetchWorker{
 		msgClient:        msgClient,
-		crawlQueue:       crawlQueue,
+		crawlQueues:      crawlQueues,
 		parsingQueue:     parsingQueue,
 		contentStore:     contentStore,
 		taskRepo:         taskRepo,
@@ -81,10 +81,22 @@ func NewFetchWorker(
 	}
 }
 
-// Start starts consuming messages from crawl_queue
+// Start starts consuming messages from all crawl queues concurrently.
 func (w *FetchWorker) Start(ctx context.Context) error {
-	w.logger.Info("Starting fetch worker", zap.String("queue", w.crawlQueue))
-	return w.msgClient.Consume(ctx, w.crawlQueue, w.handleMessage)
+	w.logger.Info("Starting fetch worker", zap.Strings("queues", w.crawlQueues))
+
+	if len(w.crawlQueues) == 1 {
+		return w.msgClient.Consume(ctx, w.crawlQueues[0], w.handleMessage)
+	}
+
+	errCh := make(chan error, len(w.crawlQueues))
+	for _, q := range w.crawlQueues {
+		queue := q
+		go func() {
+			errCh <- w.msgClient.Consume(ctx, queue, w.handleMessage)
+		}()
+	}
+	return <-errCh
 }
 
 // ActiveTasks returns the number of tasks currently being processed.

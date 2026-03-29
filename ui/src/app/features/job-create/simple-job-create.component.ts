@@ -364,8 +364,14 @@ interface JobCopyNavigationState {
               Add Queue
             </p-button>
           </div>
-          <div *ngIf="availableQueues.length > 0" class="text-xs text-gray-400">
-            Available queues: {{ availableQueues.join(', ') }}
+          <div *ngIf="availableQueues.length > 0" class="flex flex-wrap items-center gap-2">
+            <span class="text-xs text-gray-400">Available:</span>
+            <span
+              *ngFor="let q of availableQueues"
+              (click)="addQueueWeight({queue: q, weight: 1})"
+              class="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-700 dark:hover:text-blue-300 select-none">
+              {{ q }}
+            </span>
           </div>
           <div formArrayName="queue_weights" class="space-y-3">
             <div
@@ -975,6 +981,10 @@ export class SimpleJobCreateComponent implements OnInit {
   }
 
   addQueueWeight(qw?: QueueWeight): void {
+    if (qw?.queue) {
+      const already = this.queueWeights.controls.some(c => c.get('queue')?.value === qw.queue);
+      if (already) return;
+    }
     this.queueWeights.push(this.fb.group({
       queue: [qw?.queue ?? ''],
       weight: [qw?.weight ?? 1]

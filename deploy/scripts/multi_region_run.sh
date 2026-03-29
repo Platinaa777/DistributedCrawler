@@ -66,6 +66,7 @@ REGIONS_CSV=""
 CONFIG_PATH=".env"
 WORKER_CONFIG=".worker.env"
 BUILD_LOCAL=false
+NO_BUILD=false
 PASSTHROUGH=()
 
 # ── argument parsing ──────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ while [[ $# -gt 0 ]]; do
     --config)        CONFIG_PATH="$2";    shift 2 ;;
     --worker-config) WORKER_CONFIG="$2";  shift 2 ;;
     --build)         BUILD_LOCAL=true;    shift ;;
+    --no-build)      NO_BUILD=true;       shift ;;
     --)              shift; PASSTHROUGH+=("$@"); break ;;
     --help|-h)
       sed -n '2,/^set -/{ /^set -/d; s/^# \{0,1\}//; p }' "$0"
@@ -105,7 +107,19 @@ if [[ "${#REGIONS[@]}" -eq 0 ]]; then
   exit 1
 fi
 
+# Build RABBITMQ_CRAWL_QUEUE_NAMES: default queue + one per region.
+# This is exported so both the API server and workers know the full queue list,
+# enabling the UI to suggest region queues when creating jobs.
+_base_queue="${RABBITMQ_CRAWL_QUEUE_NAME:-crawl_queue}"
+_queue_names="${_base_queue}"
+for _r in "${REGIONS[@]}"; do
+  _queue_names="${_queue_names},${_base_queue}_${_r}"
+done
+export RABBITMQ_CRAWL_QUEUE_NAMES="${_queue_names}"
+unset _base_queue _r
+
 echo "==> multi_region_run.sh  mode=${MODE}  regions=(${REGIONS[*]})"
+echo "==> Crawl queues: ${RABBITMQ_CRAWL_QUEUE_NAMES}"
 
 # ── mode: local ───────────────────────────────────────────────────────────────
 run_local() {
@@ -143,6 +157,9 @@ run_local() {
       start_bg "${name}" go run "${PROJECT_ROOT}/cmd/${name}/main.go" "$@"
     fi
   }
+
+  # RABBITMQ_CRAWL_QUEUE_NAMES is already exported above; godotenv.Load won't
+  # override it, so the grpc-server and workers pick it up from the environment.
 
   # Start shared components (no fetch-worker here)
   run_component grpc_server      --config-path="${CONFIG_PATH}"
@@ -186,10 +203,21 @@ run_docker() {
 
   COMPOSE_FILES=(-f "${INFRA_COMPOSE_FILE}" -f "${APP_COMPOSE_FILE}")
 
-  # Start base stack without fetch-workers so each region gets its own container
+  # Propagate NO_BUILD so deploy-all.sh honours it via the env var it reads.
+  export NO_BUILD
+
+  # Start base stack without fetch-workers so each region gets its own container.
+  # RABBITMQ_CRAWL_QUEUE_NAMES is already exported; the grpc-server picks it up
+  # (CONFIG_SOURCE=env) and returns all queues from /api/v1/crawl-queues.
   echo "==> Starting base stack (grpc-server, parser-worker, export-worker, ui)..."
   APP_COMPONENTS_CSV="grpc-server,parser-worker,export-worker,ui" \
   bash "${SCRIPT_DIR}/docker/deploy-all.sh" "${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}"
+
+  # deploy-all.sh excludes fetch-worker, so build its image separately here.
+  if [[ "${NO_BUILD}" != "true" ]]; then
+    echo "==> Building fetch-worker image..."
+    bash "${SCRIPT_DIR}/k8s/build-images.sh" fetch-worker
+  fi
 
   # Start one detached fetch-worker container per region
   for region in "${REGIONS[@]}"; do

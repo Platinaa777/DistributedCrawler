@@ -11,6 +11,7 @@ x-app-env: &app-env
   MESSAGING_BROKER: "${MESSAGING_BROKER:-rabbitmq}"
   RABBITMQ_URL: "amqp://${RMQ_USER:-guest}:${RMQ_PWD:-guest}@rabbitmq:5672/"
   RABBITMQ_CRAWL_QUEUE_NAME: "${RABBITMQ_CRAWL_QUEUE_NAME:-crawl_queue}"
+  RABBITMQ_CRAWL_QUEUE_NAMES: "${RABBITMQ_CRAWL_QUEUE_NAMES:-}"
   RABBITMQ_PARSING_QUEUE_NAME: "${RABBITMQ_PARSING_QUEUE_NAME:-parsing_queue}"
   KAFKA_BROKERS: "kafka:29091"
   KAFKA_CONSUMER_GROUP: "${KAFKA_CONSUMER_GROUP:-distributed-crawler}"
@@ -40,6 +41,9 @@ x-app-env: &app-env
   # Fetcher
   FETCHER_TYPE: "${FETCHER_TYPE:-http}"
   CHROME_REMOTE_URL: "${CHROME_REMOTE_URL:-http://chrome:9222}"
+
+  # Region (empty = default queue only; set to e.g. "east_ua" to also consume crawl_queue_east_ua)
+  WORKER_REGION: "${WORKER_REGION:-}"
 
   # Logger
   LOG_LEVEL: "${LOG_LEVEL:-info}"
