@@ -11,10 +11,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CrawlerApiService, JobListFilter, JobSortParams } from '../../core/services/api/crawler-api.service';
-import { QueueAdminApiService } from '../../core/services/api/queue-admin-api.service';
+
 import { AuthService } from '../../core/services/auth.service';
 import { CrawlJob, CrawlJobConfig } from '../../core/models';
-import { QueueEndpoint } from '../../core/models/queue.model';
+
 import { JobFiltersComponent } from './components/job-filters.component';
 
 @Component({
@@ -54,14 +54,6 @@ import { JobFiltersComponent } from './components/job-filters.component';
             (onClick)="goToMonitoring()">
             <i class="pi pi-chart-line mr-2"></i>
             Monitoring
-          </p-button>
-          <p-button
-            *ngIf="canManageUsers"
-            [outlined]="true"
-            severity="secondary"
-            (onClick)="goToQueues()">
-            <i class="pi pi-server mr-2"></i>
-            Queue Admin
           </p-button>
           <p-button
             severity="primary"
@@ -173,13 +165,6 @@ import { JobFiltersComponent } from './components/job-filters.component';
                     <code class="text-xs bg-white dark:bg-gray-700 rounded px-3 py-2 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 inline-block">
                       {{ job.job_config?.scopes?.allowed_url_patterns?.join(', ') }}
                     </code>
-                  </div>
-                  <div class="mb-3" *ngIf="job.job_config?.queue_endpoint_assignments?.length">
-                    <p class="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Queue Endpoints</p>
-                    <div class="flex flex-wrap gap-2">
-                      <p-tag *ngFor="let a of job.job_config?.queue_endpoint_assignments"
-                        [value]="getEndpointLabel(a.endpoint_id, a.weight)" severity="secondary" />
-                    </div>
                   </div>
                   <div class="pagination-info mb-3" *ngIf="job.job_config?.extraction_spec?.pagination?.length">
                     <p class="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Pagination Selectors</p>
@@ -326,8 +311,6 @@ export class JobsListComponent implements OnInit, OnDestroy {
   error: string | null = null;
   expandedRows: { [key: string]: boolean } = {};
   hasMore = false;
-  endpointMap = new Map<string, QueueEndpoint>();
-
   // Delete state
   showDeleteDialog = false;
   jobToDelete: CrawlJob | null = null;
@@ -344,20 +327,12 @@ export class JobsListComponent implements OnInit, OnDestroy {
 
   constructor(
     private crawlerApi: CrawlerApiService,
-    private queueAdminApi: QueueAdminApiService,
     private router: Router,
     private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     // Initial job load is triggered by (onLazyLoad) from p-table init
-    this.queueAdminApi.listEndpoints().subscribe({
-      next: (res) => {
-        this.endpointMap.clear();
-        (res.endpoints ?? []).forEach(ep => this.endpointMap.set(ep.id, ep));
-      },
-      error: () => { /* non-critical */ }
-    });
   }
 
   ngOnDestroy(): void {
@@ -544,18 +519,6 @@ export class JobsListComponent implements OnInit, OnDestroy {
 
   goToMonitoring(): void {
     this.router.navigate(['/workers']);
-  }
-
-  goToQueues(): void {
-    this.router.navigate(['/queues']);
-  }
-
-  getEndpointLabel(id: string, weight?: number): string {
-    const ep = this.endpointMap.get(id);
-    const name = ep ? ep.display_name : id;
-    const stage = ep ? (ep.stage === 'QUEUE_STAGE_CRAWL' ? 'crawl' : 'parse') : '';
-    const label = stage ? `${name} (${stage})` : name;
-    return weight && weight !== 1 ? `${label} ×${weight}` : label;
   }
 
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

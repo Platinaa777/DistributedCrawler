@@ -11,8 +11,9 @@ import (
 // Commands for CrawlJob management
 
 type CreateCrawlJobCommand struct {
-	Config models.CrawlJobConfig
-	UserID string
+	Config          models.CrawlJobConfig
+	UserID          string
+	AvailableQueues []string // all crawl queue names known to the API server
 }
 
 type UpdateCrawlJobStatusCommand struct {

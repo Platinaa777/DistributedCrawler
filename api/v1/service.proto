@@ -136,43 +136,6 @@ service UserService {
   }
 }
 
-// QueueAdminService provides CRUD for queue endpoints and routing rules.
-service QueueAdminService {
-  rpc ListQueueEndpoints(ListQueueEndpointsRequest) returns (ListQueueEndpointsResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/queues"
-    };
-  }
-  rpc CreateQueueEndpoint(CreateQueueEndpointRequest) returns (CreateQueueEndpointResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/queues"
-      body: "endpoint"
-    };
-  }
-  rpc UpdateQueueEndpoint(UpdateQueueEndpointRequest) returns (UpdateQueueEndpointResponse) {
-    option (google.api.http) = {
-      patch: "/api/v1/queues/{endpoint.id}"
-      body: "endpoint"
-    };
-  }
-  rpc DeleteQueueEndpoint(DeleteQueueEndpointRequest) returns (DeleteQueueEndpointResponse) {
-    option (google.api.http) = {
-      delete: "/api/v1/queues/{id}"
-    };
-  }
-  rpc ListQueueRoutingRules(ListQueueRoutingRulesRequest) returns (ListQueueRoutingRulesResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/queue-routing"
-    };
-  }
-  rpc UpsertQueueRoutingRules(UpsertQueueRoutingRulesRequest) returns (UpsertQueueRoutingRulesResponse) {
-    option (google.api.http) = {
-      put: "/api/v1/queue-routing"
-      body: "rule"
-    };
-  }
-}
-
 // WorkerService defines worker monitoring and control operations
 service WorkerService {
   // Bidirectional stream for worker heartbeats and control commands

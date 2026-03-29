@@ -1,46 +1,50 @@
 #!/usr/bin/env bash
-# Stop and remove application and/or infrastructure Docker containers.
+# Stop and remove all Docker containers and all Docker volumes on the host.
 #
 # Usage:
-#   ./teardown.sh              # stop app components only (preserve infra)
-#   INFRA=true ./teardown.sh   # stop app + infra
-#   APP_ONLY=true ./teardown.sh  # same as default (explicit)
-#
-# Flags:
-#   -v / VOLUMES=true    – also remove named volumes (destructive — data loss!)
+#   ./teardown.sh
+#   FORCE=true ./teardown.sh
 #
 # Environment variables:
-#   INFRA      – set to "true" to also stop infra services (default: false)
-#   APP_ONLY   – set to "true" to stop app only, ignored if INFRA=true (default: true)
-#   VOLUMES    – set to "true" to remove volumes (default: false)
+#   FORCE  - set to "true" to skip the interactive confirmation prompt
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+FORCE="${FORCE:-false}"
 
-INFRA="${INFRA:-false}"
-VOLUMES="${VOLUMES:-false}"
+if ! command -v docker >/dev/null 2>&1; then
+  echo "ERROR: docker is not installed or not available in PATH." >&2
+  exit 1
+fi
 
-INFRA_COMPOSE="-f ${PROJECT_ROOT}/docker-compose.yaml"
-APP_COMPOSE="-f ${PROJECT_ROOT}/docker-compose.app.yaml"
+if [[ "${FORCE}" != "true" ]] && [[ -t 0 ]]; then
+  echo "WARNING: This will delete ALL Docker containers and ALL Docker volumes on this host."
+  read -r -p "Type 'delete-all' to continue: " CONFIRM
+  if [[ "${CONFIRM}" != "delete-all" ]]; then
+    echo "Aborted."
+    exit 1
+  fi
+fi
 
-VOLUME_FLAG=()
-[[ "${VOLUMES}" == "true" ]] && VOLUME_FLAG=(-v)
+container_ids="$(docker ps -aq)"
+if [[ -n "${container_ids}" ]]; then
+  echo "==> Removing all containers..."
+  docker rm -f ${container_ids}
+else
+  echo "==> No containers found."
+fi
 
-APP_SERVICES=(grpc-server fetch-worker parser-worker export-worker ui migrate)
-
-echo "==> Stopping application components..."
-docker compose ${INFRA_COMPOSE} ${APP_COMPOSE} \
-  stop "${APP_SERVICES[@]}" 2>/dev/null || true
-
-docker compose ${INFRA_COMPOSE} ${APP_COMPOSE} \
-  rm -f "${VOLUME_FLAG[@]}" "${APP_SERVICES[@]}" 2>/dev/null || true
-
-if [[ "${INFRA}" == "true" ]]; then
-  echo "==> Stopping infrastructure..."
-  docker compose ${INFRA_COMPOSE} down "${VOLUME_FLAG[@]}"
+volume_ids="$(docker volume ls -q)"
+if [[ -n "${volume_ids}" ]]; then
+  echo "==> Removing all volumes..."
+  docker volume rm ${volume_ids}
+else
+  echo "==> No volumes found."
 fi
 
 echo ""
-echo "==> Remaining containers (project):"
-docker compose ${INFRA_COMPOSE} ${APP_COMPOSE} ps 2>/dev/null || true
+echo "==> Remaining containers:"
+docker ps -a || true
+
+echo ""
+echo "==> Remaining volumes:"
+docker volume ls || true

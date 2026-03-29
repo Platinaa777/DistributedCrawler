@@ -4,19 +4,22 @@ import (
 	"distributed-crawler/internal/config"
 	"fmt"
 	"os"
+	"strings"
 )
 
 const (
 	rabbitmqURLEnvName = "RABBITMQ_URL"
 
 	// Environment variable names for specific queues
-	rabbitmqCrawlQueueEnvName   = "RABBITMQ_CRAWL_QUEUE_NAME"
-	rabbitmqParsingQueueEnvName = "RABBITMQ_PARSING_QUEUE_NAME"
+	rabbitmqCrawlQueueEnvName    = "RABBITMQ_CRAWL_QUEUE_NAME"
+	rabbitmqCrawlQueuesEnvName   = "RABBITMQ_CRAWL_QUEUE_NAMES" // comma-separated, multi-region
+	rabbitmqParsingQueueEnvName  = "RABBITMQ_PARSING_QUEUE_NAME"
 )
 
 type rabbitmqConfig struct {
-	url        string
-	queueNames map[string]string
+	url              string
+	queueNames       map[string]string
+	allCrawlQueues   []string
 }
 
 func NewRabbitMQConfig() (config.RabbitMQConfig, error) {
@@ -40,9 +43,19 @@ func NewRabbitMQConfig() (config.RabbitMQConfig, error) {
 	}
 	queueNames[config.ParsingQueueKey] = parsingQueue
 
+	// Parse multi-region crawl queue names. Falls back to single queue if not set.
+	var allCrawlQueues []string
+	if namesRaw := os.Getenv(rabbitmqCrawlQueuesEnvName); namesRaw != "" {
+		allCrawlQueues = splitTrimComma(namesRaw)
+	}
+	if len(allCrawlQueues) == 0 {
+		allCrawlQueues = []string{crawlQueue}
+	}
+
 	return &rabbitmqConfig{
-		url:        url,
-		queueNames: queueNames,
+		url:            url,
+		queueNames:     queueNames,
+		allCrawlQueues: allCrawlQueues,
 	}, nil
 }
 
@@ -56,4 +69,20 @@ func (c *rabbitmqConfig) GetQueueName(key string) string {
 	}
 	// Return the key itself as fallback (for backward compatibility)
 	return key
+}
+
+func (c *rabbitmqConfig) GetAllCrawlQueueNames() []string {
+	return c.allCrawlQueues
+}
+
+// splitTrimComma splits s on commas and trims whitespace from each element.
+func splitTrimComma(s string) []string {
+	raw := strings.Split(s, ",")
+	out := make([]string, 0, len(raw))
+	for _, p := range raw {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

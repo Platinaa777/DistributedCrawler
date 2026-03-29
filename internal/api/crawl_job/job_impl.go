@@ -15,16 +15,19 @@ type CrawlJobImplementation struct {
 	crawlJobService  service.CrawlJobService
 	crawlTaskService service.CrawlTaskService
 	urlGenerator     PresignedURLGenerator
+	availableQueues  []string
 }
 
 func NewImplementation(
 	crawlJobService service.CrawlJobService,
 	crawlTaskService service.CrawlTaskService,
 	urlGenerator PresignedURLGenerator,
+	availableQueues []string,
 ) *CrawlJobImplementation {
 	return &CrawlJobImplementation{
 		crawlJobService:  crawlJobService,
 		crawlTaskService: crawlTaskService,
 		urlGenerator:     urlGenerator,
+		availableQueues:  availableQueues,
 	}
 }

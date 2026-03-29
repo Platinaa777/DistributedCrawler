@@ -33,6 +33,11 @@ export const JOB_TYPES: { value: JobType; label: string; description: string }[]
   { value: 'JOB_TYPE_SCHEDULED', label: 'Scheduled', description: 'Run on a recurring schedule' }
 ];
 
+export interface QueueWeight {
+  queue: string;
+  weight: number;
+}
+
 export interface CrawlJobConfig {
   id?: string;
   user_id?: string;
@@ -50,13 +55,8 @@ export interface CrawlJobConfig {
   crawl_mode?: CrawlMode;
   // If true, crawler follows robots.txt rules; if false, robots.txt is ignored
   respect_robots_txt?: boolean;
-  // Queue endpoint assignments for controlled load distribution with per-endpoint weights
-  queue_endpoint_assignments?: QueueEndpointAssignment[];
-}
-
-export interface QueueEndpointAssignment {
-  endpoint_id: string;
-  weight: number;
+  // Per-queue routing weights for multi-region setups. Empty means equal distribution.
+  queue_weights?: QueueWeight[];
 }
 
 export interface ScopeRules {

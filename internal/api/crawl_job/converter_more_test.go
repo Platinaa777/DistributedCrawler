@@ -56,17 +56,12 @@ func TestProtoConversion_RoundTripForJobConfig(t *testing.T) {
 		JobType:          models.JobTypeScheduled,
 		RespectRobotsTxt: true,
 		CrawlMode:        models.CrawlModeLinksOnly,
-		QueueEndpointAssignments: []models.QueueEndpointAssignment{{
-			EndpointID: "endpoint-1",
-			Weight:     2,
-		}},
 	}
 
 	protoCfg := ToProtoCrawlJobConfig(config)
 	require.NotNil(t, protoCfg)
 	assert.Equal(t, crawlergrpc.JobType_JOB_TYPE_SCHEDULED, protoCfg.JobType)
 	assert.Equal(t, crawlergrpc.CrawlMode_CRAWL_MODE_LINKS_ONLY, protoCfg.CrawlMode)
-	require.Len(t, protoCfg.QueueEndpointAssignments, 1)
 
 	roundTrip := FromProtoCrawlJobConfig(protoCfg)
 	assert.Equal(t, config.Name, roundTrip.Name)
@@ -75,7 +70,6 @@ func TestProtoConversion_RoundTripForJobConfig(t *testing.T) {
 	assert.Equal(t, config.Schedule.Cron, roundTrip.Schedule.Cron)
 	assert.Equal(t, config.JobType, roundTrip.JobType)
 	assert.Equal(t, config.CrawlMode, roundTrip.CrawlMode)
-	assert.Equal(t, int32(2), roundTrip.QueueEndpointAssignments[0].Weight)
 }
 
 func TestProtoConversion_DefaultsAndNilHandling(t *testing.T) {
@@ -88,13 +82,6 @@ func TestProtoConversion_DefaultsAndNilHandling(t *testing.T) {
 	assert.Equal(t, models.CrawlMode(""), FromProtoCrawlMode(crawlergrpc.CrawlMode_CRAWL_MODE_UNSPECIFIED))
 	assert.Equal(t, models.JobTypeOnce, FromProtoJobType(crawlergrpc.JobType_JOB_TYPE_UNSPECIFIED))
 	assert.Equal(t, crawlergrpc.CrawlMode_CRAWL_MODE_UNSPECIFIED, ToProtoCrawlMode(models.CrawlMode("bad")))
-
-	assignments := fromProtoAssignments([]*crawlergrpc.QueueEndpointAssignment{{
-		EndpointId: "endpoint-1",
-		Weight:     0,
-	}})
-	require.Len(t, assignments, 1)
-	assert.Equal(t, int32(1), assignments[0].Weight)
 }
 
 func TestToProtoCrawlJobAndTask_OptionalFields(t *testing.T) {

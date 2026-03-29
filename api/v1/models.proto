@@ -145,8 +145,7 @@ message CrawlJobConfig {
   // Controls link-following behavior: pagination_only, links_only, or pagination_and_links (default)
   CrawlMode crawl_mode = 12 [json_name = "crawl_mode"];
   reserved 13; // was allowed_url_pattern (moved to scopes.allowed_url_patterns)
-  // Queue endpoint assignments for this job config with per-endpoint routing weights
-  repeated QueueEndpointAssignment queue_endpoint_assignments = 14 [json_name = "queue_endpoint_assignments"];
+  reserved 14; // was queue_endpoint_assignments
 }
 
 // CrawlJob represents a crawling job
@@ -458,64 +457,6 @@ message UpdateUserRoleRequest {
 message UpdateUserRoleResponse {
   bool updated = 1;
 }
-
-// Queue admin messages
-
-// QueueStage identifies which pipeline stage a queue belongs to.
-enum QueueStage {
-  QUEUE_STAGE_UNSPECIFIED = 0;
-  QUEUE_STAGE_CRAWL = 1;
-  QUEUE_STAGE_PARSE = 2;
-}
-
-// QueueBrokerType identifies the messaging broker implementation.
-enum QueueBrokerType {
-  QUEUE_BROKER_TYPE_UNSPECIFIED = 0;
-  QUEUE_BROKER_TYPE_RABBITMQ = 1;
-  QUEUE_BROKER_TYPE_KAFKA = 2;
-}
-
-// QueueEndpoint describes a single queue/topic that workers can connect to.
-message QueueEndpoint {
-  string id = 1;
-  string display_name = 2 [json_name = "display_name"];
-  QueueBrokerType broker_type = 3 [json_name = "broker_type"];
-  QueueStage stage = 4;
-  string host = 6;
-  string queue_name = 7 [json_name = "queue_name"];
-  string secret_key = 9 [json_name = "secret_key"];
-  reserved 10; // was enabled
-  string created_at = 11 [json_name = "created_at"];
-  string updated_at = 12 [json_name = "updated_at"];
-}
-
-// QueueEndpointAssignment links a queue endpoint to a job config with a routing weight.
-message QueueEndpointAssignment {
-  string endpoint_id = 1 [json_name = "endpoint_id"];
-  int32 weight = 2;
-}
-
-// QueueRoutingRule defines routing across endpoints for a given stage.
-message QueueRoutingRule {
-  string id = 1;
-  QueueStage stage = 2;
-  string scope = 3;
-  reserved 4; // was repeated QueueRouteWeight weights
-  reserved 5; // was enabled
-}
-
-message ListQueueEndpointsRequest {}
-message ListQueueEndpointsResponse { repeated QueueEndpoint endpoints = 1; }
-message CreateQueueEndpointRequest { QueueEndpoint endpoint = 1; }
-message CreateQueueEndpointResponse { QueueEndpoint endpoint = 1; }
-message UpdateQueueEndpointRequest { QueueEndpoint endpoint = 1; }
-message UpdateQueueEndpointResponse { QueueEndpoint endpoint = 1; }
-message DeleteQueueEndpointRequest { string id = 1; }
-message DeleteQueueEndpointResponse {}
-message ListQueueRoutingRulesRequest { QueueStage stage = 1; }
-message ListQueueRoutingRulesResponse { repeated QueueRoutingRule rules = 1; }
-message UpsertQueueRoutingRulesRequest { QueueRoutingRule rule = 1; }
-message UpsertQueueRoutingRulesResponse { QueueRoutingRule rule = 1; }
 
 // Worker monitoring messages
 

@@ -145,6 +145,10 @@ export class CrawlerApiService {
     return this.http.delete<void>(`${this.baseUrl}${API_ENDPOINTS.JOBS}/${id}`);
   }
 
+  getCrawlQueues(): Observable<{ queues: string[] }> {
+    return this.http.get<{ queues: string[] }>(`${this.baseUrl}${API_ENDPOINTS.CRAWL_QUEUES}`);
+  }
+
   // Tasks - Updated with pagination and filtering
   listTasksByJob(jobId: string, params?: TaskListParams): Observable<TaskListResponse> {
     let httpParams = new HttpParams();

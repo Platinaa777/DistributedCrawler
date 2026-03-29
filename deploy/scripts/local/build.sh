@@ -17,7 +17,6 @@ BIN_DIR="${BIN_DIR:-${PROJECT_ROOT}/bin}"
 
 COMPONENTS=(
   grpc_server
-  http_server
   fetch_worker
   parser_worker
   export_worker

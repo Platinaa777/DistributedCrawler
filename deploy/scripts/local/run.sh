@@ -5,7 +5,7 @@
 #   ./run.sh <component> [extra args...]
 #
 # Components:
-#   grpc_server, http_server, fetch_worker, parser_worker,
+#   grpc_server, fetch_worker, parser_worker,
 #   export_worker, scheduler_worker, memory_broker
 #
 # Environment variables:
@@ -41,9 +41,6 @@ case "${COMPONENT}" in
   grpc_server)
     run_cmd grpc_server --config-path="${CONFIG_PATH}" "$@"
     ;;
-  http_server)
-    run_cmd http_server --config-path="${CONFIG_PATH}" "$@"
-    ;;
   fetch_worker|parser_worker|export_worker|scheduler_worker)
     run_cmd "${COMPONENT}" --worker-config-path="${WORKER_CONFIG}" "$@"
     ;;
@@ -52,7 +49,7 @@ case "${COMPONENT}" in
     ;;
   *)
     echo "ERROR: Unknown component '${COMPONENT}'." >&2
-    echo "Available: grpc_server, http_server, fetch_worker, parser_worker, export_worker, scheduler_worker, memory_broker" >&2
+    echo "Available: grpc_server, fetch_worker, parser_worker, export_worker, scheduler_worker, memory_broker" >&2
     exit 1
     ;;
 esac

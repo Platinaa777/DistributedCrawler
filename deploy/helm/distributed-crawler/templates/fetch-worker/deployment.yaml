@@ -1,74 +1,97 @@
 {{- if .Values.fetchWorker.enabled }}
+{{- $root := . }}
+{{- $deployments := list "" }}
+{{- if .Values.fetchWorker.regions }}
+{{- $deployments = .Values.fetchWorker.regions }}
+{{- end }}
+{{- range $i, $region := $deployments }}
+{{- if $i }}
+---
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "distributed-crawler.fetchWorker.fullname" . }}
-  namespace: {{ include "distributed-crawler.namespace" . }}
+  name: {{ if $region }}{{ printf "%s-%s" (include "distributed-crawler.fetchWorker.fullname" $root) $region | trunc 63 | trimSuffix "-" }}{{ else }}{{ include "distributed-crawler.fetchWorker.fullname" $root }}{{ end }}
+  namespace: {{ include "distributed-crawler.namespace" $root }}
   labels:
-    {{- include "distributed-crawler.fetchWorker.labels" . | nindent 4 }}
+    {{- include "distributed-crawler.fetchWorker.labels" $root | nindent 4 }}
+    {{- if $region }}
+    worker-region: {{ $region | quote }}
+    {{- end }}
 spec:
-  {{- if not .Values.fetchWorker.autoscaling.enabled }}
-  replicas: {{ .Values.fetchWorker.replicaCount }}
+  {{- if not $root.Values.fetchWorker.autoscaling.enabled }}
+  replicas: {{ $root.Values.fetchWorker.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "distributed-crawler.fetchWorker.selectorLabels" . | nindent 6 }}
+      {{- include "distributed-crawler.fetchWorker.selectorLabels" $root | nindent 6 }}
+      {{- if $region }}
+      worker-region: {{ $region | quote }}
+      {{- end }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-        {{- with .Values.fetchWorker.podAnnotations }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $root | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") $root | sha256sum }}
+        {{- with $root.Values.fetchWorker.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "distributed-crawler.fetchWorker.selectorLabels" . | nindent 8 }}
+        {{- include "distributed-crawler.fetchWorker.selectorLabels" $root | nindent 8 }}
+        {{- if $region }}
+        worker-region: {{ $region | quote }}
+        {{- end }}
     spec:
-      {{- with .Values.global.imagePullSecrets }}
+      {{- with $root.Values.global.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "distributed-crawler.serviceAccountName" . }}
+      serviceAccountName: {{ include "distributed-crawler.serviceAccountName" $root }}
       securityContext:
-        {{- toYaml .Values.fetchWorker.podSecurityContext | nindent 8 }}
+        {{- toYaml $root.Values.fetchWorker.podSecurityContext | nindent 8 }}
       initContainers:
-        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "postgresql" "host" (include "distributed-crawler.postgresHost" .) "port" .Values.config.postgres.port) | nindent 8 }}
-        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "rabbitmq" "host" (include "distributed-crawler.rabbitmqHost" .) "port" .Values.config.rabbitmq.port) | nindent 8 }}
-        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "minio" "host" (include "distributed-crawler.minioHost" .) "port" .Values.config.minio.port) | nindent 8 }}
-        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "redis" "host" (include "distributed-crawler.redisHost" .) "port" .Values.config.redis.port) | nindent 8 }}
-        {{- include "distributed-crawler.waitForService" (dict "root" . "name" "grpc-server" "host" (include "distributed-crawler.grpcServer.host" .) "port" .Values.grpcServer.service.grpcPort) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" $root "name" "postgresql" "host" (include "distributed-crawler.postgresHost" $root) "port" $root.Values.config.postgres.port) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" $root "name" "rabbitmq" "host" (include "distributed-crawler.rabbitmqHost" $root) "port" $root.Values.config.rabbitmq.port) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" $root "name" "minio" "host" (include "distributed-crawler.minioHost" $root) "port" $root.Values.config.minio.port) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" $root "name" "redis" "host" (include "distributed-crawler.redisHost" $root) "port" $root.Values.config.redis.port) | nindent 8 }}
+        {{- include "distributed-crawler.waitForService" (dict "root" $root "name" "grpc-server" "host" (include "distributed-crawler.grpcServer.host" $root) "port" $root.Values.grpcServer.service.grpcPort) | nindent 8 }}
       containers:
         - name: fetch-worker
           securityContext:
-            {{- toYaml .Values.fetchWorker.securityContext | nindent 12 }}
-          image: {{ include "distributed-crawler.image" (dict "imageRoot" .Values.fetchWorker.image "global" .Values.global) | quote }}
-          imagePullPolicy: {{ .Values.fetchWorker.image.pullPolicy }}
+            {{- toYaml $root.Values.fetchWorker.securityContext | nindent 12 }}
+          image: {{ include "distributed-crawler.image" (dict "imageRoot" $root.Values.fetchWorker.image "global" $root.Values.global) | quote }}
+          imagePullPolicy: {{ $root.Values.fetchWorker.image.pullPolicy }}
           env:
             - name: WORKER_ID
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{- if $region }}
+            - name: WORKER_REGION
+              value: {{ $region | quote }}
+            {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ include "distributed-crawler.configMapName" . }}
+                name: {{ include "distributed-crawler.configMapName" $root }}
             - secretRef:
-                name: {{ include "distributed-crawler.secretName" . }}
+                name: {{ include "distributed-crawler.secretName" $root }}
           resources:
-            {{- toYaml .Values.fetchWorker.resources | nindent 12 }}
+            {{- toYaml $root.Values.fetchWorker.resources | nindent 12 }}
           volumeMounts:
-            {{- include "distributed-crawler.queueSecretsVolumeMount" . | nindent 12 }}
+            {{- include "distributed-crawler.queueSecretsVolumeMount" $root | nindent 12 }}
       volumes:
-        {{- include "distributed-crawler.queueSecretsVolume" . | nindent 8 }}
-      {{- with .Values.fetchWorker.nodeSelector }}
+        {{- include "distributed-crawler.queueSecretsVolume" $root | nindent 8 }}
+      {{- with $root.Values.fetchWorker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.fetchWorker.affinity }}
+      {{- with $root.Values.fetchWorker.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.fetchWorker.tolerations }}
+      {{- with $root.Values.fetchWorker.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}
 {{- end }}

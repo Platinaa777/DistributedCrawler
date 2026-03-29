@@ -2,8 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"distributed-crawler/internal/domain/crawl/models"
 	crawljobconfig "distributed-crawler/internal/domain/crawl/repos/crawl_job_config"
@@ -16,8 +14,7 @@ import (
 )
 
 const (
-	configTableName           = "crawl_job_configs"
-	configQueueEndpointsTable = "crawl_job_config_queue_endpoints"
+	configTableName = "crawl_job_configs"
 
 	configIDColumn               = "id"
 	configUserIDColumn           = "user_id"
@@ -32,25 +29,7 @@ const (
 	configJobTypeColumn          = "job_type"
 	configRespectRobotsTxtColumn = "respect_robots_txt"
 	configCrawlModeColumn        = "crawl_mode"
-
-	configQueueEndpointConfigIDColumn = "crawl_job_config_id"
-	configQueueEndpointIDColumn       = "queue_endpoint_id"
-	configQueueEndpointWeightColumn   = "weight"
-)
-
-var (
-	configQueueEndpointAssignmentColumns = []string{
-		configQueueEndpointIDColumn,
-		configQueueEndpointWeightColumn,
-	}
-	configQueueEndpointAssignmentColumnsWithConfigID = []string{
-		configQueueEndpointConfigIDColumn,
-		configQueueEndpointIDColumn,
-		configQueueEndpointWeightColumn,
-	}
-	configQueueEndpointAssignmentSelectList             = strings.Join(configQueueEndpointAssignmentColumns, ", ")
-	configQueueEndpointAssignmentSelectWithConfigIDList = strings.Join(configQueueEndpointAssignmentColumnsWithConfigID, ", ")
-	configQueueEndpointInsertColumnList                 = strings.Join(configQueueEndpointAssignmentColumnsWithConfigID, ", ")
+	configQueueWeightsColumn     = "queue_weights"
 )
 
 type crawlJobConfigRepository struct {
@@ -83,6 +62,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 			configJobTypeColumn,
 			configRespectRobotsTxtColumn,
 			configCrawlModeColumn,
+			configQueueWeightsColumn,
 		).
 		Values(
 			dbEntity.ID,
@@ -98,6 +78,7 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 			dbEntity.JobType,
 			dbEntity.RespectRobotsTxt,
 			dbEntity.CrawlMode,
+			dbEntity.QueueWeights,
 		).
 		Suffix("RETURNING id")
 
@@ -114,10 +95,6 @@ func (r *crawlJobConfigRepository) Create(ctx context.Context, entity models.Cra
 	var id string
 	err = r.client.DB().QueryRowContext(ctx, q, args...).Scan(&id)
 	if err != nil {
-		return valueobjects.ID{}, err
-	}
-
-	if err := r.insertQueueEndpoints(ctx, id, entity.QueueEndpointAssignments); err != nil {
 		return valueobjects.ID{}, err
 	}
 
@@ -139,6 +116,7 @@ func (r *crawlJobConfigRepository) Get(ctx context.Context, id valueobjects.ID) 
 		configJobTypeColumn,
 		configRespectRobotsTxtColumn,
 		configCrawlModeColumn,
+		configQueueWeightsColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(configTableName).
@@ -160,12 +138,6 @@ func (r *crawlJobConfigRepository) Get(ctx context.Context, id valueobjects.ID) 
 	if err != nil {
 		return nil, err
 	}
-
-	assignments, err := fetchQueueEndpointAssignments(ctx, r.client, snapshot.ID)
-	if err != nil {
-		return nil, err
-	}
-	snapshot.QueueEndpointAssignments = assignments
 
 	return converters.RestoreCrawlJobConfigFromSnapshot(snapshot)
 }
@@ -190,6 +162,7 @@ func (r *crawlJobConfigRepository) Update(ctx context.Context, entity models.Cra
 		Set(configJobTypeColumn, dbEntity.JobType).
 		Set(configRespectRobotsTxtColumn, dbEntity.RespectRobotsTxt).
 		Set(configCrawlModeColumn, dbEntity.CrawlMode).
+		Set(configQueueWeightsColumn, dbEntity.QueueWeights).
 		Where(sq.Eq{configIDColumn: dbEntity.ID})
 
 	query, args, err := builder.ToSql()
@@ -204,10 +177,6 @@ func (r *crawlJobConfigRepository) Update(ctx context.Context, entity models.Cra
 
 	_, err = r.client.DB().ExecContext(ctx, q, args...)
 	if err != nil {
-		return err
-	}
-
-	if err := r.replaceQueueEndpoints(ctx, dbEntity.ID, entity.QueueEndpointAssignments); err != nil {
 		return err
 	}
 
@@ -248,6 +217,7 @@ func (r *crawlJobConfigRepository) ListAllScheduled(ctx context.Context, limit, 
 		configJobTypeColumn,
 		configRespectRobotsTxtColumn,
 		configCrawlModeColumn,
+		configQueueWeightsColumn,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(configTableName).
@@ -272,19 +242,8 @@ func (r *crawlJobConfigRepository) ListAllScheduled(ctx context.Context, limit, 
 		return nil, err
 	}
 
-	// Collect IDs for batch fetch of queue endpoints.
-	configIDs := make([]string, len(snaps))
-	for i, s := range snaps {
-		configIDs[i] = s.ID
-	}
-	assignmentsByConfig, err := fetchQueueEndpointAssignmentsForMany(ctx, r.client, configIDs)
-	if err != nil {
-		return nil, err
-	}
-
 	configs := make([]*models.CrawlJobConfig, 0, len(snaps))
 	for _, snapshot := range snaps {
-		snapshot.QueueEndpointAssignments = assignmentsByConfig[snapshot.ID]
 		config, err := converters.RestoreCrawlJobConfigFromSnapshot(snapshot)
 		if err != nil {
 			return nil, err
@@ -295,126 +254,3 @@ func (r *crawlJobConfigRepository) ListAllScheduled(ctx context.Context, limit, 
 	return configs, nil
 }
 
-// fetchQueueEndpointAssignments returns assignments for a single config.
-func fetchQueueEndpointAssignments(ctx context.Context, client persistence.Client, configID string) ([]snapshots.QueueEndpointAssignmentSnap, error) {
-	rawQuery := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE %s = $1",
-		configQueueEndpointAssignmentSelectList,
-		configQueueEndpointsTable,
-		configQueueEndpointConfigIDColumn,
-	)
-
-	rows, err := client.DB().QueryContext(ctx, persistence.Query{
-		Name:     "crawl_job_config_repository.fetchQueueEndpointAssignments",
-		QueryRaw: rawQuery,
-	}, configID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var result []snapshots.QueueEndpointAssignmentSnap
-	for rows.Next() {
-		var a snapshots.QueueEndpointAssignmentSnap
-		if err := scanQueueEndpointAssignment(rows, &a); err != nil {
-			return nil, err
-		}
-		result = append(result, a)
-	}
-	return result, rows.Err()
-}
-
-// fetchQueueEndpointAssignmentsForMany returns a map of configID → assignments for a batch of configs.
-func fetchQueueEndpointAssignmentsForMany(ctx context.Context, client persistence.Client, configIDs []string) (map[string][]snapshots.QueueEndpointAssignmentSnap, error) {
-	result := make(map[string][]snapshots.QueueEndpointAssignmentSnap, len(configIDs))
-	if len(configIDs) == 0 {
-		return result, nil
-	}
-
-	placeholders := make([]string, len(configIDs))
-	args := make([]any, len(configIDs))
-	for i, id := range configIDs {
-		placeholders[i] = fmt.Sprintf("$%d", i+1)
-		args[i] = id
-	}
-
-	rawQuery := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE %s IN (%s)",
-		configQueueEndpointAssignmentSelectWithConfigIDList,
-		configQueueEndpointsTable,
-		configQueueEndpointConfigIDColumn,
-		strings.Join(placeholders, ", "),
-	)
-
-	rows, err := client.DB().QueryContext(ctx, persistence.Query{
-		Name:     "crawl_job_config_repository.fetchQueueEndpointAssignmentsForMany",
-		QueryRaw: rawQuery,
-	}, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var configID string
-		var a snapshots.QueueEndpointAssignmentSnap
-		if err := scanQueueEndpointAssignmentWithConfigID(rows, &configID, &a); err != nil {
-			return nil, err
-		}
-		result[configID] = append(result[configID], a)
-	}
-	return result, rows.Err()
-}
-
-// insertQueueEndpoints inserts rows into the join table for the given configID.
-func (r *crawlJobConfigRepository) insertQueueEndpoints(ctx context.Context, configID string, assignments []models.QueueEndpointAssignment) error {
-	if len(assignments) == 0 {
-		return nil
-	}
-
-	placeholders := make([]string, len(assignments))
-	args := make([]any, 0, len(assignments)*3)
-	for i, a := range assignments {
-		placeholders[i] = fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3)
-		w := a.Weight
-		if w <= 0 {
-			w = 1
-		}
-		args = append(args, configID, a.EndpointID, w)
-	}
-
-	rawQuery := fmt.Sprintf(
-		"INSERT INTO %s (%s) VALUES %s ON CONFLICT DO NOTHING",
-		configQueueEndpointsTable,
-		configQueueEndpointInsertColumnList,
-		strings.Join(placeholders, ", "),
-	)
-
-	_, err := r.client.DB().ExecContext(ctx, persistence.Query{
-		Name:     "crawl_job_config_repository.insertQueueEndpoints",
-		QueryRaw: rawQuery,
-	}, args...)
-	return err
-}
-
-// replaceQueueEndpoints deletes existing join rows and inserts the new set.
-func (r *crawlJobConfigRepository) replaceQueueEndpoints(ctx context.Context, configID string, assignments []models.QueueEndpointAssignment) error {
-	deleteQuery := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", configQueueEndpointsTable, configQueueEndpointConfigIDColumn)
-	_, err := r.client.DB().ExecContext(ctx, persistence.Query{
-		Name:     "crawl_job_config_repository.deleteQueueEndpoints",
-		QueryRaw: deleteQuery,
-	}, configID)
-	if err != nil {
-		return err
-	}
-
-	return r.insertQueueEndpoints(ctx, configID, assignments)
-}
-
-func scanQueueEndpointAssignment(row scanner, assignment *snapshots.QueueEndpointAssignmentSnap) error {
-	return row.Scan(&assignment.EndpointID, &assignment.Weight)
-}
-
-func scanQueueEndpointAssignmentWithConfigID(row scanner, configID *string, assignment *snapshots.QueueEndpointAssignmentSnap) error {
-	return row.Scan(configID, &assignment.EndpointID, &assignment.Weight)
-}

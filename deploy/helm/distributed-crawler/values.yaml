@@ -98,6 +98,11 @@ grpcServer:
 fetchWorker:
   enabled: true
   replicaCount: 2
+  # regions is a list of WORKER_REGION values. One Deployment is created per entry,
+  # each running replicaCount replicas with WORKER_REGION set to that value.
+  # Leave empty to create a single Deployment with no WORKER_REGION (default region).
+  # Example: ["us-east", "eu-west"]
+  regions: []
 
   image:
     repository: distributed-crawler/fetch-worker
@@ -141,6 +146,11 @@ fetchWorker:
 parserWorker:
   enabled: true
   replicaCount: 2
+  # regions is a list of WORKER_REGION values. One Deployment is created per entry,
+  # each running replicaCount replicas with WORKER_REGION set to that value.
+  # Leave empty to create a single Deployment with no WORKER_REGION (default region).
+  # Example: ["us-east", "eu-west"]
+  regions: []
 
   image:
     repository: distributed-crawler/parser-worker

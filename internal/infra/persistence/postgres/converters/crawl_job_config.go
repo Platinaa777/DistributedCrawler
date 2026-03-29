@@ -113,13 +113,18 @@ func SaveCrawlJobConfigToSnapshot(config models.CrawlJobConfig) (*snapshots.Craw
 	// Set CrawlMode (default to empty string if not set; runtime treats as pagination_and_links)
 	snapshot.CrawlMode = string(config.CrawlMode)
 
-	// Pass through QueueEndpointAssignments (stored in join table, not a column)
-	snapshot.QueueEndpointAssignments = make([]snapshots.QueueEndpointAssignmentSnap, len(config.QueueEndpointAssignments))
-	for i, a := range config.QueueEndpointAssignments {
-		snapshot.QueueEndpointAssignments[i] = snapshots.QueueEndpointAssignmentSnap{
-			EndpointID: a.EndpointID,
-			Weight:     a.Weight,
+	// Convert QueueWeights to JSONBArray (always non-nil to satisfy NOT NULL constraint)
+	snapshot.QueueWeights = snapshots.JSONBArray{}
+	if len(config.QueueWeights) > 0 {
+		queueWeightsJSON, err := json.Marshal(config.QueueWeights)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal QueueWeights: %w", err)
 		}
+		var queueWeightsArray []interface{}
+		if err := json.Unmarshal(queueWeightsJSON, &queueWeightsArray); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal QueueWeights to array: %w", err)
+		}
+		snapshot.QueueWeights = queueWeightsArray
 	}
 
 	return snapshot, nil
@@ -219,12 +224,14 @@ func RestoreCrawlJobConfigFromSnapshot(snapshot snapshots.CrawlJobConfigSnapshot
 	// Restore CrawlMode
 	config.CrawlMode = models.CrawlMode(snapshot.CrawlMode)
 
-	// Pass through QueueEndpointAssignments (populated by repo from join table)
-	config.QueueEndpointAssignments = make([]models.QueueEndpointAssignment, len(snapshot.QueueEndpointAssignments))
-	for i, a := range snapshot.QueueEndpointAssignments {
-		config.QueueEndpointAssignments[i] = models.QueueEndpointAssignment{
-			EndpointID: a.EndpointID,
-			Weight:     a.Weight,
+	// Restore QueueWeights
+	if len(snapshot.QueueWeights) > 0 {
+		queueWeightsJSON, err := json.Marshal(snapshot.QueueWeights)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal QueueWeights from snapshot: %w", err)
+		}
+		if err := json.Unmarshal(queueWeightsJSON, &config.QueueWeights); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal QueueWeights: %w", err)
 		}
 	}
 

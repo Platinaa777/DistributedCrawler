@@ -10,6 +10,10 @@ type TaskEnqueuedEvent struct {
 	URL          string            `json:"url"`
 	EnqueuedAt   time.Time         `json:"enqueued_at"`
 	TraceContext map[string]string `json:"trace_context,omitempty"`
+	// TargetQueue is the crawl queue this task should be published to.
+	// Set at task creation time by the queue routing policy.
+	// Empty means fall back to the outbox publisher's configured queue.
+	TargetQueue string `json:"target_queue,omitempty"`
 }
 
 // NewTaskEnqueuedEvent creates a new TaskEnqueuedEvent

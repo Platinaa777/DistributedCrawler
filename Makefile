@@ -16,7 +16,9 @@ GO_FILES := $(shell find . -name '*.go' -type f)
 # Без этого, если в директории есть файл с именем "build" или "test",
 # make подумает что цель уже выполнена и не запустит команду.
 # Это защищает от конфликтов имен и улучшает производительность.
-.PHONY: help build run test clean docker-up docker-down docker-logs all info docker-build
+.PHONY: help build run test clean docker-up docker-down docker-logs all info docker-build \
+        docker-deploy docker-deploy-component docker-teardown \
+        k8s-deploy k8s-deploy-component k8s-teardown k8s-port-forward
 
 .bin-deps: export GOBIN := $(LOCAL_BIN_WIN)
 .bin-deps:
@@ -106,10 +108,44 @@ docker-build:
 	docker build -f docker/$(APP)/Dockerfile -t distributed-crawler-$(APP) .
 
 docker-up:
-	docker compose -f docker/docker-compose.yaml up -d
+	docker compose -f docker-compose.yaml up -d
 
 docker-down:
-	docker compose -f docker/docker-compose.yaml down
+	docker compose -f docker-compose.yaml down
 
 docker-logs:
-	docker compose -f docker/docker-compose.yaml logs -f
+	docker compose -f docker-compose.yaml logs -f
+
+## One-click Docker deployments
+# Build images + start infra + run migrations + start all app components
+# Override params: make docker-deploy PG_PASSWORD=mypwd JWT_SECRET=secret
+docker-deploy:
+	./deploy/scripts/docker/launch.sh $(ARGS)
+
+# Deploy a single Docker component (infra must be running)
+# Usage: make docker-deploy-component COMPONENT=grpc-server
+docker-deploy-component:
+	./deploy/scripts/docker/deploy-component.sh $(COMPONENT) $(ARGS)
+
+# Stop and remove all app containers (add INFRA=true to also stop infra)
+docker-teardown:
+	./deploy/scripts/docker/teardown.sh
+
+## One-click Kubernetes (minikube) deployments
+# Start minikube + build images + deploy infra + deploy app
+# Override params: make k8s-deploy ARGS="--pg-password mypwd --jwt-secret secret"
+k8s-deploy:
+	./deploy/scripts/k8s/launch-minikube.sh $(ARGS)
+
+# Deploy a single K8s component
+# Usage: make k8s-deploy-component COMPONENT=grpc-server
+k8s-deploy-component:
+	./deploy/scripts/k8s/deploy-component.sh $(COMPONENT) $(ARGS)
+
+# Uninstall all Helm releases
+k8s-teardown:
+	./deploy/scripts/k8s/teardown.sh
+
+# Open port-forwards to all services
+k8s-port-forward:
+	./deploy/scripts/k8s/port-forward.sh $(ARGS)

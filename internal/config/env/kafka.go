@@ -8,16 +8,18 @@ import (
 )
 
 const (
-	kafkaBrokersEnvName       = "KAFKA_BROKERS"
-	kafkaConsumerGroupEnvName = "KAFKA_CONSUMER_GROUP"
-	kafkaCrawlTopicEnvName    = "KAFKA_CRAWL_TOPIC_NAME"
-	kafkaParsingTopicEnvName  = "KAFKA_PARSING_TOPIC_NAME"
+	kafkaBrokersEnvName        = "KAFKA_BROKERS"
+	kafkaConsumerGroupEnvName  = "KAFKA_CONSUMER_GROUP"
+	kafkaCrawlTopicEnvName     = "KAFKA_CRAWL_TOPIC_NAME"
+	kafkaCrawlTopicsEnvName    = "KAFKA_CRAWL_TOPIC_NAMES" // comma-separated, multi-region
+	kafkaParsingTopicEnvName   = "KAFKA_PARSING_TOPIC_NAME"
 )
 
 type kafkaConfig struct {
-	brokers       []string
-	consumerGroup string
-	topicNames    map[string]string
+	brokers          []string
+	consumerGroup    string
+	topicNames       map[string]string
+	allCrawlTopics   []string
 }
 
 func NewKafkaConfig() (config.KafkaConfig, error) {
@@ -49,10 +51,20 @@ func NewKafkaConfig() (config.KafkaConfig, error) {
 	}
 	topicNames[config.ParsingQueueKey] = parsingTopic
 
+	// Parse multi-region crawl topic names. Falls back to single topic if not set.
+	var allCrawlTopics []string
+	if namesRaw := os.Getenv(kafkaCrawlTopicsEnvName); namesRaw != "" {
+		allCrawlTopics = splitTrimComma(namesRaw)
+	}
+	if len(allCrawlTopics) == 0 {
+		allCrawlTopics = []string{crawlTopic}
+	}
+
 	return &kafkaConfig{
-		brokers:       brokers,
-		consumerGroup: consumerGroup,
-		topicNames:    topicNames,
+		brokers:        brokers,
+		consumerGroup:  consumerGroup,
+		topicNames:     topicNames,
+		allCrawlTopics: allCrawlTopics,
 	}, nil
 }
 
@@ -69,4 +81,8 @@ func (c *kafkaConfig) GetTopicName(key string) string {
 		return name
 	}
 	return key
+}
+
+func (c *kafkaConfig) GetAllCrawlTopicNames() []string {
+	return c.allCrawlTopics
 }

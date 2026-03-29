@@ -29,17 +29,18 @@ const (
 
 // ScheduleWorker creates crawl jobs based on cron schedules.
 type ScheduleWorker struct {
-	jobRepo       crawljob.CrawlJobRepository
-	jobConfigRepo crawljobconfig.CrawlJobConfigRepository
-	taskRepo      crawltask.CrawlTaskRepository
-	outboxRepo    outbox.OutboxRepository
-	txManager     persistence.TxManager
-	pollInterval  time.Duration
-	batchSize     int
-	logger        *zap.Logger
-	metrics       *telemetry.Metrics
-	activeTasks   atomic.Int64
-	accepting     atomic.Bool
+	jobRepo         crawljob.CrawlJobRepository
+	jobConfigRepo   crawljobconfig.CrawlJobConfigRepository
+	taskRepo        crawltask.CrawlTaskRepository
+	outboxRepo      outbox.OutboxRepository
+	txManager       persistence.TxManager
+	pollInterval    time.Duration
+	batchSize       int
+	logger          *zap.Logger
+	metrics         *telemetry.Metrics
+	activeTasks     atomic.Int64
+	accepting       atomic.Bool
+	availableQueues []string
 }
 
 // NewScheduleWorker creates a new schedule worker.
@@ -51,17 +52,19 @@ func NewScheduleWorker(
 	txManager persistence.TxManager,
 	logger *zap.Logger,
 	metrics *telemetry.Metrics,
+	availableQueues []string,
 ) *ScheduleWorker {
 	worker := &ScheduleWorker{
-		jobRepo:       jobRepo,
-		jobConfigRepo: jobConfigRepo,
-		taskRepo:      taskRepo,
-		outboxRepo:    outboxRepo,
-		txManager:     txManager,
-		pollInterval:  DefaultSchedulePollInterval,
-		batchSize:     DefaultScheduleBatchSize,
-		logger:        logger,
-		metrics:       metrics,
+		jobRepo:         jobRepo,
+		jobConfigRepo:   jobConfigRepo,
+		taskRepo:        taskRepo,
+		outboxRepo:      outboxRepo,
+		txManager:       txManager,
+		pollInterval:    DefaultSchedulePollInterval,
+		batchSize:       DefaultScheduleBatchSize,
+		logger:          logger,
+		metrics:         metrics,
+		availableQueues: availableQueues,
 	}
 	worker.accepting.Store(true)
 	return worker
@@ -237,6 +240,7 @@ func (w *ScheduleWorker) createScheduledJob(
 				task.URL,
 				task.EnqueuedAt,
 			)
+			event.TargetQueue = models.SelectCrawlQueue(w.availableQueues, config.QueueWeights)
 
 			payload, err := json.Marshal(event)
 			if err != nil {

@@ -51,9 +51,10 @@ type ParserWorker struct {
 	logger           *zap.Logger
 	activeTasks      atomic.Int64
 
-	tracer   trace.Tracer
-	metrics  *telemetry.Metrics
-	workerID string
+	tracer          trace.Tracer
+	metrics         *telemetry.Metrics
+	workerID        string
+	availableQueues []string
 }
 
 // NewParserWorker creates a new parser worker
@@ -72,6 +73,7 @@ func NewParserWorker(
 	tracer trace.Tracer,
 	metrics *telemetry.Metrics,
 	workerID string,
+	availableQueues []string,
 ) *ParserWorker {
 	return &ParserWorker{
 		msgClient:        msgClient,
@@ -88,6 +90,7 @@ func NewParserWorker(
 		tracer:           tracer,
 		metrics:          metrics,
 		workerID:         workerID,
+		availableQueues:  availableQueues,
 	}
 }
 
@@ -1134,6 +1137,7 @@ func (w *ParserWorker) preparePaginationLinks(
 			now,
 		)
 		event.TraceContext = currentTraceCtx
+		event.TargetQueue = models.SelectCrawlQueue(w.availableQueues, jobConfig.QueueWeights)
 
 		// Marshal event to JSON
 		payload, err := json.Marshal(event)
@@ -1324,6 +1328,7 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 			now,
 		)
 		event.TraceContext = currentTraceCtx
+		event.TargetQueue = models.SelectCrawlQueue(w.availableQueues, jobConfig.QueueWeights)
 
 		// Marshal event to JSON
 		payload, err := json.Marshal(event)

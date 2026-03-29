@@ -15,9 +15,7 @@ import { catchError, forkJoin, interval, of, Subscription, switchMap } from 'rxj
 import 'chart.js/auto';
 import { ChartData, ChartOptions } from 'chart.js';
 import { CrawlerApiService, TaskListFilter, TaskAnalytics, TaskSortParams } from '../../core/services/api/crawler-api.service';
-import { QueueAdminApiService } from '../../core/services/api/queue-admin-api.service';
 import { CrawlJob, CrawlTask, FileType, JobExportFileType } from '../../core/models';
-import { QueueEndpoint } from '../../core/models/queue.model';
 import { TaskFiltersComponent } from './components/task-filters.component';
 
 @Component({
@@ -100,40 +98,14 @@ import { TaskFiltersComponent } from './components/task-filters.component';
             </div>
           </div>
 
-          <div class="mt-4" *ngIf="job?.job_config?.queue_endpoint_assignments?.length">
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Assigned Queue Endpoints</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              <div *ngFor="let a of job?.job_config?.queue_endpoint_assignments"
-                   class="endpoint-card">
-                <ng-container *ngIf="endpointMap.get(a.endpoint_id) as ep; else unknownEndpoint">
-                  <div class="flex items-start justify-between mb-2">
-                    <span class="font-semibold text-sm text-gray-900 dark:text-white leading-tight">{{ ep.display_name }}</span>
-                    <div class="flex items-center gap-1 ml-2 shrink-0">
-                      <p-tag [value]="'×' + a.weight" severity="warn" styleClass="text-xs" />
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap gap-1 mb-2">
-                    <p-tag
-                      [value]="ep.stage === 'QUEUE_STAGE_CRAWL' ? 'crawl' : 'parse'"
-                      [severity]="ep.stage === 'QUEUE_STAGE_CRAWL' ? 'info' : 'secondary'"
-                      styleClass="text-xs" />
-                    <p-tag [value]="getBrokerLabel(ep.broker_type)" severity="secondary" styleClass="text-xs" />
-                  </div>
-                  <div class="space-y-1">
-                    <p class="endpoint-meta truncate" [pTooltip]="ep.host">
-                      <i class="pi pi-server"></i> {{ ep.host }}
-                    </p>
-                    <p class="endpoint-meta font-mono truncate" [pTooltip]="ep.queue_name">
-                      <i class="pi pi-inbox"></i> {{ ep.queue_name }}
-                    </p>
-                  </div>
-                </ng-container>
-                <ng-template #unknownEndpoint>
-                  <p class="text-xs text-gray-400 dark:text-gray-500 font-medium mb-1">Unknown endpoint</p>
-                  <code class="text-xs text-gray-500 dark:text-gray-400 break-all">{{ a.endpoint_id }}</code>
-                  <span class="ml-2 text-xs text-amber-600 dark:text-amber-400">×{{ a.weight }}</span>
-                </ng-template>
-              </div>
+
+          <div class="mt-4" *ngIf="job?.job_config?.queue_weights?.length">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Queue Routing Weights</p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <p-tag
+                *ngFor="let qw of job?.job_config?.queue_weights"
+                [value]="qw.queue + ' ×' + qw.weight"
+                severity="secondary" />
             </div>
           </div>
 
@@ -500,11 +472,8 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   errorDialogVisible = false;
   selectedErrorTask: CrawlTask | null = null;
 
-  endpointMap = new Map<string, QueueEndpoint>();
-
   constructor(
     private crawlerApi: CrawlerApiService,
-    private queueAdminApi: QueueAdminApiService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -515,13 +484,6 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
       this.loadJobDetails(id);
       this.startAnalyticsPolling(id);
     }
-    this.queueAdminApi.listEndpoints().subscribe({
-      next: (res) => {
-        this.endpointMap.clear();
-        (res.endpoints ?? []).forEach(ep => this.endpointMap.set(ep.id, ep));
-      },
-      error: () => { /* non-critical */ }
-    });
   }
 
   ngOnDestroy(): void {
@@ -767,13 +729,6 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  getEndpointLabel(id: string, weight?: number): string {
-    const ep = this.endpointMap.get(id);
-    const name = ep ? ep.display_name : id;
-    const stage = ep ? (ep.stage === 'QUEUE_STAGE_CRAWL' ? 'crawl' : 'parse') : '';
-    const label = stage ? `${name} (${stage})` : name;
-    return weight && weight !== 1 ? `${label} ×${weight}` : label;
-  }
 
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     const normalized = status.toLowerCase().replace(/_/g, '');

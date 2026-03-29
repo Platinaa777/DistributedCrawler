@@ -21,8 +21,9 @@ func (i *CrawlJobImplementation) CreateJob(ctx context.Context, req *crawlergrpc
 	config := FromProtoCrawlJobConfig(req.Config)
 
 	command := service.CreateCrawlJobCommand{
-		Config: config,
-		UserID: userID,
+		Config:          config,
+		UserID:          userID,
+		AvailableQueues: i.availableQueues,
 	}
 
 	id, err := i.crawlJobService.CreateCrawlJob(ctx, command)

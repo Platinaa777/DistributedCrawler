@@ -56,12 +56,8 @@ type CrawlJobConfig struct {
 	// Defaults to CrawlModePaginationAndLinks when empty.
 	CrawlMode CrawlMode
 
-	// QueueEndpointAssignments lists the queue endpoints assigned to this job config with routing weights.
-	QueueEndpointAssignments []QueueEndpointAssignment
-}
-
-// QueueEndpointAssignment links a queue endpoint to a job config with a routing weight.
-type QueueEndpointAssignment struct {
-	EndpointID string
-	Weight     int32
+	// QueueWeights controls how tasks are distributed across crawl queues.
+	// Empty means equal distribution over all available queues.
+	// Queues with Weight==0 are excluded; queues not listed get Weight==1.
+	QueueWeights []QueueWeight
 }

@@ -15,9 +15,7 @@ import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
 import { CrawlerApiService } from '../../core/services/api/crawler-api.service';
-import { QueueAdminApiService } from '../../core/services/api/queue-admin-api.service';
-import { CrawlJobConfig, QueueEndpointAssignment, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES, CrawlMode, CRAWL_MODES } from '../../core/models/crawl-job.model';
-import { QueueEndpoint } from '../../core/models/queue.model';
+import { CrawlJobConfig, QueueWeight, RetryPolicy, ScheduleOptions, JobType, JOB_TYPES, CrawlMode, CRAWL_MODES } from '../../core/models/crawl-job.model';
 import { FieldSpec, ItemsSpec, PaginationSpec, TransformSpec } from '../../core/models/extraction-spec.model';
 
 interface SimpleJobFormValue {
@@ -352,49 +350,33 @@ interface JobCopyNavigationState {
         </div>
       </p-panel>
 
-      <p-panel header="Queue Endpoints" [toggleable]="true" [collapsed]="true" styleClass="mb-6">
-        <div class="p-4 space-y-3">
+
+      <p-panel header="Queue Routing (optional)" [toggleable]="true" [collapsed]="true" styleClass="mb-6">
+        <div class="p-4 space-y-4">
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            Assign specific queue endpoints for this job. Leave empty to use the default routing policy.
-            Weight controls relative traffic share across selected endpoints.
+            Assign weights to control how tasks are distributed across crawl queues.
+            Queues not listed here get weight&nbsp;1. Leave empty for equal distribution.
           </p>
-          <div *ngIf="availableEndpoints.length === 0" class="text-sm text-gray-400 italic">
-            No queue endpoints available. Configure them in Queue Admin.
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-semibold">Queue Weights</p>
+            <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addQueueWeight()">
+              <i class="pi pi-plus mr-2"></i>
+              Add Queue
+            </p-button>
           </div>
-          <div class="space-y-2">
-            <div *ngFor="let ep of availableEndpoints"
-              class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
-              <p-checkbox
-                [ngModel]="isEndpointSelected(ep.id)"
-                [ngModelOptions]="{standalone: true}"
-                [binary]="true"
-                (ngModelChange)="toggleEndpoint(ep.id)"
-                [inputId]="'ep-' + ep.id">
-              </p-checkbox>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <label [for]="'ep-' + ep.id" class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">{{ ep.display_name }}</label>
-                  <p-tag [value]="ep.stage === 'QUEUE_STAGE_CRAWL' ? 'crawl' : 'parse'"
-                    [severity]="ep.stage === 'QUEUE_STAGE_CRAWL' ? 'info' : 'warn'"
-                    styleClass="text-xs" />
-                  <p-tag [value]="ep.broker_type === 'QUEUE_BROKER_TYPE_RABBITMQ' ? 'RabbitMQ' : 'Kafka'"
-                    severity="secondary"
-                    styleClass="text-xs" />
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                  {{ ep.host }}
-                </p>
-              </div>
-              <div *ngIf="isEndpointSelected(ep.id)" class="flex items-center gap-1 shrink-0">
-                <label class="text-xs text-gray-500 dark:text-gray-400">Weight</label>
-                <input
-                  type="number"
-                  [ngModel]="getEndpointWeight(ep.id)"
-                  [ngModelOptions]="{standalone: true}"
-                  (ngModelChange)="setEndpointWeight(ep.id, +$event)"
-                  min="1" max="100"
-                  class="w-16 text-center text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
-              </div>
+          <div *ngIf="availableQueues.length > 0" class="text-xs text-gray-400">
+            Available queues: {{ availableQueues.join(', ') }}
+          </div>
+          <div formArrayName="queue_weights" class="space-y-3">
+            <div
+              *ngFor="let qw of queueWeights.controls; let i = index"
+              [formGroupName]="i"
+              class="flex items-center gap-3">
+              <input pInputText formControlName="queue" placeholder="Queue name" class="flex-1" />
+              <p-inputNumber formControlName="weight" [min]="1" [max]="100" placeholder="Weight" inputStyleClass="w-24" />
+              <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeQueueWeight(i)">
+                <i class="pi pi-trash"></i>
+              </p-button>
             </div>
           </div>
         </div>
@@ -711,6 +693,7 @@ export class SimpleJobCreateComponent implements OnInit {
   importError?: string;
   copiedFromJobName?: string;
   copiedFromJobId?: string;
+  availableQueues: string[] = [];
   readonly fieldTypeOptions: FieldSpec['type'][] = ['string', 'int', 'float', 'bool', 'url', 'json'];
   readonly attributeOptions = ['text', 'html', 'href', 'src', 'content'];
   readonly transformOpOptions: TransformSpec['op'][] = [
@@ -735,33 +718,6 @@ export class SimpleJobCreateComponent implements OnInit {
   jobTypeSelectOptions = JOB_TYPES.map(option => ({ label: option.label, value: option.value }));
   crawlModeSelectOptions = CRAWL_MODES.map(option => ({ label: option.label, value: option.value }));
 
-  availableEndpoints: QueueEndpoint[] = [];
-  /** endpoint_id → weight (only selected endpoints are in this map) */
-  endpointSelections = new Map<string, number>();
-
-  isEndpointSelected(id: string): boolean {
-    return this.endpointSelections.has(id);
-  }
-
-  getEndpointWeight(id: string): number {
-    return this.endpointSelections.get(id) ?? 1;
-  }
-
-  toggleEndpoint(id: string): void {
-    if (this.endpointSelections.has(id)) {
-      this.endpointSelections.delete(id);
-    } else {
-      this.endpointSelections.set(id, 1);
-    }
-    this.updatePreview();
-  }
-
-  setEndpointWeight(id: string, weight: number): void {
-    if (this.endpointSelections.has(id)) {
-      this.endpointSelections.set(id, weight > 0 ? weight : 1);
-      this.updatePreview();
-    }
-  }
 
   private readonly sampleConfig: CrawlJobConfig = {
     name: 'Example Crawl Job',
@@ -808,7 +764,6 @@ export class SimpleJobCreateComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private crawlerApi: CrawlerApiService,
-    private queueAdminApi: QueueAdminApiService,
     private router: Router,
     private messageService: MessageService
   ) {}
@@ -843,17 +798,16 @@ export class SimpleJobCreateComponent implements OnInit {
       items_enabled: [false],
       items_container_selector: [''],
       items_fields: this.fb.array([]),
-      pagination: this.fb.array([])
-    });
-
-    this.queueAdminApi.listEndpoints().subscribe({
-      next: (res) => {
-        this.availableEndpoints = res.endpoints ?? [];
-      },
-      error: () => { /* non-critical — queue admin may not be configured */ }
+      pagination: this.fb.array([]),
+      queue_weights: this.fb.array([])
     });
 
     this.jobForm.valueChanges.subscribe(() => this.updatePreview());
+
+    this.crawlerApi.getCrawlQueues().subscribe({
+      next: (res) => { this.availableQueues = res.queues ?? []; },
+      error: () => { /* non-critical, ignore */ }
+    });
 
     if (!this.applyInitialConfigFromNavigation()) {
       this.updatePreview();
@@ -886,6 +840,10 @@ export class SimpleJobCreateComponent implements OnInit {
 
   get itemFields(): FormArray {
     return this.jobForm.get('items_fields') as FormArray;
+  }
+
+  get queueWeights(): FormArray {
+    return this.jobForm.get('queue_weights') as FormArray;
   }
 
   get retriesGroup(): FormGroup {
@@ -1016,6 +974,19 @@ export class SimpleJobCreateComponent implements OnInit {
     this.updatePreview();
   }
 
+  addQueueWeight(qw?: QueueWeight): void {
+    this.queueWeights.push(this.fb.group({
+      queue: [qw?.queue ?? ''],
+      weight: [qw?.weight ?? 1]
+    }));
+    this.updatePreview();
+  }
+
+  removeQueueWeight(index: number): void {
+    this.queueWeights.removeAt(index);
+    this.updatePreview();
+  }
+
   getTransforms(fieldIndex: number): FormArray {
     return (this.extractionFields.at(fieldIndex) as FormGroup).get('transforms') as FormArray;
   }
@@ -1093,12 +1064,12 @@ export class SimpleJobCreateComponent implements OnInit {
       },
       error: (err) => {
         this.creating = false;
-        this.error = err.message || 'Failed to create job';
+        this.error = err?.error?.error || err?.error?.message || err?.message || 'Failed to create job';
         this.messageService.add({
           severity: 'error',
-          summary: 'Error',
+          summary: `Error ${err?.status ?? ''}`.trim(),
           detail: this.error ?? 'Failed to create job',
-          life: 5000
+          life: 10000
         });
       }
     });
@@ -1180,6 +1151,11 @@ export class SimpleJobCreateComponent implements OnInit {
         }
       : undefined;
 
+    const rawWeights: { queue: string; weight: number }[] = (this.jobForm.getRawValue() as any).queue_weights ?? [];
+    const queueWeights: QueueWeight[] = rawWeights
+      .filter(w => w.queue && w.queue.trim() !== '' && w.weight > 0)
+      .map(w => ({ queue: w.queue.trim(), weight: Number(w.weight) }));
+
     return {
       name: raw.name,
       job_type: raw.job_type,
@@ -1203,7 +1179,7 @@ export class SimpleJobCreateComponent implements OnInit {
         items: itemsSpec,
         pagination: paginationSpecs.length > 0 ? paginationSpecs : undefined
       },
-      queue_endpoint_assignments: Array.from(this.endpointSelections.entries()).map(([endpoint_id, weight]) => ({ endpoint_id, weight }))
+      queue_weights: queueWeights.length > 0 ? queueWeights : undefined
     };
   }
 
@@ -1281,10 +1257,6 @@ export class SimpleJobCreateComponent implements OnInit {
       items_container_selector: config.extraction_spec?.items?.container_selector ?? ''
     });
 
-    this.endpointSelections.clear();
-    const assignments: QueueEndpointAssignment[] = config.queue_endpoint_assignments ?? [];
-    assignments.forEach(a => this.endpointSelections.set(a.endpoint_id, a.weight > 0 ? a.weight : 1));
-
     const seeds = config.seeds?.length > 0
       ? config.seeds.map(seed => this.createSeedGroup(seed.url ?? ''))
       : [this.createSeedGroup()];
@@ -1307,6 +1279,12 @@ export class SimpleJobCreateComponent implements OnInit {
 
     const paginationItems: PaginationSpec[] = config.extraction_spec?.pagination ?? [];
     this.resetArray(this.pagination, paginationItems.map(pagination => this.createPaginationGroup(pagination)));
+
+    const weights: QueueWeight[] = config.queue_weights ?? [];
+    this.resetArray(this.queueWeights, weights.map(qw => this.fb.group({
+      queue: [qw.queue],
+      weight: [qw.weight]
+    })));
 
     this.updatePreview();
   }

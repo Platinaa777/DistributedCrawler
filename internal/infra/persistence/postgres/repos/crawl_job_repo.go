@@ -48,6 +48,7 @@ const (
 	aliasConfigJobType          = "config_job_type"
 	aliasConfigRespectRobotsTxt = "config_respect_robots_txt"
 	aliasConfigCrawlMode        = "config_crawl_mode"
+	aliasConfigQueueWeights     = "config_queue_weights"
 	aliasUserTable              = "u"
 )
 
@@ -124,6 +125,7 @@ func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID
 		"c.job_type as "+aliasConfigJobType,
 		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
 		"c.crawl_mode as "+aliasConfigCrawlMode,
+		"c.queue_weights as "+aliasConfigQueueWeights,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -145,14 +147,6 @@ func (c *crawlJobRepository) Get(ctx context.Context, id valueobjects.CrawlJobID
 	crawlJob, err := scanCrawlJobWithConfig(row)
 	if err != nil {
 		return nil, err
-	}
-
-	if crawlJob.JobConfig != nil {
-		assignments, err := fetchQueueEndpointAssignments(ctx, c.client, crawlJob.JobConfig.ID)
-		if err != nil {
-			return nil, err
-		}
-		crawlJob.JobConfig.QueueEndpointAssignments = assignments
 	}
 
 	return converters.RestoreCrawlJobFromSnapshot(*crawlJob)
@@ -200,6 +194,7 @@ func (c *crawlJobRepository) List(ctx context.Context, status models.TaskStatus,
 		"c.job_type as "+aliasConfigJobType,
 		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
 		"c.crawl_mode as "+aliasConfigCrawlMode,
+		"c.queue_weights as "+aliasConfigQueueWeights,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -245,6 +240,7 @@ func (c *crawlJobRepository) ListAll(ctx context.Context, limit, offset int) ([]
 		"c.job_type as "+aliasConfigJobType,
 		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
 		"c.crawl_mode as "+aliasConfigCrawlMode,
+		"c.queue_weights as "+aliasConfigQueueWeights,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -293,6 +289,7 @@ func (c *crawlJobRepository) ListWithCursor(ctx context.Context, query service.L
 		"c.job_type as "+aliasConfigJobType,
 		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
 		"c.crawl_mode as "+aliasConfigCrawlMode,
+		"c.queue_weights as "+aliasConfigQueueWeights,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -437,6 +434,7 @@ func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID v
 		"c.job_type as "+aliasConfigJobType,
 		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
 		"c.crawl_mode as "+aliasConfigCrawlMode,
+		"c.queue_weights as "+aliasConfigQueueWeights,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -464,14 +462,6 @@ func (c *crawlJobRepository) GetLatestByConfigID(ctx context.Context, configID v
 		return nil, err
 	}
 
-	if crawlJob.JobConfig != nil {
-		assignments, err := fetchQueueEndpointAssignments(ctx, c.client, crawlJob.JobConfig.ID)
-		if err != nil {
-			return nil, err
-		}
-		crawlJob.JobConfig.QueueEndpointAssignments = assignments
-	}
-
 	return converters.RestoreCrawlJobFromSnapshot(*crawlJob)
 }
 
@@ -494,6 +484,7 @@ func (c *crawlJobRepository) ListEligibleForExport(ctx context.Context, limit in
 		"c.job_type as "+aliasConfigJobType,
 		"c.respect_robots_txt as "+aliasConfigRespectRobotsTxt,
 		"c.crawl_mode as "+aliasConfigCrawlMode,
+		"c.queue_weights as "+aliasConfigQueueWeights,
 	).
 		PlaceholderFormat(sq.Dollar).
 		From(tableName + " j").
@@ -654,6 +645,7 @@ func scanCrawlJobWithConfig(row scanner) (*snapshots.CrawlJobSnapshot, error) {
 		&config.JobType,
 		&config.RespectRobotsTxt,
 		&config.CrawlMode,
+		&config.QueueWeights,
 	)
 	if err != nil {
 		return nil, err
@@ -688,24 +680,8 @@ func (c *crawlJobRepository) scanJobsWithQueueEndpoints(ctx context.Context, row
 		return nil, err
 	}
 
-	// Collect config IDs that have an embedded config.
-	configIDs := make([]string, 0, len(snaps))
-	for _, s := range snaps {
-		if s.JobConfig != nil {
-			configIDs = append(configIDs, s.JobConfig.ID)
-		}
-	}
-
-	assignmentsByConfig, err := fetchQueueEndpointAssignmentsForMany(ctx, c.client, configIDs)
-	if err != nil {
-		return nil, err
-	}
-
 	jobs := make([]*models.CrawlJob, 0, len(snaps))
 	for _, snap := range snaps {
-		if snap.JobConfig != nil {
-			snap.JobConfig.QueueEndpointAssignments = assignmentsByConfig[snap.JobConfig.ID]
-		}
 		job, err := converters.RestoreCrawlJobFromSnapshot(*snap)
 		if err != nil {
 			return nil, err

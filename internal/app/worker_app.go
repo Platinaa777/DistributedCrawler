@@ -21,7 +21,6 @@ import (
 	kafkaclient "distributed-crawler/internal/infra/messaging/kafka"
 	memorybroker "distributed-crawler/internal/infra/messaging/memory/broker"
 	rabbitmqclient "distributed-crawler/internal/infra/messaging/rabbitmq"
-	"distributed-crawler/internal/infra/secrets"
 	"distributed-crawler/internal/infra/persistence"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	"distributed-crawler/internal/infra/persistence/postgres/repos"
@@ -71,8 +70,6 @@ type WorkerApp struct {
 	workerID  string
 	startedAt time.Time
 	status    atomic.Int32
-
-	secretsStore secrets.SecretsStore
 
 	fetchWorker    *worker.FetchWorker
 	parserWorker   *worker.ParserWorker
@@ -166,7 +163,6 @@ func (a *WorkerApp) initDeps(ctx context.Context) error {
 		a.initMessaging,
 		a.initRedis,
 		a.initWorker,
-		a.initSecrets, // must come after initWorker (workerCtx is created there)
 	}
 
 	for _, f := range inits {
@@ -344,6 +340,7 @@ func (a *WorkerApp) initMessaging(_ context.Context) error {
 	return nil
 }
 
+
 func (a *WorkerApp) getQueueName(key string) string {
 	if a.brokerType == env.BrokerKafka && a.kafkaConfig != nil {
 		return a.kafkaConfig.GetTopicName(key)
@@ -353,6 +350,17 @@ func (a *WorkerApp) getQueueName(key string) string {
 	}
 	return key
 }
+
+func (a *WorkerApp) getAllCrawlQueueNames() []string {
+	if a.brokerType == env.BrokerKafka && a.kafkaConfig != nil {
+		return a.kafkaConfig.GetAllCrawlTopicNames()
+	}
+	if a.rmqConfig != nil {
+		return a.rmqConfig.GetAllCrawlQueueNames()
+	}
+	return []string{a.getQueueName(config.CrawlQueueKey)}
+}
+
 
 func (a *WorkerApp) initRedis(_ context.Context) error {
 	redisCfg, err := env.NewRedisConfig()
@@ -531,6 +539,7 @@ func (a *WorkerApp) initParserWorker() error {
 		tracer,
 		a.metrics,
 		a.workerID,
+		a.getAllCrawlQueueNames(),
 	)
 	a.activeTasksCounter = a.parserWorker
 
@@ -602,41 +611,13 @@ func (a *WorkerApp) initScheduleWorker() error {
 		txManager,
 		a.zapLogger,
 		a.metrics,
+		a.getAllCrawlQueueNames(),
 	)
 	a.activeTasksCounter = a.scheduleWorker
 
 	return nil
 }
 
-func (a *WorkerApp) initSecrets(_ context.Context) error {
-	secretsCfg, err := env.NewSecretsConfig()
-	if err != nil {
-		a.zapLogger.Info("Secrets store disabled (QUEUE_SECRETS_FILE_PATH not set)")
-		return nil
-	}
-
-	reloadInterval := secretsCfg.ReloadInterval()
-	if !secretsCfg.WatchEnabled() {
-		reloadInterval = 24 * time.Hour
-	}
-
-	store, err := secrets.NewFileSecretsStore(a.workerCtx, secretsCfg.FilePath(), reloadInterval)
-	if err != nil {
-		a.zapLogger.Warn("Failed to initialize secrets store, continuing without it",
-			zap.String("path", secretsCfg.FilePath()),
-			zap.Error(err),
-		)
-		return nil
-	}
-
-	a.secretsStore = store
-	a.zapLogger.Info("Secrets store initialized",
-		zap.String("path", secretsCfg.FilePath()),
-		zap.Bool("watch", secretsCfg.WatchEnabled()),
-		zap.Duration("interval", reloadInterval),
-	)
-	return nil
-}
 
 func (a *WorkerApp) runWorker() error {
 	switch a.workerType {

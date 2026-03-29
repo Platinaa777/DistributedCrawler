@@ -92,6 +92,8 @@ func (s *crawlJobServ) CreateCrawlJob(ctx context.Context, command service.Creat
 				task.URL,
 				task.EnqueuedAt,
 			)
+			// Route to a specific crawl queue based on job config weights.
+			event.TargetQueue = models.SelectCrawlQueue(command.AvailableQueues, config.QueueWeights)
 			// Capture the gRPC request's trace context so the outbox publisher
 			// can continue the same trace when it publishes to RabbitMQ.
 			event.TraceContext = telemetry.InjectTraceContext(ctx)

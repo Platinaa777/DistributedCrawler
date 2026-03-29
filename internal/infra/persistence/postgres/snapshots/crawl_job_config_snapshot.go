@@ -21,14 +21,7 @@ type CrawlJobConfigSnapshot struct {
 	JobType          string         `db:"job_type"`
 	RespectRobotsTxt bool           `db:"respect_robots_txt"`
 	CrawlMode        string         `db:"crawl_mode"`
-	// QueueEndpointAssignments is populated via join table query, not scanned from the main row.
-	QueueEndpointAssignments []QueueEndpointAssignmentSnap
-}
-
-// QueueEndpointAssignmentSnap holds the join-table row data (endpoint ID + weight).
-type QueueEndpointAssignmentSnap struct {
-	EndpointID string
-	Weight     int32
+	QueueWeights     JSONBArray     `db:"queue_weights"`
 }
 
 // JSONB is a type for PostgreSQL JSONB columns (for JSON objects)

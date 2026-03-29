@@ -81,6 +81,7 @@ func TestCreateJob_MapsProtoConfigToCommand(t *testing.T) {
 		},
 		fakeCrawlTaskService{},
 		fakeURLGenerator{},
+		nil,
 	)
 
 	ctx := context.WithValue(context.Background(), auth.UserIDContextKey, "user-123")
@@ -144,6 +145,7 @@ func TestListJobs_UsesDecodedCursorAndEncodesNextCursor(t *testing.T) {
 		},
 		fakeCrawlTaskService{},
 		fakeURLGenerator{},
+		nil,
 	)
 
 	resp, err := impl.ListJobs(context.Background(), &crawlergrpc.ListJobsRequest{
@@ -166,7 +168,7 @@ func TestListJobs_UsesDecodedCursorAndEncodesNextCursor(t *testing.T) {
 func TestListJobs_InvalidCursorReturnsInvalidArgument(t *testing.T) {
 	t.Parallel()
 
-	impl := NewImplementation(fakeCrawlJobService{}, fakeCrawlTaskService{}, fakeURLGenerator{})
+	impl := NewImplementation(fakeCrawlJobService{}, fakeCrawlTaskService{}, fakeURLGenerator{}, nil)
 	resp, err := impl.ListJobs(context.Background(), &crawlergrpc.ListJobsRequest{
 		Cursor: ptr("%%%"),
 	})
@@ -187,6 +189,7 @@ func TestGetJob_NotFoundReturnsGrpcNotFound(t *testing.T) {
 		},
 		fakeCrawlTaskService{},
 		fakeURLGenerator{},
+		nil,
 	)
 
 	resp, err := impl.GetJob(context.Background(), &crawlergrpc.GetJobRequest{Id: "missing-job"})
@@ -238,6 +241,7 @@ func TestListTasksByJob_MapsFiltersAndCursor(t *testing.T) {
 			},
 		},
 		fakeURLGenerator{},
+		nil,
 	)
 
 	resp, err := impl.ListTasksByJob(context.Background(), &crawlergrpc.ListTasksByJobRequest{
@@ -271,6 +275,7 @@ func TestGetTaskAnalytics_ConvertsMaps(t *testing.T) {
 			},
 		},
 		fakeURLGenerator{},
+		nil,
 	)
 
 	resp, err := impl.GetTaskAnalytics(context.Background(), &crawlergrpc.GetTaskAnalyticsRequest{JobId: "job-id"})
@@ -304,6 +309,7 @@ func TestGetTaskFileURL_UsesRequestedObjectKey(t *testing.T) {
 				return "https://signed/result", nil
 			},
 		},
+		nil,
 	)
 
 	resp, err := impl.GetTaskFileURL(context.Background(), &crawlergrpc.GetTaskFileURLRequest{
@@ -326,6 +332,7 @@ func TestGetTaskFileURL_ValidatesTypeAndAvailability(t *testing.T) {
 			},
 		},
 		fakeURLGenerator{presignFn: func(key string, ttlMinutes int) (string, error) { return "", nil }},
+		nil,
 	)
 
 	resp, err := impl.GetTaskFileURL(context.Background(), &crawlergrpc.GetTaskFileURLRequest{
@@ -357,6 +364,7 @@ func TestGetTaskFileURLByJobID_RejectsTaskFromDifferentJob(t *testing.T) {
 			},
 		},
 		fakeURLGenerator{},
+		nil,
 	)
 
 	_, err := impl.GetTaskFileURLByJobID(context.Background(), valueobjects.GenerateCrawlJobID(), "task-id", FileTypePages)
@@ -381,6 +389,7 @@ func TestGetTaskFileURLByJobID_ValidatesTypeAndAvailability(t *testing.T) {
 				return "https://signed/local", nil
 			},
 		},
+		nil,
 	)
 
 	url, err := impl.GetTaskFileURLByJobID(context.Background(), jobID, "task-id", FileTypeResult)
@@ -414,6 +423,7 @@ func TestGetJobExportFileURL_ValidatesTypeAndUsesKey(t *testing.T) {
 				return "https://signed/export", nil
 			},
 		},
+		nil,
 	)
 
 	resp, err := impl.GetJobExportFileURL(context.Background(), &crawlergrpc.GetJobExportFileURLRequest{

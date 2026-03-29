@@ -8,7 +8,6 @@ import (
 	authapi "distributed-crawler/internal/api/auth"
 	crawljob "distributed-crawler/internal/api/crawl_job"
 	previewapi "distributed-crawler/internal/api/preview"
-	queueadminapi "distributed-crawler/internal/api/queue_admin"
 	userapi "distributed-crawler/internal/api/user"
 	workerapi "distributed-crawler/internal/api/worker"
 	"distributed-crawler/internal/application/service"
@@ -17,7 +16,6 @@ import (
 	crawltaskservice "distributed-crawler/internal/application/service/crawl_task"
 	previewservice "distributed-crawler/internal/application/service/preview"
 	userservice "distributed-crawler/internal/application/service/user"
-	appqueue "distributed-crawler/internal/application/queue"
 	"distributed-crawler/internal/auth"
 	"distributed-crawler/internal/config"
 	"distributed-crawler/internal/config/env"
@@ -31,16 +29,12 @@ import (
 	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	previewrepo "distributed-crawler/internal/domain/crawl/repos/preview"
 	"distributed-crawler/internal/domain/crawl/services"
-	queuerepos "distributed-crawler/internal/domain/queue/repos"
 	"distributed-crawler/internal/infra/messaging"
 	kafkaclient "distributed-crawler/internal/infra/messaging/kafka"
 	memorybroker "distributed-crawler/internal/infra/messaging/memory/broker"
 	rabbitmqclient "distributed-crawler/internal/infra/messaging/rabbitmq"
-	"distributed-crawler/internal/infra/secrets"
 	"distributed-crawler/internal/infra/persistence"
-	"distributed-crawler/internal/worker/routing"
 
-	"github.com/redis/go-redis/v9"
 	"distributed-crawler/internal/infra/persistence/postgres/pg"
 	crawljobrepoimpl "distributed-crawler/internal/infra/persistence/postgres/repos"
 	"distributed-crawler/internal/infra/persistence/postgres/transaction"
@@ -96,18 +90,9 @@ type serviceProvider struct {
 	authServiceImpl     *authapi.AuthImplementation
 	userServiceImpl     *userapi.UserImplementation
 	workerServiceImpl   *workerapi.WorkerImplementation
-	queueAdminImpl      *queueadminapi.QueueAdminImplementation
 	outboxPublisher     *worker.OutboxPublisher
 	scheduleWorker      *worker.ScheduleWorker
 	workerRegistry      *workerhealth.Registry
-
-	queueEndpointRepo  queuerepos.QueueEndpointRepository
-	queueRuleRepo      queuerepos.QueueRoutingRuleRepository
-	queueService       *appqueue.Service
-	secretsStore       secrets.SecretsStore
-
-	redisClient   *redis.Client
-	routingPolicy routing.QueueRoutingPolicy
 
 	logger *zap.Logger
 }
@@ -291,6 +276,7 @@ func (s *serviceProvider) CrawlerServiceImpl(ctx context.Context) *crawljob.Craw
 			s.CrawlJobService(ctx),
 			s.CrawlTaskService(ctx),
 			minioStore,
+			s.AvailableQueues(),
 		)
 	}
 
@@ -347,39 +333,16 @@ func (s *serviceProvider) getQueueName(key string) string {
 	}
 }
 
-// RedisClient returns a Redis client if REDIS_ADDRESS is configured, otherwise nil.
-func (s *serviceProvider) RedisClient() *redis.Client {
-	if s.redisClient == nil {
-		cfg, err := env.NewRedisConfig()
-		if err != nil {
-			// Redis not configured — routing will fall back to in-memory
-			return nil
-		}
-		s.redisClient = redis.NewClient(&redis.Options{
-			Addr:     cfg.Address(),
-			Password: cfg.Password(),
-			DB:       cfg.DB(),
-		})
+// AvailableQueues returns all configured crawl queue names for routing decisions.
+func (s *serviceProvider) AvailableQueues() []string {
+	switch env.GetBrokerType() {
+	case env.BrokerKafka:
+		return s.KafkaConfig().GetAllCrawlTopicNames()
+	case env.BrokerGRPCMemory:
+		return []string{config.CrawlQueueKey}
+	default:
+		return s.RabbitMQConfig().GetAllCrawlQueueNames()
 	}
-	return s.redisClient
-}
-
-// RoutingPolicy returns a job-aware queue routing policy.
-// Uses Redis round-robin if Redis is available, otherwise weighted random in-memory.
-func (s *serviceProvider) RoutingPolicy(ctx context.Context) routing.QueueRoutingPolicy {
-	if s.routingPolicy == nil {
-		loader := routing.NewDBJobQueueLoader(s.DBClient(ctx).DB())
-		fallbackCrawl := s.getQueueName(config.CrawlQueueKey)
-		fallbackParse := s.getQueueName(config.ParsingQueueKey)
-
-		rdb := s.RedisClient()
-		if rdb != nil {
-			s.routingPolicy = routing.NewRedisRoutingPolicy(loader, rdb, fallbackCrawl, fallbackParse)
-		} else {
-			s.routingPolicy = routing.NewInMemoryRoutingPolicy(loader, fallbackCrawl, fallbackParse)
-		}
-	}
-	return s.routingPolicy
 }
 
 func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPublisher {
@@ -397,7 +360,7 @@ func (s *serviceProvider) OutboxPublisher(ctx context.Context) *worker.OutboxPub
 			s.getQueueName(config.CrawlQueueKey),
 			s.Logger(),
 			tracer,
-		).WithRoutingPolicy(s.RoutingPolicy(ctx))
+		)
 	}
 
 	return s.outboxPublisher
@@ -413,6 +376,7 @@ func (s *serviceProvider) ScheduleWorker(ctx context.Context) *worker.ScheduleWo
 			s.TxManager(ctx),
 			s.Logger(),
 			s.Metrics(ctx),
+			s.AvailableQueues(),
 		)
 	}
 	return s.scheduleWorker
@@ -716,68 +680,6 @@ func (s *serviceProvider) EnsureDefaultAdmin(ctx context.Context) error {
 	return err
 }
 
-func (s *serviceProvider) QueueEndpointRepo(ctx context.Context) queuerepos.QueueEndpointRepository {
-	if s.queueEndpointRepo == nil {
-		s.queueEndpointRepo = crawljobrepoimpl.NewQueueEndpointRepository(s.DBClient(ctx))
-	}
-	return s.queueEndpointRepo
-}
-
-func (s *serviceProvider) QueueRuleRepo(ctx context.Context) queuerepos.QueueRoutingRuleRepository {
-	if s.queueRuleRepo == nil {
-		s.queueRuleRepo = crawljobrepoimpl.NewQueueRoutingRuleRepository(s.DBClient(ctx))
-	}
-	return s.queueRuleRepo
-}
-
-func (s *serviceProvider) QueueService(ctx context.Context) *appqueue.Service {
-	if s.queueService == nil {
-		s.queueService = appqueue.NewService(
-			s.QueueEndpointRepo(ctx),
-			s.QueueRuleRepo(ctx),
-		)
-	}
-	return s.queueService
-}
-
-func (s *serviceProvider) QueueAdminImpl(ctx context.Context) *queueadminapi.QueueAdminImplementation {
-	if s.queueAdminImpl == nil {
-		s.queueAdminImpl = queueadminapi.NewImplementation(s.QueueService(ctx))
-	}
-	return s.queueAdminImpl
-}
-
-// SecretsStore returns the initialized secrets store, or nil if not configured.
-func (s *serviceProvider) SecretsStore() secrets.SecretsStore {
-	return s.secretsStore
-}
-
-// InitSecretsStore initializes the file-based secrets store using appCtx for the
-// background reload goroutine. It is optional: if QUEUE_SECRETS_FILE_PATH is not
-// set the store is left nil and callers must handle that gracefully.
-func (s *serviceProvider) InitSecretsStore(appCtx context.Context) {
-	secretsCfg, err := env.NewSecretsConfig()
-	if err != nil {
-		log.Printf("secrets store disabled: %v", err)
-		return
-	}
-
-	reloadInterval := secretsCfg.ReloadInterval()
-	if !secretsCfg.WatchEnabled() {
-		reloadInterval = 24 * time.Hour
-	}
-
-	store, err := secrets.NewFileSecretsStore(appCtx, secretsCfg.FilePath(), reloadInterval)
-	if err != nil {
-		log.Printf("failed to initialize secrets store from %s: %v", secretsCfg.FilePath(), err)
-		return
-	}
-
-	s.secretsStore = store
-	log.Printf("secrets store initialized: path=%s watch=%v interval=%s",
-		secretsCfg.FilePath(), secretsCfg.WatchEnabled(), reloadInterval)
-}
-
 func (s *serviceProvider) Close() error {
 	// Shutdown telemetry first to flush pending data
 	if s.telemetryProvider != nil {
@@ -790,11 +692,6 @@ func (s *serviceProvider) Close() error {
 	if s.msgClient != nil {
 		if err := s.msgClient.Close(); err != nil {
 			log.Printf("failed to close messaging client: %v", err)
-		}
-	}
-	if s.redisClient != nil {
-		if err := s.redisClient.Close(); err != nil {
-			log.Printf("failed to close redis client: %v", err)
 		}
 	}
 	if s.dbClient != nil {

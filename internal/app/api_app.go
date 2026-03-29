@@ -106,7 +106,6 @@ func (a *APIApp) initDeps(ctx context.Context) error {
 		a.initGRPCServer,
 		a.initHTTPServer,
 		a.initWorker,
-		a.initSecretsStore, // must come after initWorker (workerCtx is created there)
 	}
 
 	for _, f := range inits {
@@ -198,7 +197,6 @@ func (a *APIApp) initGRPCServer(ctx context.Context) error {
 	crawlergrpc.RegisterAuthServiceServer(a.grpcServer, a.serviceProvider.AuthServiceImpl(ctx))
 	crawlergrpc.RegisterUserServiceServer(a.grpcServer, a.serviceProvider.UserServiceImpl(ctx))
 	crawlergrpc.RegisterWorkerServiceServer(a.grpcServer, a.serviceProvider.WorkerServiceImpl(ctx))
-	crawlergrpc.RegisterQueueAdminServiceServer(a.grpcServer, a.serviceProvider.QueueAdminImpl(ctx))
 
 	return nil
 }
@@ -242,12 +240,16 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
-	err = crawlergrpc.RegisterQueueAdminServiceHandlerFromEndpoint(ctx, mux, a.serviceProvider.GRPCConfig().Address(), opts)
-	if err != nil {
+	if err = mux.HandlePath("DELETE", "/api/v1/jobs/{id}", a.deleteJobHandlerFunc()); err != nil {
 		return err
 	}
-
-	if err = mux.HandlePath("DELETE", "/api/v1/jobs/{id}", a.deleteJobHandlerFunc()); err != nil {
+	if err = mux.HandlePath("POST", "/api/v1/jobs", a.createJobHandlerFunc()); err != nil {
+		return err
+	}
+	if err = mux.HandlePath("GET", "/api/v1/jobs/{id}", a.getJobHandlerFunc()); err != nil {
+		return err
+	}
+	if err = mux.HandlePath("GET", "/api/v1/crawl-queues", a.crawlQueuesHandlerFunc()); err != nil {
 		return err
 	}
 
@@ -270,11 +272,6 @@ func (a *APIApp) initHTTPServer(ctx context.Context) error {
 
 func (a *APIApp) initWorker(ctx context.Context) error {
 	a.workerCtx, a.workerCancel = context.WithCancel(ctx)
-	return nil
-}
-
-func (a *APIApp) initSecretsStore(_ context.Context) error {
-	a.serviceProvider.InitSecretsStore(a.workerCtx)
 	return nil
 }
 

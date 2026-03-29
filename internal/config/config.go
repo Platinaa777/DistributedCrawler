@@ -45,12 +45,17 @@ type LoggerConfig interface {
 type RabbitMQConfig interface {
 	URL() string
 	GetQueueName(key string) string
+	// GetAllCrawlQueueNames returns all configured crawl queue names (multi-region support).
+	// Falls back to a single-item slice containing the primary crawl queue.
+	GetAllCrawlQueueNames() []string
 }
 
 type KafkaConfig interface {
 	Brokers() []string
 	ConsumerGroup() string
 	GetTopicName(key string) string
+	// GetAllCrawlTopicNames returns all configured crawl topic names (multi-region support).
+	GetAllCrawlTopicNames() []string
 }
 
 type MinIOConfig interface {
@@ -103,11 +108,6 @@ type MemoryBrokerConfig interface {
 	Address() string
 	// QueueCapacity is the per-queue channel buffer size reported by the server.
 	QueueCapacity() int
-}
-
-// WorkerRegionConfig identifies the geographic/logical region for a worker instance.
-type WorkerRegionConfig interface {
-	Region() string
 }
 
 // SecretsFileConfig holds settings for the file-based secrets store.
