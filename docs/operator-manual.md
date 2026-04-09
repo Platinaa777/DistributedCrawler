@@ -6,11 +6,12 @@
 2. [Требования к окружению](#2-требования-к-окружению)
 3. [Описание компонентов системы](#3-описание-компонентов-системы)
 4. [Переменные окружения](#4-переменные-окружения)
-5. [Развертывание с помощью Docker Compose](#5-развертывание-с-помощью-docker-compose)
-6. [Развертывание в Kubernetes с помощью Helm](#6-развертывание-в-kubernetes-с-помощью-helm)
-7. [Адреса сервисов и интерфейсов](#7-адреса-сервисов-и-интерфейсов)
-8. [Управление миграциями базы данных](#8-управление-миграциями-базы-данных)
-9. [Остановка и удаление](#9-остановка-и-удаление)
+5. [Быстрый запуск с помощью launcher-скриптов](#5-быстрый-запуск-с-помощью-launcher-скриптов)
+6. [Развертывание с помощью Docker Compose](#6-развертывание-с-помощью-docker-compose)
+7. [Развертывание в Kubernetes с помощью Helm](#7-развертывание-в-kubernetes-с-помощью-helm)
+8. [Адреса сервисов и интерфейсов](#8-адреса-сервисов-и-интерфейсов)
+9. [Управление миграциями базы данных](#9-управление-миграциями-базы-данных)
+10. [Остановка и удаление](#10-остановка-и-удаление)
 
 ---
 
@@ -28,8 +29,11 @@ MinIO (содержимое страниц). Redis применяется для
 | Путь | Назначение |
 |------|-----------|
 | `docker-compose.yaml` | Инфраструктура для локальной разработки |
-| `deploy/scripts/local/` | Скрипты запуска компонентов приложения локально |
-| `deploy/scripts/k8s/` | Скрипты сборки образов и деплоя в Kubernetes |
+| `deploy/scripts/default_run.sh` | Launcher: запуск полного стека (один регион) в режимах local/docker/k8s |
+| `deploy/scripts/multi_region_run.sh` | Launcher: запуск стека с несколькими региональными пулами fetch-воркеров |
+| `deploy/scripts/local/` | Низкоуровневые скрипты запуска компонентов приложения локально |
+| `deploy/scripts/docker/` | Низкоуровневые скрипты деплоя через Docker Compose |
+| `deploy/scripts/k8s/` | Низкоуровневые скрипты сборки образов и деплоя в Kubernetes |
 | `deploy/helm/distributed-crawler/` | Helm-чарт приложения |
 | `deploy/helm/infra/` | Helm-чарт инфраструктурных сервисов |
 
@@ -174,9 +178,177 @@ MinIO (содержимое страниц). Redis применяется для
 
 ---
 
-## 5. Развертывание с помощью Docker Compose
+## 5. Быстрый запуск с помощью launcher-скриптов
 
-### 5.1 Запуск инфраструктурных сервисов
+В директории `deploy/scripts/` расположены два верхнеуровневых launcher-скрипта,
+которые покрывают два основных сценария развертывания — однорегиональный и
+многорегиональный. Скрипты принимают флаг `--mode` и делегируют работу
+соответствующим низкоуровневым скриптам из `local/`, `docker/` или `k8s/`.
+Дополнительные аргументы, переданные после `--`, пробрасываются в нижележащий
+скрипт без изменений.
+
+| Скрипт | Назначение |
+|--------|-----------|
+| `deploy/scripts/default_run.sh` | Полный стек, один регион (без `WORKER_REGION`) |
+| `deploy/scripts/multi_region_run.sh` | Полный стек с отдельным пулом fetch-воркеров на каждый регион |
+
+---
+
+### 5.1 `default_run.sh` — стандартный запуск (один регион)
+
+Запускает полный стек с единым пулом fetch-воркеров без привязки к региону.
+
+#### Быстрый старт
+
+```bash
+# Локальные процессы (go run, файлы .env / .worker.env по умолчанию)
+./deploy/scripts/default_run.sh
+
+# Docker Compose
+./deploy/scripts/default_run.sh --mode docker
+
+# Kubernetes (minikube + Helm)
+./deploy/scripts/default_run.sh --mode k8s
+```
+
+#### Доступные флаги
+
+| Флаг | Режим | По умолчанию | Описание |
+|------|-------|-------------|---------|
+| `--mode` | все | `local` | `local`, `docker` или `k8s` |
+| `--config <путь>` | local | `.env` | Файл конфигурации API-сервера |
+| `--worker-config <путь>` | local | `.worker.env` | Файл конфигурации воркеров |
+| `--build` | local | выкл. | Собрать Go-бинарники перед запуском |
+| `--no-build` | docker/k8s | выкл. | Пропустить сборку образов |
+| `--app-only` | docker | выкл. | Не запускать инфраструктурные сервисы |
+| `--tag <тег>` | docker/k8s | `latest` | Тег Docker-образа |
+| `--registry <имя>` | docker/k8s | `distributed-crawler` | Префикс имени образа |
+| `--port-forward` | k8s | выкл. | Пробросить порты после деплоя |
+| `--full-observability` | k8s | выкл. | Включить Prometheus/Grafana/OpenSearch |
+| `--jwt-secret <значение>` | k8s | dev-значение | Секрет для подписи JWT |
+| `--pg-password <пароль>` | k8s | dev-значение | Пароль PostgreSQL |
+| `--default-user-password <пароль>` | k8s | dev-значение | Пароль администратора UI |
+| `--messaging-broker <тип>` | k8s | `rabbitmq` | `rabbitmq`, `kafka`, `grpc_memory` |
+
+Пример передачи дополнительных параметров в нижележащий скрипт:
+
+```bash
+./deploy/scripts/default_run.sh --mode k8s -- \
+  --jwt-secret supersecret \
+  --app-set grpcServer.replicaCount=2
+```
+
+---
+
+### 5.2 `multi_region_run.sh` — многорегиональный запуск
+
+Запускает стек с отдельным пулом fetch-воркеров для каждого региона. Каждый
+пул получает свою метку `WORKER_REGION`. Parser-воркеры всегда запускаются в
+едином общем пуле и не являются регион-зависимыми.
+
+Параметры подключения к очередям для каждого регионального пула задаются через
+переменные окружения или файл конфигурации воркера при запуске; динамического
+обнаружения очередей через базу данных нет. Перед запуском необходимо указать
+корректные `RABBITMQ_URL` / `RABBITMQ_CRAWL_QUEUE_NAME` (или аналоги для
+Kafka) для каждого регионального пула.
+
+#### Быстрый старт
+
+```bash
+# Docker Compose — два региональных пула fetch-воркеров
+./deploy/scripts/multi_region_run.sh --regions us-east,eu-west
+
+# Kubernetes
+./deploy/scripts/multi_region_run.sh --regions us-east,eu-west --mode k8s
+
+# Локальные процессы
+./deploy/scripts/multi_region_run.sh --regions us-east,eu-west --mode local
+```
+
+#### Доступные флаги
+
+| Флаг | Режим | По умолчанию | Описание |
+|------|-------|-------------|---------|
+| `--regions <csv>` | все | **обязательный** | Названия регионов через запятую |
+| `--mode` | все | `docker` | `local`, `docker` или `k8s` |
+| `--config <путь>` | local | `.env` | Файл конфигурации API-сервера |
+| `--worker-config <путь>` | local | `.worker.env` | Конфигурация не-fetch воркеров |
+| `--build` | local | выкл. | Собрать Go-бинарники перед запуском |
+| `--no-build` | docker/k8s | выкл. | Пропустить сборку образов |
+| `--tag <тег>` | docker/k8s | `latest` | Тег Docker-образа |
+| `--registry <имя>` | docker | `distributed-crawler` | Префикс имени образа |
+| `--port-forward` | k8s | выкл. | Пробросить порты после деплоя |
+| `--full-observability` | k8s | выкл. | Включить Prometheus/Grafana/OpenSearch |
+| `--jwt-secret <значение>` | k8s | dev-значение | Секрет для подписи JWT |
+| `--pg-password <пароль>` | k8s | dev-значение | Пароль PostgreSQL |
+| `--messaging-broker <тип>` | k8s | `rabbitmq` | Тип брокера сообщений |
+
+Пример:
+
+```bash
+./deploy/scripts/multi_region_run.sh --regions us-east,eu-west --mode k8s -- \
+  --jwt-secret supersecret \
+  --port-forward
+```
+
+#### Что делает каждый режим
+
+**`--mode local`**
+
+1. Запускает `grpc_server`, `parser_worker`, `export_worker`, `scheduler_worker`
+   как фоновые процессы (PID-файлы в `.pids/`).
+2. Запускает по одному процессу `fetch_worker` на каждый регион с переменной
+   `WORKER_REGION=<регион>`.
+
+Логи записываются в `<корень_проекта>/logs/`, файлы fetch-воркеров именуются
+`fetch-worker-<регион>.log`. Для остановки всех процессов используйте
+`./deploy/scripts/local/stop-all.sh`.
+
+**`--mode docker`**
+
+1. Запускает `deploy/scripts/docker/deploy-all.sh` со всеми компонентами
+   **кроме** `fetch-worker`.
+2. Запускает `docker compose run --detach --no-deps -e WORKER_REGION=<регион> fetch-worker`
+   для каждого региона, создавая по одному отдельному контейнеру.
+
+Просмотр запущенных fetch-воркеров: `docker ps`. Остановка всего стека:
+`docker compose down` из корня проекта.
+
+**`--mode k8s`**
+
+Делегирует вызов в `deploy/scripts/k8s/launch-minikube.sh` с параметром:
+
+```
+--app-set fetchWorker.regions={us-east,eu-west}
+```
+
+Helm создаёт по одному Deployment `fetch-worker` на каждый регион с инжектом
+`WORKER_REGION=<регион>` и суффиксом `-<регион>` в имени Deployment.
+
+---
+
+### 5.3 Низкоуровневые скрипты
+
+Launcher-скрипты не заменяют низкоуровневые скрипты в `local/`, `docker/` и
+`k8s/` — те по-прежнему доступны для точечных операций:
+
+| Скрипт | Назначение |
+|--------|-----------|
+| `local/build.sh` | Сборка Go-бинарников |
+| `local/run.sh <компонент>` | Запуск отдельного компонента |
+| `local/start-all.sh` / `stop-all.sh` | Запуск / остановка всех локальных процессов |
+| `docker/deploy-all.sh` | Полный деплой через Docker Compose |
+| `docker/deploy-component.sh` | Передеплой отдельного compose-сервиса |
+| `docker/teardown.sh` | Удаление всех Docker-контейнеров и томов на хосте |
+| `k8s/launch-minikube.sh` | Полный деплой в minikube+Helm со всеми опциями |
+| `k8s/port-forward.sh` | Проброс портов сервисов k8s на локальную машину |
+| `k8s/teardown.sh` | Удаление Helm-релизов и namespace |
+
+---
+
+## 6. Развертывание с помощью Docker Compose
+
+### 6.1 Запуск инфраструктурных сервисов
 
 Все инфраструктурные сервисы (PostgreSQL, RabbitMQ, MinIO, Redis, Jaeger,
 Prometheus, Grafana, OpenSearch, Kafka, OTel Collector) описаны в файле
@@ -246,7 +418,7 @@ docker compose ps
 | Kafka | `9091` |
 | Kafka UI | `8080` |
 
-### 5.2 Запуск компонентов приложения
+### 6.2 Запуск компонентов приложения
 
 Компоненты приложения запускаются локально (через `go run` или собранные
 бинарные файлы) с помощью скриптов из директории `deploy/scripts/local/`.
@@ -303,7 +475,7 @@ gRPC API — по адресу `localhost:8083`.
 
 ---
 
-## 6. Развертывание в Kubernetes с помощью Helm
+## 7. Развертывание в Kubernetes с помощью Helm
 
 Все скрипты деплоя расположены в директории `deploy/scripts/k8s/`. Скрипты
 являются идемпотентными — при повторном запуске используется `helm upgrade
@@ -320,7 +492,7 @@ gRPC API — по адресу `localhost:8083`.
 | `deploy/helm/distributed-crawler/values-prod.yaml` | Наложение для production |
 | `deploy/helm/distributed-crawler/values-external-infra.yaml` | Наложение при внешней инфраструктуре |
 
-### 6.1 Шаг 1. Сборка Docker-образов
+### 7.1 Шаг 1. Сборка Docker-образов
 
 Перед деплоем необходимо собрать Docker-образы всех компонентов приложения.
 Dockerfile для каждого компонента расположен в директории `docker/<имя_компонента>/Dockerfile`.
@@ -357,10 +529,10 @@ NO_CACHE=1 ./deploy/scripts/k8s/build-images.sh --minikube
 | `IMAGE_TAG` | `latest` | Тег образа |
 | `NO_CACHE` | `0` | Установить `1` для сборки без кэша |
 
-### 6.2 Шаг 2. Загрузка образов в реестр (для production)
+### 7.2 Шаг 2. Загрузка образов в реестр (для production)
 
 Этот шаг необходим только при деплое в удалённый кластер. При использовании
-minikube образы уже находятся внутри кластера после шага 6.1.
+minikube образы уже находятся внутри кластера после шага 7.1.
 
 ```bash
 TARGET_REGISTRY=ghcr.io/myorg IMAGE_TAG=v1.2.3 ./deploy/scripts/k8s/push-images.sh
@@ -393,7 +565,7 @@ fetchWorker:
 # ... и т.д. для остальных компонентов
 ```
 
-### 6.3 Шаг 3. Развертывание инфраструктуры
+### 7.3 Шаг 3. Развертывание инфраструктуры
 
 Чарт `deploy/helm/infra/` разворачивает все инфраструктурные сервисы в
 отдельный namespace `infra`. Этот шаг нужен при использовании «режима внешней
@@ -430,7 +602,7 @@ NAMESPACE=my-infra VALUES_ENV=prod ./deploy/scripts/k8s/deploy-infra.sh
 Разворачиваемые сервисы: PostgreSQL, RabbitMQ, MinIO, Redis, RedisInsight,
 OTel Collector, Jaeger, Prometheus, Grafana, OpenSearch, OpenSearch Dashboards.
 
-### 6.4 Шаг 4. Настройка секретов перед деплоем приложения
+### 7.4 Шаг 4. Настройка секретов перед деплоем приложения
 
 Перед деплоем приложения необходимо задать безопасные пароли. Это можно
 сделать одним из двух способов.
@@ -462,14 +634,14 @@ secrets:
   existingSecret: "my-crawler-secrets"
 ```
 
-### 6.5 Шаг 5. Развертывание приложения
+### 7.5 Шаг 5. Развертывание приложения
 
 Существует два режима развертывания приложения.
 
 **Режим А: внешняя инфраструктура (рекомендуется)**
 
 Используется, если инфраструктура уже развёрнута через `deploy-infra.sh`
-(шаг 6.3). Приложение указывает на сервисы в namespace `infra`.
+(шаг 7.3). Приложение указывает на сервисы в namespace `infra`.
 
 ```bash
 EXTERNAL_INFRA=true ./deploy/scripts/k8s/deploy-all.sh
@@ -503,7 +675,7 @@ EXTERNAL_INFRA=true ./deploy/scripts/k8s/deploy-all.sh -f my-secrets.yaml
 | `VALUES_ENV` | `dev` | Наложение значений: `dev` или `prod` |
 | `EXTERNAL_INFRA` | `false` | `true` — использовать отдельный релиз инфраструктуры |
 
-### 6.6 Деплой отдельного компонента
+### 7.6 Деплой отдельного компонента
 
 Для обновления одного компонента без передеплоя всего стека:
 
@@ -520,7 +692,7 @@ EXTERNAL_INFRA=true ./deploy/scripts/k8s/deploy-all.sh -f my-secrets.yaml
 ./deploy/scripts/k8s/deploy-component.sh fetch-worker --set fetchWorker.replicaCount=3
 ```
 
-### 6.7 Проверка состояния после деплоя
+### 7.7 Проверка состояния после деплоя
 
 Просмотр запущенных подов:
 ```bash
@@ -534,7 +706,7 @@ kubectl logs -n crawler -l app.kubernetes.io/component=grpc-server -f
 kubectl logs -n crawler -l app.kubernetes.io/component=fetch-worker -f
 ```
 
-### 6.8 Проброс портов для локального доступа
+### 7.8 Проброс портов для локального доступа
 
 Для доступа к сервисам кластера с локальной машины без настройки Ingress
 используется скрипт:
@@ -567,7 +739,7 @@ kubectl logs -n crawler -l app.kubernetes.io/component=fetch-worker -f
 | `grpc-server` | `8083` (gRPC), `8084` (HTTP) |
 | `ui` | `8080` |
 
-### 6.9 Настройка Ingress (опционально)
+### 7.9 Настройка Ingress (опционально)
 
 Для доступа через доменное имя без проброса портов необходимо включить Ingress
 в файле values:
@@ -600,7 +772,7 @@ ui:
 
 ---
 
-## 7. Адреса сервисов и интерфейсов
+## 8. Адреса сервисов и интерфейсов
 
 После успешного деплоя и проброса портов сервисы доступны по следующим адресам:
 
@@ -628,7 +800,7 @@ curl -X POST http://localhost:8084/v1/auth/login \
 
 ---
 
-## 8. Управление миграциями базы данных
+## 9. Управление миграциями базы данных
 
 ### Локально
 
@@ -664,7 +836,7 @@ migrations:
 
 ---
 
-## 9. Остановка и удаление
+## 10. Остановка и удаление
 
 ### Docker Compose
 
