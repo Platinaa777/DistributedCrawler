@@ -1,0 +1,154 @@
+{
+  "exported_at": "2026-04-09T19:35:42Z",
+  "job_id": "2ff01642-f6cb-4de0-b660-98fc5def4eb1",
+  "results": [
+    {
+      "task_id": "3cd6d428-4df3-49fa-b1fd-aadfdb01ac2d",
+      "url": "https://en.wikipedia.org/w/index.php?title=Special:Search\u0026search=programming+language+history\u0026fulltext=1\u0026ns0=1\u0026limit=20",
+      "status": "Parsed",
+      "fields": {
+        "categories": null,
+        "image": null,
+        "infobox_labels": null,
+        "infobox_values": null,
+        "summary": null,
+        "title": "Search results"
+      },
+      "items": [
+        {
+          "meta": "38 KB (3,666 words) - 03:25, 3 March 2026",
+          "snippet": "history of programming languages spans from documentation of early mechanical computers to modern tools for software development. Early programming languages...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Glen_Beck_and_Betty_Snyder_program_the_ENIAC_in_building_328_at_the_Ballistic_Research_Laboratory.jpg/120px-Glen_Beck_and_Betty_Snyder_program_the_ENIAC_in_building_328_at_the_Ballistic_Research_Laboratory.jpg",
+          "title": "History of programming languages",
+          "url": "https://en.wikipedia.org/wiki/History_of_programming_languages"
+        },
+        {
+          "meta": "99 KB (10,990 words) - 21:22, 4 April 2026",
+          "snippet": "C is a general-purpose programming language created in the 1970s by Dennis Ritchie. By design, C gives the programmer relatively direct access to the features...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/The_C_Programming_Language_logo.svg/120px-The_C_Programming_Language_logo.svg.png",
+          "title": "C (programming language)",
+          "url": "https://en.wikipedia.org/wiki/C_(programming_language)"
+        },
+        {
+          "meta": "15 KB (1,613 words) - 13:45, 10 November 2025",
+          "snippet": "engineering. In some ways, the history of programming language theory predates even the development of programming languages. The lambda calculus, developed...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Lambda_lc.svg/120px-Lambda_lc.svg.png",
+          "title": "Programming language theory",
+          "url": "https://en.wikipedia.org/wiki/Programming_language_theory"
+        },
+        {
+          "meta": "87 KB (10,058 words) - 11:23, 14 March 2026",
+          "snippet": "an abbreviation of \"list processing\") is a family of programming languages with a long history and a distinctive, fully parenthesized prefix notation...",
+          "title": "Lisp (programming language)",
+          "url": "https://en.wikipedia.org/wiki/Lisp_(programming_language)"
+        },
+        {
+          "meta": "10 KB (1,153 words) - 18:29, 20 January 2026",
+          "snippet": "The C Programming Language (sometimes termed K\u0026R, after its authors' initials) is a computer programming book written by Brian Kernighan and Dennis Ritchie...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/The_C_Programming_Language%2C_First_Edition_Cover.svg/250px-The_C_Programming_Language%2C_First_Edition_Cover.svg.png",
+          "title": "The C Programming Language",
+          "url": "https://en.wikipedia.org/wiki/The_C_Programming_Language"
+        },
+        {
+          "meta": "24 KB (2,618 words) - 15:07, 15 March 2026",
+          "snippet": "An esoteric programming language (sometimes shortened to esolang) or weird language is a programming language designed to test the boundaries of computer...",
+          "title": "Esoteric programming language",
+          "url": "https://en.wikipedia.org/wiki/Esoteric_programming_language"
+        },
+        {
+          "meta": "58 KB (5,446 words) - 16:53, 25 February 2026",
+          "snippet": "Ruby is a general-purpose programming language. Its design puts an emphasis on programming productivity and simplicity. In Ruby, everything is an object...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Ruby_logo.svg/120px-Ruby_logo.svg.png",
+          "title": "Ruby (programming language)",
+          "url": "https://en.wikipedia.org/wiki/Ruby_(programming_language)"
+        },
+        {
+          "meta": "14 KB (1,495 words) - 02:36, 3 March 2026",
+          "snippet": "general-purpose language that supported scientific, commercial, and systems programming. Indeed, a subset of PL/I was used as the standard systems programming language...",
+          "title": "General-purpose programming language",
+          "url": "https://en.wikipedia.org/wiki/General-purpose_programming_language"
+        },
+        {
+          "meta": "9 KB (990 words) - 18:28, 29 March 2026",
+          "snippet": "History of Programming Languages (HOPL) is an infrequent ACM SIGPLAN conference. It has been held in 1978, 1993, 2007, and 2021. HOPL I was held June 1–3...",
+          "title": "History of Programming Languages (conference)",
+          "url": "https://en.wikipedia.org/wiki/History_of_Programming_Languages_(conference)"
+        },
+        {
+          "meta": "12 KB (1,026 words) - 00:52, 2 February 2026",
+          "snippet": "general-purpose programming language that runs on the BEAM virtual machine, which is also used to implement the Erlang programming language. Elixir builds...",
+          "title": "Elixir (programming language)",
+          "url": "https://en.wikipedia.org/wiki/Elixir_(programming_language)"
+        },
+        {
+          "meta": "17 KB (1,355 words) - 18:17, 2 February 2026",
+          "snippet": "programming portal Comparison of programming languages History of programming languages List of programming languages List of programming languages by...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/V_Logo_SVG.svg/120px-V_Logo_SVG.svg.png",
+          "title": "V (programming language)",
+          "url": "https://en.wikipedia.org/wiki/V_(programming_language)"
+        },
+        {
+          "meta": "97 KB (9,952 words) - 02:05, 27 March 2026",
+          "snippet": "spreadsheets, functional programming, and computer math packages. It has also inspired several other programming languages. A mathematical notation for...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/APL_%28programming_language%29_logo.svg/120px-APL_%28programming_language%29_logo.svg.png",
+          "title": "APL (programming language)",
+          "url": "https://en.wikipedia.org/wiki/APL_(programming_language)"
+        },
+        {
+          "meta": "88 KB (8,702 words) - 04:04, 15 March 2026",
+          "snippet": "functional programming is a programming paradigm where programs are constructed by applying and composing functions. It is a declarative programming paradigm...",
+          "title": "Functional programming",
+          "url": "https://en.wikipedia.org/wiki/Functional_programming"
+        },
+        {
+          "meta": "65 KB (7,435 words) - 08:00, 30 March 2026",
+          "snippet": "A programming language is an engineered language for expressing computer programs. Programming languages typically allow software to be written in a human...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/C_Hello_World_Program.png/120px-C_Hello_World_Program.png",
+          "title": "Programming language",
+          "url": "https://en.wikipedia.org/wiki/Programming_language"
+        },
+        {
+          "meta": "74 KB (6,734 words) - 22:07, 19 March 2026",
+          "snippet": "Java is a high-level, general-purpose, memory-safe, object-oriented programming language. It is intended to let programmers write once, run anywhere (WORA)...",
+          "title": "Java (programming language)",
+          "url": "https://en.wikipedia.org/wiki/Java_(programming_language)"
+        },
+        {
+          "meta": "112 KB (10,619 words) - 15:54, 31 March 2026",
+          "snippet": "general-purpose programming language. It is noted for its emphasis on performance, type safety, concurrency, and memory safety. Rust supports multiple programming paradigms...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Rust_programming_language_black_logo.svg/120px-Rust_programming_language_black_logo.svg.png",
+          "title": "Rust (programming language)",
+          "url": "https://en.wikipedia.org/wiki/Rust_(programming_language)"
+        },
+        {
+          "meta": "28 KB (2,947 words) - 20:17, 2 April 2026",
+          "snippet": "Zig is a system programming language designed to be a general-purpose improvement to the C programming language. It is free and open-source software,...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Zig_logo_2020.svg/330px-Zig_logo_2020.svg.png",
+          "title": "Zig (programming language)",
+          "url": "https://en.wikipedia.org/wiki/Zig_(programming_language)"
+        },
+        {
+          "meta": "81 KB (8,311 words) - 12:42, 2 April 2026",
+          "snippet": "Go Programming Language. \"Release History\". The Go Programming Language. \"Backward Compatibility, Go 1.21, and Go 2\". The Go Programming Language. \"A...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Go_Logo_Blue.svg/250px-Go_Logo_Blue.svg.png",
+          "title": "Go (programming language)",
+          "url": "https://en.wikipedia.org/wiki/Go_(programming_language)"
+        },
+        {
+          "meta": "17 KB (2,038 words) - 16:29, 4 December 2025",
+          "snippet": "The history of the programming language Scheme begins with the development of earlier members of the Lisp family of languages during the second half of...",
+          "title": "History of the Scheme programming language",
+          "url": "https://en.wikipedia.org/wiki/History_of_the_Scheme_programming_language"
+        },
+        {
+          "meta": "55 KB (5,670 words) - 23:48, 25 March 2026",
+          "snippet": "D, also known as dlang, is a multi-paradigm system programming language created by Walter Bright at Digital Mars and released in 2001. Andrei Alexandrescu...",
+          "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/D_Programming_Language_logo.svg/120px-D_Programming_Language_logo.svg.png",
+          "title": "D (programming language)",
+          "url": "https://en.wikipedia.org/wiki/D_(programming_language)"
+        }
+      ]
+    }
+  ],
+  "total_tasks": 1
+}
