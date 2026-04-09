@@ -1,0 +1,252 @@
+{
+  "config": {
+    "name": "Project Gutenberg - All Books Metadata",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_AND_LINKS",
+    "seeds": [
+      {
+        "url": "https://www.gutenberg.org/ebooks/search/?sort_order=release_date"
+      }
+    ],
+    "scopes": {
+      "max_depth": 5,
+      "allowed_domains": ["www.gutenberg.org"],
+      "deny_url_patterns": [
+        "/cache/",
+        "/files/",
+        "/ebooks/send/",
+        "/ebooks/author/",
+        "/ebooks/subject/",
+        "/ebooks/bookshelf/",
+        "/ebooks/offline_catalogs",
+        "/ebooks/feeds",
+        "/browse/",
+        "/about/",
+        "/help/",
+        "/donate/",
+        "/policy/",
+        "/also/",
+        ".epub",
+        ".mobi",
+        ".txt",
+        ".zip",
+        ".rdf",
+        ".opds"
+      ]
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 1000,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "td[itemprop=\"headline\"]",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "author",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "a[rel=\"marcrel:aut\"]",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "tr[property=\"dcterms:language\"] td",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "subjects",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "td[property=\"dcterms:subject\"] a",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "lcc_class",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "tr[property=\"dcterms:subject\"][datatype=\"dcterms:LCC\"] td a",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "td[property=\"dcterms:type\"]",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "release_date",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "tr[property=\"dcterms:issued\"] td",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "copyright_status",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "td[property=\"dcterms:rights\"]",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "downloads_30d",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "td[itemprop=\"interactionCount\"]",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "cover_image",
+          "type": "url",
+          "required": false,
+          "extractor": {
+            "selector": "img.cover-art",
+            "attribute": "src",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "normalize_url" }
+          ]
+        }
+      ],
+      "items": {
+        "container_selector": "li.booklink",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "span.title",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "author",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": "span.subtitle",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "a.link",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "a[accesskey=\"9\"]",
+          "attribute": "href",
+          "multiple": false
+        }
+      ]
+    }
+  }
+}

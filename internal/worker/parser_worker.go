@@ -1101,19 +1101,21 @@ func (w *ParserWorker) preparePaginationLinks(
 			}
 		}
 
-		// Check robots.txt rules
-		allowed, err := w.robotsTxtService.IsAllowed(ctx, link, userAgent)
-		if err != nil {
-			w.logger.Debug("Failed to check robots.txt for pagination link, allowing",
-				zap.String("url", link),
-				zap.Error(err),
-			)
-			// On error, proceed with enqueueing (permissive default)
-		} else if !allowed {
-			w.logger.Debug("Pagination link disallowed by robots.txt",
-				zap.String("url", link),
-			)
-			continue
+		if jobConfig.RespectRobotsTxt {
+			// Check robots.txt rules
+			allowed, err := w.robotsTxtService.IsAllowed(ctx, link, userAgent)
+			if err != nil {
+				w.logger.Debug("Failed to check robots.txt for pagination link, allowing",
+					zap.String("url", link),
+					zap.Error(err),
+				)
+				// On error, proceed with enqueueing (permissive default)
+			} else if !allowed {
+				w.logger.Debug("Pagination link disallowed by robots.txt",
+					zap.String("url", link),
+				)
+				continue
+			}
 		}
 
 		// Create new CrawlTask
@@ -1292,19 +1294,21 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 			}
 		}
 
-		// Check robots.txt rules
-		allowed, err := w.robotsTxtService.IsAllowed(ctx, link, userAgent)
-		if err != nil {
-			w.logger.Debug("Failed to check robots.txt for link, allowing",
-				zap.String("url", link),
-				zap.Error(err),
-			)
-			// On error, proceed with enqueueing (permissive default)
-		} else if !allowed {
-			w.logger.Debug("Link disallowed by robots.txt",
-				zap.String("url", link),
-			)
-			continue
+		if jobConfig.RespectRobotsTxt {
+			// Check robots.txt rules
+			allowed, err := w.robotsTxtService.IsAllowed(ctx, link, userAgent)
+			if err != nil {
+				w.logger.Debug("Failed to check robots.txt for link, allowing",
+					zap.String("url", link),
+					zap.Error(err),
+				)
+				// On error, proceed with enqueueing (permissive default)
+			} else if !allowed {
+				w.logger.Debug("Link disallowed by robots.txt",
+					zap.String("url", link),
+				)
+				continue
+			}
 		}
 
 		// Create new CrawlTask

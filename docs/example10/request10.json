@@ -1,0 +1,201 @@
+{
+  "config": {
+    "name": "Wikipedia - Search results with article transitions",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_AND_LINKS",
+    "respect_robots_txt": false,
+    "seeds": [
+      {
+        "url": "https://en.wikipedia.org/w/index.php?title=Special:Search&search=programming+language+history&fulltext=1&ns0=1&limit=20"
+      }
+    ],
+    "scopes": {
+      "max_depth": 1,
+      "allowed_domains": ["en.wikipedia.org"],
+      "allowed_url_patterns": [
+        "^https://en\\.wikipedia\\.org/wiki/([^:]+)$"
+      ],
+      "deny_url_patterns": [
+        "^https://en\\.wikipedia\\.org/wiki/Main_Page$"
+      ]
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 1000,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "#firstHeading",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "summary",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "meta[property=\"og:description\"]",
+            "attribute": "content",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "image",
+          "type": "url",
+          "required": false,
+          "extractor": {
+            "selector": "meta[property=\"og:image\"]",
+            "attribute": "content",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "normalize_url" }
+          ]
+        },
+        {
+          "name": "infobox_labels",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "table.infobox tr > th.infobox-label",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "infobox_values",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "table.infobox tr > td.infobox-data",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "categories",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "#mw-normal-catlinks ul li a",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        }
+      ],
+      "items": {
+        "container_selector": "ul.mw-search-results li.mw-search-result",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": ".mw-search-result-heading a",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": ".mw-search-result-heading a",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          },
+          {
+            "name": "snippet",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": ".searchresult",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "meta",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": ".mw-search-result-data",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "thumbnail",
+            "type": "url",
+            "required": false,
+            "extractor": {
+              "selector": ".searchResultImage-thumbnail img",
+              "attribute": "src",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          }
+        ]
+      },
+      "pagination": []
+    }
+  }
+}

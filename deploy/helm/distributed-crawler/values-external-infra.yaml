@@ -20,14 +20,14 @@ config:
 
 secrets:
   postgres:
-    password: "changeme-postgres-password"
+    password: "some-pwd-123"
 
   rabbitmq:
-    password: "changeme-rabbitmq-password"
+    password: "guest"
 
   minio:
     user: "minioadmin"
-    password: "changeme-minio-password"
+    password: "minioadmin"
 
   redis:
-    password: "changeme-redis-password"
+    password: "some_redis_pwd_123"

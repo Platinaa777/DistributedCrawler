@@ -23,6 +23,8 @@ INFRA_NS="${INFRA_NAMESPACE:-infra}"
 INFRA_REL="${INFRA_RELEASE:-infra}"
 APP_NS="${APP_NAMESPACE:-crawler}"
 APP_REL="${APP_RELEASE:-crawler}"
+APP_CHART="${APP_CHART_NAME:-distributed-crawler}"
+APP_FULL="${APP_REL}-${APP_CHART}"
 
 # ---- Service registry -------------------------------------------------------
 # Each entry: "alias namespace svc-name port1:targetPort1 [port2:targetPort2 ...]"
@@ -47,8 +49,8 @@ register prometheus            "${INFRA_NS}" "${INFRA_REL}-prometheus"          
 register grafana               "${INFRA_NS}" "${INFRA_REL}-grafana"                 3000:3000
 register opensearch            "${INFRA_NS}" "${INFRA_REL}-opensearch"              9200:9200
 register opensearch-dashboards "${INFRA_NS}" "${INFRA_REL}-opensearch-dashboards"   5601:5601
-register grpc-server           "${APP_NS}"   "${APP_REL}-grpc-server"               8083:8083 8084:8084
-register ui                    "${APP_NS}"   "${APP_REL}-ui"                         8080:80
+register grpc-server           "${APP_NS}"   "${APP_FULL}-grpc-server"              8083:8083 8084:8084
+register ui                    "${APP_NS}"   "${APP_FULL}-ui"                        4200:8080
 
 ALL_ALIASES=(
   postgresql rabbitmq minio redis redisinsight
@@ -90,7 +92,7 @@ for alias in "${SELECTED[@]}"; do
   ports=(${SVC_PORTS[$alias]})
 
   echo "==> Forwarding ${alias} (${ns}/${svc}): ${ports[*]}"
-  kubectl port-forward -n "${ns}" "svc/${svc}" "${ports[@]}" &>/dev/null &
+  kubectl port-forward --address=0.0.0.0 -n "${ns}" "svc/${svc}" "${ports[@]}" &>/dev/null &
   PIDS+=($!)
 done
 
@@ -132,7 +134,7 @@ for alias in "${SELECTED[@]}"; do
       3000)   printf "  %-26s %s\n" "grafana"                 "http://localhost:${local_port}  (admin/changeme-grafana-password)" ;;
       9200)   printf "  %-26s %s\n" "opensearch"              "http://localhost:${local_port}" ;;
       5601)   printf "  %-26s %s\n" "opensearch dashboards"   "http://localhost:${local_port}" ;;
-      8080)   printf "  %-26s %s\n" "admin UI"                "http://localhost:${local_port}" ;;
+      4200)   printf "  %-26s %s\n" "admin UI"                "http://localhost:${local_port}" ;;
       8083)   printf "  %-26s %s\n" "grpc API"                "localhost:${local_port}" ;;
       8084)   printf "  %-26s %s\n" "http gateway"            "http://localhost:${local_port}" ;;
     esac

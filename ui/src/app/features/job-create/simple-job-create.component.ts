@@ -351,19 +351,13 @@ interface JobCopyNavigationState {
       </p-panel>
 
 
-      <p-panel header="Queue Routing (optional)" [toggleable]="true" [collapsed]="true" styleClass="mb-6">
+      <p-panel *ngIf="isMultiRegion" header="Queue Routing (optional)" [toggleable]="true" [collapsed]="true" styleClass="mb-6">
         <div class="p-4 space-y-4">
           <p class="text-sm text-gray-500 dark:text-gray-400">
             Assign weights to control how tasks are distributed across crawl queues.
             Queues not listed here get weight&nbsp;1. Leave empty for equal distribution.
           </p>
-          <div class="flex items-center justify-between">
-            <p class="text-sm font-semibold">Queue Weights</p>
-            <p-button [outlined]="true" severity="secondary" type="button" (onClick)="addQueueWeight()">
-              <i class="pi pi-plus mr-2"></i>
-              Add Queue
-            </p-button>
-          </div>
+          <p class="text-sm font-semibold">Queue Weights</p>
           <div *ngIf="availableQueues.length > 0" class="flex flex-wrap items-center gap-2">
             <span class="text-xs text-gray-400">Available:</span>
             <span
@@ -378,7 +372,7 @@ interface JobCopyNavigationState {
               *ngFor="let qw of queueWeights.controls; let i = index"
               [formGroupName]="i"
               class="flex items-center gap-3">
-              <input pInputText formControlName="queue" placeholder="Queue name" class="flex-1" />
+              <p-select formControlName="queue" [options]="availableQueues" placeholder="Select queue" styleClass="flex-1"></p-select>
               <p-inputNumber formControlName="weight" [min]="1" [max]="100" placeholder="Weight" inputStyleClass="w-24" />
               <p-button [text]="true" [rounded]="true" severity="danger" type="button" (onClick)="removeQueueWeight(i)">
                 <i class="pi pi-trash"></i>
@@ -850,6 +844,10 @@ export class SimpleJobCreateComponent implements OnInit {
 
   get queueWeights(): FormArray {
     return this.jobForm.get('queue_weights') as FormArray;
+  }
+
+  get isMultiRegion(): boolean {
+    return this.availableQueues.length > 1;
   }
 
   get retriesGroup(): FormGroup {

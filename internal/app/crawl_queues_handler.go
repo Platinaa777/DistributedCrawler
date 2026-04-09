@@ -77,13 +77,20 @@ func (a *APIApp) createJobHandlerFunc() runtime.HandlerFunc {
 		_ = json.Unmarshal(envelope.Config, &queueWeightsWrapper)
 
 		config := crawljob.FromProtoCrawlJobConfig(&protoConfig)
-		config.QueueWeights = queueWeightsWrapper.QueueWeights
+
+		availableQueues := a.serviceProvider.AvailableQueues()
+		// Queue routing only makes sense when more than one queue is configured.
+		// In single-region mode ignore any submitted weights to avoid routing
+		// tasks to queues that do not exist.
+		if len(availableQueues) > 1 {
+			config.QueueWeights = queueWeightsWrapper.QueueWeights
+		}
 
 		ctx := r.Context()
 		id, err := a.serviceProvider.CrawlJobService(ctx).CreateCrawlJob(ctx, service.CreateCrawlJobCommand{
 			Config:          config,
 			UserID:          claims.UserID,
-			AvailableQueues: a.serviceProvider.AvailableQueues(),
+			AvailableQueues: availableQueues,
 		})
 		if err != nil {
 			writeJSONError(w, http.StatusInternalServerError, err.Error())

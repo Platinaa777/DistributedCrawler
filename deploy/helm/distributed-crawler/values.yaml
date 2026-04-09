@@ -303,6 +303,7 @@ config:
     user: guest
     # password is in secrets
     crawlQueueName: crawl_queue
+    crawlQueueNames: ""  # comma-separated list for multi-region; falls back to crawlQueueName when empty
     parsingQueueName: parsing_queue
     exportQueueName: export_queue
 
@@ -312,6 +313,7 @@ config:
     port: 9000
     useSSL: false
     bucketName: pages
+    publicBaseURL: ""  # If set, presigned URLs use this base (e.g. http://localhost:9000 for minikube)
     # user and password are in secrets
 
   # Redis connection

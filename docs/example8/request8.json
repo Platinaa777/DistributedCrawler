@@ -1,0 +1,245 @@
+{
+  "config": {
+    "name": "BigGeek - All Apple Products",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_AND_LINKS",
+    "seeds": [
+      {
+        "url": "https://biggeek.ru/catalog/apple"
+      }
+    ],
+    "scopes": {
+      "max_depth": 5,
+      "allowed_domains": ["biggeek.ru"],
+      "deny_url_patterns": [
+        "/cart",
+        "/checkout",
+        "/login",
+        "/account",
+        "/trade-in",
+        "/warranty",
+        "/dostavka",
+        "/o-kompanii",
+        "/contacts",
+        "/find-us",
+        "/postoyannym-klientam",
+        "/dlya-smi-i-blogerov",
+        "/newsletter",
+        "/s/",
+        "/api/",
+        "/img/",
+        "/css/",
+        "/fonts/"
+      ]
+    },
+    "rate_limit": {
+      "rps": 2
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 500,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "h1.produt-section__title",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "price",
+          "type": "float",
+          "required": true,
+          "extractor": {
+            "selector": "div.prod-info-price__row span.total-prod-price",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "parse_price" }
+          ]
+        },
+        {
+          "name": "old_price",
+          "type": "float",
+          "required": false,
+          "extractor": {
+            "selector": "div.prod-info-price__top span.old-price",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "parse_price" }
+          ]
+        },
+        {
+          "name": "vendor_code",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "span.vendor-code",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "breadcrumbs",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "ul.breadcrumbs__list li.breadcrumbs__item a",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "image",
+          "type": "url",
+          "required": false,
+          "extractor": {
+            "selector": "meta[property=\"og:image\"]",
+            "attribute": "content",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "normalize_url" }
+          ]
+        },
+        {
+          "name": "char_names",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div#product-characteristics div.tabs-content__txt-row div.descr",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "char_values",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div#product-characteristics div.tabs-content__txt-row div.value",
+            "attribute": "text",
+            "multiple": true
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        }
+      ],
+      "items": {
+        "container_selector": "div.catalog-card",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "a.catalog-card__title",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "price",
+            "type": "float",
+            "required": true,
+            "extractor": {
+              "selector": "div.catalog-card__price-row b.cart-modal-count",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "parse_price" }
+            ]
+          },
+          {
+            "name": "old_price",
+            "type": "float",
+            "required": false,
+            "extractor": {
+              "selector": "div.catalog-card__price-row span.old-price",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "parse_price" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "a.catalog-card__title",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          },
+          {
+            "name": "thumbnail",
+            "type": "url",
+            "required": false,
+            "extractor": {
+              "selector": "a.catalog-card__img img.cart-modal-image",
+              "attribute": "src",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "a.prod-pagination__item-next",
+          "attribute": "href",
+          "multiple": false
+        }
+      ]
+    }
+  }
+}

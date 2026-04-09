@@ -245,16 +245,32 @@ run_docker() {
 
 # ── mode: k8s ─────────────────────────────────────────────────────────────────
 run_k8s() {
-  # Build helm --set-string value for fetchWorker.regions as YAML sequence:
+  # Build helm --set value for fetchWorker.regions as YAML sequence:
   # e.g. regions=["us-east","eu-west"]  →  --set 'fetchWorker.regions={us-east,eu-west}'
   local regions_helm
   regions_helm="{$(IFS=','; echo "${REGIONS[*]}")}"
 
   echo "==> Deploying to k8s with fetchWorker.regions=${regions_helm}"
 
-  bash "${SCRIPT_DIR}/k8s/launch-minikube.sh" \
-    --app-set "fetchWorker.regions=${regions_helm}" \
-    "${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}"
+  # Write crawlQueueNames into a temp values file — commas in the value break
+  # helm --set-string parsing, so a values file is the safe alternative.
+  local queue_values_file
+  queue_values_file="$(mktemp)"
+  trap 'rm -f "${queue_values_file}"' RETURN
+  cat > "${queue_values_file}" <<EOF
+config:
+  rabbitmq:
+    crawlQueueNames: "${RABBITMQ_CRAWL_QUEUE_NAMES}"
+EOF
+
+  local launch_args=(
+    --app-set "fetchWorker.regions=${regions_helm}"
+    --app-values-file "${queue_values_file}"
+  )
+  [[ "${NO_BUILD}" == "true" ]] && launch_args+=("--no-build")
+  [[ ${#PASSTHROUGH[@]} -gt 0 ]] && launch_args+=("${PASSTHROUGH[@]}")
+
+  bash "${SCRIPT_DIR}/k8s/launch-minikube.sh" "${launch_args[@]}"
 
   echo ""
   echo "==> Access points (requires port-forward or minikube tunnel):"

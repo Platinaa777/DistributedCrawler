@@ -34,6 +34,8 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: rabbitmq
     spec:
+      securityContext:
+        fsGroup: 999
       containers:
         - name: rabbitmq
           image: {{ .Values.rabbitmq.image.repository }}:{{ .Values.rabbitmq.image.tag }}
@@ -56,18 +58,20 @@ spec:
                 - rabbitmq-diagnostics
                 - -q
                 - ping
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 5
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
           livenessProbe:
             exec:
               command:
                 - rabbitmq-diagnostics
                 - -q
                 - ping
-            initialDelaySeconds: 20
-            periodSeconds: 10
-            timeoutSeconds: 5
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 6
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq

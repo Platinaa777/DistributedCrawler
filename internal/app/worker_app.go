@@ -425,11 +425,16 @@ func (a *WorkerApp) initFetchWorker() error {
 
 	// Initialize fetcher services
 	var fetcherFactory services.FetcherFactory
-	if env.GetFetcherType() == env.FetcherTypeBrowser {
+	switch env.GetFetcherType() {
+	case env.FetcherTypeBrowser:
 		chromeURL := env.GetChromeRemoteURL()
 		a.zapLogger.Info("Fetcher: using browser (chromedp)", zap.String("chrome_remote_url", chromeURL))
 		fetcherFactory = fetcher.NewBrowserFetcherFactory(chromeURL)
-	} else {
+	case env.FetcherTypeSelenium:
+		seleniumURL := env.GetSeleniumRemoteURL()
+		a.zapLogger.Info("Fetcher: using Selenium WebDriver", zap.String("selenium_remote_url", seleniumURL))
+		fetcherFactory = fetcher.NewSeleniumFetcherFactory(seleniumURL)
+	default:
 		a.zapLogger.Info("Fetcher: using HTTP")
 		fetcherFactory = fetcher.NewHTTPFetcherFactory()
 	}

@@ -150,6 +150,64 @@ Deployment name.
 
 ---
 
+## Port-forwarding (`k8s/port-forward.sh`)
+
+Opens `kubectl port-forward` tunnels for any combination of infra and app
+services. All forwards run in the background; **Ctrl-C** stops them all.
+
+### Quick start
+
+```bash
+# Forward everything (infra + app)
+./deploy/scripts/k8s/port-forward.sh
+
+# Forward selected services only
+./deploy/scripts/k8s/port-forward.sh grpc-server ui
+./deploy/scripts/k8s/port-forward.sh postgresql rabbitmq minio
+```
+
+Or start it automatically after a deploy with `--port-forward`:
+
+```bash
+./deploy/scripts/default_run.sh --mode k8s --port-forward
+./deploy/scripts/multi_region_run.sh --regions us-east,eu-west --mode k8s --port-forward
+```
+
+### Available services and local ports
+
+| Alias | Local port(s) | URL / note |
+|-------|--------------|------------|
+| `grpc-server` | `8083`, `8084` | gRPC API / HTTP gateway |
+| `ui` | `4200` | Admin UI → http://localhost:4200 |
+| `postgresql` | `54322` | `localhost:54322` |
+| `rabbitmq` | `5672`, `15672` | AMQP / Management UI → http://localhost:15672 (guest/guest) |
+| `minio` | `9000`, `9001` | S3 API / Console → http://localhost:9001 (minioadmin/minioadmin) |
+| `redis` | `6379` | `localhost:6379` |
+| `redisinsight` | `8001` | http://localhost:8001 |
+| `jaeger` | `16686` | http://localhost:16686 |
+| `prometheus` | `9090` | http://localhost:9090 |
+| `grafana` | `3000` | http://localhost:3000 (admin/changeme-grafana-password) |
+| `opensearch` | `9200` | http://localhost:9200 |
+| `opensearch-dashboards` | `5601` | http://localhost:5601 |
+
+> Observability services (jaeger, prometheus, grafana, opensearch, opensearch-dashboards)
+> are only deployed when `--full-observability` was passed to the launch script.
+
+### Environment overrides
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `INFRA_NAMESPACE` | `infra` | Namespace of the infra Helm release |
+| `INFRA_RELEASE` | `infra` | Name of the infra Helm release |
+| `APP_NAMESPACE` | `crawler` | Namespace of the app Helm release |
+| `APP_RELEASE` | `crawler` | Name of the app Helm release |
+
+```bash
+APP_NAMESPACE=my-crawler ./deploy/scripts/k8s/port-forward.sh ui grpc-server
+```
+
+---
+
 ## Relationship to existing low-level scripts
 
 The launchers do not replace the scripts in `local/`, `docker/`, and `k8s/`.

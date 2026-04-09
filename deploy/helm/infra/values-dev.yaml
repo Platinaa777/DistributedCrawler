@@ -21,11 +21,11 @@ rabbitmq:
     size: 1Gi
   resources:
     limits:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 500m
+      memory: 768Mi
     requests:
-      cpu: 50m
-      memory: 128Mi
+      cpu: 100m
+      memory: 512Mi
 
 minio:
   persistence:

@@ -254,38 +254,40 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		return nil
 	}
 
-	// Check robots.txt rules
-	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-	allowed, err := w.robotsTxtService.IsAllowed(ctx, task.URL, userAgent)
-	if err != nil {
-		w.logger.Warn("Failed to check robots.txt, proceeding with fetch",
-			zap.String("task_id", taskMsg.TaskID),
-			zap.String("url", task.URL),
-			zap.Error(err),
-		)
-		// On error, proceed with fetching (permissive default)
-	} else if !allowed {
-		w.logger.Warn("URL disallowed by robots.txt",
-			zap.String("task_id", taskMsg.TaskID),
-			zap.String("url", task.URL),
-		)
-
-		task.MarkAsFailed("URL disallowed by robots.txt")
-		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
-			w.logger.Error("Failed to update task status to failed",
+	if config.RespectRobotsTxt {
+		// Check robots.txt rules
+		userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+		allowed, err := w.robotsTxtService.IsAllowed(ctx, task.URL, userAgent)
+		if err != nil {
+			w.logger.Warn("Failed to check robots.txt, proceeding with fetch",
 				zap.String("task_id", taskMsg.TaskID),
-				zap.Error(updateErr),
+				zap.String("url", task.URL),
+				zap.Error(err),
 			)
-			return fmt.Errorf("failed to update task status: %w", updateErr)
+			// On error, proceed with fetching (permissive default)
+		} else if !allowed {
+			w.logger.Warn("URL disallowed by robots.txt",
+				zap.String("task_id", taskMsg.TaskID),
+				zap.String("url", task.URL),
+			)
+
+			task.MarkAsFailed("URL disallowed by robots.txt")
+			if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
+				w.logger.Error("Failed to update task status to failed",
+					zap.String("task_id", taskMsg.TaskID),
+					zap.Error(updateErr),
+				)
+				return fmt.Errorf("failed to update task status: %w", updateErr)
+			}
+
+			w.logger.Info("Task marked as failed due to robots.txt disallow",
+				zap.String("task_id", taskMsg.TaskID),
+				zap.String("url", task.URL),
+			)
+
+			// Don't return error - task is processed (marked as failed)
+			return nil
 		}
-
-		w.logger.Info("Task marked as failed due to robots.txt disallow",
-			zap.String("task_id", taskMsg.TaskID),
-			zap.String("url", task.URL),
-		)
-
-		// Don't return error - task is processed (marked as failed)
-		return nil
 	}
 
 	// Apply rate limiting before fetching

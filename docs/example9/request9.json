@@ -1,0 +1,134 @@
+{
+  "config": {
+    "name": "Wikipedia - Search results for programming language history",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_ONLY",
+    "respect_robots_txt": false,
+    "seeds": [
+      {
+        "url": "https://en.wikipedia.org/w/index.php?title=Special:Search&search=programming+language+history&fulltext=1&ns0=1&limit=20"
+      }
+    ],
+    "scopes": {
+      "max_depth": 5,
+      "allowed_domains": ["en.wikipedia.org"],
+      "deny_url_patterns": []
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 1000,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "page_title",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "#firstHeading",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        }
+      ],
+      "items": {
+        "container_selector": "ul.mw-search-results li.mw-search-result",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": ".mw-search-result-heading a",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": ".mw-search-result-heading a",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          },
+          {
+            "name": "snippet",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": ".searchresult",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "meta",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": ".mw-search-result-data",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "thumbnail",
+            "type": "url",
+            "required": false,
+            "extractor": {
+              "selector": ".searchResultImage-thumbnail img",
+              "attribute": "src",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "a[rel=\"next\"]",
+          "attribute": "href",
+          "multiple": false
+        }
+      ]
+    }
+  }
+}

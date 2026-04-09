@@ -13,6 +13,9 @@ config:
 
   limiterType: "redis"
 
+  minio:
+    publicBaseURL: "http://localhost:9000"
+
   kafka:
     brokers: "localhost:9091"
     consumerGroup: "distributed-crawler"

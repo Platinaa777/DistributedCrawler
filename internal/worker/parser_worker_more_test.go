@@ -32,8 +32,8 @@ func (f *fakeContentStore) Get(context.Context, string) ([]byte, error) { return
 func (f *fakeContentStore) GetReader(context.Context, string) (io.ReadCloser, error) {
 	return nil, errors.New("not implemented")
 }
-func (f *fakeContentStore) Delete(context.Context, string) error            { return nil }
-func (f *fakeContentStore) Exists(context.Context, string) (bool, error)    { return false, nil }
+func (f *fakeContentStore) Delete(context.Context, string) error         { return nil }
+func (f *fakeContentStore) Exists(context.Context, string) (bool, error) { return false, nil }
 
 type fakeScopeValidator struct {
 	validateFn func(url string, depth uint64, rules models.ScopeRules) error
@@ -48,9 +48,11 @@ func (f fakeScopeValidator) Validate(url string, depth uint64, rules models.Scop
 
 type fakeRobotsService struct {
 	allowFn func(ctx context.Context, urlStr string, userAgent string) (bool, error)
+	calls   int
 }
 
-func (f fakeRobotsService) IsAllowed(ctx context.Context, urlStr string, userAgent string) (bool, error) {
+func (f *fakeRobotsService) IsAllowed(ctx context.Context, urlStr string, userAgent string) (bool, error) {
+	f.calls++
 	if f.allowFn != nil {
 		return f.allowFn(ctx, urlStr, userAgent)
 	}
@@ -258,7 +260,7 @@ func TestUploadResultToS3_StoresExpectedPayload(t *testing.T) {
 	var storedContent []byte
 
 	w := &ParserWorker{
-		logger:       zap.NewNop(),
+		logger: zap.NewNop(),
 		contentStore: &fakeContentStore{storeFn: func(ctx context.Context, key string, content []byte, contentType string) error {
 			storedKey = key
 			storedType = contentType
@@ -308,7 +310,7 @@ func TestPreparePaginationLinks_FiltersByAllowedPatternsRobotsAndScheme(t *testi
 				return nil
 			},
 		},
-		robotsTxtService: fakeRobotsService{
+		robotsTxtService: &fakeRobotsService{
 			allowFn: func(ctx context.Context, urlStr string, userAgent string) (bool, error) {
 				return urlStr != "https://example.com/blocked-by-robots", nil
 			},
@@ -325,6 +327,7 @@ func TestPreparePaginationLinks_FiltersByAllowedPatternsRobotsAndScheme(t *testi
 		</body></html>`)
 
 	tasks, events, err := w.preparePaginationLinks(context.Background(), task, html, &models.CrawlJobConfig{
+		RespectRobotsTxt: true,
 		Scopes: models.ScopeRules{
 			MaxDepth:           2,
 			AllowedURLPatterns: []string{"https://example.com/allowed*"},
@@ -357,7 +360,7 @@ func TestPrepareDiscoveredLinks_DeduplicatesAndRespectsDepthLimit(t *testing.T) 
 	w := &ParserWorker{
 		logger:           zap.NewNop(),
 		scopeValidator:   fakeScopeValidator{},
-		robotsTxtService: fakeRobotsService{},
+		robotsTxtService: &fakeRobotsService{},
 	}
 
 	html := []byte(`
@@ -392,6 +395,80 @@ func TestPrepareDiscoveredLinks_DeduplicatesAndRespectsDepthLimit(t *testing.T) 
 	require.NoError(t, err)
 	assert.Nil(t, none)
 	assert.Nil(t, noneEvents)
+}
+
+func TestPreparePaginationLinks_IgnoresRobotsWhenDisabled(t *testing.T) {
+	t.Parallel()
+
+	task := &models.CrawlTask{
+		ID:    valueobjects.GenerateCrawlTaskID(),
+		JobID: valueobjects.GenerateCrawlJobID(),
+		URL:   "https://example.com/list",
+		Depth: 0,
+	}
+
+	robots := &fakeRobotsService{
+		allowFn: func(ctx context.Context, urlStr string, userAgent string) (bool, error) {
+			return false, nil
+		},
+	}
+
+	w := &ParserWorker{
+		logger:           zap.NewNop(),
+		scopeValidator:   fakeScopeValidator{},
+		robotsTxtService: robots,
+	}
+
+	html := []byte(`<html><body><a class="page" href="/blocked">next</a></body></html>`)
+
+	tasks, events, err := w.preparePaginationLinks(context.Background(), task, html, &models.CrawlJobConfig{
+		RespectRobotsTxt: false,
+		Scopes: models.ScopeRules{
+			MaxDepth:           2,
+			AllowedURLPatterns: []string{"https://example.com/*"},
+		},
+		ExtractionSpec: models.ExtractionSpec{
+			Pagination: []models.PaginationSpec{
+				{Name: "next", Selector: "a.page", Attribute: "href", Multiple: true},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, tasks, 1)
+	require.Len(t, events, 1)
+	assert.Equal(t, "https://example.com/blocked", tasks[0].URL)
+	assert.Equal(t, 0, robots.calls)
+}
+
+func TestPrepareDiscoveredLinks_IgnoresRobotsWhenDisabled(t *testing.T) {
+	t.Parallel()
+
+	robots := &fakeRobotsService{
+		allowFn: func(ctx context.Context, urlStr string, userAgent string) (bool, error) {
+			return false, nil
+		},
+	}
+
+	w := &ParserWorker{
+		logger:           zap.NewNop(),
+		scopeValidator:   fakeScopeValidator{},
+		robotsTxtService: robots,
+	}
+
+	tasks, events, err := w.prepareDiscoveredLinks(context.Background(), &models.CrawlTask{
+		ID:    valueobjects.GenerateCrawlTaskID(),
+		JobID: valueobjects.GenerateCrawlJobID(),
+		URL:   "https://example.com/catalog",
+		Depth: 0,
+	}, []byte(`<html><body><a href="/blocked">blocked</a></body></html>`), &models.CrawlJobConfig{
+		RespectRobotsTxt: false,
+		Scopes:           models.ScopeRules{MaxDepth: 1},
+	})
+	require.NoError(t, err)
+	require.Len(t, tasks, 1)
+	require.Len(t, events, 1)
+	assert.Equal(t, "https://example.com/blocked", tasks[0].URL)
+	assert.Equal(t, 0, robots.calls)
 }
 
 func TestApplyTransform_LimitAcceptsJSONNumber(t *testing.T) {
