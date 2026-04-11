@@ -9,7 +9,7 @@
       }
     ],
     "scopes": {
-      "max_depth": 5,
+      "max_depth": 1,
       "allowed_domains": ["biggeek.ru"],
       "deny_url_patterns": [
         "/cart",

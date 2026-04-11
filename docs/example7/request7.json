@@ -9,7 +9,7 @@
       }
     ],
     "scopes": {
-      "max_depth": 5,
+      "max_depth": 2,
       "allowed_domains": ["www.gutenberg.org"],
       "deny_url_patterns": [
         "/cache/",
