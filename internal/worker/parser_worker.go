@@ -14,12 +14,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"distributed-crawler/internal/domain/crawl/events"
 	"distributed-crawler/internal/domain/crawl/models"
 	crawljob "distributed-crawler/internal/domain/crawl/repos/crawl_job"
 	crawljobconfig "distributed-crawler/internal/domain/crawl/repos/crawl_job_config"
 	crawltask "distributed-crawler/internal/domain/crawl/repos/crawl_task"
-	"distributed-crawler/internal/domain/crawl/repos/outbox"
 	"distributed-crawler/internal/domain/crawl/services"
 	"distributed-crawler/internal/domain/crawl/valueobjects"
 	"distributed-crawler/internal/infra/messaging"
@@ -44,7 +42,6 @@ type ParserWorker struct {
 	taskRepo         crawltask.CrawlTaskRepository
 	jobRepo          crawljob.CrawlJobRepository
 	jobConfigRepo    crawljobconfig.CrawlJobConfigRepository
-	outboxRepo       outbox.OutboxRepository
 	txManager        persistence.TxManager
 	scopeValidator   services.ScopeValidator
 	robotsTxtService services.RobotsTxtService
@@ -65,7 +62,6 @@ func NewParserWorker(
 	taskRepo crawltask.CrawlTaskRepository,
 	jobRepo crawljob.CrawlJobRepository,
 	jobConfigRepo crawljobconfig.CrawlJobConfigRepository,
-	outboxRepo outbox.OutboxRepository,
 	txManager persistence.TxManager,
 	scopeValidator services.ScopeValidator,
 	robotsTxtService services.RobotsTxtService,
@@ -82,7 +78,6 @@ func NewParserWorker(
 		taskRepo:         taskRepo,
 		jobRepo:          jobRepo,
 		jobConfigRepo:    jobConfigRepo,
-		outboxRepo:       outboxRepo,
 		txManager:        txManager,
 		scopeValidator:   scopeValidator,
 		robotsTxtService: robotsTxtService,
@@ -291,9 +286,8 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 
 	// Prepare new tasks/events outside any transaction (robots.txt checks involve network I/O).
 	var paginationTasks []models.CrawlTask
-	var paginationEvents []models.OutboxEvent
 	if crawlMode != models.CrawlModeLinksOnly {
-		paginationTasks, paginationEvents, err = w.preparePaginationLinks(ctx, crawlTask, htmlContent, jobConfig)
+		paginationTasks, err = w.preparePaginationLinks(ctx, crawlTask, htmlContent, jobConfig)
 		if err != nil {
 			w.logger.Error("Failed to prepare pagination links",
 				zap.String("task_id", task.TaskID),
@@ -303,9 +297,8 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 	}
 
 	var discoveryTasks []models.CrawlTask
-	var discoveryEvents []models.OutboxEvent
 	if crawlMode != models.CrawlModePaginationOnly {
-		discoveryTasks, discoveryEvents, err = w.prepareDiscoveredLinks(ctx, crawlTask, htmlContent, jobConfig)
+		discoveryTasks, err = w.prepareDiscoveredLinks(ctx, crawlTask, htmlContent, jobConfig)
 		if err != nil {
 			w.logger.Error("Failed to prepare discovered links",
 				zap.String("task_id", task.TaskID),
@@ -314,13 +307,10 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		}
 	}
 
-	// Atomically: persist result DB reference + all new tasks + outbox events.
-	// A single transaction closes the race window where the export worker could
-	// see result_object_key set on the last task but find no pending outbox events
-	// for newly discovered URLs, causing it to export an incomplete job.
 	allTasks := append(paginationTasks, discoveryTasks...)
-	allEvents := append(paginationEvents, discoveryEvents...)
 
+	// Atomically persist result DB reference + all new tasks.
+	var insertedIDs []valueobjects.CrawlTaskID
 	if err := w.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		crawlTask.MarkAsParsed(objectKey, "application/json", sizeBytes, time.Now())
 
@@ -328,34 +318,11 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 			return fmt.Errorf("failed to update task status to parsed: %w", err)
 		}
 
-		eventsToCreate := allEvents
 		if len(allTasks) > 0 {
-			insertedIDs, err := w.taskRepo.BulkCreate(ctx, allTasks)
+			var err error
+			insertedIDs, err = w.taskRepo.BulkCreate(ctx, allTasks)
 			if err != nil {
 				return fmt.Errorf("failed to bulk create new tasks: %w", err)
-			}
-			// BulkCreate uses ON CONFLICT DO NOTHING: some tasks may have been skipped because
-			// the (job_id, url) pair already exists. Only create outbox events for tasks that
-			// were actually inserted — otherwise the fetch worker would receive a message for a
-			// task_id that is not in the database.
-			if len(insertedIDs) < len(allTasks) {
-				insertedSet := make(map[string]bool, len(insertedIDs))
-				for _, id := range insertedIDs {
-					insertedSet[id.String()] = true
-				}
-				filtered := make([]models.OutboxEvent, 0, len(insertedIDs))
-				for _, e := range eventsToCreate {
-					if insertedSet[e.AggregateID] {
-						filtered = append(filtered, e)
-					}
-				}
-				eventsToCreate = filtered
-			}
-		}
-
-		if len(eventsToCreate) > 0 {
-			if err := w.outboxRepo.BulkCreate(ctx, eventsToCreate); err != nil {
-				return fmt.Errorf("failed to bulk create outbox events: %w", err)
 			}
 		}
 		return nil
@@ -380,6 +347,37 @@ func (w *ParserWorker) handleMessage(body []byte) error {
 		)
 
 		return nil
+	}
+
+	// Publish directly to crawl queue for each task that was actually inserted.
+	// BulkCreate uses ON CONFLICT DO NOTHING, so insertedIDs may be fewer than allTasks.
+	if len(insertedIDs) > 0 {
+		traceCtx := telemetry.InjectTraceContext(ctx)
+		taskByID := make(map[string]models.CrawlTask, len(allTasks))
+		for _, t := range allTasks {
+			taskByID[t.ID.String()] = t
+		}
+		for _, id := range insertedIDs {
+			t, ok := taskByID[id.String()]
+			if !ok {
+				continue
+			}
+			targetQueue := models.SelectCrawlQueue(w.availableQueues, jobConfig.QueueWeights)
+			msg := messaging.CrawlTaskMessage{
+				TaskID:       id.String(),
+				JobID:        t.JobID.String(),
+				URL:          t.URL,
+				EnqueuedAt:   t.EnqueuedAt,
+				TraceContext: traceCtx,
+			}
+			if err := w.msgClient.Publish(ctx, targetQueue, msg); err != nil {
+				w.logger.Error("Failed to publish crawl task message",
+					zap.String("task_id", id.String()),
+					zap.String("url", t.URL),
+					zap.Error(err),
+				)
+			}
+		}
 	}
 
 	// Record successful parsing duration metric
@@ -948,22 +946,21 @@ func (w *ParserWorker) uploadResultToS3(ctx context.Context, taskID, url string,
 }
 
 // preparePaginationLinks extracts URLs from pagination elements using user-defined CSS selectors
-// and returns the CrawlTask and OutboxEvent records to be created. The caller is responsible
-// for persisting them — typically in the same transaction as SetTaskResult.
+// and returns CrawlTask records to be created. The caller is responsible for persisting them.
 func (w *ParserWorker) preparePaginationLinks(
 	ctx context.Context,
 	crawlTask *models.CrawlTask,
 	htmlContent []byte,
 	jobConfig *models.CrawlJobConfig,
-) ([]models.CrawlTask, []models.OutboxEvent, error) {
+) ([]models.CrawlTask, error) {
 	allowedURLPatterns, err := models.CompileAllowedURLPatterns(jobConfig.Scopes.AllowedURLPatterns)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid scopes.allowed_url_patterns: %w", err)
+		return nil, fmt.Errorf("invalid scopes.allowed_url_patterns: %w", err)
 	}
 
 	// Skip if no pagination selectors defined
 	if len(jobConfig.ExtractionSpec.Pagination) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	// Check depth limit - stop if we've reached MaxDepth
@@ -973,13 +970,13 @@ func (w *ParserWorker) preparePaginationLinks(
 			zap.Uint64("current_depth", crawlTask.Depth),
 			zap.Uint64("max_depth", jobConfig.Scopes.MaxDepth),
 		)
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	// Parse HTML with goquery
 	doc, err := w.parseHTMLDocument(htmlContent)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse HTML for pagination extraction: %w", err)
+		return nil, fmt.Errorf("failed to parse HTML for pagination extraction: %w", err)
 	}
 
 	// Determine base URL for resolving relative links
@@ -990,7 +987,7 @@ func (w *ParserWorker) preparePaginationLinks(
 		baseURL, err = url.Parse(crawlTask.URL)
 	}
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse base URL: %w", err)
+		return nil, fmt.Errorf("failed to parse base URL: %w", err)
 	}
 
 	// Extract URLs from all pagination selectors and deduplicate
@@ -1060,20 +1057,16 @@ func (w *ParserWorker) preparePaginationLinks(
 			zap.String("task_id", crawlTask.ID.String()),
 			zap.Int("pagination_selectors", len(jobConfig.ExtractionSpec.Pagination)),
 		)
-		return nil, nil, nil
+		return nil, nil
 	}
 
-	// Filter URLs by scope rules and prepare tasks/events
+	// Filter URLs by scope rules and prepare tasks
 	nextDepth := crawlTask.Depth + 1
 	tasks := make([]models.CrawlTask, 0)
-	outboxEvents := make([]models.OutboxEvent, 0)
 	now := time.Now().UTC()
 
 	// User-agent for robots.txt checking (matches the fetcher's user-agent)
 	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
-	// Capture the current parser span's trace context once for all child events.
-	currentTraceCtx := telemetry.InjectTraceContext(ctx)
 
 	for link := range paginationURLs {
 		// Validate against scope rules
@@ -1118,46 +1111,15 @@ func (w *ParserWorker) preparePaginationLinks(
 			}
 		}
 
-		// Create new CrawlTask
 		taskID := valueobjects.GenerateCrawlTaskID()
-		task := models.CrawlTask{
+		tasks = append(tasks, models.CrawlTask{
 			ID:         taskID,
 			JobID:      crawlTask.JobID,
 			URL:        link,
 			Status:     models.TaskStatusInProgress,
 			EnqueuedAt: now,
 			Depth:      nextDepth,
-		}
-		tasks = append(tasks, task)
-
-		// Create TaskEnqueuedEvent with the current parser span's trace context
-		// so downstream fetch/parse spans are children of this parser span.
-		event := events.NewTaskEnqueuedEvent(
-			taskID.String(),
-			crawlTask.JobID.String(),
-			link,
-			now,
-		)
-		event.TraceContext = currentTraceCtx
-		event.TargetQueue = models.SelectCrawlQueue(w.availableQueues, jobConfig.QueueWeights)
-
-		// Marshal event to JSON
-		payload, err := json.Marshal(event)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to marshal event for pagination task %s: %w", taskID.String(), err)
-		}
-
-		// Create OutboxEvent
-		outboxEvent := models.OutboxEvent{
-			ID:          valueobjects.GenerateOutboxEventID(),
-			EventType:   string(event.Type),
-			AggregateID: taskID.String(),
-			Payload:     payload,
-			OccurredAt:  event.OccurredAt,
-			ProcessedAt: nil,
-			CreatedAt:   now,
-		}
-		outboxEvents = append(outboxEvents, outboxEvent)
+		})
 	}
 
 	if len(tasks) == 0 {
@@ -1165,7 +1127,7 @@ func (w *ParserWorker) preparePaginationLinks(
 			zap.String("task_id", crawlTask.ID.String()),
 			zap.Int("total_pagination_urls", len(paginationURLs)),
 		)
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	w.logger.Debug("Prepared pagination links",
@@ -1175,21 +1137,20 @@ func (w *ParserWorker) preparePaginationLinks(
 		zap.Uint64("next_depth", nextDepth),
 	)
 
-	return tasks, outboxEvents, nil
+	return tasks, nil
 }
 
-// prepareDiscoveredLinks extracts links from HTML, filters them, and returns the CrawlTask and
-// OutboxEvent records to be created. The caller is responsible for persisting them — typically
-// in the same transaction as SetTaskResult.
+// prepareDiscoveredLinks extracts links from HTML, filters them, and returns CrawlTask records
+// to be created. The caller is responsible for persisting them.
 func (w *ParserWorker) prepareDiscoveredLinks(
 	ctx context.Context,
 	crawlTask *models.CrawlTask,
 	htmlContent []byte,
 	jobConfig *models.CrawlJobConfig,
-) ([]models.CrawlTask, []models.OutboxEvent, error) {
+) ([]models.CrawlTask, error) {
 	allowedURLPatterns, err := models.CompileAllowedURLPatterns(jobConfig.Scopes.AllowedURLPatterns)
 	if err != nil {
-		return nil, nil, fmt.Errorf("invalid scopes.allowed_url_patterns: %w", err)
+		return nil, fmt.Errorf("invalid scopes.allowed_url_patterns: %w", err)
 	}
 
 	// Check depth limit - stop if we've reached MaxDepth
@@ -1199,13 +1160,13 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 			zap.Uint64("current_depth", crawlTask.Depth),
 			zap.Uint64("max_depth", jobConfig.Scopes.MaxDepth),
 		)
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	// Parse HTML with goquery
 	doc, err := w.parseHTMLDocument(htmlContent)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse HTML for link discovery: %w", err)
+		return nil, fmt.Errorf("failed to parse HTML for link discovery: %w", err)
 	}
 
 	// Determine base URL for resolving relative links
@@ -1216,7 +1177,7 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 		baseURL, err = url.Parse(crawlTask.URL)
 	}
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse base URL: %w", err)
+		return nil, fmt.Errorf("failed to parse base URL: %w", err)
 	}
 
 	// Extract all links and dedupe
@@ -1253,20 +1214,16 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 		w.logger.Debug("No valid links found on page",
 			zap.String("task_id", crawlTask.ID.String()),
 		)
-		return nil, nil, nil
+		return nil, nil
 	}
 
-	// Filter links by scope rules and prepare tasks/events
+	// Filter links by scope rules and prepare tasks
 	nextDepth := crawlTask.Depth + 1
 	tasks := make([]models.CrawlTask, 0)
-	outboxEvents := make([]models.OutboxEvent, 0)
 	now := time.Now().UTC()
 
 	// User-agent for robots.txt checking (matches the fetcher's user-agent)
 	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
-	// Capture the current parser span's trace context once for all child events.
-	currentTraceCtx := telemetry.InjectTraceContext(ctx)
 
 	for link := range linkSet {
 		// Validate against scope rules
@@ -1311,46 +1268,15 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 			}
 		}
 
-		// Create new CrawlTask
 		taskID := valueobjects.GenerateCrawlTaskID()
-		task := models.CrawlTask{
+		tasks = append(tasks, models.CrawlTask{
 			ID:         taskID,
 			JobID:      crawlTask.JobID,
 			URL:        link,
 			Status:     models.TaskStatusInProgress,
 			EnqueuedAt: now,
 			Depth:      nextDepth,
-		}
-		tasks = append(tasks, task)
-
-		// Create TaskEnqueuedEvent with the current parser span's trace context
-		// so downstream fetch/parse spans are children of this parser span.
-		event := events.NewTaskEnqueuedEvent(
-			taskID.String(),
-			crawlTask.JobID.String(),
-			link,
-			now,
-		)
-		event.TraceContext = currentTraceCtx
-		event.TargetQueue = models.SelectCrawlQueue(w.availableQueues, jobConfig.QueueWeights)
-
-		// Marshal event to JSON
-		payload, err := json.Marshal(event)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to marshal event for task %s: %w", taskID.String(), err)
-		}
-
-		// Create OutboxEvent
-		outboxEvent := models.OutboxEvent{
-			ID:          valueobjects.GenerateOutboxEventID(),
-			EventType:   string(event.Type),
-			AggregateID: taskID.String(),
-			Payload:     payload,
-			OccurredAt:  event.OccurredAt,
-			ProcessedAt: nil,
-			CreatedAt:   now,
-		}
-		outboxEvents = append(outboxEvents, outboxEvent)
+		})
 	}
 
 	if len(tasks) == 0 {
@@ -1358,7 +1284,7 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 			zap.String("task_id", crawlTask.ID.String()),
 			zap.Int("total_links", len(linkSet)),
 		)
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	w.logger.Debug("Prepared discovered links",
@@ -1368,5 +1294,5 @@ func (w *ParserWorker) prepareDiscoveredLinks(
 		zap.Uint64("next_depth", nextDepth),
 	)
 
-	return tasks, outboxEvents, nil
+	return tasks, nil
 }

@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"distributed-crawler/internal/domain/crawl/models"
 	crawljobconfig "distributed-crawler/internal/domain/crawl/repos/crawl_job_config"
 	crawltask "distributed-crawler/internal/domain/crawl/repos/crawl_task"
 	"distributed-crawler/internal/domain/crawl/services"
@@ -168,39 +167,6 @@ func (w *FetchWorker) handleMessage(body []byte) error {
 		w.logger.Info("Task not found (job deleted), skipping message",
 			zap.String("task_id", taskMsg.TaskID),
 		)
-		return nil
-	}
-
-	// URL deduplication: check if another task with the same URL already exists in this job
-	isDuplicate, err := w.taskRepo.ExistsByJobIDAndURL(ctx, task.JobID, task.URL)
-	if err != nil {
-		w.logger.Error("Failed to check for duplicate URL",
-			zap.String("task_id", taskMsg.TaskID),
-			zap.String("url", task.URL),
-			zap.Error(err),
-		)
-		return fmt.Errorf("failed to check for duplicate URL: %w", err)
-	}
-
-	if isDuplicate {
-		w.logger.Info("Duplicate URL detected, skipping task",
-			zap.String("task_id", taskMsg.TaskID),
-			zap.String("url", task.URL),
-		)
-
-		if models.TaskStatusParsed == task.Status {
-			return nil
-		}
-
-		task.MarkAsSkipped(fmt.Sprintf("duplicate URL: %s", task.URL))
-		if updateErr := w.taskRepo.Update(ctx, *task); updateErr != nil {
-			w.logger.Error("Failed to update task status to skipped",
-				zap.String("task_id", taskMsg.TaskID),
-				zap.Error(updateErr),
-			)
-			return fmt.Errorf("failed to update task status: %w", updateErr)
-		}
-
 		return nil
 	}
 

@@ -326,7 +326,7 @@ func TestPreparePaginationLinks_FiltersByAllowedPatternsRobotsAndScheme(t *testi
 			<a class="page" href="/not-matching">other</a>
 		</body></html>`)
 
-	tasks, events, err := w.preparePaginationLinks(context.Background(), task, html, &models.CrawlJobConfig{
+	tasks, err := w.preparePaginationLinks(context.Background(), task, html, &models.CrawlJobConfig{
 		RespectRobotsTxt: true,
 		Scopes: models.ScopeRules{
 			MaxDepth:           2,
@@ -340,10 +340,8 @@ func TestPreparePaginationLinks_FiltersByAllowedPatternsRobotsAndScheme(t *testi
 	})
 	require.NoError(t, err)
 	require.Len(t, tasks, 1)
-	require.Len(t, events, 1)
 	assert.Equal(t, "https://example.com/allowed?page=2", tasks[0].URL)
 	assert.Equal(t, uint64(1), tasks[0].Depth)
-	assert.Equal(t, tasks[0].ID.String(), events[0].AggregateID)
 }
 
 func TestPrepareDiscoveredLinks_DeduplicatesAndRespectsDepthLimit(t *testing.T) {
@@ -371,12 +369,11 @@ func TestPrepareDiscoveredLinks_DeduplicatesAndRespectsDepthLimit(t *testing.T) 
 			<a href="javascript:void(0)">js</a>
 		</body></html>`)
 
-	tasks, events, err := w.prepareDiscoveredLinks(context.Background(), task, html, &models.CrawlJobConfig{
+	tasks, err := w.prepareDiscoveredLinks(context.Background(), task, html, &models.CrawlJobConfig{
 		Scopes: models.ScopeRules{MaxDepth: 2},
 	})
 	require.NoError(t, err)
 	require.Len(t, tasks, 2)
-	require.Len(t, events, 2)
 
 	urls := []string{tasks[0].URL, tasks[1].URL}
 	assert.ElementsMatch(t, []string{
@@ -384,7 +381,7 @@ func TestPrepareDiscoveredLinks_DeduplicatesAndRespectsDepthLimit(t *testing.T) 
 		"https://example.com/item/2",
 	}, urls)
 
-	none, noneEvents, err := w.prepareDiscoveredLinks(context.Background(), &models.CrawlTask{
+	none, err := w.prepareDiscoveredLinks(context.Background(), &models.CrawlTask{
 		ID:    valueobjects.GenerateCrawlTaskID(),
 		JobID: jobID,
 		URL:   "https://example.com/catalog",
@@ -394,7 +391,6 @@ func TestPrepareDiscoveredLinks_DeduplicatesAndRespectsDepthLimit(t *testing.T) 
 	})
 	require.NoError(t, err)
 	assert.Nil(t, none)
-	assert.Nil(t, noneEvents)
 }
 
 func TestPreparePaginationLinks_IgnoresRobotsWhenDisabled(t *testing.T) {
@@ -421,7 +417,7 @@ func TestPreparePaginationLinks_IgnoresRobotsWhenDisabled(t *testing.T) {
 
 	html := []byte(`<html><body><a class="page" href="/blocked">next</a></body></html>`)
 
-	tasks, events, err := w.preparePaginationLinks(context.Background(), task, html, &models.CrawlJobConfig{
+	tasks, err := w.preparePaginationLinks(context.Background(), task, html, &models.CrawlJobConfig{
 		RespectRobotsTxt: false,
 		Scopes: models.ScopeRules{
 			MaxDepth:           2,
@@ -435,7 +431,6 @@ func TestPreparePaginationLinks_IgnoresRobotsWhenDisabled(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, tasks, 1)
-	require.Len(t, events, 1)
 	assert.Equal(t, "https://example.com/blocked", tasks[0].URL)
 	assert.Equal(t, 0, robots.calls)
 }
@@ -455,7 +450,7 @@ func TestPrepareDiscoveredLinks_IgnoresRobotsWhenDisabled(t *testing.T) {
 		robotsTxtService: robots,
 	}
 
-	tasks, events, err := w.prepareDiscoveredLinks(context.Background(), &models.CrawlTask{
+	tasks, err := w.prepareDiscoveredLinks(context.Background(), &models.CrawlTask{
 		ID:    valueobjects.GenerateCrawlTaskID(),
 		JobID: valueobjects.GenerateCrawlJobID(),
 		URL:   "https://example.com/catalog",
@@ -466,7 +461,6 @@ func TestPrepareDiscoveredLinks_IgnoresRobotsWhenDisabled(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, tasks, 1)
-	require.Len(t, events, 1)
 	assert.Equal(t, "https://example.com/blocked", tasks[0].URL)
 	assert.Equal(t, 0, robots.calls)
 }

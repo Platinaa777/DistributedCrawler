@@ -2,6 +2,7 @@ package crawltask
 
 import (
 	"context"
+	"time"
 
 	"distributed-crawler/internal/application/service"
 	"distributed-crawler/internal/domain/crawl/models"
@@ -29,4 +30,8 @@ type CrawlTaskRepository interface {
 
 	// ExistsByJobIDAndURL checks if a task with the given URL already exists for the job (URL deduplication)
 	ExistsByJobIDAndURL(ctx context.Context, jobID valueobjects.CrawlJobID, url string) (bool, error)
+
+	// ListStaleInProgress returns InProgress tasks enqueued before olderThan, ordered by enqueued_at.
+	// Used by StuckTaskRecovery to re-publish tasks that were never dispatched due to a worker crash.
+	ListStaleInProgress(ctx context.Context, olderThan time.Time, limit int) ([]*models.CrawlTask, error)
 }

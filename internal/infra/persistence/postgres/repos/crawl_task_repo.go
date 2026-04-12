@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 
@@ -424,6 +425,50 @@ func (c *crawlTaskRepository) ExistsByJobIDAndURL(ctx context.Context, jobID val
 	}
 
 	return true, nil
+}
+
+// ListStaleInProgress returns InProgress tasks enqueued before olderThan.
+func (c *crawlTaskRepository) ListStaleInProgress(ctx context.Context, olderThan time.Time, limit int) ([]*models.CrawlTask, error) {
+	builder := sq.Select(
+		taskIDColumn, taskJobIDColumn, taskURLColumn, taskFinalURLColumn, taskStatusColumn, taskEnqueuedAtColumn,
+		taskDepthColumn, taskMinioObjectKeyColumn,
+		taskResultObjectKeyColumn, taskResultContentTypeColumn, taskResultSizeBytesColumn, taskResultCreatedAtColumn,
+		taskErrorMessageColumn,
+	).
+		PlaceholderFormat(sq.Dollar).
+		From(taskTableName).
+		Where(sq.And{
+			sq.Eq{taskStatusColumn: models.TaskStatusInProgress.String()},
+			sq.Lt{taskEnqueuedAtColumn: olderThan},
+		}).
+		OrderBy(taskEnqueuedAtColumn + " ASC").
+		Limit(uint64(limit))
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := persistence.Query{
+		Name:     "crawl_task_repository.ListStaleInProgress",
+		QueryRaw: query,
+	}
+
+	var taskSnapshots []snapshots.CrawlTaskSnapshot
+	if err := c.client.DB().ScanAllContext(ctx, &taskSnapshots, q, args...); err != nil {
+		return nil, err
+	}
+
+	tasks := make([]*models.CrawlTask, 0, len(taskSnapshots))
+	for _, snapshot := range taskSnapshots {
+		task, err := converters.RestoreCrawlTaskFromSnapshot(snapshot)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
 }
 
 // ListWithCursor returns tasks with cursor-based pagination and filtering

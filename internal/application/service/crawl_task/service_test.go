@@ -49,6 +49,9 @@ func (f crawlTaskRepoFake) SetTaskResult(context.Context, valueobjects.CrawlTask
 func (f crawlTaskRepoFake) ExistsByJobIDAndURL(context.Context, valueobjects.CrawlJobID, string) (bool, error) {
 	return false, nil
 }
+func (f crawlTaskRepoFake) ListStaleInProgress(context.Context, time.Time, int) ([]*models.CrawlTask, error) {
+	return nil, nil
+}
 
 var _ crawltaskrepo.CrawlTaskRepository = crawlTaskRepoFake{}
 

@@ -71,10 +71,11 @@ type WorkerApp struct {
 	startedAt time.Time
 	status    atomic.Int32
 
-	fetchWorker    *worker.FetchWorker
-	parserWorker   *worker.ParserWorker
-	exportWorker   *worker.ExportWorker
-	scheduleWorker *worker.ScheduleWorker
+	fetchWorker        *worker.FetchWorker
+	parserWorker       *worker.ParserWorker
+	exportWorker       *worker.ExportWorker
+	scheduleWorker     *worker.ScheduleWorker
+	stuckTaskRecovery  *worker.StuckTaskRecovery
 
 	workerCtx     context.Context
 	workerCancel  context.CancelFunc
@@ -521,7 +522,6 @@ func (a *WorkerApp) initParserWorker() error {
 	taskRepo := repos.NewCrawlTaskRepository(a.pgClient)
 	jobRepo := repos.NewCrawlRepository(a.pgClient)
 	jobConfigRepo := repos.NewCrawlJobConfigRepository(a.pgClient)
-	outboxRepo := repos.NewOutboxRepository(a.pgClient)
 
 	// Initialize transaction manager
 	txManager := transaction.NewTransactorManager(a.pgClient.DB())
@@ -549,7 +549,6 @@ func (a *WorkerApp) initParserWorker() error {
 		taskRepo,
 		jobRepo,
 		jobConfigRepo,
-		outboxRepo,
 		txManager,
 		scopeValidator,
 		robotsTxtService,
@@ -560,6 +559,13 @@ func (a *WorkerApp) initParserWorker() error {
 		a.getAllCrawlQueueNames(),
 	)
 	a.activeTasksCounter = a.parserWorker
+
+	a.stuckTaskRecovery = worker.NewStuckTaskRecovery(
+		taskRepo,
+		a.msgClient,
+		a.getAllCrawlQueueNames(),
+		a.zapLogger,
+	)
 
 	return nil
 }
@@ -644,6 +650,7 @@ func (a *WorkerApp) runWorker() error {
 		return a.fetchWorker.Start(a.consumeCtx)
 	case ParserWorkerType:
 		a.zapLogger.Info("Parser worker started")
+		go a.stuckTaskRecovery.Start(a.consumeCtx)
 		return a.parserWorker.Start(a.consumeCtx)
 	case ExportWorkerType:
 		a.zapLogger.Info("Export worker started")

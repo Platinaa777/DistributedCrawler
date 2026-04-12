@@ -107,6 +107,9 @@ func (f crawlTaskRepoForJobFake) SetTaskResult(context.Context, valueobjects.Cra
 func (f crawlTaskRepoForJobFake) ExistsByJobIDAndURL(context.Context, valueobjects.CrawlJobID, string) (bool, error) {
 	return false, nil
 }
+func (f crawlTaskRepoForJobFake) ListStaleInProgress(context.Context, time.Time, int) ([]*models.CrawlTask, error) {
+	return nil, nil
+}
 
 type outboxRepoFake struct {
 	createFn func(ctx context.Context, event models.OutboxEvent) error

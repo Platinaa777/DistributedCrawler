@@ -5,6 +5,10 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Use Docker's embedded DNS resolver so upstream IPs are re-resolved
+    # on each request rather than cached at startup.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
     # SPA routing
     location / {
         try_files $uri $uri/ /index.html;
@@ -12,7 +16,8 @@ server {
 
     # Proxy API calls to the backend
     location /api/v1/ {
-        proxy_pass ${BACKEND_URL};
+        set $backend "${BACKEND_URL}";
+        proxy_pass $backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
