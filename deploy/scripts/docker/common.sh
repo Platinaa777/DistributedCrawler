@@ -10,8 +10,8 @@ APP_COMPOSE_FILE="${PROJECT_ROOT}/docker-compose.app.yaml"
 
 ALL_APP_SERVICES=(grpc-server fetch-worker parser-worker export-worker ui)
 
-INFRA_COMPOSE_ARGS=(-f "${INFRA_COMPOSE_FILE}")
-APP_STACK_COMPOSE_ARGS=(-f "${INFRA_COMPOSE_FILE}" -f "${APP_COMPOSE_FILE}")
+INFRA_COMPOSE_ARGS=(--project-directory "${PROJECT_ROOT}" -f "${INFRA_COMPOSE_FILE}")
+APP_STACK_COMPOSE_ARGS=(--project-directory "${PROJECT_ROOT}" -f "${INFRA_COMPOSE_FILE}" -f "${APP_COMPOSE_FILE}")
 
 load_project_env() {
   local env_file="${PROJECT_ROOT}/.env"
@@ -82,18 +82,19 @@ array_contains() {
 }
 
 append_unique() {
-  local -n arr_ref="$1"
+  local arr_name="$1"
   local value="$2"
+  local arr_copy=()
+  eval "arr_copy=(\"\${${arr_name}[@]+\${${arr_name}[@]}}\")"
 
-  if ! array_contains "${value}" "${arr_ref[@]}"; then
-    arr_ref+=("${value}")
+  if ! array_contains "${value}" "${arr_copy[@]+"${arr_copy[@]}"}"; then
+    eval "${arr_name}+=($(printf '%q' "${value}"))"
   fi
 }
 
 normalize_broker() {
   local broker
-  broker="$(trim_value "${1:-rabbitmq}")"
-  broker="${broker,,}"
+  broker="$(trim_value "${1:-rabbitmq}" | tr '[:upper:]' '[:lower:]')"
 
   case "${broker}" in
     kafka|grpc_memory)
@@ -107,8 +108,7 @@ normalize_broker() {
 
 normalize_fetcher_type() {
   local fetcher_type
-  fetcher_type="$(trim_value "${1:-http}")"
-  fetcher_type="${fetcher_type,,}"
+  fetcher_type="$(trim_value "${1:-http}" | tr '[:upper:]' '[:lower:]')"
 
   if [[ "${fetcher_type}" == "browser" ]]; then
     printf '%s' "browser"
@@ -120,7 +120,7 @@ normalize_fetcher_type() {
 
 parse_csv_into_array() {
   local csv="$1"
-  local -n out_ref="$2"
+  local out_name="$2"
   local old_ifs
   local raw_items=()
   local item
@@ -130,10 +130,10 @@ parse_csv_into_array() {
   read -r -a raw_items <<< "${csv}"
   IFS="${old_ifs}"
 
-  for item in "${raw_items[@]}"; do
+  for item in "${raw_items[@]+"${raw_items[@]}"}"; do
     item="$(trim_value "${item}")"
     if [[ -n "${item}" ]]; then
-      out_ref+=("${item}")
+      eval "${out_name}+=($(printf '%q' "${item}"))"
     fi
   done
 }

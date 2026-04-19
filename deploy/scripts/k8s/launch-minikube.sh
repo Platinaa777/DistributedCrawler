@@ -107,12 +107,17 @@ write_file_block() {
 
 csv_to_array() {
   local csv="$1"
-  local -n out_ref="$2"
+  local out_name="$2"
   local old_ifs
+  local raw_items=()
   old_ifs="$IFS"
   IFS=','
-  read -r -a out_ref <<< "${csv}"
+  read -r -a raw_items <<< "${csv}"
   IFS="${old_ifs}"
+  local item
+  for item in "${raw_items[@]+"${raw_items[@]}"}"; do
+    eval "${out_name}+=($(printf '%q' "${item}"))"
+  done
 }
 
 VALUES_ENV="dev"

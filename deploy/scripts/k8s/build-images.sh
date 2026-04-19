@@ -52,7 +52,7 @@ build_image() {
   local image="${REGISTRY}/${name}:${TAG}"
 
   echo "==> Building ${image} ..."
-  docker build "${EXTRA_BUILD_ARGS[@]}" -t "${image}" -f "${PROJECT_ROOT}/${dockerfile}" "${PROJECT_ROOT}"
+  docker build "${EXTRA_BUILD_ARGS[@]+"${EXTRA_BUILD_ARGS[@]}"}" -t "${image}" -f "${PROJECT_ROOT}/${dockerfile}" "${PROJECT_ROOT}"
   echo "==> Done: ${image}"
 }
 
