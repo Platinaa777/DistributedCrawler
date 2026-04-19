@@ -1,0 +1,152 @@
+{
+  "exported_at": "2026-04-19T09:52:30Z",
+  "job_id": "c57ff6df-270e-4c76-a190-16cdc7e6e1e2",
+  "results": [
+    {
+      "task_id": "bd4a97d0-ac08-4eff-b475-0fc673098780",
+      "url": "https://github.com/Platinaa777?tab=repositories",
+      "status": "Parsed",
+      "fields": {
+        "bio": null,
+        "profile_login": "Platinaa777\n\n            ·\n            he/him",
+        "profile_name": "Denis"
+      },
+      "items": [
+        {
+          "language": "Go",
+          "name": "DistributedCrawler",
+          "url": "https://github.com/Platinaa777/DistributedCrawler"
+        },
+        {
+          "language": "Typst",
+          "name": "Obsidian",
+          "url": "https://github.com/Platinaa777/Obsidian"
+        },
+        {
+          "language": "C#",
+          "name": "SiteScraper",
+          "url": "https://github.com/Platinaa777/SiteScraper"
+        },
+        {
+          "description": "Observability platform",
+          "language": "C#",
+          "name": "DataCat",
+          "url": "https://github.com/Platinaa777/DataCat"
+        },
+        {
+          "description": "Chat roulette for developing communication skills",
+          "language": "C#",
+          "name": "ChatRoulette.Backend",
+          "stars": 3,
+          "url": "https://github.com/Platinaa777/ChatRoulette.Backend"
+        },
+        {
+          "description": "My docs about Go",
+          "name": "golang-docs",
+          "url": "https://github.com/Platinaa777/golang-docs"
+        },
+        {
+          "description": "My overview about Grafana",
+          "name": "grafana-docs",
+          "url": "https://github.com/Platinaa777/grafana-docs"
+        },
+        {
+          "description": "My overview about Prometheus",
+          "name": "prometheus-docs",
+          "url": "https://github.com/Platinaa777/prometheus-docs"
+        },
+        {
+          "description": "My overview about OpenTelemetry",
+          "name": "opentelemetry-docs",
+          "url": "https://github.com/Platinaa777/opentelemetry-docs"
+        },
+        {
+          "description": "My overview about Quartz .NET library",
+          "name": "quartz-docs",
+          "url": "https://github.com/Platinaa777/quartz-docs"
+        },
+        {
+          "description": "My overview about MassTransit library",
+          "name": "masstransit-docs",
+          "url": "https://github.com/Platinaa777/masstransit-docs"
+        },
+        {
+          "description": "Basics of computer networks",
+          "name": "Networks",
+          "url": "https://github.com/Platinaa777/Networks"
+        },
+        {
+          "description": "My summary about GC while learning it",
+          "name": "dotnet-gc",
+          "url": "https://github.com/Platinaa777/dotnet-gc"
+        },
+        {
+          "description": "Basics of relational databases (PostgreSQL)",
+          "name": "Databases",
+          "url": "https://github.com/Platinaa777/Databases"
+        },
+        {
+          "description": "Programming language",
+          "language": "F#",
+          "name": "3p5",
+          "url": "https://github.com/Platinaa777/3p5"
+        },
+        {
+          "name": "FullText_Clustering_Indexes",
+          "url": "https://github.com/Platinaa777/FullText_Clustering_Indexes"
+        },
+        {
+          "name": "Indexing",
+          "url": "https://github.com/Platinaa777/Indexing"
+        },
+        {
+          "name": "Platinaa777",
+          "url": "https://github.com/Platinaa777/Platinaa777"
+        },
+        {
+          "language": "C#",
+          "name": "DB_HW7",
+          "url": "https://github.com/Platinaa777/DB_HW7"
+        },
+        {
+          "name": "HW3_DB",
+          "url": "https://github.com/Platinaa777/HW3_DB"
+        },
+        {
+          "description": "HW 2",
+          "name": "PlantUmlDb",
+          "url": "https://github.com/Platinaa777/PlantUmlDb"
+        },
+        {
+          "description": "Dapper extensions library",
+          "language": "C#",
+          "name": "Dapper.Extensions",
+          "url": "https://github.com/Platinaa777/Dapper.Extensions"
+        },
+        {
+          "name": "Booking",
+          "url": "https://github.com/Platinaa777/Booking"
+        },
+        {
+          "language": "C#",
+          "name": "ATOH",
+          "url": "https://github.com/Platinaa777/ATOH"
+        },
+        {
+          "name": "test",
+          "url": "https://github.com/Platinaa777/test"
+        },
+        {
+          "name": "microservices",
+          "url": "https://github.com/Platinaa777/microservices"
+        },
+        {
+          "language": "C#",
+          "name": "Mindbox",
+          "url": "https://github.com/Platinaa777/Mindbox"
+        }
+      ]
+    }
+  ],
+  "total_tasks": 1
+}

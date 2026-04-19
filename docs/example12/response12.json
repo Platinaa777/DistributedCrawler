@@ -1,0 +1,51 @@
+{
+  "exported_at": "2026-04-19T12:10:00Z",
+  "job_id": "d4e5f6a7-b8c9-0123-def0-123456789012",
+  "results": [
+    {
+      "task_id": "e5f6a7b8-c9d0-1234-ef01-234567890123",
+      "url": "https://wiki.internal.example.com/docs/",
+      "status": "Parsed",
+      "fields": {
+        "page_title": "Documentation",
+        "last_modified": "2026-04-10T09:00:00Z",
+        "content": "Welcome to the internal wiki. Here you will find all engineering documentation organized by team and project."
+      },
+      "items": [
+        {
+          "title": "Backend Architecture",
+          "url": "https://wiki.internal.example.com/docs/backend/"
+        },
+        {
+          "title": "API Reference",
+          "url": "https://wiki.internal.example.com/docs/api/"
+        },
+        {
+          "title": "Deployment Runbooks",
+          "url": "https://wiki.internal.example.com/docs/runbooks/"
+        }
+      ]
+    },
+    {
+      "task_id": "f6a7b8c9-d0e1-2345-f012-345678901234",
+      "url": "https://wiki.internal.example.com/docs/backend/",
+      "status": "Parsed",
+      "fields": {
+        "page_title": "Backend Architecture",
+        "last_modified": "2026-03-28T14:22:00Z",
+        "content": "This section describes the backend architecture including service boundaries, data flows, and key design decisions."
+      },
+      "items": [
+        {
+          "title": "Service Map",
+          "url": "https://wiki.internal.example.com/docs/backend/service-map/"
+        },
+        {
+          "title": "Database Schema",
+          "url": "https://wiki.internal.example.com/docs/backend/schema/"
+        }
+      ]
+    }
+  ],
+  "total_tasks": 4
+}

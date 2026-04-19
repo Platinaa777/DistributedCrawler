@@ -1,0 +1,173 @@
+{
+  "config": {
+    "name": "GitHub - Platinaa777 public repos",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_ONLY",
+    "seeds": [
+      {
+        "url": "https://github.com/Platinaa777?tab=repositories"
+      }
+    ],
+    "scopes": {
+      "max_depth": 3,
+      "allowed_domains": ["github.com"],
+      "allowed_url_patterns": [
+        "^https://github\\.com/Platinaa777\\?tab=repositories.*$"
+      ],
+      "deny_url_patterns": []
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 2000,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": "<your_github_cookie>"
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "profile_name",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "span[itemprop='name']",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" }
+          ]
+        },
+        {
+          "name": "profile_login",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "span[itemprop='additionalName']",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" }
+          ]
+        },
+        {
+          "name": "bio",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div[data-bio-text]",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        }
+      ],
+      "items": {
+        "container_selector": "#user-repositories-list ul li",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "a[itemprop='name codeRepository']",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "a[itemprop='name codeRepository']",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": "p[itemprop='description']",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "language",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": "span[itemprop='programmingLanguage']",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" }
+            ]
+          },
+          {
+            "name": "stars",
+            "type": "int",
+            "required": false,
+            "extractor": {
+              "selector": "a.Link--muted[href$='/stargazers']",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "parse_int" }
+            ]
+          },
+          {
+            "name": "is_fork",
+            "type": "bool",
+            "required": false,
+            "extractor": {
+              "selector": "span.Label--secondary",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": []
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "a[rel='next']",
+          "attribute": "href",
+          "multiple": false
+        }
+      ]
+    }
+  }
+}

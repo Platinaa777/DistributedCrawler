@@ -1,0 +1,128 @@
+{
+  "exported_at": "2026-04-19T09:30:43Z",
+  "job_id": "36871be8-931b-4c09-ab98-3ce5adf43b52",
+  "results": [
+    {
+      "task_id": "179fac24-f819-4d72-ac43-0323b39b38e9",
+      "url": "https://habr.com/ru/feed/",
+      "status": "Parsed",
+      "items": [
+        {
+          "author": "maybe_elf",
+          "title": "Проект World Альтмана интегрирует технологию верификации в приложения для знакомств",
+          "url": "https://habr.com/ru/news/1025178/",
+          "views": "3"
+        },
+        {
+          "author": "runaway_llm",
+          "title": "Альтман покинет OpenAI перед IPO? Его сделки слишком часто обогащают не OpenAI, а его самого",
+          "url": "https://habr.com/ru/news/1025186/",
+          "views": "64"
+        },
+        {
+          "author": "denis-19",
+          "views": "251"
+        },
+        {
+          "author": "maybe_elf",
+          "title": "В Duolingo прекратили отслеживать использование сотрудниками ИИ при оценке эффективности",
+          "url": "https://habr.com/ru/news/1025176/",
+          "views": "639"
+        },
+        {
+          "author": "Bright_Translate",
+          "title": "Я установил все расширения Firefox",
+          "url": "https://habr.com/ru/companies/ruvds/articles/1024470/",
+          "views": "942"
+        },
+        {
+          "author": "groTex22",
+          "title": "SLA для Redmine. Подходящих плагинов не оказалось",
+          "url": "https://habr.com/ru/articles/1025174/",
+          "views": "1.3K"
+        },
+        {
+          "author": "obulygin",
+          "title": "Почему ваш LLM-сервис ведёт себя как хочет, а не как вы просите",
+          "url": "https://habr.com/ru/articles/1025172/",
+          "views": "1.2K"
+        },
+        {
+          "author": "prohronus",
+          "title": "Почему ИИ-код создаёт больше проблем, чем решает",
+          "url": "https://habr.com/ru/articles/1025170/",
+          "views": "1.1K"
+        },
+        {
+          "author": "handelsburo",
+          "title": "Контекст – ветер перемен, сдувающий капитализацию облачных решений и рабочие места",
+          "url": "https://habr.com/ru/articles/1025164/",
+          "views": "2.1K"
+        },
+        {
+          "author": "PatientZero",
+          "title": "Структуры данных на практике. Глава 12: Кучи и очереди с приоритетом",
+          "url": "https://habr.com/ru/articles/1016636/",
+          "views": "1.6K"
+        },
+        {
+          "author": "maybe_elf",
+          "title": "Исследование: для разблокировки по лицу на Android-смартфонах можно использовать фото",
+          "url": "https://habr.com/ru/news/1025160/",
+          "views": "1.9K"
+        },
+        {
+          "author": "Editor_cloud_ru",
+          "views": "65"
+        },
+        {
+          "author": "TrexSelectel",
+          "title": "Код Apollo 11 выглядит лучше современного софта. Похоже, мы где-то свернули не туда",
+          "url": "https://habr.com/ru/companies/selectel/articles/1023644/",
+          "views": "2K"
+        },
+        {
+          "author": "SkaJazz",
+          "title": "4 привычки, которые, как кажется, двигают вашу карьеру (но на самом деле ей вредят)",
+          "url": "https://habr.com/ru/companies/viju/articles/1025158/",
+          "views": "2.7K"
+        },
+        {
+          "author": "drzewo",
+          "title": "Классическая механика: метод Рауса и задача о кольцах на вращающемся стержне",
+          "url": "https://habr.com/ru/articles/1025156/",
+          "views": "2.2K"
+        },
+        {
+          "author": "VetaOne",
+          "title": "108 окон, 0 фреймворков, 1 Kubernetes: как команда без разработчиков построила интерактивный дом-таймлайн про ТВ 90-х",
+          "url": "https://habr.com/ru/articles/1025152/",
+          "views": "2.4K"
+        },
+        {
+          "author": "gr0grig",
+          "views": "1.9K"
+        },
+        {
+          "author": "romkamario",
+          "title": "Как техлид без навыка кодинга руками собрал Telegram-систему закупок с OCR, модерацией и безопасным деплоем",
+          "url": "https://habr.com/ru/articles/1025150/",
+          "views": "5.8K"
+        },
+        {
+          "author": "linux2000",
+          "title": "Счётчик воды для Home Assistant из датчика протечки Tuya",
+          "url": "https://habr.com/ru/articles/1025148/",
+          "views": "4K"
+        },
+        {
+          "author": "dima_yiu",
+          "title": "Как контролировать токены: поиск ошибок, версионирование и графы в едином дашборде",
+          "url": "https://habr.com/ru/articles/1025146/",
+          "views": "4K"
+        }
+      ]
+    }
+  ],
+  "total_tasks": 1
+}

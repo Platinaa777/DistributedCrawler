@@ -1,0 +1,116 @@
+{
+  "config": {
+    "name": "Habr - Personal feed (cookie auth)",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_ONLY",
+    "seeds": [
+      {
+        "url": "https://habr.com/ru/feed/"
+      }
+    ],
+    "scopes": {
+      "max_depth": 3,
+      "allowed_domains": ["habr.com"],
+      "deny_url_patterns": []
+    },
+    "rate_limit": {
+      "rps": 1
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 1000,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "",
+      "basic_password": "",
+      "bearer_token": "",
+      "cookie": "<input_cookie_header_for_habr>"
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [],
+      "items": {
+        "container_selector": "article.tm-articles-list__item",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "h2.tm-title a",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" },
+              { "op": "collapse_ws" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "h2.tm-title a",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          },
+          {
+            "name": "author",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": "a.tm-user-info__username",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" }
+            ]
+          },
+          {
+            "name": "hubs",
+            "type": "json",
+            "required": false,
+            "extractor": {
+              "selector": "ul.tm-article-snippet__hubs li a",
+              "attribute": "text",
+              "multiple": true
+            },
+            "transforms": [
+              { "op": "trim" }
+            ]
+          },
+          {
+            "name": "views",
+            "type": "string",
+            "required": false,
+            "extractor": {
+              "selector": "span.tm-icon-counter__value",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" }
+            ]
+          }
+        ]
+      },
+      "pagination": [
+        {
+          "name": "next_page",
+          "selector": "a[id='next_page']",
+          "attribute": "href",
+          "multiple": false
+        }
+      ]
+    }
+  }
+}

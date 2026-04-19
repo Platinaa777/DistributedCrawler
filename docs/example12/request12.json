@@ -1,0 +1,114 @@
+{
+  "config": {
+    "name": "Internal wiki - HTTP Basic Auth",
+    "job_type": "JOB_TYPE_ONCE",
+    "crawl_mode": "CRAWL_MODE_PAGINATION_AND_LINKS",
+    "seeds": [
+      {
+        "url": "https://wiki.internal.example.com/docs/"
+      }
+    ],
+    "scopes": {
+      "max_depth": 2,
+      "allowed_domains": ["wiki.internal.example.com"],
+      "allowed_url_patterns": [
+        "^https://wiki\\.internal\\.example\\.com/docs/.*$"
+      ],
+      "deny_url_patterns": [
+        "^https://wiki\\.internal\\.example\\.com/docs/_edit/.*$"
+      ]
+    },
+    "rate_limit": {
+      "rps": 2
+    },
+    "retries": {
+      "max_attempts": 3,
+      "backoff_initial_ms": 500,
+      "backoff_multiplier": 2
+    },
+    "auth": {
+      "basic_user": "crawler",
+      "basic_password": "s3cr3t",
+      "bearer_token": "",
+      "cookie": ""
+    },
+    "schedule": {
+      "cron": ""
+    },
+    "extraction_spec": {
+      "fields": [
+        {
+          "name": "page_title",
+          "type": "string",
+          "required": true,
+          "extractor": {
+            "selector": "h1.page-title",
+            "attribute": "text",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "trim" },
+            { "op": "collapse_ws" }
+          ]
+        },
+        {
+          "name": "last_modified",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "meta[name='last-modified']",
+            "attribute": "content",
+            "multiple": false
+          },
+          "transforms": []
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "required": false,
+          "extractor": {
+            "selector": "div.wiki-content",
+            "attribute": "html",
+            "multiple": false
+          },
+          "transforms": [
+            { "op": "html_to_text" },
+            { "op": "collapse_ws" }
+          ]
+        }
+      ],
+      "items": {
+        "container_selector": "ul.child-pages li",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "extractor": {
+              "selector": "a",
+              "attribute": "text",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "trim" }
+            ]
+          },
+          {
+            "name": "url",
+            "type": "url",
+            "required": true,
+            "extractor": {
+              "selector": "a",
+              "attribute": "href",
+              "multiple": false
+            },
+            "transforms": [
+              { "op": "normalize_url" }
+            ]
+          }
+        ]
+      },
+      "pagination": []
+    }
+  }
+}
