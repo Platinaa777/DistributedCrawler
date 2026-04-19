@@ -85,9 +85,15 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $root.Values.fetchWorker.affinity }}
+      {{- if $root.Values.fetchWorker.affinity }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $root.Values.fetchWorker.affinity | nindent 8 }}
+      {{- else if $region }}
+      {{- $nodeAffinity := include "distributed-crawler.regionalNodeAffinity" (dict "root" $root "region" $region) }}
+      {{- if $nodeAffinity }}
+      affinity:
+        {{- $nodeAffinity | nindent 8 }}
+      {{- end }}
       {{- end }}
       {{- with $root.Values.fetchWorker.tolerations }}
       tolerations:

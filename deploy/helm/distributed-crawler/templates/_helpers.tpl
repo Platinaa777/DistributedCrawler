@@ -378,3 +378,34 @@ Namespace to use
 {{- .Release.Namespace }}
 {{- end }}
 {{- end }}
+
+{{/*
+nodeAffinity for a regional fetch-worker deployment.
+Args: dict "root" . "region" $region
+Only emits output when scheduling.regionalNodeAffinity.enabled is true.
+*/}}
+{{- define "distributed-crawler.regionalNodeAffinity" -}}
+{{- $root := .root -}}
+{{- $region := .region -}}
+{{- if $root.Values.scheduling.regionalNodeAffinity.enabled }}
+nodeAffinity:
+  {{- if eq $root.Values.scheduling.regionalNodeAffinity.mode "hard" }}
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: {{ $root.Values.scheduling.regionalNodeAffinity.labelKey }}
+            operator: In
+            values:
+              - {{ $region }}
+  {{- else }}
+  preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+          - key: {{ $root.Values.scheduling.regionalNodeAffinity.labelKey }}
+            operator: In
+            values:
+              - {{ $region }}
+  {{- end }}
+{{- end }}
+{{- end }}

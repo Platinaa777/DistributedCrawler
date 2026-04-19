@@ -502,7 +502,7 @@ echo "==> Deploying infra release..."
 RELEASE_NAME="${INFRA_RELEASE_NAME}" \
 NAMESPACE="${INFRA_NAMESPACE}" \
 VALUES_ENV="${VALUES_ENV}" \
-bash "${DEPLOY_INFRA_SCRIPT}" -f "${INFRA_VALUES_FILE}" "${INFRA_HELM_ARGS[@]}"
+bash "${DEPLOY_INFRA_SCRIPT}" -f "${INFRA_VALUES_FILE}" "${INFRA_HELM_ARGS[@]+"${INFRA_HELM_ARGS[@]}"}"
 
 echo "==> Deploying app release..."
 RELEASE_NAME="${APP_RELEASE_NAME}" \
@@ -511,7 +511,7 @@ VALUES_ENV="${VALUES_ENV}" \
 EXTERNAL_INFRA="true" \
 INFRA_RELEASE_NAME="${INFRA_RELEASE_NAME}" \
 INFRA_NAMESPACE="${INFRA_NAMESPACE}" \
-bash "${DEPLOY_APP_SCRIPT}" -f "${APP_VALUES_FILE}" "${APP_HELM_ARGS[@]}"
+bash "${DEPLOY_APP_SCRIPT}" -f "${APP_VALUES_FILE}" "${APP_HELM_ARGS[@]+"${APP_HELM_ARGS[@]}"}"
 
 if [[ "${CREATE_BUCKET}" == "true" ]]; then
   bash "${ENSURE_BUCKET_SCRIPT}" \
@@ -544,7 +544,7 @@ if [[ "${PORT_FORWARD}" == "true" ]]; then
   INFRA_RELEASE="${INFRA_RELEASE_NAME}" \
   APP_NAMESPACE="${APP_NAMESPACE}" \
   APP_RELEASE="${APP_RELEASE_NAME}" \
-  bash "${PORT_FORWARD_SCRIPT}" "${PORT_FORWARD_SERVICES[@]}"
+  zsh "${PORT_FORWARD_SCRIPT}" "${PORT_FORWARD_SERVICES[@]}"
 else
   echo "==> To access services locally, run:"
   echo "    INFRA_NAMESPACE=${INFRA_NAMESPACE} INFRA_RELEASE=${INFRA_RELEASE_NAME} APP_NAMESPACE=${APP_NAMESPACE} APP_RELEASE=${APP_RELEASE_NAME} bash deploy/scripts/k8s/port-forward.sh grpc-server ui rabbitmq minio"

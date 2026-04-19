@@ -544,6 +544,22 @@ serviceAccount:
   name: ""
 
 # =============================================================================
+# Scheduling Configuration
+# =============================================================================
+scheduling:
+  # nodeAffinity for regional fetch-worker deployments.
+  # Only applies when fetchWorker.regions is non-empty.
+  regionalNodeAffinity:
+    enabled: false
+    # Node label key to match against the region name.
+    # Standard cloud label: topology.kubernetes.io/region
+    # Custom label example: node-region
+    labelKey: "topology.kubernetes.io/region"
+    # hard: requiredDuringSchedulingIgnoredDuringExecution (pod stays Pending if no matching node)
+    # soft: preferredDuringSchedulingIgnoredDuringExecution (falls back to any node)
+    mode: "soft"
+
+# =============================================================================
 # Pod Disruption Budget
 # =============================================================================
 podDisruptionBudget:

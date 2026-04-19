@@ -9,5 +9,6 @@ RUN npm run build -- --configuration production
 # Stage 2: Serve with nginx
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY --from=builder /app/ui/dist/ui/browser /usr/share/nginx/html
-COPY docker/ui/nginx.conf.template /etc/nginx/templates/default.conf.template
-EXPOSE 80
+COPY docker/ui/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY --chmod=0755 docker/ui/40-init-nginx-config.sh /docker-entrypoint.d/40-init-nginx-config.sh
+EXPOSE 8080

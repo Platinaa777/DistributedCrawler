@@ -119,3 +119,16 @@ redis:
       requests:
         cpu: 200m
         memory: 512Mi
+
+# Multi-region fetch workers example.
+# Requires nodes labeled with topology.kubernetes.io/region=<region>:
+#   kubectl label node <node-name> topology.kubernetes.io/region=us-east
+#
+# fetchWorker:
+#   regions: ["us-east", "eu-west"]
+#
+# scheduling:
+#   regionalNodeAffinity:
+#     enabled: true
+#     labelKey: topology.kubernetes.io/region
+#     mode: hard

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 # Open kubectl port-forwards for infrastructure and application services.
 # All forwards run in the background; Ctrl-C kills them all cleanly.
 #
@@ -27,30 +27,55 @@ APP_CHART="${APP_CHART_NAME:-distributed-crawler}"
 APP_FULL="${APP_REL}-${APP_CHART}"
 
 # ---- Service registry -------------------------------------------------------
-# Each entry: "alias namespace svc-name port1:targetPort1 [port2:targetPort2 ...]"
-#
-declare -A SVC_NS SVC_NAME SVC_PORTS
+# svc_ns <alias>    → namespace
+# svc_name <alias>  → k8s service name
+# svc_ports <alias> → space-separated "local:remote" mappings
 
-register() {
-  local alias="$1" ns="$2" svc="$3"
-  shift 3
-  SVC_NS[$alias]="$ns"
-  SVC_NAME[$alias]="$svc"
-  SVC_PORTS[$alias]="$*"
+svc_ns() {
+  case "$1" in
+    postgresql|rabbitmq|minio|redis|redisinsight|jaeger|prometheus|grafana|opensearch|opensearch-dashboards)
+      echo "${INFRA_NS}" ;;
+    grpc-server|ui)
+      echo "${APP_NS}" ;;
+    *) return 1 ;;
+  esac
 }
 
-register postgresql            "${INFRA_NS}" "${INFRA_REL}-postgresql"              54322:5432
-register rabbitmq              "${INFRA_NS}" "${INFRA_REL}-rabbitmq"                5672:5672 15672:15672
-register minio                 "${INFRA_NS}" "${INFRA_REL}-minio"                   9000:9000 9001:9001
-register redis                 "${INFRA_NS}" "${INFRA_REL}-redis-master"            6379:6379
-register redisinsight          "${INFRA_NS}" "${INFRA_REL}-redisinsight"            8001:8001
-register jaeger                "${INFRA_NS}" "${INFRA_REL}-jaeger-query"            16686:16686
-register prometheus            "${INFRA_NS}" "${INFRA_REL}-prometheus"              9090:9090
-register grafana               "${INFRA_NS}" "${INFRA_REL}-grafana"                 3000:3000
-register opensearch            "${INFRA_NS}" "${INFRA_REL}-opensearch"              9200:9200
-register opensearch-dashboards "${INFRA_NS}" "${INFRA_REL}-opensearch-dashboards"   5601:5601
-register grpc-server           "${APP_NS}"   "${APP_FULL}-grpc-server"              8083:8083 8084:8084
-register ui                    "${APP_NS}"   "${APP_FULL}-ui"                        4200:8080
+svc_name() {
+  case "$1" in
+    postgresql)              echo "${INFRA_REL}-postgresql" ;;
+    rabbitmq)                echo "${INFRA_REL}-rabbitmq" ;;
+    minio)                   echo "${INFRA_REL}-minio" ;;
+    redis)                   echo "${INFRA_REL}-redis-master" ;;
+    redisinsight)            echo "${INFRA_REL}-redisinsight" ;;
+    jaeger)                  echo "${INFRA_REL}-jaeger-query" ;;
+    prometheus)              echo "${INFRA_REL}-prometheus" ;;
+    grafana)                 echo "${INFRA_REL}-grafana" ;;
+    opensearch)              echo "${INFRA_REL}-opensearch" ;;
+    opensearch-dashboards)   echo "${INFRA_REL}-opensearch-dashboards" ;;
+    grpc-server)             echo "${APP_FULL}-grpc-server" ;;
+    ui)                      echo "${APP_FULL}-ui" ;;
+    *) return 1 ;;
+  esac
+}
+
+svc_ports() {
+  case "$1" in
+    postgresql)              echo "54322:5432" ;;
+    rabbitmq)                echo "5672:5672 15672:15672" ;;
+    minio)                   echo "9000:9000 9001:9001" ;;
+    redis)                   echo "6379:6379" ;;
+    redisinsight)            echo "8001:8001" ;;
+    jaeger)                  echo "16686:16686" ;;
+    prometheus)              echo "9090:9090" ;;
+    grafana)                 echo "3000:3000" ;;
+    opensearch)              echo "9200:9200" ;;
+    opensearch-dashboards)   echo "5601:5601" ;;
+    grpc-server)             echo "8083:8083 8084:8084" ;;
+    ui)                      echo "4200:8080" ;;
+    *) return 1 ;;
+  esac
+}
 
 ALL_ALIASES=(
   postgresql rabbitmq minio redis redisinsight
@@ -62,7 +87,7 @@ ALL_ALIASES=(
 if [[ $# -gt 0 ]]; then
   SELECTED=("$@")
   for alias in "${SELECTED[@]}"; do
-    if [[ -z "${SVC_NS[$alias]+_}" ]]; then
+    if ! svc_ns "${alias}" >/dev/null 2>&1; then
       echo "ERROR: Unknown service '${alias}'." >&2
       echo "Available: ${ALL_ALIASES[*]}" >&2
       exit 1
@@ -72,27 +97,41 @@ else
   SELECTED=("${ALL_ALIASES[@]}")
 fi
 
-# ---- Start port-forwards in background --------------------------------------
+# ---- Start port-forwards with auto-restart ----------------------------------
 PIDS=()
 
 cleanup() {
   echo ""
   echo "==> Stopping port-forwards..."
-  for pid in "${PIDS[@]}"; do
+  for pid in "${PIDS[@]+"${PIDS[@]}"}"; do
     kill "$pid" 2>/dev/null || true
   done
   wait 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
 
+# Runs kubectl port-forward in a retry loop so transient failures
+# (pod not ready, connection reset) don't kill the whole session.
+forward_with_retry() {
+  local alias="$1" ns="$2" svc="$3"
+  shift 3
+  local ports=("$@")
+  while true; do
+    kubectl port-forward --address=0.0.0.0 -n "${ns}" "svc/${svc}" "${ports[@]}" 2>&1 \
+      | sed "s/^/[${alias}] /" || true
+    echo "[${alias}] port-forward exited, retrying in 5s..." >&2
+    sleep 5
+  done
+}
+
 for alias in "${SELECTED[@]}"; do
-  ns="${SVC_NS[$alias]}"
-  svc="${SVC_NAME[$alias]}"
+  ns="$(svc_ns "${alias}")"
+  svc="$(svc_name "${alias}")"
   # shellcheck disable=SC2206
-  ports=(${SVC_PORTS[$alias]})
+  ports=($(svc_ports "${alias}"))
 
   echo "==> Forwarding ${alias} (${ns}/${svc}): ${ports[*]}"
-  kubectl port-forward --address=0.0.0.0 -n "${ns}" "svc/${svc}" "${ports[@]}" &>/dev/null &
+  forward_with_retry "${alias}" "${ns}" "${svc}" "${ports[@]}" &
   PIDS+=($!)
 done
 
@@ -102,23 +141,9 @@ echo ""
 echo "  Service                 Local URL"
 echo "  ----------------------  ----------------------------------"
 
-print_url() {
-  local alias="$1"
-  # shellcheck disable=SC2206
-  local ports=(${SVC_PORTS[$alias]})
-  local first_port="${ports[0]%%:*}"   # left side of first mapping
-  case "$alias" in
-    rabbitmq)              echo "  rabbitmq (AMQP)         localhost:5672" ;;
-    rabbitmq-ui)           : ;;
-    minio-api)             : ;;
-    *)                     ;;
-  esac
-}
-
-# Print a clean table of URLs
 for alias in "${SELECTED[@]}"; do
   # shellcheck disable=SC2206
-  ports=(${SVC_PORTS[$alias]})
+  ports=($(svc_ports "${alias}"))
   for mapping in "${ports[@]}"; do
     local_port="${mapping%%:*}"
     case "${local_port}" in
