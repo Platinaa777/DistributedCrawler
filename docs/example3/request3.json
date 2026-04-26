@@ -1,6 +1,6 @@
 {
   "config": {
-    "name": "BigGeek - MacBook Pro 14",
+    "name": "BigGeek - Products",
     "job_type": "JOB_TYPE_ONCE",
     "crawl_mode": "CRAWL_MODE_PAGINATION_AND_LINKS",
     "seeds": [

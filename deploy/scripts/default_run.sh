@@ -19,6 +19,7 @@
 #   --app-only                  Skip infra startup (infra must already be running)
 #   --tag <tag>                 Image tag (default: latest)
 #   --registry <name>           Image registry prefix (default: distributed-crawler)
+#   --redis-limiter             Use Redis for rate limiting across workers (default: inmemory)
 #
 # Options (k8s):
 #   --no-build                  Skip image build
@@ -49,6 +50,7 @@ CONFIG_PATH=".env"
 WORKER_CONFIG=".worker.env"
 BUILD_LOCAL=false
 PASSTHROUGH=()
+REDIS_LIMITER=false
 
 # ── argument parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
@@ -57,6 +59,7 @@ while [[ $# -gt 0 ]]; do
     --config)       CONFIG_PATH="$2";   shift 2 ;;
     --worker-config) WORKER_CONFIG="$2"; shift 2 ;;
     --build)        BUILD_LOCAL=true;   shift ;;
+    --redis-limiter) REDIS_LIMITER=true; shift ;;
     --)             shift; PASSTHROUGH+=("$@"); break ;;
     --help|-h)
       sed -n '2,/^set -/{ /^set -/d; s/^# \{0,1\}//; p }' "$0"
@@ -65,6 +68,11 @@ while [[ $# -gt 0 ]]; do
     *)              PASSTHROUGH+=("$1"); shift ;;
   esac
 done
+
+# ── apply flags ───────────────────────────────────────────────────────────────
+if [[ "${REDIS_LIMITER}" == true ]]; then
+  export LIMITER_TYPE=redis
+fi
 
 # ── mode: local ───────────────────────────────────────────────────────────────
 run_local() {

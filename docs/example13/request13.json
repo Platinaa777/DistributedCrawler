@@ -1,6 +1,6 @@
 {
   "config": {
-    "name": "GitHub - Platinaa777 public repos",
+    "name": "GitHub - Platinaa777 repos",
     "job_type": "JOB_TYPE_ONCE",
     "crawl_mode": "CRAWL_MODE_PAGINATION_ONLY",
     "seeds": [

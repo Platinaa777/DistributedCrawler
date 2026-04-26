@@ -11,6 +11,8 @@ go.work.sum
 coverage.out
 cover_*
 
+.idea/
+
 *.exe
 
 */.angular/

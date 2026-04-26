@@ -65,7 +65,7 @@ svc_ports() {
     rabbitmq)                echo "5672:5672 15672:15672" ;;
     minio)                   echo "9000:9000 9001:9001" ;;
     redis)                   echo "6379:6379" ;;
-    redisinsight)            echo "8001:8001" ;;
+    redisinsight)            echo "8001:5540" ;;
     jaeger)                  echo "16686:16686" ;;
     prometheus)              echo "9090:9090" ;;
     grafana)                 echo "3000:3000" ;;

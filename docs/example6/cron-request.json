@@ -1,6 +1,6 @@
 {
   "config": {
-    "name": "Books to Scrape - All Products",
+    "name": "Books to Scrape - All Products (Scheduled)",
     "job_type": "JOB_TYPE_SCHEDULED",
     "crawl_mode": "CRAWL_MODE_PAGINATION_ONLY",
     "seeds": [

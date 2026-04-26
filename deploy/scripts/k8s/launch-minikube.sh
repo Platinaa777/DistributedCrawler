@@ -482,6 +482,7 @@ if [[ "${START_MINIKUBE}" == "true" ]]; then
     "--driver=${MINIKUBE_DRIVER}"
     "--cpus=${MINIKUBE_CPUS}"
     "--memory=${MINIKUBE_MEMORY}"
+    "--wait=all"
   )
   if [[ -n "${MINIKUBE_DISK_SIZE}" ]]; then
     MINIKUBE_ARGS+=("--disk-size=${MINIKUBE_DISK_SIZE}")
@@ -489,6 +490,48 @@ if [[ "${START_MINIKUBE}" == "true" ]]; then
 
   echo "==> Starting minikube..."
   minikube "${MINIKUBE_ARGS[@]}"
+
+  echo "==> Waiting for API server to be fully ready..."
+  for i in $(seq 1 60); do
+    if kubectl get nodes --request-timeout=5s >/dev/null 2>&1; then
+      echo "    API server is up (attempt ${i})"
+      break
+    fi
+    if [[ "${i}" -eq 60 ]]; then
+      echo "ERROR: API server did not become ready after 60 attempts" >&2
+      minikube status >&2
+      exit 1
+    fi
+    echo "    waiting for API server... (${i}/60)"
+    sleep 5
+  done
+  kubectl wait --for=condition=Ready node --all --timeout=120s
+
+  echo "==> Pre-pulling minikube addon images..."
+  ADDON_IMAGES=(
+    "gcr.io/k8s-minikube/storage-provisioner:v5"
+    "docker.io/kubernetesui/dashboard:v2.7.0"
+    "docker.io/kubernetesui/metrics-scraper:v1.0.8"
+  )
+  for img in "${ADDON_IMAGES[@]}"; do
+    echo "    pulling ${img}"
+    minikube image pull "${img}" || true
+  done
+
+  echo "==> Pre-pulling infra images..."
+  INFRA_IMAGES=(
+    "jaegertracing/all-in-one:1.50.0"
+    "minio/minio:RELEASE.2025-07-23T15-54-02Z"
+    "postgres:14-alpine3.17"
+    "rabbitmq:4.2.2-management"
+    "redis:7.4-alpine"
+    "redis/redisinsight:2.46.0"
+    "otel/opentelemetry-collector-contrib:0.123.0"
+  )
+  for img in "${INFRA_IMAGES[@]}"; do
+    echo "    pulling ${img}"
+    minikube image pull "${img}" || true
+  done
 fi
 
 kubectl config use-context minikube >/dev/null
