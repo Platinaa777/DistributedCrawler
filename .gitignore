@@ -13,11 +13,14 @@ cover_*
 
 .idea/
 
+coverage_internal/
+
 *.exe
 
 */.angular/
 */node_modules/
 
 .playwright-mcp/*
+.codex/
 
 CLAUDE.md

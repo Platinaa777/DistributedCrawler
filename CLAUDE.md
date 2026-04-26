@@ -1,183 +1,206 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file gives coding agents the shortest accurate orientation for working in this repository.
 
-## Project Overview
+## Overview
 
-Distributed web crawling platform built with Go. Uses RabbitMQ (or Kafka/gRPC-memory) for task distribution, PostgreSQL for persistence, MinIO for blob storage, Redis for rate limiting/caching, and OpenTelemetry for observability.
+Distributed Crawler is a Go-based distributed web crawling platform.
 
-## Development Commands
+- API entrypoint: `cmd/grpc_server`
+- Workers: `cmd/fetch_worker`, `cmd/parser_worker`, `cmd/export_worker`, `cmd/scheduler_worker`
+- Dev broker: `cmd/memory_broker`
+- DB migration CLI: `cmd/migrate`
+- UI: `ui/` (Angular, served by nginx in containerized deploys)
 
-### Infrastructure
+Main infrastructure:
+
+- PostgreSQL for jobs, tasks, users, outbox, previews
+- MinIO for fetched page payloads and export artifacts
+- RabbitMQ, Kafka, or gRPC memory broker for task delivery
+- Redis for rate limiting and robots/cache support
+- OpenTelemetry, Prometheus, Grafana, Jaeger, OpenSearch for observability
+
+## Fast Start
+
+### Preferred launchers
 
 ```bash
-# Start all infra services (Postgres, RabbitMQ, MinIO, Redis)
-docker compose -f docker/docker-compose.yaml up -d
-docker compose -f docker/docker-compose.yaml down
+# Single-region full stack
+./deploy/scripts/default_run.sh
+./deploy/scripts/default_run.sh --mode docker
+./deploy/scripts/default_run.sh --mode k8s
+
+# Multi-region fetch workers
+./deploy/scripts/multi_region_run.sh --regions us-east,eu-west
 ```
 
-Ports: PostgreSQL `:54322`, RabbitMQ `:5672` (UI `:15672`), MinIO `:9000` (UI `:9001`), Redis `:6379`
-
-### Build & Run
+### Common development commands
 
 ```bash
-make build              # → ./bin/distributed-crawler (gRPC server)
+make build
 
-make run-grpc-server    # gRPC :8083 + HTTP gateway :8084
-make run-fetcher        # Fetch worker
-make run-parser         # Parser worker
-make run-export         # Export worker
+make run-grpc-server
+make run-fetcher
+make run-parser
+make run-export
 
-# Memory broker (standalone gRPC queue service)
-go run ./cmd/memory_broker --addr :9095
-```
+make docker-deploy
+make k8s-deploy
 
-Workers use `--worker-config-path` flag (default `.worker.env`); the API server uses `--config-path` (default `.env`).
+make test
+make test-coverage
 
-### Database Migrations
-
-```bash
-make local-migration-status
 make local-migration-up
 make local-migration-down
-make local-migration-create NAME=add_something   # creates new .sql file
+make local-migration-status
+
+make .bin-deps
+make generate
+go generate ./...
 ```
 
-Migration directory: `internal/infra/persistence/postgres/migrations/`
-
-### Code Generation
+### Local process mode
 
 ```bash
-make .bin-deps     # install protoc plugins, goose, statik
-make generate      # buf generate + statik embed (runs tidy first)
-go generate ./...  # regenerate mocks (minimock)
+docker compose -f docker-compose.yaml up -d
+./deploy/scripts/local/start-all.sh
+./deploy/scripts/local/stop-all.sh
 ```
 
-Proto definitions: `api/v1/`. Generated Go: `pkg/v1/` (package `crawlergrpc`).
+Logs go to `logs/`, PID files to `.pids/`.
 
-### Testing
+## Real Binary Flags
+
+The app binaries take very few flags directly; most configuration comes from dotenv files or env vars.
 
 ```bash
-make test                  # all tests, 5 iterations, with coverage
-make test-coverage         # HTML coverage report (excludes mocks/config)
-
-go test ./internal/api/crawl_job/tests/...
-go test -run TestCreateCrawlJob ./internal/api/crawl_job/tests/
+go run ./cmd/grpc_server/main.go --config-path=.env
+go run ./cmd/fetch_worker/main.go --worker-config-path=.worker.env
+go run ./cmd/parser_worker/main.go --worker-config-path=.worker.env
+go run ./cmd/export_worker/main.go --worker-config-path=.worker.env
+go run ./cmd/scheduler_worker/main.go --worker-config-path=.worker.env
+go run ./cmd/memory_broker/main.go --addr :9095 --capacity 1000
+go run ./cmd/migrate/main.go --dsn "$PG_DSN" status
 ```
 
-## Architecture
+`internal/config/config.go` skips dotenv loading when `CONFIG_SOURCE=env`, which is how Docker Compose and Helm deployments inject config.
 
-### Entry Points (`cmd/`)
+## Architecture Notes
 
-| Binary | Description |
-|--------|-------------|
-| `grpc_server` | Main API: gRPC + HTTP (grpc-gateway) + outbox publisher + schedule worker, all in one process |
-| `fetch_worker` | Consumes `crawl_queue`, fetches pages, uploads to MinIO, publishes to `parsing_queue` |
-| `parser_worker` | Consumes `parsing_queue`, extracts data, stores `ExtractedRecord`, handles link discovery |
-| `export_worker` | Polls for completed jobs, generates export files in MinIO |
-| `scheduler_worker` | Polls for scheduled jobs, creates new crawl cycles |
-| `memory_broker` | Standalone gRPC in-memory message broker (alternative to RabbitMQ/Kafka) |
-| `grpc_service` | gRPC client utility |
+### Coordinator
 
-### Layer Structure
+`grpc-server` is the coordinator service.
 
-```
-internal/
-  app/                    # Wiring: api_app.go, worker_app.go, service_provider.go
-  domain/
-    crawl/                # Core crawling domain (jobs, tasks, snapshots, records, outbox)
-    auth/                 # Authentication domain (users, refresh tokens)
-    queue/                # Queue endpoint admin domain
-    shared/               # Shared clock, errors
-  application/service/    # Use cases (crawl_job, crawl_task, auth, preview, user, queue)
-  api/                    # gRPC service implementations (crawl_job, auth, preview, user, worker, queue_admin)
-  interfaces/http/        # Additional HTTP handlers (snapshots, tasks, records)
-  infra/
-    persistence/postgres/ # Repos, snapshots (DB structs), converters, transactions
-    messaging/            # messaging.Client interface + rabbitmq/kafka/memory/broker impls
-    services/             # Fetcher, parser, contentstore (MinIO), sanitizer
-    cache/                # Redis client, rate limiter, robots.txt cache
-    secrets/              # File-based polling secrets store (queue credentials)
-    logger/               # Zap logger + OpenSearch core
-  auth/                   # JWT service, middleware, RBAC interceptor
-  interceptor/            # gRPC: validate, log, shard-key, JWT, RBAC
-  worker/                 # FetchWorker, ParserWorker, ExportWorker, ScheduleWorker, WorkerMonitor
-  telemetry/              # OpenTelemetry provider + metrics
-  config/env/             # One file per config type (pg.go, rabbitmq.go, redis.go, …)
+- Serves gRPC and grpc-gateway HTTP APIs
+- Seeds the default admin user
+- Registers worker health/control service
+- Runs the outbox publisher in-process
+- Runs the schedule worker in-process
+
+Important implication: there is also a standalone `scheduler_worker` binary, but the default API deployment already starts scheduling internally.
+
+### Worker pipeline
+
+```text
+create job
+-> save tasks + outbox events in PostgreSQL
+-> outbox publisher sends crawl tasks to broker
+-> fetch-worker downloads pages and stores HTML in MinIO
+-> parser-worker extracts data, discovers more links, stores results
+-> export-worker aggregates completed results into JSON and CSV
 ```
 
-### Key Architectural Patterns
+### Storage and transport
 
-**Single API process**: `grpc_server` runs gRPC, HTTP (grpc-gateway), outbox publisher goroutine, and schedule worker goroutine together in `internal/app/api_app.go`.
+- Domain state lives in `internal/domain/`
+- Use cases live in `internal/application/service/`
+- gRPC handlers live in `internal/api/`
+- HTTP-only handlers live in `internal/interfaces/http/`
+- Infra adapters live in `internal/infra/`
+- App wiring lives in `internal/app/`
+- Worker implementations live in `internal/worker/`
 
-**Messaging abstraction**: `internal/infra/messaging/client.go` defines `messaging.Client`. Broker selected by `MESSAGING_BROKER` env var (`rabbitmq` | `kafka` | `grpc_memory`). Queue/topic names come from `RABBITMQ_CRAWL_QUEUE_NAME` / `KAFKA_CRAWL_TOPIC_NAME`, etc.
+Important patterns:
 
-**Outbox pattern**: `TaskEnqueuedEvent` and similar events are stored in `outbox_events` in the same DB transaction as business data. A background goroutine in the API process reads unprocessed events and publishes them to the broker.
+- Outbox pattern for reliable publish after DB state changes
+- Repository plus converter plus snapshot layering for persistence
+- Messaging abstraction in `internal/infra/messaging/`
+- Optional PostgreSQL sharding
+- Worker heartbeat and drain control through `WorkerMonitor`
 
-**Worker monitoring**: Each worker process runs `WorkerMonitor`, which registers with the API server via `WorkerServiceServer`. The API server can remotely drain or force-kill workers.
+## Messaging And Regions
 
-**Transaction management**: `TxManager` in `internal/infra/persistence/postgres/transaction/` propagates transactions via `context.Context`. Repos detect and reuse an active tx from ctx automatically.
+- Broker is selected by `MESSAGING_BROKER`: `rabbitmq`, `kafka`, or `grpc_memory`
+- Default crawl queue name comes from `RABBITMQ_CRAWL_QUEUE_NAME` or Kafka equivalent
+- Multi-region mode uses `RABBITMQ_CRAWL_QUEUE_NAMES` plus `WORKER_REGION`
+- `multi_region_run.sh` creates one fetch-worker pool per region
+- Parser workers are shared and not region-bound
 
-**Repository / Converter pattern**: DB structs (`*Snapshot`) live in `infra/persistence/postgres/snapshots/`. Converters in `infra/persistence/postgres/converters/` translate between domain models and DB structs. Repos work only with domain models.
+## Config Surfaces To Know
 
-**Queue routing**: `internal/worker/routing/queue_routing_policy.go` supports weighted FNV-hash routing across admin-managed queue endpoints (`QueueAdminService`). Queue credentials loaded from a polling file secrets store (`QUEUE_SECRETS_FILE_PATH`).
+### Core env vars
 
-**Auth**: JWT-based with roles. gRPC interceptor chain: `Log → Validate → ShardKey → JWTAuth → RBAC`. Default admin seeded on startup from `DEFAULT_USER_EMAIL` / `DEFAULT_USER_PWD`.
+- `PG_DSN`
+- `LOG_LEVEL`
+- `LOG_ENV`
+- `MESSAGING_BROKER`
 
-**Sharding**: Optional PostgreSQL sharding. `PG_SHARDING_ENABLED=true` requires `PG_SHARD_DSNS` (comma-separated DSNs). `ShardKeyInterceptor` reads shard key from gRPC metadata.
+### API env vars
 
-### Configuration
+- `GRPC_HOST`, `GRPC_PORT`
+- `HTTP_HOST`, `HTTP_PORT`
+- `JWT_SECRET`
+- `DEFAULT_USER_EMAIL`, `DEFAULT_USER_PWD`
+- `HTTP_CORS_ALLOWED_ORIGINS`
 
-Config is loaded from a dotenv file by `config.Load(path)`. All typed config readers are in `internal/config/env/` — one file per config type.
+### Worker env vars
 
-**Required env vars by component:**
+- `MINIO_ENDPOINT`, `MINIO_USER`, `MINIO_PWD`, `MINIO_BUCKET_NAME`
+- `REDIS_ADDRESS`, `REDIS_PWD`, `REDIS_DB`
+- `LIMITER_TYPE`
+- `WORKER_REGION`
+- `FETCHER_TYPE`
+- `CHROME_REMOTE_URL`
 
-| Component | Required vars |
-|-----------|--------------|
-| All | `PG_DSN`, `LOG_LEVEL`, `LOG_ENV` |
-| API server | `GRPC_HOST/PORT`, `HTTP_HOST/PORT`, `JWT_SECRET`, `DEFAULT_USER_EMAIL/PWD` |
-| Fetch/Parser workers | `MINIO_ENDPOINT`, `MINIO_USER`, `MINIO_PWD`, `MINIO_BUCKET_NAME`, `REDIS_ADDRESS`, `REDIS_PWD` |
-| RabbitMQ | `RABBITMQ_URL`, `RABBITMQ_CRAWL_QUEUE_NAME`, `RABBITMQ_PARSING_QUEUE_NAME` |
-| Kafka | `KAFKA_BROKERS`, `KAFKA_CONSUMER_GROUP`, `KAFKA_CRAWL_TOPIC_NAME`, `KAFKA_PARSING_TOPIC_NAME` |
-| gRPC memory broker | `MEMORY_BROKER_ADDR` |
+### Queue-secret support
 
-`LIMITER_TYPE=redis|inmemory` controls whether workers use Redis or per-process in-memory rate limiting.
+- `QUEUE_SECRETS_FILE_PATH`
+- `QUEUE_SECRETS_WATCH_ENABLED`
+- `QUEUE_SECRETS_RELOAD_INTERVAL`
 
-### Database Schema
+The example file is [queue-secrets.json.example](/Users/denis/projects/go/DistributedCrawler/queue-secrets.json.example).
 
-Key tables: `crawl_jobs`, `crawl_job_configs`, `crawl_tasks`, `page_snapshots`, `extracted_records`, `outbox_events`, `previews`, `users`, `refresh_tokens`, `queue_endpoints`.
+## Files And Directories Worth Checking First
 
-All IDs are UUIDs. FKs use `ON DELETE CASCADE`. `outbox_events.processed_at IS NULL` = pending.
+- [README.md](/Users/denis/projects/go/DistributedCrawler/README.md)
+- [docs/operator-manual.md](/Users/denis/projects/go/DistributedCrawler/docs/operator-manual.md)
+- [docs/parsing-syntax-spec.md](/Users/denis/projects/go/DistributedCrawler/docs/parsing-syntax-spec.md)
+- [Makefile](/Users/denis/projects/go/DistributedCrawler/Makefile)
+- [docker-compose.yaml](/Users/denis/projects/go/DistributedCrawler/docker-compose.yaml)
+- [docker-compose.app.yaml](/Users/denis/projects/go/DistributedCrawler/docker-compose.app.yaml)
+- [internal/app/api_app.go](/Users/denis/projects/go/DistributedCrawler/internal/app/api_app.go)
+- [internal/app/worker_app.go](/Users/denis/projects/go/DistributedCrawler/internal/app/worker_app.go)
 
-### Mocks
+## Working Conventions
 
-Mocks use `github.com/gojuno/minimock/v3`. `//go:generate` directives in `internal/application/service/generate.go` and per-repo `generate.go` files. Run `go generate ./...` to regenerate all mocks.
+- Prefer `rg` for searches
+- Prefer `apply_patch` for edits
+- Do not assume the old docs are correct; verify against `cmd/`, `internal/app/`, and deployment scripts
+- Be careful with `deploy/scripts/docker/teardown.sh`: it removes all Docker containers and all Docker volumes on the host
+- Respect existing changes in the worktree; do not revert unrelated user work
 
-## Helm Deployment
+## Testing And Regeneration
 
-Chart: `deploy/helm/distributed-crawler/`
+Use these after changing API or generated assets:
 
 ```bash
-# Dev (subcharts included)
-helm upgrade --install crawler ./deploy/helm/distributed-crawler \
-  -f values.yaml -f values-dev.yaml
-
-# External infra (infra managed by a separate release)
-helm upgrade --install crawler ./deploy/helm/distributed-crawler \
-  -f values.yaml -f values-dev.yaml -f values-external-infra.yaml
+make test
+make generate
+go generate ./...
 ```
 
-ConfigMap holds non-secret env vars; Secret holds passwords and constructed DSNs/URLs. All pods load both via `envFrom`.
+Generated sources:
 
-## Code Conventions
-
-- Errors: wrap with context: `fmt.Errorf("doing X: %w", err)`
-- Domain errors in `internal/domain/shared/errors.go`
-- Tests in `tests/` subdirectory within the package; use `testify/require`
-- Commands mutate state; Queries read state (split in `application/service/`)
-- All IDs are typed value objects (`CrawlJobID`, `CrawlTaskID`, etc.) — UUID validation enforced at construction
-
-## Known Technical Debt
-
-- `CompletedAt` in `CrawlJob` uses non-nullable time in domain but needs `sql.NullTime` in DB — see `internal/infra/persistence/postgres/converters/crawl_job.go`
-- `internal/infra/persistence/dbclient.go` uses `log.Println` instead of zap
+- Protos: `api/v1/`
+- Generated Go: `pkg/v1/`
+- Embedded Swagger assets: `statik/statik.go`
