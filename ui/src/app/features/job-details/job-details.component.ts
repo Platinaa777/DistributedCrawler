@@ -464,6 +464,16 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   currentTaskSortOrder = 1;
   private currentSort: TaskSortParams = { sort_field: 'TASK_SORT_FIELD_ENQUEUED_AT', sort_order: 'SORT_ORDER_ASC' };
   private taskTableInitialized = false; // skip first (onLazyLoad) — tasks already loaded by forkJoin
+  private readonly statusChartColors: Record<string, string> = {
+    pending: '#f59e0b',
+    queued: '#06b6d4',
+    inprogress: '#3b82f6',
+    fetched: '#14b8a6',
+    parsed: '#8b5cf6',
+    completed: '#22c55e',
+    failed: '#ef4444',
+    skipped: '#64748b',
+  };
 
   // Server-side analytics
   analytics: TaskAnalytics | null = null;
@@ -641,11 +651,24 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.tasks = response.tasks;
-          this.taskCursor = response.next_cursor || null;
-          this.hasMoreTasks = response.has_more;
+          this.applyPolledTasks(response);
         }
       });
+  }
+
+  private applyPolledTasks(response: { tasks: CrawlTask[]; next_cursor: string | null; has_more: boolean }): void {
+    if (this.loadingMoreTasks) return;
+
+    const isFirstPageView = this.tasks.length <= this.pageSize;
+    if (isFirstPageView) {
+      this.tasks = response.tasks;
+      this.taskCursor = response.next_cursor || null;
+      this.hasMoreTasks = response.has_more;
+      return;
+    }
+
+    const polledTasksById = new Map(response.tasks.map(task => [task.id, task]));
+    this.tasks = this.tasks.map(task => polledTasksById.get(task.id) ?? task);
   }
 
   private stopTasksPolling(): void {
@@ -681,7 +704,9 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
           if (this.isTerminalStatus(updatedJob?.status || '')) {
             this.stopJobPolling();
             if (becameTerminal) {
-              this.loadTasks();
+              if (this.tasks.length <= this.pageSize) {
+                this.loadTasks();
+              }
               this.stopTasksPolling();
             }
           }
@@ -755,16 +780,14 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
   private buildStatusChart(): void {
     if (!this.analytics) return;
 
-    const labels = Object.keys(this.analytics.status_counts).map(s => s.replace(/_/g, ' '));
-    const data = Object.values(this.analytics.status_counts);
-    const palette = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#64748b'];
+    const statusEntries = Object.entries(this.analytics.status_counts);
 
     this.statusChartData = {
-      labels,
+      labels: statusEntries.map(([status]) => status.replace(/_/g, ' ')),
       datasets: [
         {
-          data,
-          backgroundColor: labels.map((_, index) => palette[index % palette.length]),
+          data: statusEntries.map(([, count]) => count),
+          backgroundColor: statusEntries.map(([status]) => this.getStatusChartColor(status)),
           borderColor: '#ffffff',
           borderWidth: 2
         }
@@ -778,6 +801,14 @@ export class JobDetailsComponent implements OnInit, OnDestroy {
         }
       }
     };
+  }
+
+  private getStatusChartColor(status: string): string {
+    return this.statusChartColors[this.normalizeStatusKey(status)] ?? '#94a3b8';
+  }
+
+  private normalizeStatusKey(status: string): string {
+    return status.toLowerCase().replace(/[\s_-]/g, '');
   }
 
   private buildDepthChart(): void {
