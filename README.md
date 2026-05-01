@@ -1,28 +1,58 @@
 # Distributed Crawler
 
-Распределённая платформа для веб-краулинга на Go. Система предоставляет gRPC API и HTTP gateway, выполняет пайплайн сканирования через набор воркеров, хранит метаданные в PostgreSQL, страницы и экспортные артефакты в MinIO, а для доставки задач использует RabbitMQ, Kafka или gRPC in-memory broker.
+Distributed Crawler — распределённая платформа для веб-краулинга на Go с gRPC API, HTTP gateway, Angular UI, набором воркеров и инфраструктурой для Docker Compose и Kubernetes.
 
-Подробное руководство по эксплуатации находится в [docs/operator-manual.md](docs/operator-manual.md). Примеры парсинга и образцы запросов лежат в каталоге [`docs/example*`](docs/).
+Система создаёт crawl jobs, загружает страницы, сохраняет HTML/артефакты в MinIO, извлекает данные по DSL проекта, строит follow-up задачи, ведёт пользователей и роли, отдаёт превью страниц и формирует JSON/CSV экспорт.
 
-## Что Делает Система
+Главный эксплуатационный runbook находится в [docs/operator-manual.md](docs/operator-manual.md). Синтаксис extraction DSL описан в [docs/parsing-syntax-spec.md](docs/parsing-syntax-spec.md), а multi-node Kubernetes affinity для региональных fetch-worker — в [docs/multiregion-affinity-spec.md](docs/multiregion-affinity-spec.md).
 
-- `grpc-server` принимает запросы на создание crawl-job, сохраняет jobs/tasks/configs, обслуживает gRPC и HTTP API, запускает outbox publisher и schedule worker внутри одного процесса.
-- `fetch-worker` потребляет crawl-задачи, проверяет scope и robots-правила, загружает страницы, сохраняет HTML в MinIO и публикует задачи на парсинг.
-- `parser-worker` загружает сохранённый HTML, извлекает записи по DSL проекта, находит follow-up ссылки, создаёт новые задачи и сохраняет результаты извлечения.
-- `export-worker` опрашивает завершённые job, агрегирует результаты задач и формирует JSON/CSV-экспорт в MinIO.
-- `scheduler-worker` также доступен как отдельный процесс, если нужно вынести расписание за пределы API-процесса.
-- `memory_broker` даёт лёгкий встроенный брокер для разработки и тестов, когда RabbitMQ/Kafka не нужны.
+## Возможности
 
-## Архитектура
+- gRPC API и HTTP gateway со Swagger UI.
+- Angular Admin UI для jobs, tasks, workers, users и создания crawl jobs.
+- Авторизация через JWT, refresh tokens, роли пользователей и seed admin.
+- Preview API для загрузки страницы перед настройкой extraction spec.
+- Fetch pipeline с scope rules, robots.txt, retry policy, rate limiting и разными fetcher backend (`http`, `browser`, `selenium`).
+- Parser pipeline с extraction DSL, пагинацией, дочерними ссылками и сохранением результатов.
+- Export worker, который собирает результаты завершённых jobs в JSON/CSV.
+- RabbitMQ, Kafka или gRPC in-memory broker.
+- PostgreSQL для метаданных, MinIO для страниц/экспортов, Redis для rate limiting и кэша.
+- Observability через OpenTelemetry Collector, Jaeger, Prometheus, Grafana и OpenSearch.
+- Docker Compose, Minikube/Helm и multi-region запуск fetch-worker.
+
+## Структура проекта
+
+| Путь | Назначение |
+|---|---|
+| `cmd/` | Точки входа: `grpc_server`, `fetch_worker`, `parser_worker`, `export_worker`, `scheduler_worker`, `memory_broker`, `migrate` |
+| `internal/api/` | gRPC/HTTP application handlers: auth, jobs, preview, users, workers |
+| `internal/app/` | Сборка API/worker приложений и wiring зависимостей |
+| `internal/application/` | Use cases и application services |
+| `internal/domain/` | Доменные модели, value objects, events и repo interfaces |
+| `internal/infra/` | PostgreSQL, RabbitMQ/Kafka/memory messaging, MinIO, Redis, fetchers, logger |
+| `internal/interfaces/http/` | Дополнительные HTTP handlers, DTO и middleware |
+| `internal/worker/` | Fetch, parser, export, scheduler, outbox publisher, worker monitoring |
+| `internal/config/` | Env/dotenv конфигурация |
+| `api/v1/` | Protobuf definitions и Swagger assets |
+| `pkg/v1/` | Сгенерированный Go-код protobuf/gRPC/gateway/validation |
+| `ui/` | Angular frontend |
+| `docker/` | Dockerfiles компонентов |
+| `deploy/scripts/` | Launcher-скрипты для local, Docker и Kubernetes |
+| `deploy/helm/` | Helm charts приложения и инфраструктуры |
+| `docs/` | Operator manual, DSL spec, examples, multi-region guide |
+| `observability/`, `grafana/` | Конфиги OTel Collector, Prometheus, Grafana dashboards/provisioning |
+
+## Компоненты
 
 ```mermaid
 flowchart LR
-    User[Пользователь или UI] --> API[Координатор / grpc-server]
+    UI[Angular UI] --> API[gRPC server / HTTP gateway]
+    Client[API client] --> API
     API --> PG[(PostgreSQL)]
     API --> OUTBOX[Outbox publisher]
-    OUTBOX --> MQ[Брокер сообщений]
+    OUTBOX --> MQ[Broker]
     MQ --> FETCH[Fetch worker]
-    FETCH --> MINIO[(Хранилище страниц MinIO)]
+    FETCH --> MINIO[(MinIO)]
     FETCH --> MQ
     MQ --> PARSER[Parser worker]
     PARSER --> PG
@@ -31,370 +61,140 @@ flowchart LR
     PG --> EXPORT[Export worker]
     MINIO --> EXPORT
     EXPORT --> MINIO
+    WORKERS[Workers] --> API
 ```
 
-### Роли Компонентов
+| Компонент | Точка входа | Роль |
+|---|---|---|
+| `grpc-server` | `cmd/grpc_server` | gRPC `:8083`, HTTP gateway `:8084`, Swagger, auth, jobs, preview, users, workers, outbox publisher и встроенный scheduler loop |
+| `fetch-worker` | `cmd/fetch_worker` | Забирает crawl tasks, проверяет scope/robots/rate limits, скачивает страницы и публикует parsing tasks |
+| `parser-worker` | `cmd/parser_worker` | Читает HTML из MinIO, извлекает records, создаёт follow-up tasks и обновляет статусы |
+| `export-worker` | `cmd/export_worker` | Собирает результаты завершённых jobs и пишет JSON/CSV exports в MinIO |
+| `scheduler-worker` | `cmd/scheduler_worker` | Отдельный scheduler процесс, если расписание нужно вынести из API |
+| `memory-broker` | `cmd/memory_broker` | gRPC in-memory broker для разработки и тестов |
+| `ui` | `ui/`, `docker/ui` | Angular SPA, отдаётся через nginx container |
 
-```text
-Координатор / coordinator service (grpc-server)
-- Точка входа для UI и API-клиентов.
-- Валидирует запросы и сохраняет crawl jobs и метаданные задач в PostgreSQL.
-- Публикует gRPC на :8083 и HTTP gateway / Swagger на :8084.
-- Создаёт администратора по умолчанию при старте.
-- Запускает outbox publisher, который превращает события из БД в сообщения брокера.
-- Запускает цикл schedule worker для cron-задач.
+## Быстрый запуск
 
-Fetch worker
-- Читает crawl-задачи из одной или нескольких crawl-очередей.
-- Применяет scope-правила, rate limiting и опциональную проверку robots.txt.
-- Загружает HTML через настроенную реализацию fetcher.
-- Загружает содержимое страницы и снапшоты в MinIO.
-- Отправляет задачи в parsing queue.
-
-Parser worker
-- Читает parsing-задачи из parsing queue.
-- Загружает ранее сохранённый HTML из MinIO.
-- Извлекает поля и элементы по extraction DSL.
-- Сохраняет результаты извлечения и статус задачи.
-- Находит пагинацию и дочерние ссылки, затем ставит follow-up crawl-задачи через outbox flow.
-
-Exporter worker
-- Опрашивает job, у которых crawl-часть завершена.
-- Загружает результаты извлечения по задачам из MinIO.
-- Формирует итоговые JSON и CSV файлы экспорта.
-- Обновляет export status и ключи объектов в записи job.
-```
-
-### Пайплайн
-
-```mermaid
-sequenceDiagram
-    participant C as Клиент или UI
-    participant A as grpc-server
-    participant D as PostgreSQL
-    participant O as Outbox publisher
-    participant B as Broker
-    participant F as fetch-worker
-    participant M as MinIO
-    participant P as parser-worker
-    participant E as export-worker
-
-    C->>A: Create crawl job
-    A->>D: Save job, seed tasks, save outbox events
-    O->>D: Poll unprocessed outbox events
-    O->>B: Publish crawl task
-    B->>F: Deliver crawl task
-    F->>M: Save fetched page
-    F->>B: Publish parsing task
-    B->>P: Deliver parsing task
-    P->>M: Read HTML and save extraction result
-    P->>D: Update task and create follow-up tasks
-    O->>B: Publish discovered follow-up crawl tasks
-    E->>D: Poll export-eligible jobs
-    E->>M: Read task results and write JSON/CSV exports
-```
-
-## Способы Запуска Проекта
-
-### 1. Основной launcher, один регион
-
-`deploy/scripts/default_run.sh` — основной launcher для полного стека.
+Верхнеуровневые launcher-скрипты находятся в `deploy/scripts/` и описаны подробнее в [operator manual](docs/operator-manual.md#5-быстрый-запуск-с-помощью-launcher-скриптов).
 
 ```bash
-# локальные фоновые процессы
+# Локальные процессы + infra из docker-compose.yaml
 ./deploy/scripts/default_run.sh
 
-# docker compose
+# Полный стек в Docker Compose
 ./deploy/scripts/default_run.sh --mode docker
 
-# minikube + helm
-./deploy/scripts/default_run.sh --mode k8s
-```
+# Minikube + Helm
+./deploy/scripts/default_run.sh --mode k8s --port-forward
 
-#### Аргументы
-
-| Флаг | Режимы | По умолчанию | Значение |
-|---|---|---:|---|
-| `--mode <local\|docker\|k8s>` | все | `local` | Выбор режима запуска |
-| `--config <path>` | local | `.env` | Файл конфигурации API |
-| `--worker-config <path>` | local | `.worker.env` | Файл конфигурации воркеров |
-| `--build` | local | выкл | Сначала собрать бинарники и запускать их вместо `go run` |
-| `--redis-limiter` | local | выкл | Экспортировать `LIMITER_TYPE=redis` перед стартом |
-| `--no-build` | docker, k8s | выкл | Пропустить сборку образов |
-| `--app-only` | docker | выкл | Поднять только app-контейнеры, переиспользовать уже запущенную infra |
-| `--tag <tag>` | docker, k8s | `latest` | Тег образа |
-| `--registry <name>` | docker, k8s | `distributed-crawler` | Префикс образа |
-| `--no-bucket` | k8s | выкл | Не создавать MinIO bucket |
-| `--port-forward` | k8s | выкл | Запустить `kubectl port-forward` после деплоя |
-| `--full-observability` | k8s | выкл | Включить стек Prometheus/Grafana/OpenSearch |
-| `--jwt-secret <value>` | k8s | dev-значение | JWT secret для API |
-| `--pg-password <pwd>` | k8s | dev-значение | Пароль PostgreSQL |
-| `--default-user-password <pwd>` | k8s | dev-значение | Пароль seed-админа |
-| `--messaging-broker <kind>` | k8s | `rabbitmq` | `rabbitmq`, `kafka` или `grpc_memory` |
-| `-- ...` | все | нет | Передать оставшиеся аргументы нижележащим скриптам |
-
-Примеры:
-
-```bash
-./deploy/scripts/default_run.sh --mode docker --no-build
-./deploy/scripts/default_run.sh --mode k8s --port-forward --full-observability
-./deploy/scripts/default_run.sh --mode k8s -- --app-set grpcServer.replicaCount=2
-```
-
-### 2. Основной launcher, несколько регионов fetch-worker
-
-`deploy/scripts/multi_region_run.sh` поднимает отдельный пул `fetch-worker` на каждый регион. `parser-worker` при этом остаются общими.
-
-```bash
-./deploy/scripts/multi_region_run.sh --regions us-east,eu-west
-./deploy/scripts/multi_region_run.sh --regions us-east,eu-west --mode local
+# Multi-region fetch-worker pools
 ./deploy/scripts/multi_region_run.sh --regions us-east,eu-west --mode k8s --port-forward
 ```
 
-#### Аргументы
+Основные флаги launcher-скриптов:
 
-| Флаг | Режимы | По умолчанию | Значение |
-|---|---|---:|---|
-| `--regions <csv>` | все | обязателен | Список регионов, например `us-east,eu-west` |
-| `--mode <local\|docker\|k8s>` | все | `docker` | Выбор режима запуска |
-| `--config <path>` | local | `.env` | Файл конфигурации API |
-| `--worker-config <path>` | local | `.worker.env` | Конфигурация non-fetch воркеров |
-| `--build` | local | выкл | Собрать бинарники перед запуском |
-| `--no-build` | docker, k8s | выкл | Пропустить сборку образов |
-| `--tag <tag>` | docker, k8s | `latest` | Тег образа |
-| `--registry <name>` | docker | `distributed-crawler` | Префикс образа |
-| `--no-bucket` | k8s | выкл | Не создавать MinIO bucket |
-| `--port-forward` | k8s | выкл | Запустить `kubectl port-forward` после деплоя |
-| `--full-observability` | k8s | выкл | Включить полный observability stack |
-| `--jwt-secret <value>` | k8s | dev-значение | JWT secret для API |
-| `--pg-password <pwd>` | k8s | dev-значение | Пароль PostgreSQL |
-| `--default-user-password <pwd>` | k8s | dev-значение | Пароль seed-админа |
-| `--messaging-broker <kind>` | k8s | `rabbitmq` | `rabbitmq`, `kafka` или `grpc_memory` |
-| `-- ...` | все | нет | Передать оставшиеся аргументы нижележащим скриптам |
+| Флаг | Режимы | Значение |
+|---|---|---|
+| `--mode local\|docker\|k8s` | все | Режим запуска |
+| `--config <path>` | local | dotenv-файл API, по умолчанию `.env` |
+| `--worker-config <path>` | local | dotenv-файл воркеров, по умолчанию `.worker.env` |
+| `--build` | local | Собрать бинарники перед запуском |
+| `--no-build` | docker/k8s | Пропустить сборку образов |
+| `--app-only` | docker | Поднять только app-контейнеры поверх уже запущенной infra |
+| `--tag <tag>` | docker/k8s | Тег Docker-образов |
+| `--registry <name>` | docker/k8s | Префикс/registry образов |
+| `--port-forward` | k8s | Открыть локальные port-forward после деплоя |
+| `--full-observability` | k8s | Включить Prometheus, Grafana, OpenSearch и связанные сервисы |
+| `--messaging-broker <kind>` | k8s | `rabbitmq`, `kafka` или `grpc_memory` |
+| `--regions <csv>` | multi-region | Список регионов для отдельных fetch-worker deployments |
+| `-- ...` | все | Проброс дополнительных аргументов в нижележащий скрипт |
 
-Примечания:
+## Низкоуровневый запуск
 
-- Скрипт экспортирует `RABBITMQ_CRAWL_QUEUE_NAMES`, чтобы API и UI видели полный список региональных очередей.
-- Каждый региональный fetch-worker получает `WORKER_REGION=<region>`.
-- Маршрутизация очередей конфигурируется через настройки; runtime discovery региональных broker endpoint из базы нет.
-
-## Низкоуровневые Режимы Запуска
-
-### Локальные процессы
-
-Сначала поднять инфраструктуру:
+Инфраструктура для локальной разработки:
 
 ```bash
 docker compose -f docker-compose.yaml up -d
 ```
 
-Потом поднять компоненты приложения:
+Локальные процессы приложения:
 
 ```bash
 ./deploy/scripts/local/start-all.sh
 ./deploy/scripts/local/stop-all.sh
 ```
 
-Сборка бинарников:
-
-```bash
-./deploy/scripts/local/build.sh
-./deploy/scripts/local/build.sh grpc_server fetch_worker
-```
-
-Прямые `make`-таргеты:
+Make targets:
 
 ```bash
 make run-grpc-server
 make run-fetcher
 make run-parser
 make run-export
-```
-
-### Docker Compose
-
-Полный стек:
-
-```bash
 make docker-deploy
-make docker-deploy ARGS="--pg-password mypwd --jwt-secret supersecret"
-make docker-deploy ARGS="--messaging-broker kafka --no-build"
-```
-
-Один компонент:
-
-```bash
-make docker-deploy-component COMPONENT=grpc-server
-make docker-deploy-component COMPONENT=fetch-worker
-```
-
-Аргументы Docker launcher из `deploy/scripts/docker/launch.sh`:
-
-| Флаг | По умолчанию |
-|---|---:|
-| `--registry <name>` | `distributed-crawler` |
-| `--tag <tag>` | `latest` |
-| `--components <csv>` / `--component <name>` | `grpc-server,fetch-worker,parser-worker,export-worker,ui` |
-| `--pg-user <name>` | `crawler` |
-| `--pg-password <pwd>` | `some-pwd-123` |
-| `--pg-database <name>` | `crawler` |
-| `--pg-port <port>` | `54322` |
-| `--rabbitmq-user <name>` | `guest` |
-| `--rabbitmq-password <pwd>` | `guest` |
-| `--minio-user <name>` | `minioadmin` |
-| `--minio-password <pwd>` | `minioadmin` |
-| `--minio-bucket <name>` | `pages` |
-| `--redis-password <pwd>` | `some_redis_pwd_123` |
-| `--grafana-user <name>` | `admin` |
-| `--grafana-password <pwd>` | `changeme-grafana-password` |
-| `--jwt-secret <value>` | небезопасное dev-значение |
-| `--default-user-email <email>` | `admin@example.com` |
-| `--default-user-password <pwd>` | `12345678` |
-| `--messaging-broker <kind>` | `rabbitmq` |
-| `--cors-origin <origin>` | `http://localhost:4200` |
-| `--queue-secrets-file <path>` | `queue-secrets.json.example` |
-| `--app-only` | выкл |
-| `--no-build` | выкл |
-| `--env KEY=VALUE` | можно повторять |
-| `--compose-arg <arg>` | можно повторять |
-
-### Kubernetes через Helm
-
-Полный стек:
-
-```bash
 make k8s-deploy
-make k8s-deploy ARGS="--full-observability --port-forward"
 ```
 
-Один компонент:
-
-```bash
-make k8s-deploy-component COMPONENT=grpc-server
-make k8s-deploy-component COMPONENT=fetch-worker
-```
-
-Основные аргументы `deploy/scripts/k8s/launch-minikube.sh`:
-
-| Флаг | По умолчанию |
-|---|---:|
-| `--release-name <name>` | `crawler` |
-| `--namespace <name>` | `crawler` |
-| `--infra-release-name <name>` | `infra` |
-| `--infra-namespace <name>` | `infra` |
-| `--values-env <dev\|prod>` | `dev` |
-| `--registry <name>` | `distributed-crawler` |
-| `--tag <tag>` | `latest` |
-| `--queue-secrets-file <path>` | `queue-secrets.json.example` |
-| `--pg-user`, `--pg-password`, `--pg-database` | dev-значения |
-| `--rabbitmq-user`, `--rabbitmq-password` | dev-значения |
-| `--minio-user`, `--minio-password`, `--minio-bucket` | dev-значения |
-| `--redis-password` | dev-значение |
-| `--grafana-user`, `--grafana-password` | dev-значения |
-| `--jwt-secret` | небезопасное dev-значение |
-| `--default-user-email`, `--default-user-password` | admin defaults |
-| `--messaging-broker <kind>` | `rabbitmq` |
-| `--cors-origin <origin>` | `http://localhost:4200` |
-| `--skip-minikube-start` | выкл |
-| `--no-build` | выкл |
-| `--no-bucket` | выкл |
-| `--port-forward` | выкл |
-| `--port-forward-services <csv>` | все поддерживаемые сервисы |
-| `--lite` | вкл |
-| `--full-observability` | выкл |
-| `--minikube-driver <name>` | `docker` |
-| `--minikube-cpus <n>` | `6` |
-| `--minikube-memory <mb>` | `8192` |
-| `--minikube-disk-size <size>` | не задан |
-| `--app-values-file`, `--infra-values-file` | можно повторять |
-| `--app-set`, `--app-set-string`, `--app-set-file` | можно повторять |
-| `--infra-set`, `--infra-set-string`, `--infra-set-file` | можно повторять |
-
-## Прямые Флаги Бинарников
-
-Ниже реальные command-line flags, которые понимают бинарники.
-
-| Бинарник | Флаги |
-|---|---|
-| `cmd/grpc_server` | `--config-path=.env` |
-| `cmd/fetch_worker` | `--worker-config-path=.worker.env` |
-| `cmd/parser_worker` | `--worker-config-path=.worker.env` |
-| `cmd/export_worker` | `--worker-config-path=.worker.env` |
-| `cmd/scheduler_worker` | `--worker-config-path=.worker.env` |
-| `cmd/memory_broker` | `--addr=:9095`, `--capacity=1000` |
-| `cmd/migrate` | `--dsn`, `--dir`, затем команда `up`, `up-by-one`, `down`, `reset`, `status`, `version`, `create <name>` |
-
-Примеры:
+Прямые команды бинарников:
 
 ```bash
 go run ./cmd/grpc_server/main.go --config-path=.env
 go run ./cmd/fetch_worker/main.go --worker-config-path=.worker.env
+go run ./cmd/parser_worker/main.go --worker-config-path=.worker.env
+go run ./cmd/export_worker/main.go --worker-config-path=.worker.env
 go run ./cmd/memory_broker/main.go --addr :9095 --capacity 2000
-go run ./cmd/migrate/main.go --dsn "postgres://crawler:pwd@localhost:54322/crawler?sslmode=disable" status
 ```
 
-## Ключевые Переменные Окружения
+Миграции:
 
-Конфигурация читается из dotenv-файлов, если не выставлен `CONFIG_SOURCE=env`. Именно так настройки прокидываются в Docker и Kubernetes.
+```bash
+make local-migration-status
+make local-migration-up
+make local-migration-down
 
-### Базовые
+go run ./cmd/migrate/main.go \
+  --dsn "postgres://crawler:pwd@localhost:54322/crawler?sslmode=disable" \
+  status
+```
 
-| Переменная | Назначение |
+## Конфигурация
+
+По умолчанию локальные процессы читают dotenv-файлы `.env` и `.worker.env`. В Docker/Kubernetes настройки прокидываются через env; при необходимости используйте `CONFIG_SOURCE=env`.
+
+Ключевые переменные:
+
+| Группа | Переменные |
 |---|---|
-| `PG_DSN` | DSN подключения к PostgreSQL |
-| `LOG_LEVEL` | `debug`, `info`, `warn`, `error` |
-| `LOG_ENV` | `development` или `production` |
-| `MESSAGING_BROKER` | `rabbitmq`, `kafka`, `grpc_memory` |
-
-### API
-
-| Переменная | Назначение |
-|---|---|
-| `GRPC_HOST`, `GRPC_PORT` | адрес привязки gRPC |
-| `HTTP_HOST`, `HTTP_PORT` | адрес привязки HTTP gateway |
-| `JWT_SECRET` | секрет подписи JWT |
-| `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL` | время жизни токенов |
-| `JWT_ISSUER`, `JWT_AUDIENCE` | метаданные JWT |
-| `DEFAULT_USER_EMAIL`, `DEFAULT_USER_PWD` | seed-учётка администратора |
-| `HTTP_CORS_ALLOWED_ORIGINS` | CORS allowlist |
-
-### Messaging
-
-| Брокер | Переменные |
-|---|---|
+| База и логирование | `PG_DSN`, `LOG_LEVEL`, `LOG_ENV` |
+| API | `GRPC_HOST`, `GRPC_PORT`, `HTTP_HOST`, `HTTP_PORT`, `HTTP_CORS_ALLOWED_ORIGINS` |
+| Auth | `JWT_SECRET`, `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL`, `JWT_ISSUER`, `JWT_AUDIENCE`, `DEFAULT_USER_EMAIL`, `DEFAULT_USER_PWD` |
+| Messaging | `MESSAGING_BROKER` |
 | RabbitMQ | `RABBITMQ_URL`, `RABBITMQ_CRAWL_QUEUE_NAME`, `RABBITMQ_CRAWL_QUEUE_NAMES`, `RABBITMQ_PARSING_QUEUE_NAME` |
 | Kafka | `KAFKA_BROKERS`, `KAFKA_CONSUMER_GROUP`, `KAFKA_CRAWL_TOPIC_NAME`, `KAFKA_PARSING_TOPIC_NAME` |
-| gRPC memory | `MEMORY_BROKER_ADDR`, `MEMORY_BROKER_CAPACITY` |
+| gRPC memory broker | `MEMORY_BROKER_ADDR`, `MEMORY_BROKER_CAPACITY` |
+| Workers | `MINIO_ENDPOINT`, `MINIO_USER`, `MINIO_PWD`, `MINIO_BUCKET_NAME`, `REDIS_ADDRESS`, `REDIS_PWD`, `REDIS_DB`, `LIMITER_TYPE`, `FETCHER_TYPE`, `WORKER_REGION` |
+| Browser/Selenium fetch | `CHROME_REMOTE_URL` и связанные настройки fetcher backend |
+| Queue secrets | `QUEUE_SECRETS_FILE_PATH`, `QUEUE_SECRETS_WATCH_ENABLED`, `QUEUE_SECRETS_RELOAD_INTERVAL` |
+| Observability | `OTEL_ENABLED`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_INSECURE`, `OTEL_TRACE_SAMPLE_RATE`, `OTEL_METRICS_INTERVAL_SECONDS`, `OPENSEARCH_ENABLED`, `OPENSEARCH_ENDPOINT`, `OPENSEARCH_INDEX` |
 
-### Workers
+Полная таблица переменных окружения и требования к окружению поддерживаются в [docs/operator-manual.md](docs/operator-manual.md#4-переменные-окружения).
 
-| Переменная | Назначение |
-|---|---|
-| `MINIO_ENDPOINT`, `MINIO_USER`, `MINIO_PWD`, `MINIO_BUCKET_NAME`, `MINIO_PUBLIC_BASE_URL` | объектное хранилище |
-| `REDIS_ADDRESS`, `REDIS_PWD`, `REDIS_DB` | rate limiting и кэш |
-| `LIMITER_TYPE` | `redis` или `inmemory` |
-| `WORKER_REGION` | региональный суффикс для fetch-worker |
-| `FETCHER_TYPE` | `http`, `browser` или `selenium` |
-| `CHROME_REMOTE_URL` | endpoint удалённого Chrome при browser fetcher |
-| `QUEUE_SECRETS_FILE_PATH` | файл с credentials для queue endpoint |
-| `QUEUE_SECRETS_WATCH_ENABLED` | включить периодический reload |
-| `QUEUE_SECRETS_RELOAD_INTERVAL` | интервал reload |
+## API и UI
 
-### Observability
+Основные сервисы protobuf API:
 
-| Переменная | Назначение |
-|---|---|
-| `OTEL_ENABLED` | включить OpenTelemetry |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | адрес collector |
-| `OTEL_EXPORTER_OTLP_INSECURE` | отключить TLS для OTLP |
-| `OTEL_TRACE_SAMPLE_RATE` | доля trace sampling |
-| `OTEL_METRICS_INTERVAL_SECONDS` | интервал экспорта метрик |
-| `OPENSEARCH_ENABLED` | включить экспорт логов |
-| `OPENSEARCH_ENDPOINT`, `OPENSEARCH_INDEX` | target OpenSearch |
+- `CrawlerService`: jobs, tasks, analytics, export links.
+- `PreviewService`: загрузка preview перед созданием job.
+- `AuthService`: register, login, refresh, logout.
+- `UserService`: список пользователей и смена ролей.
+- `WorkerService`: worker heartbeat stream, worker list, drain, force kill.
 
-## Локальные Endpoint
+Дополнительный HTTP endpoint:
 
-Типичные адреса после локального или Docker-запуска:
+- `GET /api/v1/crawl-queues` — список доступных crawl queues для UI и routing.
+
+Типичные локальные адреса:
 
 | Сервис | Адрес |
 |---|---|
@@ -411,16 +211,22 @@ go run ./cmd/migrate/main.go --dsn "postgres://crawler:pwd@localhost:54322/crawl
 | Jaeger | `http://localhost:16686` |
 | OpenSearch Dashboards | `http://localhost:5601` |
 
-## Миграции, Сборка, Тесты, Генерация
+## Multi-Region Очереди
+
+`multi_region_run.sh` создаёт отдельный пул `fetch-worker` на каждый регион и выставляет `WORKER_REGION=<region>`. Fetch-worker читает default crawl queue и региональную очередь вида:
+
+```text
+<RABBITMQ_CRAWL_QUEUE_NAME>_<region>
+```
+
+Скрипт также формирует `RABBITMQ_CRAWL_QUEUE_NAMES`, чтобы API и UI знали весь список очередей. Распределение задач между очередями задаётся через `queue_weights` в конфигурации crawl job; если веса не заданы, маршрутизация идёт равномерно по доступным очередям.
+
+Для Kubernetes node affinity по регионам используйте [multi-region affinity spec](docs/multiregion-affinity-spec.md).
+
+## Сборка, Тесты, Генерация
 
 ```bash
 make build
-
-make local-migration-status
-make local-migration-up
-make local-migration-down
-make local-migration-create NAME=add_something
-
 make test
 make test-coverage
 
@@ -429,9 +235,14 @@ make generate
 go generate ./...
 ```
 
-## Полезные Ссылки По Проекту
+`make generate` обновляет protobuf/gRPC/gateway/validation код и embedded Swagger assets через `buf` и `statik`.
 
-- [docs/operator-manual.md](docs/operator-manual.md): руководство по развертыванию и эксплуатации
-- [docs/parsing-syntax-spec.md](docs/parsing-syntax-spec.md): extraction DSL
-- [api/v1/swagger/api.swagger.json](api/v1/swagger/api.swagger.json): сгенерированная схема API
-- [queue-secrets.json.example](queue-secrets.json.example): пример файла с queue secrets
+## Документация
+
+- [docs/operator-manual.md](docs/operator-manual.md): эксплуатация, требования, env, Docker Compose, Helm, endpoints, миграции и teardown.
+- [docs/parsing-syntax-spec.md](docs/parsing-syntax-spec.md): DSL для extraction spec.
+- [docs/operator-messages.md](docs/operator-messages.md): сообщения и команды оператора.
+- [docs/multiregion-affinity-spec.md](docs/multiregion-affinity-spec.md): спека по regional node affinity в Kubernetes.
+- [docs/example*](docs/): примеры запросов, HTML fixtures и ожидаемые ответы.
+- [api/v1/swagger/api.swagger.json](api/v1/swagger/api.swagger.json): сгенерированная OpenAPI/Swagger схема.
+- [queue-secrets.json.example](queue-secrets.json.example): пример queue secrets файла.
